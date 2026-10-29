@@ -9,7 +9,7 @@
    website's scaled down but the print scale below, set for how a PDF is read.
 
    Never link this file from a document. A document carries an empty style element
-   with the data-hw-document attribute; scripts/pdf/render.ts (src/lib/render-pdf.ts)
+   with the data-hw-document attribute; os's scripts/pdf/render.ts (src/lib/render-pdf.ts)
    fills it on every render with this file, its imports inlined and its faces as data URIs,
    so the stored HTML renders standalone. */
 
@@ -500,7 +500,7 @@ tr.subtotal td {
 
 /* The total: Price.astro's card amount, mono bold, here in the h4 role so a row holds it, on the
    teal band, a 12% tint under a strong teal rule, with the figure in teal at 1.2 times. Teal marks
-   money, as Price.astro does. Blind round 4 (docs/tracking/2026-10-29-document-accents.md, 12
+   money, as Price.astro does. Blind round 4 (os/docs/tracking/2026-10-29-document-accents.md, 12
    reviews each): quote 89.4, hours document 90.2, against 74.0 and 77.5 for the purple figure.
    Teal on the tint 4.69:1, the rule on white 5.54:1. */
 tr.total td {
