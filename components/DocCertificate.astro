@@ -1,7 +1,9 @@
 ---
 // The training certificate: a fixed one-page layout on the document base, no page margin, counter,
-// body padding or paragraph spacing. Names stay in Inter: only Inter carries latin-ext (Ł, ř), at
-// 400 and 600. The generator in .claude/skills/certificates/generator/ writes these props.
+// body padding or paragraph spacing. Content too long for the page takes the fit steps of the
+// script below; what still runs over prints a second page, which the renderer refuses. Names stay
+// in Inter: only Inter carries latin-ext (Ł, ř), at 400 and 600. The generator in
+// .claude/skills/certificates/generator/ writes these props.
 import lockupSvg from "../../logos/lockup.svg?raw";
 
 interface Signer {
@@ -143,6 +145,62 @@ const topicClass = [
     </p>
   </div>
 </div>
+<script is:inline>
+  // The fit: a certificate whose content runs past its page takes the steps below in order until
+  // it fits. Each is kept only where it shortens the page; the name steps apply to a name on two
+  // or more lines; once it fits, each earlier step the page holds without is undone. Content that
+  // still does not fit drops the fixed height, so it runs onto a second page, never clipped, and
+  // the renderer's one-page check fails. Runs once the faces are ready: measured before, a page
+  // fits too few steps (measured).
+  (() => {
+    const cert = document.currentScript.previousElementSibling;
+    const steps = [
+      ["fit-tight"],
+      ["fit-columns", "fit-wide"],
+      ["fit-name", "name"],
+      ["fit-gaps"],
+      ["fit-signature"],
+      ["fit-name-small", "name"],
+      ["fit-logo"],
+      ["fit-topics"],
+    ];
+    const all = steps.flat().filter((c) => c.startsWith("fit-"));
+    const over = () => {
+      const box = cert.getBoundingClientRect();
+      let bottom = 0;
+      for (const el of cert.querySelectorAll("*"))
+        bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
+      return bottom - (box.bottom - parseFloat(getComputedStyle(cert).paddingBottom));
+    };
+    const fit = () => {
+      cert.classList.remove(...all, "certificate-overflow");
+      let left = over();
+      for (const step of steps) {
+        if (left <= 0.5) break;
+        const name = cert.querySelector(".attendee-name");
+        const lines = name.offsetHeight / parseFloat(getComputedStyle(name).lineHeight);
+        if (step[1] === "name" && lines < 1.5) continue;
+        // Of alternatives, the one that shortens most; none where neither does.
+        let best = null;
+        for (const option of step.filter((c) => c.startsWith("fit-"))) {
+          cert.classList.add(option);
+          const after = over();
+          cert.classList.remove(option);
+          if (after < left) [best, left] = [option, after];
+        }
+        if (best) cert.classList.add(best);
+      }
+      if (left > 0.5) return cert.classList.add("certificate-overflow");
+      // A late step can free more than was missing: give back each earlier one the page still holds.
+      const kept = all.filter((c) => cert.classList.contains(c));
+      for (const step of kept.slice(0, -1).reverse()) {
+        cert.classList.remove(step);
+        if (over() > 0.5) cert.classList.add(step);
+      }
+    };
+    document.fonts.ready.then(fit);
+  })();
+</script>
 
 <style>
   p {
@@ -164,7 +222,6 @@ const topicClass = [
     width: 210mm;
     height: 297mm;
     padding: 16mm 25mm 14mm;
-    overflow: hidden;
     text-align: center;
   }
 
@@ -390,5 +447,55 @@ const topicClass = [
   .footer-contact a {
     color: inherit;
     text-decoration: none;
+  }
+
+  /* The fit steps the script above takes, in its order. */
+  .fit-tight .topics li {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .fit-columns .topics,
+  .fit-wide .topics {
+    max-width: 160mm;
+  }
+
+  .fit-columns .topics ul {
+    columns: 2;
+    column-gap: 10mm;
+  }
+
+  .fit-columns .topics li {
+    break-inside: avoid;
+  }
+
+  .fit-name .attendee-name {
+    font-size: calc(var(--type-display-size) * 1.5);
+  }
+
+  .fit-gaps {
+    --cert-section: 16pt;
+  }
+
+  .fit-signature :is(.signature-image, .signature-placeholder) {
+    height: 16mm;
+  }
+
+  .fit-name-small .attendee-name {
+    font-size: calc(var(--type-display-size) * 1.25);
+  }
+
+  .fit-logo .logo {
+    height: 12mm;
+  }
+
+  /* The label role's size and leading in the small role's face: the topics stay in Inter. */
+  .fit-topics .topics li {
+    font-size: var(--type-label-size);
+    line-height: var(--type-label-line-height);
+  }
+
+  .certificate-overflow {
+    height: auto;
   }
 </style>
