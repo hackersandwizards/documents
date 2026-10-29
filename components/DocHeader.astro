@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getCompanyOsRoot } from "../lib/paths";
-import { DOCUMENT_LOGO } from "../lib/render-pdf";
+import { DOCUMENT_LOGO, wordmarkImg } from "../lib/render-pdf";
 
 interface Props {
   /** The document kind in the tag, e.g. "Honorarsätze". */
@@ -23,8 +23,7 @@ const icon = readFileSync(join(getCompanyOsRoot(), DOCUMENT_LOGO)).toString("bas
     <img src={`data:image/png;base64,${icon}`} alt="" />
     <div>
       <div class="brand-name">
-        hackers<span class="amp">&amp;</span>
-        <span class="wizards">wizards</span>
+        <Fragment set:html={wordmarkImg()} />
         {legal && <span class="legal">GmbH</span>}
       </div>
       {legal && (
@@ -75,9 +74,9 @@ const icon = readFileSync(join(getCompanyOsRoot(), DOCUMENT_LOGO)).toString("bas
       var(--color-bg) padding-box;
   }
 
-  /* Brand.astro: the emoji, then the wordmark in mono bold with an ink rule under it, at the
-     website's logo-to-wordmark ratio. The icon sits beside the wordmark, never centred on the
-     imprint lines under it. */
+  /* The wizard beside the pixel wordmark, no line under it. The wordmark's box is centred on its
+     letters, so the wizard and "GmbH" centre on the text. The icon sits beside the wordmark, never
+     centred on the imprint lines under it. */
   .brand {
     display: flex;
     align-items: flex-start;
@@ -92,35 +91,20 @@ const icon = readFileSync(join(getCompanyOsRoot(), DOCUMENT_LOGO)).toString("bas
   }
 
   .brand-name {
-    position: relative;
     display: inline-flex;
     min-height: var(--print-logo);
     align-items: center;
+    gap: var(--print-wordmark-gap);
     font: var(--role-h4);
-    font-family: var(--type-h1-family);
-    font-weight: var(--type-h1-weight);
     line-height: 1;
-    color: var(--teal);
   }
 
-  .brand-name::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 3pt;
-    height: var(--print-underline);
-    background: var(--ink);
-  }
-
-  .amp {
-    color: var(--amp);
-  }
-
-  .wizards {
-    color: var(--purple);
+  .brand .brand-name .wordmark {
+    width: auto;
+    height: var(--print-wordmark);
   }
 
   .legal {
-    margin-left: 0.3em;
     color: var(--ink);
   }
 
