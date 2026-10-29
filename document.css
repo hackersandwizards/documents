@@ -1,6 +1,6 @@
 /* The h&w document base: one print stylesheet for every PDF Company OS renders.
-   Brand values come from assets/brand/, the website's tokens, print scale and static faces,
-   copied by scripts/brand/drift.ts and never edited here. Every text takes one type role
+   Brand values come from @hackersandwizards/brand, the website's tokens, print scale and static
+   faces, never edited here. Every text takes one type role
    (display, h1 to h4, lead, body, small, label, code) through its --role-* shorthand below,
    never a size or font of its own.
 
@@ -13,8 +13,8 @@
    fills it on every render with this file, its imports inlined and its faces as data URIs,
    so the stored HTML renders standalone. */
 
-@import "brand/tokens.css";
-@import "brand/print.css";
+@import "@hackersandwizards/brand/tokens.css";
+@import "@hackersandwizards/brand/print.css";
 
 :root {
   --ink: var(--color-ink);
@@ -515,16 +515,16 @@ tr.subtotal td {
 }
 
 /* The total: Price.astro's card amount, mono bold, here in the h4 role so a row holds it, on the
-   band: the teal tint under a strong teal rule, the figure in ink. Teal marks money, as Price.astro
-   does. Blind rounds (docs/tracking/2026-10-29-document-accents.md): band 91.7 on the hours
-   document, top, and 87.5 on the quote, inside the swing of the best; one rule for every total.
-   The tint is about 1.1:1 on white, so the rule carries the frame (5.54:1). */
+   teal band, a 12% tint under a strong teal rule, with the figure in teal at 1.2 times. Teal marks
+   money, as Price.astro does. Blind round 4 (docs/tracking/2026-10-29-document-accents.md, 12
+   reviews each): quote 89.4, hours document 90.2, against 74.0 and 77.5 for the purple figure.
+   Teal on the tint 4.69:1, the rule on white 5.54:1. */
 tr.total td {
   padding-top: 7pt;
   padding-bottom: 5pt;
   border-top: var(--print-rule-strong) solid var(--teal);
   border-bottom: 0;
-  background: var(--teal-soft);
+  background: color-mix(in srgb, var(--color-teal) 12%, white);
   font: var(--role-h4);
   letter-spacing: var(--type-h4-tracking);
   font-variant-numeric: tabular-nums;
@@ -532,6 +532,11 @@ tr.total td {
 
 tr.total td:first-child {
   padding-left: 5pt;
+}
+
+tr.total td.num {
+  font-size: 1.2em;
+  color: var(--teal);
 }
 
 .strike {

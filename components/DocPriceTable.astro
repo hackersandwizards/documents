@@ -1,7 +1,8 @@
 ---
 // A price table on the base's ruled table: each row an item in bold with an optional muted detail
 // line, then its cells; a column marked num holds figures, right-aligned in tabular digits.
-// `sums` sets those figures bold in teal, the money colour (Price.astro), as a rate card's rates.
+// `sums` marks every row a sum, as a rate card's rates: the teal tint on each row, the figure in
+// teal in the h4 role, the money colour of Price.astro (blind round 4, rate card 89.4 against 76.7).
 interface Column {
   label: string;
   width?: string;
@@ -59,8 +60,18 @@ const { columns, rows, sums = false } = Astro.props;
     color: var(--muted);
   }
 
+  .sums td {
+    background: var(--teal-soft);
+  }
+
+  .sums td:first-child {
+    padding-left: 5pt;
+  }
+
   .sums td.num {
-    font-weight: 600;
+    font: var(--role-h4);
+    letter-spacing: var(--type-h4-tracking);
+    font-variant-numeric: tabular-nums;
     color: var(--teal);
   }
 </style>
