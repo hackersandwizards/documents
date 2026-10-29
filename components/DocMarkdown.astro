@@ -1,0 +1,21 @@
+---
+// A Markdown document (print-pdf, the trainer NDA, the delivery briefing): the header, then the
+// body as DocProse. `css` adds one document type's own rules after the components' styles.
+import DocHeader from "./DocHeader.astro";
+import DocProse from "./DocProse.astro";
+
+interface Props {
+  /** The document kind in the header tag, e.g. "Delivery Briefing". */
+  kind: string;
+  legal?: boolean;
+  meta?: string[];
+  /** The body: sanitized HTML, its eyebrow, title and lead already in place. */
+  html: string;
+  css?: string;
+}
+const { kind, legal, meta, html, css } = Astro.props;
+---
+
+{css && <style is:inline set:html={css} />}
+<DocHeader kind={kind} legal={legal} imprint={false} meta={meta} />
+<DocProse html={html} />

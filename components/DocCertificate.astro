@@ -1,0 +1,381 @@
+---
+// The training certificate: a fixed one-page layout on the document base, no page margin, counter,
+// body padding or paragraph spacing. Names stay in Inter: only Inter carries latin-ext (Ł, ř), at
+// 400 and 600. The generator in .claude/skills/certificates/generator/ writes these props.
+import lockupSvg from "../../logos/lockup.svg?raw";
+
+interface Signer {
+  name: string;
+  /** The English title; the German certificate names the role itself. */
+  title: string;
+  /** A data URI; empty leaves room for a signature by hand. */
+  image: string;
+}
+interface Props {
+  lang: "de" | "en";
+  title: string;
+  attendeeName: string;
+  attendeeCompany?: string;
+  trainingTitle: string;
+  trainingSubtitle?: string;
+  date: string;
+  location?: string;
+  remote?: boolean;
+  durationHours?: string;
+  topics: string[];
+  signers: Signer[];
+  credentialId?: string;
+  verificationUrl?: string;
+  qrCodeUri?: string;
+  linkedinUrl?: string;
+}
+const p = Astro.props;
+// A data URI, not a file:// one, which would print at its full source size.
+const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("base64")}`;
+const de = p.lang === "de";
+const place = p.remote ? " (Remote)" : p.location ? ` in ${p.location}` : "";
+const hours = p.durationHours ? `, ${p.durationHours} ${de ? "Stunden" : "hours"}` : "";
+const details = `${de ? "am" : "on"} ${p.date}${place}${hours}.`;
+const topicClass = [
+  "topics",
+  `topics-count-${p.topics.length}`,
+  p.topics.length > 8 && "topics-compact",
+  p.topics.length > 12 && "topics-columns",
+];
+---
+
+<style is:inline>
+  @page {
+    margin: 0;
+    @bottom-right {
+      content: none;
+    }
+  }
+  body {
+    padding: 0;
+  }
+</style>
+<div class="certificate">
+  <div class="header">
+    <img src={lockup} alt="hackers&wizards" class="logo" />
+  </div>
+  <div class="title">
+    <h1>{de ? "Abschlusszertifikat" : "Certificate of Completion"}</h1>
+  </div>
+  <div class="body-text">
+    <p class="preamble">{de ? "Hiermit wird bestätigt, dass" : "This is to certify that"}</p>
+    <p class="attendee-name">
+      {p.attendeeName
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((part) => (
+          <>
+            <span>{part}</span>{" "}
+          </>
+        ))}
+    </p>
+    {p.attendeeCompany && <p class="attendee-company">{p.attendeeCompany}</p>}
+    <p class="attended">
+      {de ? "erfolgreich teilgenommen hat an dem" : "has successfully attended the"}
+    </p>
+    <p class="training-title">{p.trainingTitle}</p>
+    {p.trainingSubtitle && <p class="training-subtitle">{p.trainingSubtitle}</p>}
+    <p class="details">{details}</p>
+  </div>
+  {p.topics.length > 0 && (
+    <div class:list={topicClass}>
+      <p class="eyebrow">{de ? "Behandelte Themen" : "Topics covered"}</p>
+      <ul>
+        {p.topics.map((topic) => (
+          <li>{topic}</li>
+        ))}
+      </ul>
+    </div>
+  )}
+  <div class="signatures">
+    {p.signers.map((signer) => (
+      <div class="signature-block">
+        {signer.image ? (
+          <img src={signer.image} alt={signer.name} class="signature-image" />
+        ) : (
+          <div class="signature-placeholder" />
+        )}
+        <div class="signature-line" />
+        <p class="signer-name">{signer.name}</p>
+        <p class="signer-title">{de ? "Mitgründer, hackers&wizards" : signer.title}</p>
+      </div>
+    ))}
+  </div>
+  <div class="footer">
+    {p.credentialId && (
+      <div class="verification">
+        {p.qrCodeUri && (
+          <a href={p.verificationUrl}>
+            <img src={p.qrCodeUri} alt="Certificate verification QR code" class="qr-code" />
+          </a>
+        )}
+        <div class="verification-text">
+          <p class="footer-cta">
+            {de
+              ? "Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen"
+              : "Verify this certificate and add it to your LinkedIn profile"}
+            <span>
+              {de
+                ? "Scannen: verifizieren & zu LinkedIn hinzufügen"
+                : "Scan to verify & add to LinkedIn"}
+            </span>
+          </p>
+          {p.linkedinUrl && (
+            <a class="linkedin-link" href={p.linkedinUrl}>
+              {de ? "Zum LinkedIn-Profil hinzufügen" : "Add to LinkedIn profile"}
+            </a>
+          )}
+          <p class="footer-url">
+            <a href={p.verificationUrl}>{p.verificationUrl}</a>
+          </p>
+          <p class="footer-credential">Credential ID: {p.credentialId}</p>
+        </div>
+      </div>
+    )}
+    <p class="footer-contact">
+      {de ? "Ausgestellt von" : "Issued by"} hackers&amp;wizards GmbH · Osterstraße 95, 20259
+      Hamburg · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a>
+    </p>
+  </div>
+</div>
+
+<style>
+  p {
+    margin: 0;
+  }
+
+  .certificate {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 210mm;
+    height: 297mm;
+    padding: 16mm 25mm 14mm;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .certificate::before,
+  .certificate::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--gradient);
+  }
+
+  .certificate::before {
+    top: 0;
+    height: 5mm;
+  }
+
+  .certificate::after {
+    bottom: 0;
+    height: 2mm;
+  }
+
+  .logo {
+    height: 16mm;
+    margin-bottom: 7mm;
+  }
+
+  .title {
+    margin-bottom: 9mm;
+  }
+
+  .title h1 {
+    color: var(--teal);
+  }
+
+  .preamble,
+  .attended,
+  .details {
+    font: var(--role-lead);
+    color: var(--muted);
+  }
+
+  /* The page's focal point, the one size outside the print roles: display's 19pt read too small
+     for a name. A name too long for one line breaks into balanced lines, only between its words,
+     so a hyphenated surname stays whole. */
+  .attendee-name {
+    margin: 3mm 0 1mm;
+    font: 600 calc(var(--type-display-size) * 1.75) / 1.15 var(--type-lead-family);
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .attendee-name span {
+    white-space: nowrap;
+  }
+
+  .attendee-company {
+    margin-bottom: 5mm;
+    color: var(--muted);
+  }
+
+  .training-title {
+    margin: 3mm 0 1mm;
+    font: var(--role-h2);
+    letter-spacing: var(--type-h2-tracking);
+    color: var(--purple);
+  }
+
+  .training-subtitle {
+    margin-bottom: 1mm;
+    font: var(--role-h3);
+    letter-spacing: var(--type-h3-tracking);
+    color: var(--purple);
+  }
+
+  .details {
+    margin-top: 2mm;
+  }
+
+  .topics {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 130mm;
+    margin-top: 9mm;
+    text-align: left;
+  }
+
+  /* typography.css .meta-line, as DocTitle's eyebrow. */
+  .eyebrow {
+    display: block;
+    margin-bottom: 4pt;
+    font: var(--role-small);
+    font-weight: 500;
+    color: var(--teal-dark);
+  }
+
+  .topics li {
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  .topics-compact {
+    max-width: 145mm;
+  }
+
+  .topics-compact li {
+    padding-top: 0.3mm;
+    padding-bottom: 0.3mm;
+  }
+
+  .topics-columns {
+    max-width: 160mm;
+  }
+
+  .topics-columns ul {
+    columns: 2;
+    column-gap: 10mm;
+  }
+
+  .topics-columns li {
+    break-inside: avoid;
+  }
+
+  /* Both founders sign, at a size that reads as a signature. */
+  .signatures {
+    display: flex;
+    justify-content: space-around;
+    gap: 16mm;
+    width: 100%;
+    margin: 5mm 0 6mm;
+  }
+
+  .signature-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 72mm;
+  }
+
+  .signature-image,
+  .signature-placeholder {
+    height: 22mm;
+    margin-bottom: 1mm;
+  }
+
+  .signature-image {
+    max-width: 70mm;
+    object-fit: contain;
+  }
+
+  .signature-line {
+    width: 66mm;
+    margin-bottom: 2mm;
+    border-top: var(--print-rule) solid var(--ink);
+  }
+
+  .signer-name {
+    font-weight: 600;
+  }
+
+  .signer-title {
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  .verification {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5mm;
+    margin-bottom: 4mm;
+    text-align: left;
+  }
+
+  .qr-code {
+    width: 26mm;
+    height: 26mm;
+  }
+
+  .footer-cta {
+    font-weight: 600;
+  }
+
+  .footer-cta span {
+    display: block;
+    font: var(--role-small);
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .footer-url,
+  .footer-credential {
+    margin-top: 1mm;
+    font: var(--role-code);
+    white-space: nowrap;
+    color: var(--muted);
+  }
+
+  /* Read on a phone, never printed: the one tap that puts the credential on a LinkedIn profile. */
+  .linkedin-link {
+    display: inline-block;
+    margin-top: 2.5mm;
+    padding: 2.8mm 7mm;
+    font-size: 12pt;
+    border-radius: var(--radius);
+    background: var(--teal);
+    color: var(--color-white);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .footer-contact {
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  .footer-contact a {
+    color: inherit;
+    text-decoration: none;
+  }
+</style>

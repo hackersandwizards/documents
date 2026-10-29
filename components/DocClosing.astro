@@ -1,18 +1,31 @@
 ---
 // The closing, kept whole so the sign-off never lands alone on a page: the closing text, the
-// sign-off, then the sender's name.
+// sign-off, then the sender's name. `tight` sets the name straight under the sign-off as one block,
+// closer to the text: blind reviews preferred each document's own closing, the proposal's tight one
+// (80.5 against 79.25) and the rate card's open one (87.0 against 86.25), 2026-10-29.
 interface Props {
   text: string;
   signOff: string;
   name: string;
+  tight?: boolean;
 }
-const { text, signOff, name } = Astro.props;
+const { text, signOff, name, tight = false } = Astro.props;
 ---
 
-<div class="closing">
+<div class:list={["closing", { tight }]}>
   <p>{text}</p>
-  <p class="sign-off">{signOff}</p>
-  <p>{name}</p>
+  {tight ? (
+    <p class="sign-off">
+      {signOff}
+      <br />
+      {name}
+    </p>
+  ) : (
+    <>
+      <p class="sign-off">{signOff}</p>
+      <p>{name}</p>
+    </>
+  )}
 </div>
 
 <style>
@@ -27,5 +40,13 @@ const { text, signOff, name } = Astro.props;
 
   .sign-off {
     margin-top: 4mm;
+  }
+
+  .tight {
+    margin-top: 4mm;
+  }
+
+  .tight .sign-off {
+    margin-top: 3mm;
   }
 </style>

@@ -1,39 +1,56 @@
 ---
 // The document header, the twin of the website's Nav.astro: a bar in the page tint across the
 // paper, the gradient strip on top, a rule under it, the brand left and the document tag right.
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { getCompanyOsRoot } from "../lib/paths";
-import { DOCUMENT_LOGO, wordmarkImg } from "../lib/render-pdf";
+// The logos are this package's own, inlined as data URIs, so the header renders in any app.
+import icon from "../../logos/emoji-logo-short-quote.png?inline";
+import wordmarkSvg from "../../logos/wordmark.svg?raw";
 
 interface Props {
   /** The document kind in the tag, e.g. "Honorarsätze". */
   kind: string;
   /** Adds "GmbH" and the imprint under the wordmark, for documents naming the legal entity. */
   legal?: boolean;
+  /** The imprint under a legal wordmark; a Markdown contract names the parties in its body. */
+  imprint?: boolean;
   /** Lines under the tag, such as the date and the validity. */
   meta?: string[];
+  /** The imprint's language. */
+  lang?: "de" | "en";
 }
-const { kind, legal = false, meta = [] } = Astro.props;
-const icon = readFileSync(join(getCompanyOsRoot(), DOCUMENT_LOGO)).toString("base64");
+const { kind, legal = false, imprint = legal, meta = [], lang = "de" } = Astro.props;
+const imprintLines = {
+  de: [
+    "Geschäftsführer: Benedikt Stemmildt & Stefan Munz",
+    "Osterstraße 95, 20259 Hamburg",
+    "AG Hamburg HRB 198840, USt-IdNr. DE463065921",
+  ],
+  en: [
+    "Managing Directors: Benedikt Stemmildt & Stefan Munz",
+    "Osterstraße 95, 20259 Hamburg, Germany",
+    "AG Hamburg HRB 198840, VAT ID DE463065921",
+  ],
+}[lang];
+// Base64 rather than Vite's URL-encoded SVG inline. Set as HTML, so the base's `.wordmark` rule
+// sizes it, not this component's scoped one.
+const wordmark = `<img class="wordmark" src="data:image/svg+xml;base64,${Buffer.from(wordmarkSvg).toString("base64")}" alt="hackers&amp;wizards" />`;
 ---
 
 <header class="doc-header">
   <div class="brand">
-    <img src={`data:image/png;base64,${icon}`} alt="" />
+    <img src={icon} alt="" />
     <div>
       <div class="brand-name">
-        <Fragment set:html={wordmarkImg()} />
+        <Fragment set:html={wordmark} />
         {legal && <span class="legal">GmbH</span>}
       </div>
-      {legal && (
+      {legal && imprint && (
         <div class="company-meta">
-          Geschäftsführer: Benedikt Stemmildt &amp; Stefan Munz
-          <br />
-          Osterstraße 95, 20259 Hamburg
-          <br />
-          AG Hamburg HRB 198840, USt-IdNr. DE463065921
-          <br />
+          {imprintLines.map((line) => (
+            <>
+              {line}
+              <br />
+            </>
+          ))}
           <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a>
         </div>
       )}

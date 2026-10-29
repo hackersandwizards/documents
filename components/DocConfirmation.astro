@@ -1,0 +1,45 @@
+---
+// The client's confirmation, kept whole on one page: a label in caps leading the statement, then
+// the line the confirmation fills. Nobody signs an hours document: the client confirms by mail
+// (Benedikt, 2026-10-29), and the line takes that mail's date.
+interface Props {
+  label: string;
+  text: string;
+  line: string;
+}
+const { label, text, line } = Astro.props;
+---
+
+<div class="confirmation">
+  <p class="statement">
+    <span class="label">{label}</span>
+    {text}
+  </p>
+  <p class="line">{line}</p>
+</div>
+
+<style>
+  .confirmation {
+    break-inside: avoid;
+  }
+
+  .statement {
+    font-weight: 500;
+  }
+
+  /* typography.css .label-caps, in ink as the footer's group headings set it. */
+  .label {
+    display: block;
+    margin-bottom: 2pt;
+    font: var(--role-label);
+    letter-spacing: var(--type-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--ink);
+  }
+
+  .line {
+    margin-top: 4mm;
+    font: var(--role-small);
+    color: var(--muted);
+  }
+</style>

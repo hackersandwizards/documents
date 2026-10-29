@@ -1,0 +1,184 @@
+---
+// Prose: the element rules for Markdown bodies (pandoc and Astro's markdown output) and other free
+// text, the print twins of the website's typography: headings in mono, the list marker square,
+// ruled tables, the terminal panel for code. The HTML comes in sanitized; this sets it on the page.
+// Each rule keeps an element's specificity (:where), so a class in the body, such as .subtitle or
+// .signature-line, still wins as it does over the document base's element rules.
+interface Props {
+  html: string;
+}
+const { html } = Astro.props;
+---
+
+<div class="doc-prose">
+  <Fragment set:html={html} />
+</div>
+
+<style>
+  :global(:where(.doc-prose) h1),
+  :global(:where(.doc-prose) h2),
+  :global(:where(.doc-prose) h3),
+  :global(:where(.doc-prose) h4) {
+    color: var(--ink);
+    text-wrap: balance;
+    break-after: avoid;
+  }
+
+  :global(:where(.doc-prose) h1) {
+    margin-bottom: 4pt;
+    font: var(--role-h1);
+    letter-spacing: var(--type-h1-tracking);
+  }
+
+  :global(:where(.doc-prose) h2) {
+    margin: 20pt 0 6pt;
+    font: var(--role-h2);
+    letter-spacing: var(--type-h2-tracking);
+  }
+
+  :global(:where(.doc-prose) h3) {
+    margin: 12.5pt 0 4pt;
+    font: var(--role-h3);
+    letter-spacing: var(--type-h3-tracking);
+  }
+
+  :global(:where(.doc-prose) h4) {
+    margin: 10pt 0 3pt;
+    font: var(--role-h4);
+    letter-spacing: var(--type-h4-tracking);
+  }
+
+  :global(:where(.doc-prose) p) {
+    margin: 0 0 6pt;
+  }
+
+  :global(:where(.doc-prose) strong),
+  :global(:where(.doc-prose) b) {
+    font-weight: 600;
+  }
+
+  :global(:where(.doc-prose) a) {
+    color: var(--teal-dark);
+    text-decoration: underline;
+    text-decoration-thickness: var(--print-underline);
+    text-underline-offset: 0.2em;
+  }
+
+  :global(:where(.doc-prose) hr) {
+    margin: 12.5pt 0;
+    border: 0;
+    border-top: var(--print-rule) solid var(--line);
+  }
+
+  :global(:where(.doc-prose) ul) {
+    margin: 0 0 6pt;
+    list-style: none;
+  }
+
+  :global(:where(.doc-prose) ul li) {
+    --li-lift: 0pt;
+    padding: 1pt 0 1pt 12.5pt;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'%3E%3Cpath fill='%231a7285' d='M1 0H6V5A1 1 0 0 1 5 6H0V1A1 1 0 0 1 1 0Z'/%3E%3C/svg%3E")
+      no-repeat 0.5pt calc(1pt + 0.5lh - 0.09em - var(--li-lift) - var(--print-bullet) / 2) /
+      var(--print-bullet) var(--print-bullet);
+  }
+
+  :global(:where(.doc-prose) ol) {
+    margin: 0 0 6pt;
+    padding-left: 12pt;
+  }
+
+  :global(:where(.doc-prose) ol li) {
+    padding: 1pt 0;
+  }
+
+  :global(:where(.doc-prose) table) {
+    width: 100%;
+    margin: 4pt 0 10pt;
+    border-collapse: collapse;
+    font: var(--role-small);
+  }
+
+  :global(:where(.doc-prose) thead) {
+    display: table-header-group;
+  }
+
+  :global(:where(.doc-prose) tr) {
+    break-inside: avoid;
+  }
+
+  :global(:where(.doc-prose) th) {
+    padding: 5pt 7.5pt 5pt 0;
+    border-bottom: var(--print-rule) solid var(--line);
+    font: var(--role-label);
+    letter-spacing: var(--type-label-tracking);
+    text-align: left;
+    text-transform: var(--type-label-case);
+    color: var(--muted);
+  }
+
+  :global(:where(.doc-prose) td) {
+    padding: 5pt 7.5pt 5pt 0;
+    border-bottom: var(--print-rule) solid var(--line);
+    vertical-align: top;
+  }
+
+  :global(:where(.doc-prose) th:last-child),
+  :global(:where(.doc-prose) td:last-child) {
+    padding-right: 0;
+  }
+
+  :global(:where(.doc-prose) blockquote) {
+    margin: 8pt 0;
+    padding-left: 12.5pt;
+    border-left: var(--print-rule-accent) solid var(--purple);
+    color: var(--muted);
+    break-inside: avoid;
+  }
+
+  :global(:where(.doc-prose) dl) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2pt 10pt;
+    margin: 6pt 0;
+    font: var(--role-small);
+  }
+
+  :global(:where(.doc-prose) dt) {
+    color: var(--muted);
+  }
+
+  :global(:where(.doc-prose) pre) {
+    margin: 8pt 0;
+    padding: var(--print-card-pad);
+    border: var(--print-rule) solid color-mix(in srgb, white 10%, var(--color-night-2));
+    border-radius: var(--radius);
+    background: var(--color-night-2);
+    font: var(--role-code);
+    color: var(--color-night-ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    break-inside: avoid;
+  }
+
+  :global(:where(.doc-prose) pre .prompt) {
+    color: var(--color-green);
+  }
+
+  :global(:where(.doc-prose) pre),
+  :global(:where(.doc-prose) code) {
+    font-variant-ligatures: none;
+  }
+
+  :global(:where(.doc-prose) code) {
+    font-family: var(--type-code-family);
+  }
+
+  :global(:where(.doc-prose) pre code) {
+    color: inherit;
+  }
+
+  :global(:where(.doc-prose) blockquote > :last-child) {
+    margin-bottom: 0;
+  }
+</style>

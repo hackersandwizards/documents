@@ -5,8 +5,10 @@ interface Props {
   label: string;
   company: string;
   lines: string[];
+  /** A second group under the address, such as the contact person. */
+  contact?: { label: string; name: string };
 }
-const { label, company, lines } = Astro.props;
+const { label, company, lines, contact } = Astro.props;
 ---
 
 <div class="prepared">
@@ -18,6 +20,12 @@ const { label, company, lines } = Astro.props;
       {line}
     </>
   ))}
+  {contact && (
+    <>
+      <span class="label second">{contact.label}</span>
+      {contact.name}
+    </>
+  )}
 </div>
 
 <style>
@@ -39,5 +47,14 @@ const { label, company, lines } = Astro.props;
     letter-spacing: var(--type-label-tracking);
     text-transform: var(--type-label-case);
     color: var(--ink);
+  }
+
+  .second {
+    margin-top: 7pt;
+  }
+
+  /* The contact label is the card's last element, its name a bare text after it: no gap under it. */
+  .prepared > :last-child {
+    margin-bottom: 0;
   }
 </style>

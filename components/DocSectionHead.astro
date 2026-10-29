@@ -1,0 +1,49 @@
+---
+// A section's head, kept with what follows: an optional section label (TrainingList.astro's group
+// title, the h4 role's size in mono 600 capitals after a teal swatch with the brand corner), then
+// the h2.
+interface Props {
+  label?: string;
+  title: string;
+}
+const { label, title } = Astro.props;
+---
+
+<div class="section-head">
+  {label && <span class="section-label">{label}</span>}
+  <h2>{title}</h2>
+</div>
+
+<style>
+  .section-head {
+    margin-top: 7mm;
+    break-inside: avoid;
+    break-after: avoid;
+  }
+
+  h2 {
+    margin-top: 0;
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 7.5pt;
+    margin: 15pt 0 6pt;
+    font: var(--role-h4);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
+    break-after: avoid;
+  }
+
+  .section-label::before {
+    content: "";
+    width: var(--print-swatch);
+    height: var(--print-swatch);
+    flex: none;
+    border-radius: var(--print-swatch-corner);
+    background: var(--teal);
+  }
+</style>

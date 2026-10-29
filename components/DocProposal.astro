@@ -1,0 +1,400 @@
+---
+// The proposal (Angebot), German or English: the lead, the price on page 1, about us, scope, the
+// optional sequence, the outcome, terms, closing and acceptance, in that fixed order. The canonical
+// props with the standard terms are .claude/skills/quote/proposal-de.json and proposal-en.json.
+// A proposal without a rate in any row is the price-free variant: the table keeps item and basis.
+import DocCallout from "./DocCallout.astro";
+import DocCard from "./DocCard.astro";
+import DocClosing from "./DocClosing.astro";
+import DocHeader from "./DocHeader.astro";
+import DocLead from "./DocLead.astro";
+import DocPriceTable from "./DocPriceTable.astro";
+import DocRecipient from "./DocRecipient.astro";
+import DocSectionHead from "./DocSectionHead.astro";
+import DocSteps from "./DocSteps.astro";
+import DocTitle from "./DocTitle.astro";
+
+type Amount = string | { list: string; offer: string };
+interface Props {
+  lang: "de" | "en";
+  /** The document title, "Angebot AG-12345-2026" or "Quote AG-12345-2026". */
+  title: string;
+  number: string;
+  date: string;
+  /** Left out in a variant for a trainer, partner or supplier. */
+  validUntil?: string;
+  clientShort: string;
+  eyebrow: string;
+  heading: string;
+  subtitle: string;
+  /** "Hallo Anna," or "Dear Anna,". */
+  salutation: string;
+  greeting: string[];
+  /** The company's legal name and the address lines: recipient, street, zip and city, country. */
+  client: { company: string; lines: string[] };
+  contact: string;
+  price: {
+    /** Replaces "Preis"/"Price", for the price-free variant. */
+    heading?: string;
+    rows: { item: string; detail?: string; basis: string; rate?: Amount; amount?: Amount }[];
+    subtotal?: string;
+    vat?: string;
+    gross?: string;
+    calculation?: string;
+  };
+  scopeHeadline: string;
+  services: { name: string; format?: string; items: string[] }[];
+  /** Trainings only: the yearly community price, with the seats and their value where the price is
+   *  computed from the participant count. */
+  community?: { price: string; seats?: string; value?: string };
+  sequence?: { headline: string; steps: { when: string; name: string; text?: string }[] };
+  outcome: { result: string; measures: string };
+  terms: { title: string; paragraphs: string[] }[];
+  signOff: string;
+  personName: string;
+  /** Omitted with false; an object replaces the total line, as in the price-free variant. */
+  acceptance?: false | { label: string; value: string };
+}
+const p = Astro.props;
+const de = p.lang === "de";
+const t = de
+  ? {
+      kind: "Angebot",
+      meta: [`Nr. ${p.number}`, `Datum: ${p.date}`, p.validUntil && `Gültig bis: ${p.validUntil}`],
+      preparedFor: "Erstellt für",
+      contact: "Ansprechpartner",
+      price: "Preis",
+      columns: ["Leistung", "Basis", "Preis", "Betrag"],
+      subtotal: "Summe netto",
+      vat: "zzgl. Umsatzsteuer 19 %",
+      gross: "Gesamtbetrag brutto",
+      about: "Über hackers&wizards",
+      aboutText: [
+        "hackers&wizards ist ein Team von Praktikern mit über 20 Jahren Erfahrung. Wir entwickeln Software und betreiben Produktionssysteme.",
+        "Geführt von Stefan und Benedikt, unterstützt von einem Netzwerk erfahrener Praktiker, mit denen sie seit Jahren zusammenarbeiten und denen sie vertrauen. Wir bringen jede Rolle, die die Produkte unserer Kunden baut, als ein Team in den Flow mit Agentic Engineering.",
+      ],
+      scope: "Leistungsumfang",
+      community: "Inklusive: hackers&wizards Community",
+      communityMeta: `Dauerhaft kostenlos für alle Teilnehmenden von ${p.clientShort}`,
+      communityItems: [
+        "Wöchentliche Best Practice Sessions und Erfahrungsaustausch",
+        "Direkter Draht zu anderen AI-Pilot-Teams",
+        "Zugang zu Templates, Prompts und Konfigurationen",
+      ],
+      communityValue: (c: { price: string; seats?: string; value?: string }) =>
+        c.seats
+          ? `Regulärer Wert: ${c.seats} Personen × ${c.price} €/Jahr = ${c.value} €/Jahr`
+          : `Regulärer Wert: ${c.price} € pro Person und Jahr`,
+      sequence: "Ablauf",
+      outcome: "Ergebnis",
+      measures: "Woran ihr es messt:",
+      terms: "Konditionen",
+      closing: "Für Rückfragen stehe ich dir gerne zur Verfügung.",
+      acceptance: "Beauftragung",
+      offer: "Angebot",
+      total: "Summe",
+      totalValue: `${p.price.subtotal} netto zzgl. USt.`,
+      valid: "Gültig bis",
+      reply: `Passt das so? Dann antworte einfach auf diese Mail mit deiner Zusage bis zum ${p.validUntil}. Das genügt als Beauftragung, eine Unterschrift brauchen wir nicht.`,
+    }
+  : {
+      kind: "Quote",
+      meta: [`No. ${p.number}`, `Date: ${p.date}`, p.validUntil && `Valid until: ${p.validUntil}`],
+      preparedFor: "Prepared for",
+      contact: "Your contact",
+      price: "Price",
+      columns: ["Item", "Basis", "Rate", "Amount"],
+      subtotal: "Net total",
+      vat: "plus VAT 19%",
+      gross: "Total incl. VAT",
+      about: "About hackers&wizards",
+      aboutText: [
+        "hackers&wizards is a team of practitioners with 20+ years of experience. We build and operate production systems.",
+        "Led by Stefan and Benedikt, supported by a network of experienced practitioners whom they have worked with and trusted for years. We bring every role that builds our clients’ products into flow with agentic engineering, as one team.",
+      ],
+      scope: "Scope",
+      community: "Included: hackers&wizards Community",
+      communityMeta: `Lifetime free access for all ${p.clientShort} participants`,
+      communityItems: [
+        "Weekly curated best practices and experience exchange",
+        "Direct access to other AI pilot teams",
+        "Access to templates, prompts, and configurations",
+      ],
+      communityValue: (c: { price: string; seats?: string; value?: string }) =>
+        c.seats
+          ? `Regular value: ${c.seats} people × ${c.price} €/year = ${c.value} €/year`
+          : `Regular value: ${c.price} € per person per year`,
+      sequence: "Sequence",
+      outcome: "Outcome",
+      measures: "How you measure it:",
+      terms: "Terms",
+      closing: "Please don't hesitate to reach out if you have any questions.",
+      acceptance: "Acceptance",
+      offer: "Quote",
+      total: "Total",
+      totalValue: `${p.price.subtotal} net plus VAT`,
+      valid: "Valid until",
+      reply: `Does this work for you? Then simply reply to this email with your go-ahead by ${p.validUntil}. That counts as the order; no signature needed.`,
+    };
+const priced = p.price.rows.some((row) => row.rate !== undefined);
+const columns = priced
+  ? [
+      { label: t.columns[0], width: "46%" },
+      { label: t.columns[1], width: "24%" },
+      { label: t.columns[2], width: "15%", num: true },
+      { label: t.columns[3], width: "15%", num: true },
+    ]
+  : [
+      { label: t.columns[0], width: "70%" },
+      { label: t.columns[1], width: "30%" },
+    ];
+const rows = p.price.rows.map((row) => ({
+  item: row.item,
+  detail: row.detail,
+  cells: priced ? [row.basis, row.rate ?? "", row.amount ?? ""] : [row.basis],
+}));
+const foot = [
+  p.price.vat && { label: t.vat, figure: p.price.vat },
+  p.price.gross && { label: t.gross, figure: p.price.gross },
+].filter((row): row is { label: string; figure: string } => !!row);
+const acceptance =
+  p.acceptance === false ? undefined : (p.acceptance ?? { label: t.total, value: t.totalValue });
+// The running header and footer: the base styles the margin boxes, a document names their content.
+const running = `@page {
+  @top-left { content: "hackers&wizards GmbH"; }
+  @top-right { content: ${JSON.stringify(`${t.kind} ${p.number}`)}; }
+  @bottom-left { content: ${JSON.stringify(`${p.clientShort} | ${p.heading}`)}; }
+}`;
+---
+
+<style is:inline set:html={running} />
+<DocHeader
+  kind={t.kind}
+  legal
+  lang={p.lang}
+  meta={t.meta.filter((line): line is string => !!line)}
+/>
+<DocTitle eyebrow={p.eyebrow} title={p.heading} subtitle={p.subtitle} />
+<DocLead>
+  <p>{p.salutation}</p>
+  {p.greeting.map((text) => (
+    <p>{text}</p>
+  ))}
+  <DocRecipient
+    slot="aside"
+    label={t.preparedFor}
+    company={p.client.company}
+    lines={p.client.lines}
+    contact={{ label: t.contact, name: p.contact }}
+  />
+</DocLead>
+
+<div class="section">
+  <h2>{p.price.heading ?? t.price}</h2>
+  <DocPriceTable
+    columns={columns}
+    rows={rows}
+    total={p.price.subtotal ? { label: t.subtotal, figure: p.price.subtotal } : undefined}
+    foot={foot}
+  />
+  {p.price.calculation && <p class="calc">{p.price.calculation}</p>}
+</div>
+
+<DocCard title={t.about} small>
+  {t.aboutText.map((text) => (
+    <p>{text}</p>
+  ))}
+</DocCard>
+
+<DocSectionHead label={t.scope} title={p.scopeHeadline} />
+<div class="grid-2">
+  {p.services.map((service) => (
+    <DocCard title={service.name} meta={service.format}>
+      <ul>
+        {service.items.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </DocCard>
+  ))}
+  {p.community && (
+    <div class="included wide">
+      <h3>{t.community}</h3>
+      <p class="meta">{t.communityMeta}</p>
+      <ul>
+        {t.communityItems.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+      <p class="value">{t.communityValue(p.community)}</p>
+    </div>
+  )}
+</div>
+
+{p.sequence && (
+  <>
+    <DocSectionHead label={t.sequence} title={p.sequence.headline} />
+    <DocSteps steps={p.sequence.steps} />
+  </>
+)}
+
+<DocCallout title={t.outcome}>
+  <p>{p.outcome.result}</p>
+  <p>
+    <strong>{t.measures}</strong> {p.outcome.measures}
+  </p>
+</DocCallout>
+
+<DocSectionHead title={t.terms} />
+<div class="terms">
+  {p.terms.map((term) => (
+    <div class="term">
+      <h3>{term.title}</h3>
+      {term.paragraphs.map((text) => (
+        <p>{text}</p>
+      ))}
+    </div>
+  ))}
+</div>
+
+<DocClosing text={t.closing} signOff={p.signOff} name={p.personName} tight />
+
+{acceptance && (
+  <div class="acceptance">
+    <h2>{t.acceptance}</h2>
+    <dl>
+      <dt>{t.offer}</dt>
+      <dd>
+        {p.number}, {p.heading}
+      </dd>
+      <dt>{acceptance.label}</dt>
+      <dd>{acceptance.value}</dd>
+      {p.validUntil && (
+        <>
+          <dt>{t.valid}</dt>
+          <dd>{p.validUntil}</dd>
+        </>
+      )}
+    </dl>
+    <p>{t.reply}</p>
+  </div>
+)}
+
+<style>
+  .section {
+    margin-top: 7mm;
+  }
+
+  .calc {
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  /* Two cards share a row; one alone in its row, or before the wide community panel, spans it. */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10pt;
+    margin: 6pt 0;
+  }
+
+  .grid-2 > :global(.card) {
+    margin: 0;
+  }
+
+  .grid-2 > :global(:nth-child(odd):is(:last-child, :has(+ .wide))) {
+    grid-column: 1 / -1;
+  }
+
+  /* The community: Card.astro's tint surface across the row, its benefits in three columns. */
+  .included {
+    grid-column: 1 / -1;
+    padding: var(--print-card-pad);
+    border: var(--print-rule) solid var(--teal-line);
+    border-radius: var(--radius);
+    background: var(--teal-soft);
+    break-inside: avoid;
+  }
+
+  .included h3 {
+    margin: 0 0 1mm;
+    font: var(--role-h4);
+  }
+
+  .included .meta {
+    margin-bottom: 1.5mm;
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  .included ul {
+    columns: 3;
+    column-gap: 6mm;
+  }
+
+  .included li {
+    break-inside: avoid;
+  }
+
+  .included .value {
+    margin: 2mm 0 0;
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  /* Terms: Card.astro's tint in two columns, breaking between terms, never inside one. */
+  .terms {
+    margin: 6pt 0;
+    padding: var(--print-card-pad);
+    border: var(--print-rule) solid var(--teal-line);
+    border-radius: var(--radius);
+    background: var(--teal-soft);
+    columns: 2;
+    column-gap: 8mm;
+    font: var(--role-small);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .term {
+    margin-bottom: 3mm;
+    break-inside: avoid;
+  }
+
+  .term h3 {
+    margin: 0 0 1.5mm;
+    font: var(--role-h4);
+  }
+
+  .term p {
+    margin: 0 0 1.5mm;
+  }
+
+  /* Acceptance: what is ordered in three facts, then the reply that confirms it: nobody signs, a
+     reply to the mail is the order (Benedikt, 2026-10-29). */
+  .acceptance {
+    margin: 4mm 0 6pt;
+    padding: var(--print-card-pad);
+    border: var(--print-rule) solid var(--line);
+    border-radius: var(--radius);
+    background: white;
+    break-inside: avoid;
+  }
+
+  .acceptance h2 {
+    margin-top: 0;
+  }
+
+  .acceptance dl {
+    grid-template-columns: 28mm 1fr;
+    margin: 2mm 0 3mm;
+  }
+
+  .acceptance dd {
+    font-weight: 600;
+  }
+
+  .acceptance p {
+    margin-bottom: 0;
+  }
+</style>

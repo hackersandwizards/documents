@@ -1,0 +1,56 @@
+---
+// A sequence of dated steps: ruled rows (patterns.css .ruled-rows), the date in the h1 family's
+// weight in purple, the step's name and one muted line beside it.
+interface Props {
+  steps: { when: string; name: string; text?: string }[];
+}
+const { steps } = Astro.props;
+---
+
+<ol class="timeline">
+  {steps.map((step) => (
+    <li>
+      <span class="when">{step.when}</span>
+      <div>
+        <strong>{step.name}</strong>
+        {step.text && <p>{step.text}</p>}
+      </div>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .timeline {
+    margin: 6pt 0 10pt;
+    padding: 0;
+    border-bottom: var(--print-rule) solid var(--line);
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    background: none;
+    grid-template-columns: 36mm 1fr;
+    gap: 10pt;
+    padding: 7pt 0;
+    border-top: var(--print-rule) solid var(--line);
+    break-inside: avoid;
+  }
+
+  .when {
+    font: var(--role-small);
+    font-family: var(--type-h1-family);
+    font-weight: var(--type-h1-weight);
+    color: var(--purple);
+  }
+
+  strong {
+    display: block;
+  }
+
+  p {
+    margin: 1pt 0 0;
+    font: var(--role-small);
+    color: var(--muted);
+  }
+</style>

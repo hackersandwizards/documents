@@ -1,16 +1,20 @@
 ---
 // Card.astro: the brand corner, a hairline border, white, the card padding. `tint` is its
-// emphasised surface; `dense` sets the card in the small role, for terms.
+// emphasised surface; `small` sets it in the small role, `dense` too with tighter gaps, for terms.
+// `meta` is one muted line under the title, for a format and a size.
 interface Props {
   title?: string;
+  meta?: string;
   tint?: boolean;
+  small?: boolean;
   dense?: boolean;
 }
-const { title, tint = false, dense = false } = Astro.props;
+const { title, meta, tint = false, small = false, dense = false } = Astro.props;
 ---
 
-<div class:list={["card", { tint, dense }]}>
+<div class:list={["card", { tint, small, dense }]}>
   {title && <h3>{title}</h3>}
+  {meta && <p class="meta">{meta}</p>}
   <slot />
 </div>
 
@@ -35,8 +39,16 @@ const { title, tint = false, dense = false } = Astro.props;
     margin: 0 0 1mm;
   }
 
+  .small,
   .dense {
     font: var(--role-small);
+  }
+
+  .meta {
+    margin-bottom: 2mm;
+    font: var(--role-small);
+    font-weight: 500;
+    color: var(--muted);
   }
 
   .dense h3 {

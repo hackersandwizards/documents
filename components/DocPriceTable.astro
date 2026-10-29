@@ -3,6 +3,15 @@
 // line, then its cells; a column marked num holds figures, right-aligned in tabular digits.
 // `sums` marks every row a sum, as a rate card's rates: the teal tint on each row, the figure in
 // teal in the h4 role, the money colour of Price.astro (blind round 4, rate card 89.4 against 76.7).
+// A price below list is a cell { list, offer }: the list price struck in red over the offer in
+// green. `total` closes the table on DocTotalRow; `foot` rows follow it muted, such as VAT.
+import DocTotalRow from "./DocTotalRow.astro";
+
+type Cell = string | { list: string; offer: string };
+interface Foot {
+  label: string;
+  figure: string;
+}
 interface Column {
   label: string;
   width?: string;
@@ -11,14 +20,17 @@ interface Column {
 interface Row {
   item: string;
   detail?: string;
-  cells: string[];
+  cells: Cell[];
 }
 interface Props {
   columns: Column[];
   rows: Row[];
   sums?: boolean;
+  total?: Foot;
+  foot?: Foot[];
 }
-const { columns, rows, sums = false } = Astro.props;
+const { columns, rows, sums = false, total, foot = [] } = Astro.props;
+const span = columns.length - 1;
 ---
 
 <table class:list={{ sums }}>
@@ -39,8 +51,25 @@ const { columns, rows, sums = false } = Astro.props;
           {row.detail && <span class="detail">{row.detail}</span>}
         </td>
         {row.cells.map((cell, i) => (
-          <td class:list={{ num: columns[i + 1]?.num }}>{cell}</td>
+          <td class:list={{ num: columns[i + 1]?.num }}>
+            {typeof cell === "string" ? (
+              cell
+            ) : (
+              <>
+                <span class="strike">{cell.list}</span>
+                <br />
+                <span class="offer">{cell.offer}</span>
+              </>
+            )}
+          </td>
         ))}
+      </tr>
+    ))}
+    {total && <DocTotalRow label={total.label} span={span} figures={[total.figure]} />}
+    {foot.map((row) => (
+      <tr class="foot">
+        <td colspan={span}>{row.label}</td>
+        <td class="num">{row.figure}</td>
       </tr>
     ))}
   </tbody>
@@ -57,6 +86,24 @@ const { columns, rows, sums = false } = Astro.props;
   .detail {
     display: block;
     margin-top: 1pt;
+    color: var(--muted);
+  }
+
+  .strike {
+    color: var(--red);
+    text-decoration: line-through;
+  }
+
+  .offer {
+    font-weight: 600;
+    color: var(--green-dark);
+  }
+
+  .foot td {
+    padding-top: 1.6mm;
+    padding-bottom: 1.6mm;
+    border-bottom: 0;
+    font: var(--role-small);
     color: var(--muted);
   }
 

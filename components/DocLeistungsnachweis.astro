@@ -1,0 +1,256 @@
+---
+// The Leistungsnachweis, one template for both modes, a month and a training engagement: the
+// header, the meta box with its fields in one order, the hours table with its total, and the
+// client's confirmation. Hours only, never a rate, an amount or a price: those are the invoice's.
+// A month of 23 single-line rows still fits one page with the confirmation, 24 carry the
+// confirmation whole onto page 2 (measured 2026-10-29), so the rows are set tight.
+import DocConfirmation from "./DocConfirmation.astro";
+import DocHeader from "./DocHeader.astro";
+import DocTitle from "./DocTitle.astro";
+import DocTotalRow from "./DocTotalRow.astro";
+
+interface Entry {
+  /** "01.07." for a day, or the period of a lump-sum item without days. */
+  date: string;
+  /** "Mi"; empty for a period row. */
+  day?: string;
+  /** "14:00 – 15:00"; empty for a period row. */
+  time?: string;
+  hours: string;
+  /** The row rounded on its own to the offer's billing unit, with `rounding` set. */
+  billed?: string;
+  /** The activity; a list renders as bullets, as a lump-sum source gives them. */
+  activity: string | string[];
+}
+/** A section head (training mode, where the source structures the hours) with its sum. */
+interface Section {
+  section: string;
+  hours: string;
+  billed?: string;
+}
+interface Props {
+  /** The month ("Oktober 2026") or the training ("Training Team Plattform"). */
+  periodLabel: string;
+  /** The client's short name, in the running footer. */
+  clientShort: string;
+  created: string;
+  client: string;
+  project?: string;
+  /** Training mode only: "Team Plattform (12 Teilnehmende)". */
+  team?: string;
+  employee: string;
+  period: string;
+  /** In this order, each where it has a source: "Angebot …", "Bestellung …", "Rechnung Nr. …". */
+  references?: string[];
+  /** A lump-sum item: the offer's number. Heads the hours "Aufwand (Std.)" and leads with the note. */
+  lumpSumQuote?: string;
+  /** The offer's rounding clause in the client's terms: adds the "Abgerechnet" column. */
+  rounding?: string;
+  rows: (Entry | Section)[];
+  total: string;
+  totalBilled?: string;
+  /** The date of the client's confirming mail, once it arrived. */
+  confirmedOn?: string;
+}
+const p = Astro.props;
+const billed = p.rounding !== undefined;
+const fields = [
+  ["Kunde", p.client],
+  ["Projekt", p.project],
+  ["Team", p.team],
+  ["Leistung erbracht von", p.employee],
+  ["Zeitraum", p.period],
+  ["Erstellt", p.created],
+].filter((f): f is [string, string] => !!f[1]);
+const running = `@page { @bottom-left { content: ${JSON.stringify(`Leistungsnachweis ${p.clientShort} ${p.periodLabel}`)}; } }`;
+const hoursText = p.lumpSumQuote ? "" : ` (${p.total} Stunden)`;
+---
+
+<style is:inline set:html={running} />
+<DocHeader kind="Leistungsnachweis" legal meta={[p.created]} />
+<DocTitle eyebrow={p.periodLabel} title="Leistungsnachweis" />
+<dl class="meta">
+  {fields.map(([label, value]) => (
+    <div>
+      <dt class="label">{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  ))}
+  {p.references?.length ? (
+    <div class="refs">
+      <dt class="label">Referenz</dt>
+      <dd class="ref">{p.references.join(" · ")}</dd>
+    </div>
+  ) : null}
+</dl>
+{p.lumpSumQuote && (
+  <p class="note">
+    Pauschal abgerechnet laut Angebot {p.lumpSumQuote}; der Aufwand dient zur Information.
+  </p>
+)}
+{billed && <p class="note">{p.rounding}</p>}
+<table>
+  <thead>
+    <tr>
+      <th class="date">Datum</th>
+      <th class="day">Tag</th>
+      <th class="time">Uhrzeit</th>
+      <th class="hours num">{p.lumpSumQuote ? "Aufwand (Std.)" : "Stunden"}</th>
+      {billed && <th class="hours num">Abgerechnet</th>}
+      <th>Tätigkeit</th>
+    </tr>
+  </thead>
+  <tbody>
+    {p.rows.map((row) =>
+      "section" in row ? (
+        <tr class="section">
+          <td colspan="3">{row.section}</td>
+          <td class="hours num">{row.hours}</td>
+          {billed && <td class="hours num">{row.billed}</td>}
+          <td />
+        </tr>
+      ) : (
+        <tr>
+          <td class="date">{row.date}</td>
+          <td class="day">{row.day}</td>
+          <td class="time">{row.time}</td>
+          <td class="hours num">{row.hours}</td>
+          {billed && <td class="hours num">{row.billed}</td>}
+          <td>
+            {Array.isArray(row.activity) ? (
+              <ul>
+                {row.activity.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              row.activity
+            )}
+          </td>
+        </tr>
+      ),
+    )}
+    <DocTotalRow
+      label="Gesamt Stunden"
+      span={3}
+      figures={billed ? [p.total, p.totalBilled ?? ""] : [p.total]}
+      note="Stunden dezimal (0,50 = 30 Minuten)"
+    />
+  </tbody>
+</table>
+<DocConfirmation
+  label="Bestätigung des Kunden"
+  text={`Die aufgeführten Leistungen${hoursText} im Zeitraum ${p.period} wurden erbracht.`}
+  line={`Bestätigt per Mail am ${p.confirmedOn ?? "____________"}`}
+/>
+
+<style>
+  /* Card.astro surface "tint", three fields to a row. */
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3mm 6mm;
+    margin: 0 0 5mm;
+    padding: var(--print-card-pad);
+    border: var(--print-rule) solid var(--teal-line);
+    border-radius: var(--radius);
+    background: var(--teal-soft);
+    font: var(--role-small);
+    break-inside: avoid;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  /* typography.css .label-caps, in ink as the footer's group headings set it. */
+  .label {
+    display: block;
+    margin-bottom: 2pt;
+    font: var(--role-label);
+    letter-spacing: var(--type-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--ink);
+  }
+
+  /* Referenz fills the rest of its row, so a mode with fewer fields leaves no empty cell. */
+  .refs {
+    grid-column: 1 / -1;
+  }
+
+  .refs:nth-child(3n + 2) {
+    grid-column: 2 / -1;
+  }
+
+  .refs:nth-child(3n) {
+    grid-column: 3;
+  }
+
+  .ref {
+    font-weight: 600;
+  }
+
+  .note {
+    margin: 0 0 3mm;
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  td {
+    padding-top: 0.2mm;
+    padding-bottom: 0.2mm;
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  td.date,
+  td.day,
+  td.time,
+  td.hours {
+    white-space: nowrap;
+  }
+
+  .date {
+    width: 16mm;
+  }
+
+  .day {
+    width: 11mm;
+  }
+
+  .time {
+    width: 27mm;
+  }
+
+  .hours {
+    width: 18mm;
+  }
+
+  .section td {
+    padding-top: 2mm;
+    white-space: nowrap;
+    font: var(--role-label);
+    letter-spacing: var(--type-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--teal-dark);
+  }
+
+  .section td.hours {
+    font: var(--role-small);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink);
+  }
+
+  /* The hours total sits 4pt over its band's edge, not the quote's 5pt, for the 22-row page. */
+  table :global(tr.total td) {
+    padding-bottom: 4pt;
+    vertical-align: baseline;
+  }
+</style>

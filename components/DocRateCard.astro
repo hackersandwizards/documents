@@ -1,0 +1,88 @@
+---
+// The personal rate card, composed from the document components. The rates and the terms are props:
+// trainers read this package, so no rate or term of ours is written here.
+import DocCard from "./DocCard.astro";
+import DocClosing from "./DocClosing.astro";
+import DocHeader from "./DocHeader.astro";
+import DocLead from "./DocLead.astro";
+import DocPriceTable from "./DocPriceTable.astro";
+import DocRecipient from "./DocRecipient.astro";
+import DocTitle from "./DocTitle.astro";
+
+interface Props {
+  personName: string;
+  date: string;
+  validUntil: string;
+  /** Year in the eyebrow, e.g. "2026". */
+  year: string;
+  /** The salutation's opening word and the recipient's first name, e.g. "Hallo" and "Anna". */
+  opener: string;
+  recipientFirstName: string;
+  greeting: string;
+  client: {
+    company: string;
+    shortName: string;
+    recipientName: string;
+    street: string;
+    zip: string;
+    city: string;
+  };
+  /** One row per rate: the item, its explanation, the unit and the net figure. */
+  rates: { item: string; detail: string; unit: string; rate: string }[];
+  /** The paragraphs of the terms panel. */
+  terms: string[];
+  scope: string[];
+  closing: string;
+  signOff: string;
+}
+const p = Astro.props;
+// The running header and footer: the base styles the margin boxes, a document names their content.
+const running = `@page {
+  @top-left { content: "hackers&wizards GmbH"; }
+  @top-right { content: ${JSON.stringify(`Honorarsätze ${p.personName}`)}; }
+  @bottom-left { content: ${JSON.stringify(`${p.client.shortName} | Persönliche Honorarsätze`)}; }
+}`;
+---
+
+<style is:inline set:html={running} />
+<DocHeader kind="Honorarsätze" legal meta={[`Datum: ${p.date}`, `Gültig bis: ${p.validUntil}`]} />
+<DocTitle eyebrow={`Honorarsätze ${p.year}`} title={`Persönliche Honorarsätze ${p.personName}`} />
+<DocLead>
+  <p>
+    {p.opener} {p.recipientFirstName},
+  </p>
+  <p>{p.greeting}</p>
+  <DocRecipient
+    slot="aside"
+    label="Erstellt für"
+    company={p.client.company}
+    lines={[p.client.recipientName, p.client.street, `${p.client.zip} ${p.client.city}`]}
+  />
+</DocLead>
+
+<h2>Honorare</h2>
+<DocPriceTable
+  sums
+  columns={[
+    { label: "Leistung", width: "55%" },
+    { label: "Einheit", width: "20%" },
+    { label: "Honorar netto", width: "25%", num: true },
+  ]}
+  rows={p.rates.map((r) => ({ item: r.item, detail: r.detail, cells: [r.unit, r.rate] }))}
+/>
+
+<DocCard title="Leistungsspektrum">
+  <ul>
+    {p.scope.map((item) => (
+      <li>{item}</li>
+    ))}
+  </ul>
+</DocCard>
+
+<DocCard title="Konditionen" tint dense>
+  {p.terms.map((text) => (
+    <p>{text}</p>
+  ))}
+</DocCard>
+
+<DocClosing text={p.closing} signOff={p.signOff} name={p.personName} />

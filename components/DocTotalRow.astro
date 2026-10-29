@@ -1,0 +1,50 @@
+---
+// The total row of a table: Price.astro's card amount in the h4 role on the teal band, a 12% tint
+// under a strong teal rule, each figure in teal at 1.2 times. Teal marks money and hours alike
+// (blind round 4, docs/tracking/2026-10-29-document-accents.md: quote 89.4, hours document 90.2).
+// The label spans `span` columns; `note` fills a last text column in the small role.
+interface Props {
+  label: string;
+  span: number;
+  figures: string[];
+  note?: string;
+}
+const { label, span, figures, note } = Astro.props;
+---
+
+<tr class="total">
+  <td colspan={span}>{label}</td>
+  {figures.map((figure) => (
+    <td class="num">{figure}</td>
+  ))}
+  {note !== undefined && <td class="total-note">{note}</td>}
+</tr>
+
+<style>
+  td {
+    padding-top: 7pt;
+    padding-bottom: 5pt;
+    border-top: var(--print-rule-strong) solid var(--teal);
+    border-bottom: 0;
+    background: color-mix(in srgb, var(--color-teal) 12%, white);
+    font: var(--role-h4);
+    letter-spacing: var(--type-h4-tracking);
+    font-variant-numeric: tabular-nums;
+  }
+
+  td:first-child {
+    padding-left: 5pt;
+  }
+
+  .num {
+    font-size: 1.2em;
+    text-align: right;
+    white-space: nowrap;
+    color: var(--teal);
+  }
+
+  .total-note {
+    font: var(--role-small);
+    color: var(--muted);
+  }
+</style>
