@@ -1,0 +1,31 @@
+---
+// A document's title block: the eyebrow (typography.css .meta-line), the h1, and an optional
+// lead (SectionHeader.astro's lead role in muted ink).
+interface Props {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+}
+const { eyebrow, title, subtitle } = Astro.props;
+---
+
+{eyebrow && <span class="eyebrow">{eyebrow}</span>}
+<h1>{title}</h1>
+{subtitle && <p class="subtitle">{subtitle}</p>}
+
+<style>
+  .eyebrow {
+    display: block;
+    margin-bottom: 4pt;
+    font: var(--role-small);
+    font-weight: 500;
+    color: var(--teal-dark);
+  }
+
+  .subtitle {
+    max-width: 150mm;
+    margin-bottom: 10pt;
+    font: var(--role-lead);
+    color: var(--muted);
+  }
+</style>

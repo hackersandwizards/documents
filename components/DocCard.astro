@@ -1,0 +1,53 @@
+---
+// Card.astro: the brand corner, a hairline border, white, the card padding. `tint` is its
+// emphasised surface; `dense` sets the card in the small role, for terms.
+interface Props {
+  title?: string;
+  tint?: boolean;
+  dense?: boolean;
+}
+const { title, tint = false, dense = false } = Astro.props;
+---
+
+<div class:list={["card", { tint, dense }]}>
+  {title && <h3>{title}</h3>}
+  <slot />
+</div>
+
+<style>
+  .card {
+    margin: 6pt 0;
+    padding: var(--print-card-pad);
+    border: var(--print-rule) solid var(--line);
+    border-radius: var(--radius);
+    background: white;
+    break-inside: avoid;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .tint {
+    border-color: var(--teal-line);
+    background: var(--teal-soft);
+  }
+
+  h3 {
+    margin: 0 0 1mm;
+  }
+
+  .dense {
+    font: var(--role-small);
+  }
+
+  .dense h3 {
+    margin-bottom: 1.5mm;
+  }
+
+  .dense :global(p) {
+    margin: 0 0 1mm;
+  }
+
+  .card > :global(:last-child) {
+    margin-bottom: 0;
+  }
+</style>

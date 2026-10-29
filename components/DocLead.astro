@@ -1,0 +1,19 @@
+---
+// The lead: the reader's situation in prose left, the slot "aside" (a DocRecipient) right.
+---
+
+<div class="lead-grid">
+  <div>
+    <slot />
+  </div>
+  <slot name="aside" />
+</div>
+
+<style>
+  .lead-grid {
+    display: grid;
+    grid-template-columns: 1.45fr 0.8fr;
+    gap: 15pt;
+    margin: 18pt 0 12pt;
+  }
+</style>

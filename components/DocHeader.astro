@@ -1,0 +1,158 @@
+---
+// The document header, the twin of the website's Nav.astro: a bar in the page tint across the
+// paper, the gradient strip on top, a rule under it, the brand left and the document tag right.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { getCompanyOsRoot } from "../lib/paths";
+import { DOCUMENT_LOGO } from "../lib/render-pdf";
+
+interface Props {
+  /** The document kind in the tag, e.g. "Honorarsätze". */
+  kind: string;
+  /** Adds "GmbH" and the imprint under the wordmark, for documents naming the legal entity. */
+  legal?: boolean;
+  /** Lines under the tag, such as the date and the validity. */
+  meta?: string[];
+}
+const { kind, legal = false, meta = [] } = Astro.props;
+const icon = readFileSync(join(getCompanyOsRoot(), DOCUMENT_LOGO)).toString("base64");
+---
+
+<header class="doc-header">
+  <div class="brand">
+    <img src={`data:image/png;base64,${icon}`} alt="" />
+    <div>
+      <div class="brand-name">
+        hackers<span class="amp">&amp;</span>
+        <span class="wizards">wizards</span>
+        {legal && <span class="legal">GmbH</span>}
+      </div>
+      {legal && (
+        <div class="company-meta">
+          Geschäftsführer: Benedikt Stemmildt &amp; Stefan Munz
+          <br />
+          Osterstraße 95, 20259 Hamburg
+          <br />
+          AG Hamburg HRB 198840, USt-IdNr. DE463065921
+          <br />
+          <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a>
+        </div>
+      )}
+    </div>
+  </div>
+  <div class="doc-meta">
+    <span class="doc-tag">{kind}</span>
+    {meta.map((line) => (
+      <>
+        <br />
+        {line}
+      </>
+    ))}
+  </div>
+</header>
+
+<style>
+  .doc-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8mm;
+    min-height: calc(var(--print-row) + var(--print-strip));
+    margin-bottom: 8mm;
+    padding: calc(var(--print-strip) + 8pt) 0 8pt;
+  }
+
+  .doc-header::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 calc(-1 * var(--side));
+    border-top: var(--print-strip) solid transparent;
+    border-bottom: var(--print-rule) solid var(--line);
+    background:
+      var(--gradient) top / 100% var(--print-strip) no-repeat border-box,
+      var(--color-bg) padding-box;
+  }
+
+  /* Brand.astro: the emoji, then the wordmark in mono bold with an ink rule under it, at the
+     website's logo-to-wordmark ratio. The icon sits beside the wordmark, never centred on the
+     imprint lines under it. */
+  .brand {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--print-logo-gap);
+  }
+
+  .brand img {
+    width: var(--print-logo);
+    height: var(--print-logo);
+    flex: none;
+    object-fit: contain;
+  }
+
+  .brand-name {
+    position: relative;
+    display: inline-flex;
+    min-height: var(--print-logo);
+    align-items: center;
+    font: var(--role-h4);
+    font-family: var(--type-h1-family);
+    font-weight: var(--type-h1-weight);
+    line-height: 1;
+    color: var(--teal);
+  }
+
+  .brand-name::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 3pt;
+    height: var(--print-underline);
+    background: var(--ink);
+  }
+
+  .amp {
+    color: var(--amp);
+  }
+
+  .wizards {
+    color: var(--purple);
+  }
+
+  .legal {
+    margin-left: 0.3em;
+    color: var(--ink);
+  }
+
+  .company-meta {
+    margin-top: 1.5pt;
+    font: var(--role-small);
+    color: var(--muted);
+  }
+
+  .doc-meta {
+    max-width: 70mm;
+    font: var(--role-small);
+    text-align: right;
+    color: var(--muted);
+  }
+
+  .doc-header a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* The website's category pill (TrainingList.astro .tl-chip): teal/24 fill in print, teal-tinted
+     ink, weight 500. A filled CTA shape was dropped: blind reviewers read it as a button. */
+  .doc-tag {
+    display: inline-block;
+    margin-bottom: 3pt;
+    padding: var(--print-chip-pad);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-teal) 24%, white);
+    font: var(--role-small);
+    font-weight: 500;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--color-teal) 40%, var(--color-ink));
+  }
+</style>

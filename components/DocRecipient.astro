@@ -1,0 +1,43 @@
+---
+// The recipient card, Card.astro's tint surface: a label in caps, the company bold, then the
+// person and the address, one per line.
+interface Props {
+  label: string;
+  company: string;
+  lines: string[];
+}
+const { label, company, lines } = Astro.props;
+---
+
+<div class="prepared">
+  <span class="label">{label}</span>
+  <strong>{company}</strong>
+  {lines.map((line) => (
+    <>
+      <br />
+      {line}
+    </>
+  ))}
+</div>
+
+<style>
+  .prepared {
+    align-self: start;
+    padding: var(--print-card-pad);
+    border: var(--print-rule) solid var(--teal-line);
+    border-radius: var(--radius);
+    background: var(--teal-soft);
+    font: var(--role-small);
+    break-inside: avoid;
+  }
+
+  /* typography.css .label-caps, in ink as the footer's group headings set it. */
+  .label {
+    display: block;
+    margin-bottom: 2pt;
+    font: var(--role-label);
+    letter-spacing: var(--type-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--ink);
+  }
+</style>

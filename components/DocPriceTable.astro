@@ -1,0 +1,66 @@
+---
+// A price table on the base's ruled table: each row an item in bold with an optional muted detail
+// line, then its cells; a column marked num holds figures, right-aligned in tabular digits.
+// `sums` sets those figures bold in teal, the money colour (Price.astro), as a rate card's rates.
+interface Column {
+  label: string;
+  width?: string;
+  num?: boolean;
+}
+interface Row {
+  item: string;
+  detail?: string;
+  cells: string[];
+}
+interface Props {
+  columns: Column[];
+  rows: Row[];
+  sums?: boolean;
+}
+const { columns, rows, sums = false } = Astro.props;
+---
+
+<table class:list={{ sums }}>
+  <thead>
+    <tr>
+      {columns.map((c) => (
+        <th class:list={{ num: c.num }} style={c.width ? `width: ${c.width}` : undefined}>
+          {c.label}
+        </th>
+      ))}
+    </tr>
+  </thead>
+  <tbody>
+    {rows.map((row) => (
+      <tr>
+        <td>
+          <strong>{row.item}</strong>
+          {row.detail && <span class="detail">{row.detail}</span>}
+        </td>
+        {row.cells.map((cell, i) => (
+          <td class:list={{ num: columns[i + 1]?.num }}>{cell}</td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  /* Tabular figures only in a figure column: Inter's tabular set widens the hyphen in prose. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .detail {
+    display: block;
+    margin-top: 1pt;
+    color: var(--muted);
+  }
+
+  .sums td.num {
+    font-weight: 600;
+    color: var(--teal);
+  }
+</style>

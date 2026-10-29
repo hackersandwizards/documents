@@ -1,0 +1,31 @@
+---
+// The closing, kept whole so the sign-off never lands alone on a page: the closing text, the
+// sign-off, then the sender's name.
+interface Props {
+  text: string;
+  signOff: string;
+  name: string;
+}
+const { text, signOff, name } = Astro.props;
+---
+
+<div class="closing">
+  <p>{text}</p>
+  <p class="sign-off">{signOff}</p>
+  <p>{name}</p>
+</div>
+
+<style>
+  .closing {
+    margin-top: 6mm;
+    break-inside: avoid;
+  }
+
+  p {
+    margin: 0 0 1mm;
+  }
+
+  .sign-off {
+    margin-top: 4mm;
+  }
+</style>
