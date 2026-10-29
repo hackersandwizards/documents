@@ -95,7 +95,7 @@ const t = de
       total: "Summe",
       totalValue: `${p.price.subtotal} netto zzgl. USt.`,
       valid: "Gültig bis",
-      reply: `Passt das so? Dann antworte einfach auf diese Mail mit deiner Zusage bis zum ${p.validUntil}. Das genügt als Beauftragung, eine Unterschrift brauchen wir nicht.`,
+      reply: `Passt das so? Dann antworte einfach auf diese Mail mit deiner Zusage${p.validUntil ? ` bis zum ${p.validUntil}` : ""}. Das genügt als Beauftragung, eine Unterschrift brauchen wir nicht.`,
     }
   : {
       kind: "Quote",
@@ -134,7 +134,7 @@ const t = de
       total: "Total",
       totalValue: `${p.price.subtotal} net plus VAT`,
       valid: "Valid until",
-      reply: `Does this work for you? Then simply reply to this email with your go-ahead by ${p.validUntil}. That counts as the order; no signature needed.`,
+      reply: `Does this work for you? Then simply reply to this email with your go-ahead${p.validUntil ? ` by ${p.validUntil}` : ""}. That counts as the order; no signature needed.`,
     };
 const priced = p.price.rows.some((row) => row.rate !== undefined);
 const columns = priced
@@ -157,8 +157,11 @@ const foot = [
   p.price.vat && { label: t.vat, figure: p.price.vat },
   p.price.gross && { label: t.gross, figure: p.price.gross },
 ].filter((row): row is { label: string; figure: string } => !!row);
+// Without a subtotal and an acceptance object the block carries no total line.
 const acceptance =
-  p.acceptance === false ? undefined : (p.acceptance ?? { label: t.total, value: t.totalValue });
+  p.acceptance === false
+    ? undefined
+    : (p.acceptance ?? (p.price.subtotal ? { label: t.total, value: t.totalValue } : {}));
 // The running header and footer: the base styles the margin boxes, a document names their content.
 const running = `@page {
   @top-left { content: "hackers&wizards GmbH"; }
@@ -267,8 +270,12 @@ const running = `@page {
       <dd>
         {p.number}, {p.heading}
       </dd>
-      <dt>{acceptance.label}</dt>
-      <dd>{acceptance.value}</dd>
+      {"label" in acceptance && (
+        <>
+          <dt>{acceptance.label}</dt>
+          <dd>{acceptance.value}</dd>
+        </>
+      )}
       {p.validUntil && (
         <>
           <dt>{t.valid}</dt>
