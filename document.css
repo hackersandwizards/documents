@@ -348,14 +348,6 @@ h4 {
   font-weight: 600;
 }
 
-/* Sections inside a card, ruled apart: the price and fact rows of TrainingPage.astro,
-   a rule between them and none before the first. */
-.ruled > * + * {
-  margin-top: 6.25pt;
-  padding-top: 6.25pt;
-  border-top: var(--print-rule) solid var(--line);
-}
-
 .card hr,
 .panel hr {
   margin: 6.25pt 0;
