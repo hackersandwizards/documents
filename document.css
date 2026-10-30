@@ -19,18 +19,18 @@
 :root {
   --ink: var(--color-ink);
   --muted: var(--color-muted);
-  /* Rules and card borders: the website's border token held a third of the way to ink, since
-     at 70% zoom its pale grey read as no line at all to both blind reviewers (2026-10-28). */
-  --line: color-mix(in srgb, var(--color-border) 65%, var(--color-ink));
+  /* Rules and card borders: border-strong, since at 70% zoom the pale border token read as no line
+     at all to both blind reviewers. */
+  --line: var(--color-border-strong);
   --soft: var(--color-bg);
   --teal: var(--color-teal);
   --teal-dark: var(--color-teal-dark);
-  /* Card tint (Card.astro surface "tint"): border teal/35, fill teal/5; print
-     takes teal/70 and teal/7 so both survive 70% zoom. */
+  /* Card tint (Card.astro surface "tint"): print takes the teal border and the 7% tint fill so
+     both survive 70% zoom. */
   --teal-soft: color-mix(in srgb, var(--color-teal) 7%, white);
-  --teal-line: color-mix(in srgb, var(--color-teal) 70%, white);
+  --teal-line: var(--color-teal);
   --purple: var(--color-purple);
-  --purple-soft: color-mix(in srgb, var(--color-purple) 6%, white);
+  --purple-soft: color-mix(in srgb, var(--color-purple) 7%, white);
   --green-dark: var(--color-green-dark);
   --red: var(--color-red);
   --amp: var(--color-ampersand);
@@ -232,19 +232,19 @@ body {
   color: var(--muted);
 }
 
-/* The document tag: TrainingList.astro's .tl-chip, the website's category pill (teal/16
-   fill, teal/24 in print, teal-tinted ink, weight 500). The header's filled CTA was tried first
+/* The document tag: TrainingList.astro's .tl-chip, the website's category pill (in print the
+   40% teal tint, teal-light, under ink, weight 500). The header's filled CTA was tried first
    and dropped: two of three blind reviewers named it a button shape that a title does not take. */
 .doc-tag {
   display: inline-block;
   margin-bottom: 3pt;
   padding: var(--print-chip-pad);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-teal) 24%, white);
+  border-radius: var(--radius-pill);
+  background: var(--color-teal-light);
   font: var(--role-small);
   font-weight: 500;
   line-height: 1.5;
-  color: color-mix(in srgb, var(--color-teal) 40%, var(--color-ink));
+  color: var(--color-ink);
 }
 
 /* Headings: the website's base, mono 700 in ink at every level. */
@@ -326,18 +326,18 @@ h4 {
   background: var(--teal);
 }
 
-/* Tag: TrainingList.astro .tl-chip, a pill in teal/16 (teal/24 in print) with teal-tinted ink, weight 500;
+/* Tag: TrainingList.astro .tl-chip, a pill in the 40% teal tint, teal-light, under ink, weight 500;
    the small role stands in for the website's fine step. */
 .chip {
   display: inline-block;
   margin: 0 2.5pt 2.5pt 0;
   padding: var(--print-chip-pad);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-teal) 24%, white);
+  border-radius: var(--radius-pill);
+  background: var(--color-teal-light);
   font: var(--role-small);
   font-weight: 500;
   line-height: 1.5;
-  color: color-mix(in srgb, var(--color-teal) 40%, var(--color-ink));
+  color: var(--color-ink);
 }
 
 /* A card's one-line lead under its title (TrainingList.astro's promise line, set bold). */
@@ -506,7 +506,7 @@ tr.total td {
   padding-bottom: 5pt;
   border-top: var(--print-rule-strong) solid var(--teal);
   border-bottom: 0;
-  background: color-mix(in srgb, var(--color-teal) 12%, white);
+  background: var(--teal-soft);
   font: var(--role-h4);
   letter-spacing: var(--type-h4-tracking);
   font-variant-numeric: tabular-nums;
@@ -776,7 +776,7 @@ dt {
 pre {
   margin: 8pt 0;
   padding: var(--print-card-pad);
-  border: var(--print-rule) solid color-mix(in srgb, white 10%, var(--color-night-2));
+  border: var(--print-rule) solid color-mix(in srgb, var(--color-white) 18%, var(--color-night));
   border-radius: var(--radius);
   background: var(--color-night-2);
   font: var(--role-code);
