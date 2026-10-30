@@ -32,9 +32,7 @@
   --purple: var(--color-purple);
   --purple-soft: color-mix(in srgb, var(--color-purple) 6%, white);
   --green-dark: var(--color-green-dark);
-  /* The documents' error red, this file's own value: the website has no error colour (os row
-     brand-unification-plan, T4 open). */
-  --red: #dc2626;
+  --red: var(--color-red);
   --amp: var(--color-ampersand);
   --gradient: linear-gradient(90deg, var(--color-teal), var(--color-purple));
   --sans: var(--font-sans);
