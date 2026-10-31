@@ -46,10 +46,11 @@ export async function openComposer(root = process.cwd()) {
       const html: string = await container.renderToString(component, { props, slots });
       return html.replace(/^<!DOCTYPE html>/i, "");
     },
-    // The container renders markup only; each scoped style is a module of the graph loaded.
+    // The container renders markup only; each scoped style is a module of the graph loaded. The
+    // &inline twins an earlier call loaded join the graph too, and are skipped.
     async styles() {
-      const ids = [...server.moduleGraph.idToModuleMap.keys()].filter((id) =>
-        id.includes("?astro&type=style"),
+      const ids = [...server.moduleGraph.idToModuleMap.keys()].filter(
+        (id) => id.includes("?astro&type=style") && !id.includes("&inline"),
       );
       const css: string[] = [];
       for (const id of ids)

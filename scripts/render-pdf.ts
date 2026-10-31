@@ -1,4 +1,5 @@
 import { execFile, execFileSync, spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -87,8 +88,9 @@ export async function renderPdf(
   }
   const html = readFileSync(htmlPath, "utf-8");
   const end = html.lastIndexOf("</body>");
-  // Beside the input, so relative resources resolve; the stored HTML stays free of the script.
-  const printPath = join(dirname(htmlPath), `.${basename(htmlPath)}.${process.pid}.print.html`);
+  // Beside the input, so relative resources resolve; the stored HTML stays free of the script. A
+  // name per call, since a render that finishes deletes its file while another may still load it.
+  const printPath = join(dirname(htmlPath), `.${basename(htmlPath)}.${randomUUID()}.print.html`);
   writeFileSync(
     printPath,
     end < 0 ? html + PRINT_SCRIPT : html.slice(0, end) + PRINT_SCRIPT + html.slice(end),

@@ -130,3 +130,17 @@ test.each(["de", "en"])(
     expect(html).not.toContain("undefined");
   },
 );
+
+test("DocProposal prints the amount of a fixed-price row that has no rate", async () => {
+  const html = await composer.render("DocProposal", {
+    ...proposal,
+    price: { rows: [{ item: P, basis: "Pauschal", amount: "1.234 €" }] },
+  });
+  expect(html).toContain("1.234 €");
+  expect(html).not.toContain("undefined");
+});
+
+test("styles() returns each scoped style once, however often it is called", async () => {
+  await composer.render("DocCertificate", props.DocCertificate);
+  expect(await composer.styles()).toBe(await composer.styles());
+});

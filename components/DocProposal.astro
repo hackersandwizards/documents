@@ -136,7 +136,8 @@ const t = de
       valid: "Valid until",
       reply: `Does this work for you? Then simply reply to this email with your go-ahead${p.validUntil ? ` by ${p.validUntil}` : ""}. That counts as the order; no signature needed.`,
     };
-const priced = p.price.rows.some((row) => row.rate !== undefined);
+// A fixed-price row carries an amount and no rate; the price-free variant drops both.
+const priced = p.price.rows.some((row) => row.rate !== undefined || row.amount !== undefined);
 const columns = priced
   ? [
       { label: t.columns[0], width: "46%" },

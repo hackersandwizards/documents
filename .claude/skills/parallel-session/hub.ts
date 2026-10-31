@@ -261,7 +261,7 @@ const ids = Object.fromEntries(
 
 // Brand values come from @hackersandwizards/brand, pinned in ~/.claude/package.json (`bun install` there), through its exports:
 // the tokens and print.css's font faces, inlined so the page opens offline from disk.
-function brandCss() {
+function hubBrandCss() {
   const at = (f: string) => Bun.resolveSync(`@hackersandwizards/brand/${f}`, import.meta.dir);
   const faces = readFileSync(at("print.css"), "utf8").match(/@font-face\s*{[^}]*}/g);
   if (!faces) throw new Error("brand print.css: no @font-face");
@@ -277,7 +277,7 @@ writeFileSync(
 <html lang="de"><head><meta charset="utf-8"><title>Was dich braucht</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-${brandCss()}
+${hubBrandCss()}
 /* Page roles on brand tokens. Dark follows the system, on the night tones: teal-night accent with night text on it. */
 :root{--bg:var(--color-bg);--surface:var(--color-white);--on-accent:var(--color-white);--ink:var(--color-ink);--muted:var(--color-muted);--line:var(--color-border);--tint:var(--color-tint);--accent:var(--color-teal);--accent-2:var(--color-purple);--error:color-mix(in srgb,var(--color-red) 70%,var(--color-ink));--warning:color-mix(in srgb,var(--color-amber-dark) 70%,var(--color-ink));
 --text-page:1.5rem;--text-heading:1.25rem;--text-subheading:1rem;--text-ui:.875rem;--text-micro:.75rem;color-scheme:light;

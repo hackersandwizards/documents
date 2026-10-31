@@ -1,4 +1,4 @@
-/* The h&w document base: one print stylesheet for every PDF Company OS renders.
+/* The h&w document base: one print stylesheet for every PDF Company OS and the trainer hub render.
    Brand values come from @hackersandwizards/brand, the website's tokens, print scale and static
    faces, never edited here. Every text takes one type role
    (display, h1 to h4, lead, body, small, label, code) through its --role-* shorthand below,
@@ -9,9 +9,9 @@
    website's scaled down but the print scale below, set for how a PDF is read.
 
    Never link this file from a document. A document carries an empty style element
-   with the data-hw-document attribute; os's scripts/pdf/render.ts (src/lib/render-pdf.ts)
-   fills it on every render with this file, its imports inlined and its faces as data URIs,
-   so the stored HTML renders standalone. */
+   with the data-hw-document attribute; bakeDocumentCss (scripts/render-pdf.ts) fills it on
+   every render with this file, its imports inlined and its faces as data URIs, so the stored
+   HTML renders standalone. */
 
 @import "@hackersandwizards/brand/tokens.css";
 @import "@hackersandwizards/brand/print.css";
