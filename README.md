@@ -43,3 +43,5 @@ bun run check    # format, lint, typecheck, unique names, tests, specimen, brand
 
 A release is a tag `v<version>` matching `version` in `package.json`; consumers then raise the tag
 in their dependency line. The rest: [CLAUDE.md](CLAUDE.md).
+
+Licence: PolyForm Strict 1.0.0, see [LICENSE](LICENSE).

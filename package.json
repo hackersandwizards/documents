@@ -6,7 +6,7 @@
   "keywords": [
     "astro-component"
   ],
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "packageManager": "bun@1.4.4",
   "engines": {
@@ -25,7 +25,8 @@
     "document.css",
     "components",
     "scripts/compose.ts",
-    "scripts/render-pdf.ts"
+    "scripts/render-pdf.ts",
+    "LICENSE"
   ],
   "scripts": {
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
