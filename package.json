@@ -29,6 +29,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "preinstall": "node .claude/skills/engineering/only-bun.cjs",
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
     "check": "bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun test && bun scripts/specimen.ts --check && brand-colours",
     "lint": "eslint --cache --concurrency=auto .",
