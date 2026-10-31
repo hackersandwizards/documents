@@ -6,7 +6,7 @@
       "name": "@hackersandwizards/documents",
       "devDependencies": {
         "@eslint/js": "10.0.1",
-        "@hackersandwizards/brand": "git+ssh://git@github.com/hackersandwizards/brand.git#v0.9.18",
+        "@hackersandwizards/brand": "git+ssh://git@github.com/hackersandwizards/brand.git#v0.10.0",
         "@types/bun": "1.4.4",
         "astro": "7.4.4",
         "eslint": "10.14.0",
@@ -117,7 +117,7 @@
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.3", "", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q=="],
 
-    "@hackersandwizards/brand": ["@hackersandwizards/brand@git+ssh://git@github.com/hackersandwizards/brand.git#4ddece9c2fbbb3295ff70a16dafcdb8893b5ee93", { "hasInstallScript": true, "bin": { "brand-colours": "scan/colours.ts", "brand-linkedin-frame": "applications/linkedin-visuals/frame.ts", "brand-linkedin-terminal": "applications/linkedin-visuals/terminal.ts", "brand-linkedin-sketch-prompt": "applications/linkedin-visuals/sketch-prompt.ts" } }, "4ddece9c2fbbb3295ff70a16dafcdb8893b5ee93"],
+    "@hackersandwizards/brand": ["@hackersandwizards/brand@git+ssh://git@github.com/hackersandwizards/brand.git#bed510efc7bc095ae467661f0e15cbbddc39e55e", { "hasInstallScript": true, "bin": { "brand-colours": "scan/colours.ts", "brand-linkedin-frame": "applications/linkedin-visuals/frame.ts", "brand-linkedin-terminal": "applications/linkedin-visuals/terminal.ts", "brand-linkedin-sketch-prompt": "applications/linkedin-visuals/sketch-prompt.ts", "brand-mail-signature": "applications/mail-signature/cli.ts" } }, "bed510efc7bc095ae467661f0e15cbbddc39e55e"],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 
