@@ -68,8 +68,10 @@ none, because receipt".
 
 ## Reviewer commands
 
-Run each reviewer headless and read-only, the prompt as the last argument naming each artifact by
-absolute path; Codex takes images with `-i <file>`:
+Run each reviewer headless and read-only, the prompt naming each artifact by absolute path. Codex
+takes images with `-i <file>`, placed after the prompt: `-i` is variadic, and a prompt after it is
+read as an image and Codex answers "No prompt provided via stdin". Check: every Codex output file
+is non-empty.
 
 ```bash
 claude -p --model opus --strict-mcp-config --no-session-persistence --allowedTools=Read "<prompt>"

@@ -37,6 +37,11 @@ handling that prevents data loss, security measures, or accessibility basics.
   serialises `bun run check`, and `only-bun.cjs` is the `preinstall` guard.
 - Remove or replace a dependency with a known vulnerability before excusing it. An audit
   exception names the advisory ID.
+- A browser that code, a script or an MCP server starts is Chrome for Testing, the build puppeteer or
+  Playwright installs, never `/Applications/Google Chrome.app`: macOS hands the person's Dock click to
+  a headless instance of that app, and no window opens. Give it a profile from `mkdtemp` under the OS
+  temp folder, removed after the run, and `--use-mock-keychain --password-store=basic`, or each
+  launch raises a keychain dialog. Puppeteer and Playwright pass both flags; a direct launch adds them.
 - Module-scope function names are unique per repository, except a framework-dictated name or a
   test-local helper.
 - Removing a collection, a skill or an agent also deletes the tests that named it. Port every

@@ -1,9 +1,10 @@
 // Builds the one page that shows what needs a person, from every docs/tracking/decisions/items.js
 // found under ~/dev (no repo list): Entscheiden (open rows with options), Prüfen (open rows
 // without options), Erledigen (the person's GOAL.md rows, else TODO.md) and, collapsed, Annahmen
-// (assumed rows). Agent work is left out. Answers stay in this browser until the row leaves the
-// rebuilt page; "kopieren" puts them in one block for the chat. Usage:
-// bun hub.ts [--check [<repo> ...]]   --check validates the found lists (or the given repos), exit 1 on a defect.
+// (assumed rows). Agent work is left out. Answers stay in this browser until, once copied, their row
+// leaves a rebuilt page that still lists its repo; "kopieren" puts them in one block for the chat.
+// Usage: bun hub.ts [--check [<repo> ...]]   --check validates the found lists (or the given repos),
+// exit 1 on a defect. The build prints defects, and while a list is unreadable exits 1 unwritten.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -80,15 +81,39 @@ type Row = {
 type List = { path: string; key: string; rows: Row[] };
 const lists: List[] = [];
 const defects: string[] = [];
+// items.js is read as data, never run: ~/dev holds third-party clones. Allowed are the
+// `window.DECISION_REPOS = window.DECISION_REPOS || {};` line and assignments of a JSON5 literal
+// to `window.DECISION_REPOS["<repo>"]` or `window.DECISION_AREAS`; anything else is a defect.
+function readDecisionList(file: string): Record<string, Row[]> {
+  const src = readFileSync(file, "utf8").replace(
+    /^window\.DECISION_REPOS = window\.DECISION_REPOS \|\| \{\};$/m,
+    "",
+  );
+  const head = /^window\.(?:DECISION_REPOS\[("[^"\n]+"|'[^'\n]+')\]|DECISION_AREAS)\s*=/gm;
+  const heads = [...src.matchAll(head)];
+  if (src.slice(0, heads[0]?.index ?? src.length).trim()) throw new Error("unexpected code before the first assignment");
+  const repos: Record<string, Row[]> = {};
+  heads.forEach((m, i) => {
+    const literal = src.slice(m.index + m[0].length, heads[i + 1]?.index ?? src.length).trim();
+    const value = Bun.JSON5.parse(literal.replace(/;$/, ""));
+    if (!m[1]) return;
+    if (!Array.isArray(value)) throw new Error(`${m[1]} is not an array`);
+    repos[Bun.JSON5.parse(m[1]) as string] = value;
+  });
+  if (!Object.keys(repos).length) throw new Error("no window.DECISION_REPOS[...] assignment");
+  return repos;
+}
+let unreadable = 0;
 for (const path of paths) {
-  const w: { DECISION_REPOS?: Record<string, Row[]> } = {};
+  let repos;
   try {
-    new Function("window", readFileSync(join(path, LIST), "utf8"))(w);
+    repos = readDecisionList(join(path, LIST));
   } catch (e) {
     defects.push(`${path}/${LIST}: ${(e as Error).message}`);
+    unreadable++;
     continue;
   }
-  for (const [key, rows] of Object.entries(w.DECISION_REPOS ?? {})) lists.push({ path, key, rows });
+  for (const [key, rows] of Object.entries(repos)) lists.push({ path, key, rows });
 }
 
 const REQUIRED = ["id", "title", "area", "priority", "order", "status", "context"];
@@ -116,6 +141,12 @@ for (const { path, key, rows } of lists) {
 if (checkOnly) {
   console.log(defects.length ? defects.join("\n") : `ok: ${lists.length} list(s)`);
   process.exit(defects.length ? 1 : 0);
+}
+if (defects.length) console.error(defects.join("\n"));
+// A page without an unreadable repo's rows would read as "nothing open" there: keep the old page.
+if (unreadable) {
+  console.error(`${unreadable} list(s) unreadable, page not written`);
+  process.exit(1);
 }
 
 // GOAL.md (else TODO.md) rows a person owns: a table line (Punkt | Owner | Beleg), a top-level
@@ -368,10 +399,15 @@ const read = (k) => { try { return JSON.parse(localStorage.getItem(STORE + k)) |
 const write = (k, v) => { try { v ? localStorage.setItem(STORE + k, JSON.stringify(v)) : localStorage.removeItem(STORE + k); return true; } catch (e) { return false; } };
 const items = [...document.querySelectorAll("details.item")];
 const known = new Set(items.map((d) => d.dataset.k));
-// An answer whose row left the page was carried out: drop it.
+// An answer whose row left the page was carried out: drop it, but only once copied and only where
+// its repo is on this page, since a repo missing from one build says nothing about its rows.
+const REPOS = new Set(${JSON.stringify(lists.map((l) => l.key)).replace(/</g, "\\u003c")});
+const copiedAt = localStorage.getItem(STORE + "copied") || "";
 for (let i = localStorage.length - 1; i >= 0; i--) {
   const k = localStorage.key(i);
-  if (k.startsWith(STORE) && k !== STORE + "who" && k !== STORE + "copied" && !known.has(k.slice(STORE.length))) localStorage.removeItem(k);
+  if (!k.startsWith(STORE) || k === STORE + "who" || k === STORE + "copied") continue;
+  const id = k.slice(STORE.length), a = read(id);
+  if (!known.has(id) && REPOS.has(id.split(":")[0]) && (!a || !a.at || a.at <= copiedAt)) localStorage.removeItem(k);
 }
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 function load(d) {
@@ -402,17 +438,19 @@ for (const d of items) {
   if (pick) pick.addEventListener("click", () => { d.querySelector('input[value="' + CSS.escape(pick.dataset.v) + '"]').checked = true; save(d); });
   d.querySelector(".clear").addEventListener("click", () => { write(d.dataset.k, null); load(d); state(); });
 }
-const answered = () => items.filter((d) => read(d.dataset.k));
+// Answers whose row is not on this page but which were kept above go into the block too.
+const kept = Object.keys(localStorage).filter((k) => k.startsWith(STORE) && k !== STORE + "who" && k !== STORE + "copied" && !known.has(k.slice(STORE.length))).map((k) => k.slice(STORE.length));
+const answered = () => [...items.map((d) => d.dataset.k), ...kept].filter((k) => read(k));
 function block() {
-  const lines = answered().map((d) => {
-    const a = read(d.dataset.k);
-    const choice = a.option ? a.option + " (" + ((IDS[d.dataset.k] || {})[a.option] || "") + ")" : a.done ? "erledigt" : "";
-    return d.dataset.k + ": " + [choice, a.note.replace(/\\s+/g, " ")].filter(Boolean).join(", ");
+  const lines = answered().map((k) => {
+    const a = read(k);
+    const choice = a.option ? a.option + " (" + ((IDS[k] || {})[a.option] || "") + ")" : a.done ? "erledigt" : "";
+    return k + ": " + [choice, (a.note || "").replace(/\\s+/g, " "), known.has(k) ? "" : "(Zeile nicht auf dieser Seite)"].filter(Boolean).join(", ");
   });
   return lines.length ? "Antworten von der Seite „Was dich braucht“:\\n" + lines.join("\\n") : "";
 }
 // Answers changed since the last copy have not reached Ada.
-const uncopied = () => { const c = localStorage.getItem(STORE + "copied") || ""; return answered().filter((d) => read(d.dataset.k).at > c).length; };
+const uncopied = () => { const c = localStorage.getItem(STORE + "copied") || ""; return answered().filter((k) => read(k).at > c).length; };
 function state() {
   const n = answered().length, open = uncopied();
   document.getElementById("copy").textContent = n ? n + (n === 1 ? " Antwort" : " Antworten") + " kopieren" : "Antworten kopieren";
