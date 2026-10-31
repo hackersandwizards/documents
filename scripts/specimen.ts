@@ -11,11 +11,19 @@ const ROOT = resolve(import.meta.dir, "..");
 const OUT = join(ROOT, "specimen");
 const BRAND = "../node_modules/@hackersandwizards/brand";
 
-const PAGES: { file: string; title: string; component: string; props: object }[] = [
-  { file: "angebot", title: "Angebot", component: "DocProposal", props: s.proposalDe },
-  { file: "quote", title: "Quote (English)", component: "DocProposal", props: s.proposalEn },
+// pages: the sheets the document prints on, so the overview's frame shows it whole.
+const PAGES: { file: string; title: string; component: string; props: object; pages?: number }[] = [
+  { file: "angebot", pages: 3, title: "Angebot", component: "DocProposal", props: s.proposalDe },
+  {
+    file: "quote",
+    pages: 2,
+    title: "Quote (English)",
+    component: "DocProposal",
+    props: s.proposalEn,
+  },
   {
     file: "angebot-ohne-preise",
+    pages: 3,
     title: "Angebot ohne Preise",
     component: "DocProposal",
     props: s.proposalDeNoPrice,
@@ -92,20 +100,31 @@ const index = (pages: typeof PAGES) => `<!doctype html>
 <link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/print.css" />
 <style>
-body { margin: 0 auto; max-width: 240mm; padding: 2rem; font-family: var(--font-sans); color: var(--color-ink); background: var(--color-bg); }
-h1 { font-size: var(--type-h2-size); }
+body { margin: 0; font-family: var(--font-sans); color: var(--color-ink); background: var(--color-bg); }
+.layout { display: grid; grid-template-columns: 16rem auto; gap: 2.5rem; max-width: calc(210mm + 21rem); margin: 0 auto; padding: 2rem; }
+nav { position: sticky; top: 2rem; align-self: start; }
+nav ul { list-style: none; padding: 0; margin: 0; }
+nav li { margin: 0.4rem 0; }
+a { color: var(--color-teal-dark); }
+h1 { font-size: var(--type-h2-size); margin-top: 0; }
 h2 { font-size: var(--type-h4-size); margin-top: 3rem; }
 p { color: var(--color-muted); }
-iframe { display: block; width: 210mm; height: 297mm; border: 1px solid var(--color-border-strong); background: white; }
+iframe { display: block; width: 210mm; border: 1px solid var(--color-border-strong); background: white; }
 </style>
 </head>
 <body>
+<div class="layout">
+<nav aria-label="Dokumenttypen">
+<ul>
+${pages.map((p) => `<li><a href="#${p.file}">${escapeHtml(p.title)}</a></li>`).join("\n")}
+</ul>
+</nav>
+<main>
 <h1>hackers&amp;wizards Dokumente: Muster</h1>
 <p>Jeder Dokumenttyp aus <code>@hackersandwizards/documents</code>, mit erfundenen Daten. Jeder Betrag ist ein Platzhalter. Das Gate baut diese Seiten neu und vergleicht sie.</p>
-<ul>
-${pages.map((p) => `<li><a href="${p.file}.html">${escapeHtml(p.title)}</a></li>`).join("\n")}
-</ul>
-${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)}</h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" loading="lazy"></iframe>`).join("\n")}
+${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" style="height: ${(p.pages ?? 1) * 297}mm" loading="lazy"></iframe>`).join("\n")}
+</main>
+</div>
 </body>
 </html>
 `;

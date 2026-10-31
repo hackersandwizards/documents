@@ -6,47 +6,58 @@
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/generated/tokens.root.css" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/print.css" />
 <style>
-body { margin: 0 auto; max-width: 240mm; padding: 2rem; font-family: var(--font-sans); color: var(--color-ink); background: var(--color-bg); }
-h1 { font-size: var(--type-h2-size); }
+body { margin: 0; font-family: var(--font-sans); color: var(--color-ink); background: var(--color-bg); }
+.layout { display: grid; grid-template-columns: 16rem auto; gap: 2.5rem; max-width: calc(210mm + 21rem); margin: 0 auto; padding: 2rem; }
+nav { position: sticky; top: 2rem; align-self: start; }
+nav ul { list-style: none; padding: 0; margin: 0; }
+nav li { margin: 0.4rem 0; }
+a { color: var(--color-teal-dark); }
+h1 { font-size: var(--type-h2-size); margin-top: 0; }
 h2 { font-size: var(--type-h4-size); margin-top: 3rem; }
 p { color: var(--color-muted); }
-iframe { display: block; width: 210mm; height: 297mm; border: 1px solid var(--color-border-strong); background: white; }
+iframe { display: block; width: 210mm; border: 1px solid var(--color-border-strong); background: white; }
 </style>
 </head>
 <body>
+<div class="layout">
+<nav aria-label="Dokumenttypen">
+<ul>
+<li><a href="#angebot">Angebot</a></li>
+<li><a href="#quote">Quote (English)</a></li>
+<li><a href="#angebot-ohne-preise">Angebot ohne Preise</a></li>
+<li><a href="#honorarsaetze">Honorarsätze</a></li>
+<li><a href="#leistungsnachweis-monat">Leistungsnachweis, ein Monat</a></li>
+<li><a href="#leistungsnachweis-training">Leistungsnachweis, ein Training in Abschnitten</a></li>
+<li><a href="#leistungsnachweis-pauschal">Leistungsnachweis, pauschal</a></li>
+<li><a href="#certificate">Certificate (English)</a></li>
+<li><a href="#zertifikat">Zertifikat</a></li>
+<li><a href="#dokument">Dokument aus Markdown</a></li>
+</ul>
+</nav>
+<main>
 <h1>hackers&amp;wizards Dokumente: Muster</h1>
 <p>Jeder Dokumenttyp aus <code>@hackersandwizards/documents</code>, mit erfundenen Daten. Jeder Betrag ist ein Platzhalter. Das Gate baut diese Seiten neu und vergleicht sie.</p>
-<ul>
-<li><a href="angebot.html">Angebot</a></li>
-<li><a href="quote.html">Quote (English)</a></li>
-<li><a href="angebot-ohne-preise.html">Angebot ohne Preise</a></li>
-<li><a href="honorarsaetze.html">Honorarsätze</a></li>
-<li><a href="leistungsnachweis-monat.html">Leistungsnachweis, ein Monat</a></li>
-<li><a href="leistungsnachweis-training.html">Leistungsnachweis, ein Training in Abschnitten</a></li>
-<li><a href="leistungsnachweis-pauschal.html">Leistungsnachweis, pauschal</a></li>
-<li><a href="certificate.html">Certificate (English)</a></li>
-<li><a href="zertifikat.html">Zertifikat</a></li>
-<li><a href="dokument.html">Dokument aus Markdown</a></li>
-</ul>
-<h2 id="angebot">Angebot</h2>
-<iframe src="angebot.html" title="Angebot" loading="lazy"></iframe>
-<h2 id="quote">Quote (English)</h2>
-<iframe src="quote.html" title="Quote (English)" loading="lazy"></iframe>
-<h2 id="angebot-ohne-preise">Angebot ohne Preise</h2>
-<iframe src="angebot-ohne-preise.html" title="Angebot ohne Preise" loading="lazy"></iframe>
-<h2 id="honorarsaetze">Honorarsätze</h2>
-<iframe src="honorarsaetze.html" title="Honorarsätze" loading="lazy"></iframe>
-<h2 id="leistungsnachweis-monat">Leistungsnachweis, ein Monat</h2>
-<iframe src="leistungsnachweis-monat.html" title="Leistungsnachweis, ein Monat" loading="lazy"></iframe>
-<h2 id="leistungsnachweis-training">Leistungsnachweis, ein Training in Abschnitten</h2>
-<iframe src="leistungsnachweis-training.html" title="Leistungsnachweis, ein Training in Abschnitten" loading="lazy"></iframe>
-<h2 id="leistungsnachweis-pauschal">Leistungsnachweis, pauschal</h2>
-<iframe src="leistungsnachweis-pauschal.html" title="Leistungsnachweis, pauschal" loading="lazy"></iframe>
-<h2 id="certificate">Certificate (English)</h2>
-<iframe src="certificate.html" title="Certificate (English)" loading="lazy"></iframe>
-<h2 id="zertifikat">Zertifikat</h2>
-<iframe src="zertifikat.html" title="Zertifikat" loading="lazy"></iframe>
-<h2 id="dokument">Dokument aus Markdown</h2>
-<iframe src="dokument.html" title="Dokument aus Markdown" loading="lazy"></iframe>
+<h2 id="angebot">Angebot <a href="angebot.html">einzeln öffnen</a></h2>
+<iframe src="angebot.html" title="Angebot" style="height: 891mm" loading="lazy"></iframe>
+<h2 id="quote">Quote (English) <a href="quote.html">einzeln öffnen</a></h2>
+<iframe src="quote.html" title="Quote (English)" style="height: 594mm" loading="lazy"></iframe>
+<h2 id="angebot-ohne-preise">Angebot ohne Preise <a href="angebot-ohne-preise.html">einzeln öffnen</a></h2>
+<iframe src="angebot-ohne-preise.html" title="Angebot ohne Preise" style="height: 891mm" loading="lazy"></iframe>
+<h2 id="honorarsaetze">Honorarsätze <a href="honorarsaetze.html">einzeln öffnen</a></h2>
+<iframe src="honorarsaetze.html" title="Honorarsätze" style="height: 297mm" loading="lazy"></iframe>
+<h2 id="leistungsnachweis-monat">Leistungsnachweis, ein Monat <a href="leistungsnachweis-monat.html">einzeln öffnen</a></h2>
+<iframe src="leistungsnachweis-monat.html" title="Leistungsnachweis, ein Monat" style="height: 297mm" loading="lazy"></iframe>
+<h2 id="leistungsnachweis-training">Leistungsnachweis, ein Training in Abschnitten <a href="leistungsnachweis-training.html">einzeln öffnen</a></h2>
+<iframe src="leistungsnachweis-training.html" title="Leistungsnachweis, ein Training in Abschnitten" style="height: 297mm" loading="lazy"></iframe>
+<h2 id="leistungsnachweis-pauschal">Leistungsnachweis, pauschal <a href="leistungsnachweis-pauschal.html">einzeln öffnen</a></h2>
+<iframe src="leistungsnachweis-pauschal.html" title="Leistungsnachweis, pauschal" style="height: 297mm" loading="lazy"></iframe>
+<h2 id="certificate">Certificate (English) <a href="certificate.html">einzeln öffnen</a></h2>
+<iframe src="certificate.html" title="Certificate (English)" style="height: 297mm" loading="lazy"></iframe>
+<h2 id="zertifikat">Zertifikat <a href="zertifikat.html">einzeln öffnen</a></h2>
+<iframe src="zertifikat.html" title="Zertifikat" style="height: 297mm" loading="lazy"></iframe>
+<h2 id="dokument">Dokument aus Markdown <a href="dokument.html">einzeln öffnen</a></h2>
+<iframe src="dokument.html" title="Dokument aus Markdown" style="height: 297mm" loading="lazy"></iframe>
+</main>
+</div>
 </body>
 </html>
