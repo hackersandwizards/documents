@@ -7,16 +7,15 @@ HTML to PDF with headless Chrome (`scripts/render-pdf.ts`). Company OS and the t
 and keep what fills a document: the props, the Markdown reading, the callers. The reasoning is in
 os `docs/tracking/2026-10-31-brand-kit-slides-docs.md`.
 
-This repo stays private on GitHub (`github.com/hackersandwizards/documents`, team `trainers` read,
-as `brand`). Consumers install it as a Git dependency pinned to a tag,
-`git+ssh://git@github.com/hackersandwizards/documents.git#v<version>`. `"private": true` stays:
-nothing is ever published. A release is a tag `v<version>` matching `package.json`. Nothing here
-writes into another repo.
+This repo is public on GitHub (`github.com/hackersandwizards/documents`), its history included.
+Consumers install it as a Git dependency pinned to a tag,
+`git+https://github.com/hackersandwizards/documents.git#v<version>`, which needs no GitHub access.
+`"private": true` stays: nothing is ever published to a registry. A release is a tag `v<version>`
+matching `package.json`. Nothing here writes into another repo.
 
-**External trainers can read this whole repo, its history included**, because the trainer hub
-installs it. Nothing goes in that a trainer may not see: no client document, price, rate, discount,
-client term, personal data or secret. Every rate or term is a prop; the samples are fictitious and
-every euro figure in them is a placeholder.
+**Anyone can read this whole repo, its history included.** Nothing goes in that may not be public:
+no client document, price, rate, discount, client term, personal data or secret. Every rate or term
+is a prop; the samples are fictitious and every euro figure in them is a placeholder.
 
 ## Layout
 

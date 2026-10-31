@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@hackersandwizards/brand": "git+ssh://git@github.com/hackersandwizards/brand.git#v0.10.0",
+    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v0.10.1",
     "@types/bun": "1.4.4",
     "astro": "7.4.4",
     "eslint": "10.14.0",

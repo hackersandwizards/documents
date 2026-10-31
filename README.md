@@ -1,11 +1,11 @@
 # @hackersandwizards/documents
 
-The hackers&wizards document engine as one private package: the document base, every document
+The hackers&wizards document engine as one package: the document base, every document
 component, composing a component to standalone HTML and rendering it to PDF with headless Chrome.
 Company OS and the trainer hub install it and keep what fills their documents.
 
-Maintainer: Benedikt Stemmildt. Trainers can read the whole repo, its history included, so nothing
-goes in that a trainer may not see.
+Maintainer: Benedikt Stemmildt. The repo is public, its history included, so nothing goes in that
+may not be public.
 
 The specimen shows every document type with invented data: open `specimen/index.html` after
 `bun install`.
@@ -14,14 +14,11 @@ The specimen shows every document type with invented data: open `specimen/index.
 
 Add the dependency in exactly this form, pinned to the newest tag
 (`git ls-remote --tags https://github.com/hackersandwizards/documents.git` lists them), next to
-`@hackersandwizards/brand`, whose tokens, faces and logos the documents use. Your machine needs
-GitHub read access to both repos. Bun rewrites `github:` and `git+https://` to GitHub's tarball
-API, which answers 404 for a private repo; the `git+ssh://` form clones through git. Without access
-Bun stops at `InstallFailed cloning repository for @hackersandwizards/documents` and names no
-cause.
+`@hackersandwizards/brand`, whose tokens, faces and logos the documents use. Both repos are public:
+Bun fetches the `git+https://` form through GitHub's tarball API without any GitHub access.
 
 ```json
-"@hackersandwizards/documents": "git+ssh://git@github.com/hackersandwizards/documents.git#v<version>"
+"@hackersandwizards/documents": "git+https://github.com/hackersandwizards/documents.git#v<version>"
 ```
 
 | Import or command                                         | What                                                                  |
