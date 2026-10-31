@@ -91,7 +91,8 @@ function readDecisionList(file: string): Record<string, Row[]> {
   );
   const head = /^window\.(?:DECISION_REPOS\[("[^"\n]+"|'[^'\n]+')\]|DECISION_AREAS)\s*=/gm;
   const heads = [...src.matchAll(head)];
-  if (src.slice(0, heads[0]?.index ?? src.length).trim()) throw new Error("unexpected code before the first assignment");
+  if (src.slice(0, heads[0]?.index ?? src.length).trim())
+    throw new Error("unexpected code before the first assignment");
   const repos: Record<string, Row[]> = {};
   heads.forEach((m, i) => {
     const literal = src.slice(m.index + m[0].length, heads[i + 1]?.index ?? src.length).trim();
@@ -297,7 +298,10 @@ function hubBrandCss() {
   const faces = readFileSync(at("print.css"), "utf8").match(/@font-face\s*{[^}]*}/g);
   if (!faces) throw new Error("brand print.css: no @font-face");
   const inline = (face: string) =>
-    face.replace(/url\("fonts\/([^"]+)"\)/g, (_, f) => `url(data:font/woff2;base64,${readFileSync(at(`fonts/${f}`)).toString("base64")})`);
+    face.replace(
+      /url\("fonts\/([^"]+)"\)/g,
+      (_, f) => `url(data:font/woff2;base64,${readFileSync(at(`fonts/${f}`)).toString("base64")})`,
+    );
   return [readFileSync(at("tokens.root.css"), "utf8"), ...faces.map(inline)].join("\n");
 }
 
