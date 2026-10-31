@@ -86,12 +86,13 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
       var(--color-bg) padding-box;
   }
 
-  /* The lockup, its wordmark at the print wordmark's height (the lockup's box is 1489 units, the
-     wordmark's 952); the imprint lines sit under it. The box is the wizard's, whose centre lies
-     7.8% of the box (--logo-wizard-lift) above the wordmark's centre line, so "GmbH" moves down by
-     that share to centre on the letters. */
+  /* The lockup at the print logo's height, the header row's mark, which sets its wordmark at 952 of
+     the lockup's 1489 units, 1.25 times the print wordmark: at the print wordmark's own height the
+     letters were hard to read at 80% zoom. The imprint lines sit under it. The box is the wizard's,
+     whose centre lies 7.8% of the box (--logo-wizard-lift) above the wordmark's centre line, so
+     "GmbH" moves down by that share to centre on the letters. */
   .brand {
-    --lockup-height: calc(var(--print-wordmark) * 1489 / 952);
+    --lockup-height: var(--print-logo);
     display: block;
   }
 
