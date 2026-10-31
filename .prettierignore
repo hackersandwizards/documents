@@ -1,0 +1,9 @@
+# The document base and components moved byte-exact from brand, and the generated specimen: never reformat.
+document.css
+components/
+specimen/
+.claude/
+.agents/
+.githooks/
+node_modules/
+bun.lock

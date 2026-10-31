@@ -1,25 +1,17 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { getViteConfig } from "astro/config";
-import { createServer, type ViteDevServer } from "vite";
-import { ROOT } from "../scripts/git";
+import { join, resolve } from "node:path";
+import { openComposer } from "../scripts/compose";
+import { chromeBinary, documentCss } from "../scripts/render-pdf";
 
-// DocCertificate printed by headless Chrome, as os's generator prints it: every case fits one A4
-// page with nothing past the content box, and content no fit step can hold prints a second page,
+// DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
+// fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
 // which the generator refuses. The cases are the worst found across os's certificate ledger and
 // curricula on 2026-10-29 (866 credentials: up to 14 topics, topics up to 120 characters, names
 // wrapping onto two lines), with invented names.
-const chrome =
-  process.env.CHROME_BINARY ??
-  [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "/usr/bin/chromium",
-    "/usr/bin/google-chrome",
-  ].find((path) => existsSync(path));
+const chrome = chromeBinary();
 
 const foundations = [
   "How LLMs and coding agents work in practice",
@@ -128,57 +120,23 @@ const overflowing = certificate({
   topics: [...longTopics, longTopics[0], longTopics[2]],
 });
 
-// The document base as os bakes it: imports inlined, faces as data URIs.
-function inlineDocumentCss(path: string): string {
-  const dir = dirname(path);
-  return readFileSync(path, "utf8")
-    .replace(/@import "@hackersandwizards\/brand\/([^"]+)";/g, (_, file: string) =>
-      inlineDocumentCss(join(ROOT, "tokens", file)),
-    )
-    .replace(/@theme\s*\{/g, ":root {")
-    .replace(
-      /url\("(fonts\/[^"]+)"\)/g,
-      (_, file: string) =>
-        `url(data:font/woff2;base64,${readFileSync(join(dir, file)).toString("base64")})`,
-    );
-}
-
-let server: ViteDevServer;
+const ROOT = resolve(import.meta.dir, "..");
+let composer: Awaited<ReturnType<typeof openComposer>>;
 let dir: string;
 beforeAll(async () => {
-  const config = await getViteConfig(
-    {
-      root: ROOT,
-      cacheDir: join(ROOT, "node_modules/.vite-test"),
-      appType: "custom",
-      logLevel: "error",
-      server: { middlewareMode: true, hmr: false, watch: null },
-      optimizeDeps: { noDiscovery: true, include: [] },
-    },
-    { root: ROOT, configFile: false, logLevel: "silent", devToolbar: { enabled: false } },
-  )({ command: "serve", mode: "development" });
-  server = await createServer({ ...config, configFile: false });
+  composer = await openComposer(ROOT);
   dir = mkdtempSync(join(tmpdir(), "certificate-fit-"));
 });
-afterAll(() => {
-  server?.close();
+afterAll(async () => {
+  await composer?.close();
   rmSync(dir, { recursive: true, force: true });
 });
 
 /** The case printed to PDF: its page count, and how far its content runs past the content box. */
 async function printCertificate(props: Record<string, unknown>) {
   if (!chrome) throw new Error("Chrome or Chromium is required; set CHROME_BINARY");
-  const { experimental_AstroContainer } = await server.ssrLoadModule("astro/container");
-  const component = (await server.ssrLoadModule("/document/components/DocCertificate.astro"))
-    .default;
-  const container = await experimental_AstroContainer.create();
-  const body = await container.renderToString(component, { props });
-  const styles = [...server.moduleGraph.idToModuleMap.keys()].filter((id) =>
-    id.includes("DocCertificate.astro?astro&type=style"),
-  );
-  const css: string[] = [];
-  for (const id of styles)
-    css.push((await server.ssrLoadModule(id.replace("&lang.css", "&inline&lang.css"))).default);
+  const body = await composer.render("DocCertificate", props);
+  const css = await composer.styles();
   // Runs after the component's own fit, which waits on the same promise.
   const probe = `<script>document.fonts.ready.then(() => {
     const cert = document.querySelector(".certificate");
@@ -191,9 +149,7 @@ async function printCertificate(props: Record<string, unknown>) {
     document.body.append(pre);
   });</script>`;
   const html = (withProbe: boolean) =>
-    `<!doctype html><html lang="${props.lang}"><head><meta charset="utf-8"><style>${inlineDocumentCss(
-      join(ROOT, "document/document.css"),
-    )}</style><style>${css.join("\n")}</style></head><body>${body.replace(/^<!DOCTYPE html>/i, "")}${
+    `<!doctype html><html lang="${props.lang}"><head><meta charset="utf-8"><style>${documentCss()}</style><style>${css}</style></head><body>${body}${
       withProbe ? probe : ""
     }</body></html>`;
   const page = join(dir, "certificate.html");
