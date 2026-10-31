@@ -51,13 +51,10 @@
   --print-rule-accent: 3pt;
   --print-card-pad: 14pt;
   --print-chip-pad: 2pt 7pt;
-  /* The list marker: the website's 6px square with a 2px brand corner (patterns.css). On paper
-     a 2pt corner on 6pt read as a rounded dot, which Benedikt rejected (2026-10-28), so the
-     corner is a hint, 1pt, drawn in the marker image under ul li, and it reads as a square. */
+  /* The list marker and the section label's swatch: squares, as every mark too small for the
+     brand corner at its full value (the website's patterns.css). */
   --print-bullet: 6pt;
   --print-swatch: 8pt;
-  /* The section label's swatch: the list marker's square at 8pt, its corner a hint. */
-  --print-swatch-corner: 1.3pt 0;
   --print-row: 56pt;
   --print-logo: 28pt;
   --print-logo-gap: 7pt;
@@ -303,7 +300,7 @@ h4 {
 }
 
 /* Section label: TrainingList.astro's group title, the h4 role's size in mono 600 capitals,
-   0.04em apart, in ink, after a teal swatch with the brand corner. */
+   0.04em apart, in ink, after a teal square. */
 .section-label {
   display: flex;
   align-items: center;
@@ -322,7 +319,6 @@ h4 {
   width: var(--print-swatch);
   height: var(--print-swatch);
   flex: none;
-  border-radius: var(--print-swatch-corner);
   background: var(--teal);
 }
 
@@ -407,12 +403,12 @@ ul {
    to item. Its middle sits on the middle of the first line's cap height, the website's target
    (patterns.css). By Inter's metrics that is 0.5lh from the line top; the glyphs render 0.09em
    higher, so the offset is measured: within 1px at 4x on quote, rate card, briefing and
-   print-pdf output (2026-10-28). The image is the 6pt square with its 1pt brand corner in
-   --color-teal (#1a7285), which a data URI cannot read from a variable. */
+   print-pdf output (2026-10-28). The image is the 6pt square in --color-teal (#1a7285), which a
+   data URI cannot read from a variable. */
 ul li {
   --li-lift: 0pt;
   padding: 1pt 0 1pt 12.5pt;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'%3E%3Cpath fill='%231a7285' d='M1 0H6V5A1 1 0 0 1 5 6H0V1A1 1 0 0 1 1 0Z'/%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'%3E%3Cpath fill='%231a7285' d='M0 0H6V6H0Z'/%3E%3C/svg%3E")
     no-repeat 0.5pt calc(1pt + 0.5lh - 0.09em - var(--li-lift) - var(--print-bullet) / 2) /
     var(--print-bullet) var(--print-bullet);
 }

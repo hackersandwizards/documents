@@ -1,7 +1,6 @@
 ---
 // A section's head, kept with what follows: an optional section label (TrainingList.astro's group
-// title, the h4 role's size in mono 600 capitals after a teal swatch with the brand corner), then
-// the h2.
+// title, the h4 role's size in mono 600 capitals after a teal square), then the h2.
 interface Props {
   label?: string;
   title: string;
@@ -43,7 +42,6 @@ const { label, title } = Astro.props;
     width: var(--print-swatch);
     height: var(--print-swatch);
     flex: none;
-    border-radius: var(--print-swatch-corner);
     background: var(--teal);
   }
 </style>
