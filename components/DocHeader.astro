@@ -1,9 +1,8 @@
 ---
 // The document header, the twin of the website's Nav.astro: a bar in the page tint across the
-// paper, the gradient strip on top, a rule under it, the brand left and the document tag right.
-// The logos are this package's own, inlined as data URIs, so the header renders in any app.
-import icon from "../../logos/emoji-logo-short-quote.png?inline";
-import wordmarkSvg from "../../logos/wordmark.svg?raw";
+// paper, the gradient strip on top, a rule under it, the lockup left and the document tag right.
+// The lockup is this package's own, inlined as a data URI, so the header renders in any app.
+import lockupSvg from "../../logos/lockup.svg?raw";
 
 interface Props {
   /** The document kind in the tag, e.g. "Honorarsätze". */
@@ -30,19 +29,16 @@ const imprintLines = {
     "AG Hamburg HRB 198840, VAT ID DE463065921",
   ],
 }[lang];
-// Base64 rather than Vite's URL-encoded SVG inline. Set as HTML, so the base's `.wordmark` rule
-// sizes it, not this component's scoped one.
-const wordmark = `<img class="wordmark" src="data:image/svg+xml;base64,${Buffer.from(wordmarkSvg).toString("base64")}" alt="hackers&amp;wizards" />`;
+// Base64 rather than Vite's URL-encoded SVG inline.
+const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("base64")}`;
 ---
 
 <header class="doc-header">
   <div class="brand">
-    <img src={icon} alt="" />
-    <div>
-      <div class="brand-name">
-        <Fragment set:html={wordmark} />
-        {legal && <span class="legal">GmbH</span>}
-      </div>
+    <div class="brand-name">
+      <img src={lockup} alt="hackers&wizards" />
+      {legal && <span class="legal">GmbH</span>}
+    </div>
       {legal && imprint && (
         <div class="company-meta">
           {imprintLines.map((line) => (
@@ -54,7 +50,6 @@ const wordmark = `<img class="wordmark" src="data:image/svg+xml;base64,${Buffer.
           <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a>
         </div>
       )}
-    </div>
   </div>
   <div class="doc-meta">
     <span class="doc-tag">{kind}</span>
@@ -91,39 +86,33 @@ const wordmark = `<img class="wordmark" src="data:image/svg+xml;base64,${Buffer.
       var(--color-bg) padding-box;
   }
 
-  /* The wizard beside the pixel wordmark, no line under it. The wordmark's box is centred on its
-     letters, so the wizard and "GmbH" centre on the text. The icon sits beside the wordmark, never
-     centred on the imprint lines under it. */
+  /* The lockup, its wordmark at the print wordmark's height (the lockup's box is 1489 units, the
+     wordmark's 952); the imprint lines sit under it. The box is the wizard's, whose centre lies
+     7.8% of the box (--logo-wizard-lift) above the wordmark's centre line, so "GmbH" moves down by
+     that share to centre on the letters. */
   .brand {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--print-logo-gap);
-  }
-
-  .brand img {
-    width: var(--print-logo);
-    height: var(--print-logo);
-    flex: none;
-    object-fit: contain;
-    translate: 0 var(--logo-wizard-lift);
+    --lockup-height: calc(var(--print-wordmark) * 1489 / 952);
+    display: block;
   }
 
   .brand-name {
-    display: inline-flex;
-    min-height: var(--print-logo);
+    display: flex;
     align-items: center;
     gap: var(--print-wordmark-gap);
     font: var(--role-h4);
     line-height: 1;
   }
 
-  .brand .brand-name .wordmark {
+  .brand-name img {
     width: auto;
-    height: var(--print-wordmark);
+    height: var(--lockup-height);
+    flex: none;
+    translate: none;
   }
 
   .legal {
     color: var(--ink);
+    translate: 0 calc(var(--lockup-height) * 0.078);
   }
 
   .company-meta {
