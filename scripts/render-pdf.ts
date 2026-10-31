@@ -7,6 +7,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
+// A path, not `new URL(..., import.meta.url)`: under a DOM test environment such as happy-dom the
+// global URL is the DOM's, which fileURLToPath rejects.
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** The one owner of the headless-Chrome flag set, browser discovery and the document base, for every h&w document PDF. */
 
@@ -119,7 +122,7 @@ export async function renderPdf(
  * that names it, so the HTML it lands in renders anywhere.
  */
 export function documentCss(): string {
-  const css = inlineCss(fileURLToPath(new URL("../document.css", import.meta.url)));
+  const css = inlineCss(join(HERE, "../document.css"));
   // The HTML parser ends a style element at this text even inside a CSS comment.
   if (/<\/style/i.test(css)) throw new Error("document.css must not contain </style");
   return css;
@@ -176,11 +179,7 @@ export async function composeDocument(
     const output = join(dir, "document.html");
     writeFileSync(input, JSON.stringify(props));
     try {
-      await execFileAsync(
-        "bun",
-        [fileURLToPath(new URL("./compose.ts", import.meta.url)), name, input, output],
-        { cwd },
-      );
+      await execFileAsync("bun", [join(HERE, "compose.ts"), name, input, output], { cwd });
     } catch (error) {
       const stderr = (error as { stderr?: string }).stderr;
       throw new Error(`Composing ${name} failed: ${stderr || (error as Error).message}`, {

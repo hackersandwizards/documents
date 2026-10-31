@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getViteConfig } from "astro/config";
 import { createServer } from "vite";
@@ -41,7 +41,7 @@ export async function openComposer(root = process.cwd()) {
   const container = await experimental_AstroContainer.create();
   return {
     async render(name: string, props: object, slots: Record<string, string> = {}) {
-      const path = fileURLToPath(new URL(`../components/${name}.astro`, import.meta.url));
+      const path = join(dirname(fileURLToPath(import.meta.url)), `../components/${name}.astro`);
       const component = (await server.ssrLoadModule(path)).default;
       const html: string = await container.renderToString(component, { props, slots });
       return html.replace(/^<!DOCTYPE html>/i, "");
