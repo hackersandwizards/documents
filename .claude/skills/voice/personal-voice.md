@@ -12,6 +12,9 @@ What leads and the person section hold where that mail cannot be reached.
 
 - Opener: `Moin <Vorname>,`. Two recipients: `Moin ihr beiden,` or `Moin {Name}, moin {Name},`.
   Group: `Moin zusammen,`. English: `Hi <Vorname>,`, and `Hi everyone,` for a group.
+- First word after the opener's comma: lowercase in German (`Moin <Vorname>,` / `danke dir`),
+  capitalized in English, British and American alike (`Hi <Vorname>,` / `Thanks`). The body's
+  language decides, not the opener's: `Moin <Vorname>,` over an English body takes a capital.
 - Sign-off: `Liebe Grüße` + newline + the sign-off name, no comma. English: `Kind regards,` +
   newline + the sign-off name, on every channel, LinkedIn included. One form per language: a
   thank-you goes in the body, since one in the sign-off (`Danke und LG`) reads as an order. A seasonal greeting card signs with the
