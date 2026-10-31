@@ -1,14 +1,10 @@
 {
   "mcpServers": {
     "chrome-devtools": {
-      "command": "bunx",
+      "command": "sh",
       "args": [
-        "chrome-devtools-mcp@latest",
-        "--headless",
-        "--isolated",
-        "--viewport=1920x1080",
-        "--no-performance-crux",
-        "--no-usage-statistics"
+        "-c",
+        "c=\"${PUPPETEER_CACHE_DIR:-$HOME/.cache/puppeteer}\"; e=$(ls -d \"$c\"/chrome/*/chrome-*/\"Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing\" \"$c\"/chrome/*/chrome-linux64/chrome 2>/dev/null | sort -V | tail -1); [ -n \"$e\" ] || e=$(bunx @puppeteer/browsers install chrome@stable --path \"$c\" --format \"{{path}}\" </dev/null) || exit 1; exec bunx chrome-devtools-mcp@latest --headless --isolated --viewport=1920x1080 --no-performance-crux --no-usage-statistics --executablePath \"$e\""
       ]
     }
   }
