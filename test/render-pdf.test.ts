@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -90,6 +90,52 @@ describe("renderPdf profile", () => {
     expect(profile).toStartWith(tmpdir());
     expect(lines).toContain(`exists ${profile}`);
     expect(existsSync(profile!)).toBe(false);
+  });
+});
+
+describe("renderPdf with an empty Chrome cache", () => {
+  it("installs Chrome without blocking the process and retries an install that failed", async () => {
+    // A child process, since this file's module already holds the real Chrome. Its `bunx` stands
+    // in for @puppeteer/browsers: it fails while the flag file exists, then prints a fake Chrome.
+    const bin = join(dir, "install-bin");
+    mkdirSync(bin);
+    const flag = join(dir, "install-fails");
+    const chrome = join(dir, "install-chrome.sh");
+    writeFileSync(flag, "");
+    writeFileSync(
+      chrome,
+      `#!/bin/sh\nfor a in "$@"; do case "$a" in --print-to-pdf=*) echo "%PDF-1.7" > "\${a#*=}";; esac; done\n`,
+      { mode: 0o755 },
+    );
+    writeFileSync(
+      join(bin, "bunx"),
+      `#!/bin/sh\nsleep 0.5\n[ -e "${flag}" ] && exit 1\necho "${chrome}"\n`,
+      { mode: 0o755 },
+    );
+    writeFileSync(join(dir, "install.html"), "<!doctype html><html><body>x</body></html>");
+    const script = `
+      import { unlinkSync } from "node:fs";
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      let ticks = 0;
+      const timer = setInterval(() => ticks++, 50);
+      const render = () => renderPdf(${JSON.stringify(join(dir, "install.html"))}, ${JSON.stringify(join(dir, "install.pdf"))}).then(() => "ok", (e) => e.message);
+      const failed = await render();
+      unlinkSync(${JSON.stringify(flag)});
+      const retried = await render();
+      clearInterval(timer);
+      console.log(JSON.stringify({ failed, retried, ticks }));`;
+    const env: Record<string, string | undefined> = {
+      ...process.env,
+      PATH: `${bin}:${process.env.PATH}`,
+      CHROME_BINARY: undefined,
+      PUPPETEER_CACHE_DIR: join(dir, "empty-cache"),
+    };
+    const child = Bun.spawn([process.execPath, "-e", script], { env, stderr: "inherit" });
+    const result = JSON.parse(await new Response(child.stdout).text());
+    expect(result.failed).toContain("Chrome for Testing is required");
+    expect(result.retried).toBe("ok");
+    // Two installs of 0.5 s each: a blocking install leaves the 50 ms timer near zero.
+    expect(result.ticks).toBeGreaterThan(10);
   });
 });
 

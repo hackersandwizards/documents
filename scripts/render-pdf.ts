@@ -14,27 +14,58 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** The one owner of the headless-Chrome flag set, browser discovery and the document base, for every h&w document PDF. */
 
-// Memoized: the cache scan, and a first install, block, and renderPdf runs on the SSR request path.
-let resolvedChrome: { path: string | undefined } | undefined;
-
-export function chromeBinary(): string | undefined {
-  if (process.env.CHROME_BINARY) return process.env.CHROME_BINARY;
-  return (resolvedChrome ??= { path: discoverChrome() }).path;
-}
+// Only a found Chrome is kept: a failed install is tried again by the next call.
+let resolvedChrome: string | undefined;
+let installingChrome: Promise<string | undefined> | undefined;
+const chromeCache = () => process.env.PUPPETEER_CACHE_DIR ?? join(homedir(), ".cache", "puppeteer");
+const installArgs = (cache: string) => [
+  "@puppeteer/browsers",
+  "install",
+  "chrome@stable",
+  "--path",
+  cache,
+  "--format",
+  "{{path}}",
+];
 
 /**
  * Chrome for Testing, the build puppeteer and playwright install, never the user's own Chrome: a
  * headless instance from `/Applications/Google Chrome.app` made macOS activate it instead of opening
- * the user's window (shown 2026-10-31). The newest build in puppeteer's cache, else installed there.
+ * the user's window (shown 2026-10-31). The newest build in puppeteer's cache, else installed there,
+ * blocking: for a command. renderPdf installs without blocking, since it runs on the SSR request path.
  */
-function discoverChrome(): string | undefined {
-  const cache = process.env.PUPPETEER_CACHE_DIR ?? join(homedir(), ".cache", "puppeteer");
+export function chromeBinary(): string | undefined {
+  if (process.env.CHROME_BINARY) return process.env.CHROME_BINARY;
+  resolvedChrome ??= cachedChrome(chromeCache());
+  if (resolvedChrome) return resolvedChrome;
+  try {
+    const out = execFileSync("bunx", installArgs(chromeCache()), { encoding: "utf-8" }).trim();
+    return (resolvedChrome = out || undefined);
+  } catch {
+    return undefined;
+  }
+}
+
+async function chromeBinaryAsync(): Promise<string | undefined> {
+  if (process.env.CHROME_BINARY) return process.env.CHROME_BINARY;
+  resolvedChrome ??= cachedChrome(chromeCache());
+  if (resolvedChrome) return resolvedChrome;
+  installingChrome ??= execFileAsync("bunx", installArgs(chromeCache()), { encoding: "utf-8" })
+    .then(
+      ({ stdout }) => (resolvedChrome = stdout.trim() || undefined),
+      () => undefined,
+    )
+    .finally(() => (installingChrome = undefined));
+  return installingChrome;
+}
+
+function cachedChrome(cache: string): string | undefined {
   const builds = join(cache, "chrome");
   const exe =
     process.platform === "darwin"
       ? "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
       : "chrome";
-  const found = (existsSync(builds) ? readdirSync(builds) : [])
+  return (existsSync(builds) ? readdirSync(builds) : [])
     .sort((a, b) => b.localeCompare(a, "en", { numeric: true }))
     .flatMap((build) =>
       readdirSync(join(builds, build))
@@ -42,13 +73,6 @@ function discoverChrome(): string | undefined {
         .map((dir) => join(builds, build, dir, exe)),
     )
     .find((path) => existsSync(path));
-  if (found) return found;
-  try {
-    const args = ["@puppeteer/browsers", "install", "chrome@stable", "--path", cache];
-    return execFileSync("bunx", [...args, "--format", "{{path}}"], { encoding: "utf-8" }).trim();
-  } catch {
-    return undefined;
-  }
 }
 
 /**
@@ -94,7 +118,7 @@ export async function renderPdf(
   pdfPath: string,
   options: { timeoutMs?: number } = {},
 ): Promise<void> {
-  const chrome = chromeBinary();
+  const chrome = await chromeBinaryAsync();
   if (!chrome) {
     throw new Error(
       "Chrome for Testing is required to render PDFs: bunx @puppeteer/browsers install chrome@stable --path ~/.cache/puppeteer, or set CHROME_BINARY.",
