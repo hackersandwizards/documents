@@ -73,6 +73,9 @@ mutate live systems or require new approval.
 
 ## Adding or cutting a line
 
+A new or changed line rests on a person's message or an observed failure, named in the commit
+message. A line with neither is not written.
+
 A line obliging an agent to report a value is incomplete until it names the field the consumer
 joins on. Open the consuming artifact and carry its key back into the line.
 

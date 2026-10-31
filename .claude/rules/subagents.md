@@ -18,6 +18,9 @@
   Launch ready work within the machine's free capacity, nested and headless jobs included, and
   queue the rest. A whole test gate, a browser suite or a load run runs one at a time. Fan out as
   parallel Agent calls, never through the Workflow tool.
+- A delegate's Skill tool runs in the session's start folder whatever it `cd`s to: a review of
+  another repository runs `claude -p` inside that repository, and its output names that
+  repository's files.
 - Before fanning out a third delegate, or leaving a session running for the person's return, load
   `parallel-session`.
 - Delegates in one session share its scratchpad. Prefix every scratch file with its run, and fetch
