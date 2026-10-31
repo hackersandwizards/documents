@@ -97,12 +97,15 @@ export async function renderPdf(
   );
   // Chrome can exit 0 without writing, so a PDF left from an earlier render must not pass the check below.
   rmSync(pdfPath, { force: true });
+  // Its own profile, so a render never runs inside, or locks, the user's own Chrome profile.
+  const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
   try {
     await execFileAsync(
       chrome,
       [
         "--headless",
         "--disable-gpu",
+        `--user-data-dir=${profile}`,
         "--no-pdf-header-footer",
         "--print-background",
         // Chrome tags the PDF without a flag; only the outline needs one.
@@ -114,6 +117,7 @@ export async function renderPdf(
     );
   } finally {
     rmSync(printPath, { force: true });
+    rmSync(profile, { recursive: true, force: true });
   }
   if (!existsSync(pdfPath)) throw new Error(`Chrome produced no PDF at ${pdfPath}`);
 }

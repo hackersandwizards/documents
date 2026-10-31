@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -65,6 +65,31 @@ describe("renderPdf without output", () => {
     await expect(renderPdf(join(dir, "stale.html"), join(dir, "stale.pdf"))).rejects.toThrow(
       "Chrome produced no PDF",
     );
+  });
+});
+
+describe("renderPdf profile", () => {
+  afterEach(() => {
+    delete process.env.CHROME_BINARY;
+  });
+
+  it("runs Chrome in its own temporary profile and removes it, so it never touches the user's Chrome", async () => {
+    // A stand-in Chrome that records its arguments, whether the profile exists, and writes the PDF.
+    const fake = join(dir, "fake-chrome.sh");
+    const log = join(dir, "fake-chrome.log");
+    writeFileSync(
+      fake,
+      `#!/bin/sh\nfor a in "$@"; do case "$a" in --user-data-dir=*) d="\${a#*=}"; [ -d "$d" ] && echo "exists $d" >> "${log}";; --print-to-pdf=*) echo "%PDF-1.7" > "\${a#*=}";; esac; echo "$a" >> "${log}"; done\n`,
+      { mode: 0o755 },
+    );
+    writeFileSync(join(dir, "profile.html"), "<!doctype html><html><body>x</body></html>");
+    process.env.CHROME_BINARY = fake;
+    await renderPdf(join(dir, "profile.html"), join(dir, "profile.pdf"));
+    const lines = readFileSync(log, "utf8").split("\n");
+    const profile = lines.find((l) => l.startsWith("--user-data-dir="))?.slice(16);
+    expect(profile).toStartWith(tmpdir());
+    expect(lines).toContain(`exists ${profile}`);
+    expect(existsSync(profile!)).toBe(false);
   });
 });
 
