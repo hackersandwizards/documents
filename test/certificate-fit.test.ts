@@ -134,7 +134,7 @@ afterAll(async () => {
 
 /** The case printed to PDF: its page count, and how far its content runs past the content box. */
 async function printCertificate(props: Record<string, unknown>) {
-  if (!chrome) throw new Error("Chrome or Chromium is required; set CHROME_BINARY");
+  if (!chrome) throw new Error("Chrome for Testing is required; set CHROME_BINARY");
   const body = await composer.render("DocCertificate", props);
   const css = await composer.styles();
   // Runs after the component's own fit, which waits on the same promise.
@@ -159,6 +159,8 @@ async function printCertificate(props: Record<string, unknown>) {
   const flags = [
     "--headless",
     "--disable-gpu",
+    "--use-mock-keychain",
+    "--password-store=basic",
     `--user-data-dir=${join(dir, "profile")}`,
     "--no-pdf-header-footer",
     "--print-background",

@@ -1,8 +1,8 @@
 import { execFile, execFileSync, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -14,7 +14,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** The one owner of the headless-Chrome flag set, browser discovery and the document base, for every h&w document PDF. */
 
-// Memoized: `which` is a blocking spawn and renderPdf runs on the SSR request path.
+// Memoized: the cache scan, and a first install, block, and renderPdf runs on the SSR request path.
 let resolvedChrome: { path: string | undefined } | undefined;
 
 export function chromeBinary(): string | undefined {
@@ -22,19 +22,33 @@ export function chromeBinary(): string | undefined {
   return (resolvedChrome ??= { path: discoverChrome() }).path;
 }
 
+/**
+ * Chrome for Testing, the build puppeteer and playwright install, never the user's own Chrome: a
+ * headless instance from `/Applications/Google Chrome.app` made macOS activate it instead of opening
+ * the user's window (shown 2026-10-31). The newest build in puppeteer's cache, else installed there.
+ */
 function discoverChrome(): string | undefined {
-  const installed = [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-  ].find((path) => existsSync(path));
-  if (installed) return installed;
-  for (const bin of ["chromium", "google-chrome"]) {
-    try {
-      const found = execFileSync("which", [bin], { encoding: "utf-8" }).trim();
-      if (found) return found;
-    } catch {}
+  const cache = process.env.PUPPETEER_CACHE_DIR ?? join(homedir(), ".cache", "puppeteer");
+  const builds = join(cache, "chrome");
+  const exe =
+    process.platform === "darwin"
+      ? "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+      : "chrome";
+  const found = (existsSync(builds) ? readdirSync(builds) : [])
+    .sort((a, b) => b.localeCompare(a, "en", { numeric: true }))
+    .flatMap((build) =>
+      readdirSync(join(builds, build))
+        .filter((dir) => dir.startsWith("chrome-"))
+        .map((dir) => join(builds, build, dir, exe)),
+    )
+    .find((path) => existsSync(path));
+  if (found) return found;
+  try {
+    const args = ["@puppeteer/browsers", "install", "chrome@stable", "--path", cache];
+    return execFileSync("bunx", [...args, "--format", "{{path}}"], { encoding: "utf-8" }).trim();
+  } catch {
+    return undefined;
   }
-  return undefined;
 }
 
 /**
@@ -83,7 +97,7 @@ export async function renderPdf(
   const chrome = chromeBinary();
   if (!chrome) {
     throw new Error(
-      "Chrome or Chromium is required to render PDFs. Install one, or set CHROME_BINARY.",
+      "Chrome for Testing is required to render PDFs: bunx @puppeteer/browsers install chrome@stable --path ~/.cache/puppeteer, or set CHROME_BINARY.",
     );
   }
   const html = readFileSync(htmlPath, "utf-8");
@@ -105,6 +119,9 @@ export async function renderPdf(
       [
         "--headless",
         "--disable-gpu",
+        // Chrome otherwise asks the macOS keychain for "Chromium Safe Storage", a dialog per launch.
+        "--use-mock-keychain",
+        "--password-store=basic",
         `--user-data-dir=${profile}`,
         "--no-pdf-header-footer",
         "--print-background",
