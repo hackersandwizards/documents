@@ -290,11 +290,7 @@ const stamp = new Date().toLocaleString("en-GB", {
 });
 const fetchAge = (ms: number) => {
   const h = Math.round((Date.now() - ms) / 3.6e6);
-  return h < 1
-    ? "under an hour ago"
-    : h < 48
-      ? `${h} h ago`
-      : `${Math.round(h / 24)} days ago`;
+  return h < 1 ? "under an hour ago" : h < 48 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
 };
 const sources = lists
   .map(({ path, key }) => {
