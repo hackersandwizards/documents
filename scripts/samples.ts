@@ -379,3 +379,115 @@ export const onepager = {
   <p class="legal">hackers&amp;wizards GmbH · Osterstraße 95 · 20259 Hamburg · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
 </div>`,
 };
+
+/** An attendee-feedback readout: invented responses for an invented team. */
+const ratings = (title: string, dist: number[], start = 1, group?: string) => {
+  const n = dist.reduce((a, b) => a + b, 0);
+  const mean = dist.reduce((sum, c, i) => sum + c * (start + i), 0) / n;
+  return { title, n, mean, start, end: start + dist.length - 1, dist, group };
+};
+export const surveyReadout = {
+  customerName: "Musterwerk AG",
+  training: "Agentic Engineering Training",
+  days: 2,
+  dateRange: "Training date 12 Nov 2026",
+  attendees: 12,
+  teams: 1,
+  counts: { all: 11, completed: 10 },
+  headline: ratings("How satisfied are you with the training overall?", [0, 0, 1, 4, 5]),
+  scales: [
+    ratings("The exercises fit our daily work.", [0, 1, 5, 4]),
+    ratings("The pace was right for me.", [0, 2, 6, 2]),
+    ratings("The trainer explained clearly.", [0, 0, 3, 7], 1, "Trainer"),
+    ratings("The trainer answered our questions.", [0, 0, 2, 8], 1, "Trainer"),
+    ratings("I feel confident using agents at work.", [0, 3, 5, 2], 1, "Confidence & application"),
+  ],
+  risks: [
+    { label: "Review effort grows", n: 5 },
+    { label: "Unclear rules in the team", n: 3 },
+    { label: "Tool access", n: 2 },
+  ],
+  noRisk: { label: "I do not see a major risk", n: 1 },
+  asked: { liked: "What did you like most?", improve: "What should we improve?" },
+  liked: [
+    "An invented answer: the exercises on a real codebase made the difference for me.",
+    "An invented answer: clear structure and room for questions.",
+    "An invented answer: the review loop.",
+  ],
+  improve: [
+    "An invented answer: more time for the second exercise.",
+    "An invented answer: a short summary at the end of each day.",
+  ],
+  readout: {
+    strengths: [
+      "Overall satisfaction (4.4)",
+      "The exercises fit our daily work. (3.3)",
+      "The trainer explained clearly. (3.7)",
+      "The trainer answered our questions. (3.8)",
+    ],
+    weak: ["I feel confident using agents at work. (2.9)"],
+    weakColors: ["var(--color-teal)"],
+    flags: ["Top perceived risk: Review effort grows (5×)"],
+  },
+};
+
+/** A preparation document for the attendees of an invented training. */
+export const preparation = {
+  lang: "de" as const,
+  title: "Vorbereitung Training: Musterwerk",
+  kind: "Vorbereitung",
+  meta: ["12. und 13. November 2026", "Musterwerk AG, Hamburg"],
+  eyebrow: "Agentic Engineering Training",
+  heading: "Vorbereitung für das Training",
+  note: {
+    label: "Gut vorbereitet",
+    html: `<p><strong>Einmal vorab, dann legen wir entspannt los.</strong> Spielt das Setup bis eine Woche vor dem Training einmal durch, dann bleibt Zeit für Fragen.</p>
+<p class="it-line"><span class="chip it-chip">Für eure IT</span>Dürft ihr nicht selbst installieren, gebt diese Seite an eure IT weiter.</p>`,
+  },
+  steps: [
+    {
+      title: "Werkzeuge prüfen",
+      html: `<p>Schaut, ob beides da ist: <code>node --version</code> und <code>git --version</code>.</p>
+<div class="grid-2">
+<div><span class="label">Windows</span><p class="small">In der PowerShell als Admin:</p><pre><code>choco install nodejs-lts git</code></pre></div>
+<div><span class="label">Mac</span><p class="small">Im Terminal:</p><pre><code>brew install node git</code></pre></div>
+</div>`,
+    },
+    {
+      title: "Beispielprojekt starten",
+      html: `<pre><code>git clone https://example.com/beispielprojekt.git
+cd beispielprojekt
+npm install
+npm run dev</code></pre>
+<p>Dann öffnet ihr <a href="http://localhost:3000">http://localhost:3000</a>.</p>`,
+    },
+    {
+      title: "Coding-Agent bereit",
+      html: `<p>Startet euren Coding-Agenten im Projektordner und stellt ihm eine Frage.</p>
+<p class="small muted">Beim ersten Start meldet ihr euch mit eurem Firmenzugang an.</p>`,
+    },
+  ],
+  closing: `<p>Bis bald, ich freue mich. <strong>Mara</strong> <span class="muted">· mara@example.com</span></p>`,
+};
+
+/** A delivery briefing as pandoc writes the Markdown: hard facts, soft facts, open items. */
+export const deliveryBriefingHtml = `<h1>Delivery Briefing: Musterwerk Training</h1>
+<p class="subtitle">What the trainer needs to know before the first day, from the records.</p>
+<h2>Hard facts</h2>
+<dl><dt>Dates</dt><dd>12 and 13 November 2026, 09:00 to 17:00</dd><dt>Place</dt><dd>On site, Hamburg</dd><dt>Group</dt><dd>12 developers, one team</dd><dt>Stack</dt><dd>TypeScript, a monorepo</dd></dl>
+<h2>Soft facts</h2>
+<ul><li>The team has used a coding agent for a few weeks, each person in their own way.</li><li>The team lead wants shared rules more than speed.</li></ul>
+<h2>What is special here</h2>
+<p>An invented paragraph: the exercises run on a copy of the team's codebase.</p>
+<h2>Open items</h2>
+<table><thead><tr><th>Item</th><th>Owner</th></tr></thead><tbody><tr><td>Licences for every attendee</td><td>Client</td></tr><tr><td>Room with a projector</td><td>Client</td></tr></tbody></table>`;
+
+/** A trainer briefing as the deal page's button builds it: English, the date under the tag. */
+export const trainerBriefingHtml = `<span class="eyebrow">Trainer Briefing</span>
+<h1>Musterwerk AG</h1>
+<h2>Hard Facts</h2>
+<p><strong>Location:</strong> On site, Hamburg<br /><strong>Language:</strong> German<br /><strong>Programming languages:</strong> TypeScript<br /><strong>Planned group size:</strong> 12</p>
+<h2>Training Content</h2>
+<p><strong>Tools:</strong> the team's own coding agent<br /><strong>Level:</strong> first weeks with agents</p>
+<h2>Open Decisions</h2>
+<ul><li>Which repository the exercises use</li></ul>`;

@@ -28,6 +28,7 @@ Bun fetches the `git+https://` form through GitHub's tarball API without any Git
 | `@hackersandwizards/documents/render-pdf`                 | `renderPdf`, `bakeDocumentCss`, `composeDocument`, `assertBrandFonts` |
 | `@hackersandwizards/documents/compose`                    | `openComposer`, `composePage`                                         |
 | `@hackersandwizards/documents/onepager`                   | `composeOnepager`: `DocOnepager` on the onepager's own stylesheet     |
+| `@hackersandwizards/documents/survey-readout`             | `composeSurveyReadout`: the attendee-feedback readout deck            |
 | `bun run documents-compose <Doc> <props.json> <out.html>` | one component with its props as standalone HTML                       |
 | `bun run documents-privacy [--deny <terms.txt>]`          | fails on private data in the package, and on each term of the file    |
 

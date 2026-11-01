@@ -6,14 +6,24 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composePage, escapeHtml, openComposer } from "./compose";
 import { composeOnepager } from "./onepager";
+import { composeSurveyReadout } from "./survey-readout";
 import * as s from "./samples";
 
 const ROOT = resolve(import.meta.dir, "..");
 const OUT = join(ROOT, "specimen");
 const BRAND = "../node_modules/@hackersandwizards/brand";
 
-// pages: the sheets the document prints on, so the overview's frame shows it whole.
-const PAGES: { file: string; title: string; component: string; props: object; pages?: number }[] = [
+// pages: the sheets the document prints on, so the overview's frame shows it whole. A page that is
+// no A4 document names its frame's size in `frame` and builds itself in `build`.
+const PAGES: {
+  file: string;
+  title: string;
+  component?: string;
+  props?: object;
+  pages?: number;
+  frame?: string;
+  build?: () => string;
+}[] = [
   { file: "angebot", pages: 3, title: "Angebot", component: "DocProposal", props: s.proposalDe },
   {
     file: "quote",
@@ -66,6 +76,40 @@ const PAGES: { file: string; title: string; component: string; props: object; pa
     title: "Onepager",
     component: "DocOnepager",
     props: s.onepager,
+  },
+  {
+    file: "vorbereitung",
+    title: "Vorbereitung",
+    component: "DocPreparation",
+    props: s.preparation,
+  },
+  {
+    file: "survey-readout",
+    title: "Survey Readout (English, slides)",
+    frame: "width: 1280px; height: 5208px",
+    build: () => composeSurveyReadout(s.surveyReadout, BRAND),
+  },
+  {
+    file: "delivery-briefing",
+    title: "Delivery Briefing",
+    component: "DocMarkdown",
+    props: {
+      title: "Delivery Briefing: Musterwerk Training",
+      kind: "Delivery Briefing",
+      html: s.deliveryBriefingHtml,
+    },
+  },
+  {
+    file: "trainer-briefing",
+    title: "Trainer Briefing (English, with meta)",
+    component: "DocMarkdown",
+    props: {
+      title: "Trainer Briefing — Musterwerk AG",
+      lang: "en",
+      kind: "Trainer Briefing",
+      meta: ["November 2, 2026"],
+      html: s.trainerBriefingHtml,
+    },
   },
   {
     file: "dokument",
@@ -142,7 +186,7 @@ ${pages.map((p) => `<li><a href="#${p.file}">${escapeHtml(p.title)}</a></li>`).j
 <main>
 <h1>hackers&amp;wizards Dokumente: Muster</h1>
 <p>Jeder Dokumenttyp aus <code>@hackersandwizards/documents</code>, mit erfundenen Daten. Jeder Betrag ist ein Platzhalter. Das Gate baut diese Seiten neu und vergleicht sie.</p>
-${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" style="height: ${(p.pages ?? 1) * 297}mm" loading="lazy"></iframe>`).join("\n")}
+${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" style="${p.frame ?? `height: ${(p.pages ?? 1) * 297}mm`}" loading="lazy"></iframe>`).join("\n")}
 </main>
 </div>
 </body>
@@ -167,14 +211,16 @@ export async function buildSpecimen(): Promise<Map<string, string>> {
     try {
       files.set(
         `${page.file}.html`,
-        page.component === "DocOnepager"
-          ? await composeOnepager(composer, s.onepager, BRAND, true)
-          : await composePage(
-              composer,
-              page.component,
-              page.props as Record<string, unknown>,
-              specimenBase,
-            ),
+        page.build
+          ? page.build()
+          : page.component === "DocOnepager"
+            ? await composeOnepager(composer, s.onepager, BRAND, true)
+            : await composePage(
+                composer,
+                page.component!,
+                page.props as Record<string, unknown>,
+                specimenBase,
+              ),
       );
     } finally {
       await composer.close();
@@ -185,7 +231,10 @@ export async function buildSpecimen(): Promise<Map<string, string>> {
 }
 
 if (import.meta.main) {
-  const covered = PAGES.reduce((all, p) => shown(p.component, all), new Set<string>());
+  const covered = PAGES.reduce(
+    (all, p) => (p.component ? shown(p.component, all) : all),
+    new Set<string>(),
+  );
   const missing = readdirSync(join(ROOT, "components"))
     .map((f) => f.replace(/\.astro$/, ""))
     .filter((c) => !covered.has(c));
