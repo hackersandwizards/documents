@@ -111,7 +111,7 @@ describe("scripts/compose.ts", () => {
       expect(deSample).not.toContain(english);
   });
 
-  it("composes a Markdown document: escaped kind, GmbH without the imprint, its own CSS", () => {
+  it("composes a Markdown document: escaped kind, the entity line without the imprint, its own CSS", () => {
     writeFileSync(
       join(dir, "md.json"),
       JSON.stringify({ kind: "A & B", legal: true, html: "<h1>T</h1>", css: ".x { color: red; }" }),
@@ -119,7 +119,8 @@ describe("scripts/compose.ts", () => {
     execFileSync("bun", [SCRIPT, "DocMarkdown", join(dir, "md.json"), join(dir, "md.html")]);
     const html = readFileSync(join(dir, "md.html"), "utf8");
     expect(html).toMatch(/<span class="doc-tag"[^>]*>A &amp; B<\/span>/);
-    expect(html).toMatch(/<span class="legal"[^>]*>GmbH<\/span>/);
+    expect(html).toContain("hackers&amp;wizards GmbH, Sitz Hamburg");
+    expect(html).not.toContain(">GmbH<");
     expect(html).not.toContain("Geschäftsführer");
     expect(html).toContain(".x { color: red; }");
     expect(html).toMatch(/<div class="doc-prose"[^>]*><h1>T<\/h1><\/div>/);

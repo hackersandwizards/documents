@@ -10,7 +10,7 @@ import { describe, expect, it } from "bun:test";
 const REMAINING = [
   // A component owns these; the base keeps them until no uncomposed template or Markdown render
   // (proposals, timesheet, certificate, briefing, NDA, print-pdf, the hub handout) uses them.
-  ...["doc-header", "brand", "brand-name", "wordmark", "legal", "company-meta", "doc-meta"],
+  ...["doc-header", "brand", "brand-name", "wordmark", "company-meta", "doc-meta"],
   ...["doc-tag", "eyebrow", "subtitle", "lead-grid", "prepared", "label", "detail", "num", "card"],
   // Not yet a component.
   ...["accent", "callout", "card-grid", "center", "chip", "grid-2", "keep", "meta", "muted"],

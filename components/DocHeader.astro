@@ -7,9 +7,11 @@ import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
 interface Props {
   /** The document kind in the tag, e.g. "Honorarsätze". */
   kind: string;
-  /** Adds "GmbH" and the imprint under the wordmark, for documents naming the legal entity. */
+  /** Names the legal entity and its seat under the wordmark, for documents h&w issues as the GmbH
+   * (§ 35a GmbHG puts legal form and seat on business letters, not on the logo). */
   legal?: boolean;
-  /** The imprint under a legal wordmark; a Markdown contract names the parties in its body. */
+  /** The rest of the imprint under the entity line; a Markdown contract names the parties in its
+   * body and keeps only the entity line. */
   imprint?: boolean;
   /** Lines under the tag, such as the date and the validity. */
   meta?: string[];
@@ -19,13 +21,15 @@ interface Props {
   href?: string;
 }
 const { kind, legal = false, imprint = legal, meta = [], lang = "de", href } = Astro.props;
-const imprintLines = {
+const [entity, ...imprintLines] = {
   de: [
+    "hackers&wizards GmbH, Sitz Hamburg",
     "Geschäftsführer: Benedikt Stemmildt & Stefan Munz",
     "Osterstraße 95, 20259 Hamburg",
     "AG Hamburg HRB 198840, USt-IdNr. DE463065921",
   ],
   en: [
+    "hackers&wizards GmbH, registered office Hamburg",
     "Managing Directors: Benedikt Stemmildt & Stefan Munz",
     "Osterstraße 95, 20259 Hamburg, Germany",
     "AG Hamburg HRB 198840, VAT ID DE463065921",
@@ -39,19 +43,24 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
   <div class="brand">
     <div class="brand-name">
       <img src={lockup} alt="hackers&wizards" />
-      {legal && <span class="legal">GmbH</span>}
     </div>
-      {legal && imprint && (
-        <div class="company-meta">
-          {imprintLines.map((line) => (
-            <>
-              {line}
-              <br />
-            </>
-          ))}
-          <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a>
-        </div>
-      )}
+    {legal && (
+      <div class="company-meta">
+        {entity}
+        {imprint && (
+          <>
+            {imprintLines.map((line) => (
+              <>
+                <br />
+                {line}
+              </>
+            ))}
+            <br />
+            <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a>
+          </>
+        )}
+      </div>
+    )}
   </div>
   <div class="doc-meta">
     <span class="doc-tag">{href ? <a href={href}>{kind}</a> : kind}</span>
@@ -90,9 +99,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
 
   /* The lockup at the print logo's height, the header row's mark, which sets its wordmark at 952 of
      the lockup's 1489 units, 1.25 times the print wordmark: at the print wordmark's own height the
-     letters were hard to read at 80% zoom. The imprint lines sit under it. The box is the wizard's,
-     whose centre lies 7.8% of the box (--logo-wizard-lift) above the wordmark's centre line, so
-     "GmbH" moves down by that share to centre on the letters. */
+     letters were hard to read at 80% zoom. The imprint lines sit under it. */
   .brand {
     --lockup-height: var(--print-logo);
     display: block;
@@ -100,10 +107,6 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
 
   .brand-name {
     display: flex;
-    align-items: center;
-    gap: var(--print-wordmark-gap);
-    font: var(--role-h4);
-    line-height: 1;
   }
 
   .brand-name img {
@@ -111,11 +114,6 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     height: var(--lockup-height);
     flex: none;
     translate: none;
-  }
-
-  .legal {
-    color: var(--ink);
-    translate: 0 calc(var(--lockup-height) * 0.078);
   }
 
   .company-meta {

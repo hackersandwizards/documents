@@ -168,3 +168,24 @@ test("styles() returns each scoped style once, however often it is called", asyn
   await composer.render("DocCertificate", props.DocCertificate);
   expect(await composer.styles()).toBe(await composer.styles());
 });
+
+// § 35a GmbHG puts legal form and seat on business letters: every document issued as the GmbH names
+// both in the imprint's first line, and nothing stands beside the lockup.
+test.each([
+  [
+    "DocProposal",
+    { ...proposal, lang: "en" },
+    "hackers&amp;wizards GmbH, registered office Hamburg",
+  ],
+  ["DocLeistungsnachweis", props.DocLeistungsnachweis, "hackers&amp;wizards GmbH, Sitz Hamburg"],
+  ["DocRateCard", props.DocRateCard, "hackers&amp;wizards GmbH, Sitz Hamburg"],
+  ["DocMarkdown", { ...props.DocMarkdown, legal: true }, "hackers&amp;wizards GmbH, Sitz Hamburg"],
+])(
+  "%s names the legal entity and its seat in the imprint",
+  async (name, componentProps, entity) => {
+    const html = await composer.render(name, componentProps as Record<string, unknown>);
+    expect(html).toMatch(new RegExp(`class="company-meta"[^>]*>\\s*${entity}`));
+    expect(html).not.toContain('class="legal"');
+  },
+  30_000,
+);

@@ -52,7 +52,7 @@
   --print-logo: 28pt;
   --print-logo-gap: 7pt;
   /* The pixel wordmark's box, 1.3 times the h4 role it replaced (the letters 1.17 times), and the
-     gap to the "GmbH" after it, 0.4 of the letters' height (logo system rounds, 2026-10-29). */
+     gap to text after it, 0.4 of the letters' height (logo system rounds, 2026-10-29). */
   --print-wordmark: 14.3pt;
   --print-wordmark-gap: 5.1pt;
   --print-underline: 1pt;
@@ -169,10 +169,6 @@ h3[data-astro-cid-fgkswtnz] {
 
 .brand-name[data-astro-cid-7lyneqhu] {
   display: flex;
-  align-items: center;
-  gap: var(--print-wordmark-gap);
-  font: var(--role-h4);
-  line-height: 1;
 }
 
 .brand-name[data-astro-cid-7lyneqhu] img[data-astro-cid-7lyneqhu] {
@@ -180,11 +176,6 @@ h3[data-astro-cid-fgkswtnz] {
   height: var(--lockup-height);
   flex: none;
   translate: none;
-}
-
-.legal[data-astro-cid-7lyneqhu] {
-  color: var(--ink);
-  translate: 0 calc(var(--lockup-height) * .078);
 }
 
 .company-meta[data-astro-cid-7lyneqhu] {

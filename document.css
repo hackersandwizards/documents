@@ -59,7 +59,7 @@
   --print-logo: 28pt;
   --print-logo-gap: 7pt;
   /* The pixel wordmark's box, 1.3 times the h4 role it replaced (the letters 1.17 times), and the
-     gap to the "GmbH" after it, 0.4 of the letters' height (logo system rounds, 2026-10-29). */
+     gap to text after it, 0.4 of the letters' height (logo system rounds, 2026-10-29). */
   --print-wordmark: 14.3pt;
   --print-wordmark-gap: 5.1pt;
   --print-underline: 1pt;
@@ -184,7 +184,7 @@ body {
 }
 
 /* The wizard beside the pixel wordmark (logos/wordmark.svg), no line under it. The wordmark's box
-   is centred on its letters, so the wizard and "GmbH" centre on the text; the wizard then rises by
+   is centred on its letters, so the wizard centres on the text; the wizard then rises by
    --logo-wizard-lift to sit optically centred. The icon sits beside the wordmark, never centred on
    address lines stacked under it. */
 .brand {
@@ -213,10 +213,6 @@ body {
 .brand .brand-name .wordmark {
   width: auto;
   height: var(--print-wordmark);
-}
-
-.legal {
-  color: var(--ink);
 }
 
 .company-meta {
