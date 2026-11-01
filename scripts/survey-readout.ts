@@ -482,10 +482,11 @@ __BRAND__
      charts, where each band has one meaning. */
   .rhead { font-family:var(--type-h3-family); font-weight:var(--type-h3-weight); font-size:1.6875rem; color:var(--color-ink); margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:var(--hairline) solid var(--color-border); }
   .readout ul { list-style:none; display:flex; flex-direction:column; gap:0.5rem; }
-  .readout li { display:flex; align-items:flex-start; gap:0.75rem; font-size:1.375rem; line-height:1.35; color:var(--color-muted); }
-  /* The list marker: the website's small teal square on the middle of the first line's cap height,
-     which for Inter is the line box's middle, as in the slide engine. */
-  .readout li::before { content:""; flex-shrink:0; width:var(--marker); height:var(--marker); margin-top:calc((1lh - var(--marker)) / 2); background:var(--color-teal); }
+  .readout li { padding-left:calc(var(--marker) + 0.75rem); font-size:1.375rem; line-height:1.35; color:var(--color-muted); }
+  /* The list marker: the website's small teal square on the middle of the first line's x-height,
+     0.273em above the baseline for Inter, as in the document base: an inline box lifted by whole
+     pixels, so Chrome rounds it together with the text. */
+  .readout li::before { content:""; display:inline-block; width:var(--marker); height:var(--marker); margin:0 0.75rem 0 calc(-1 * (var(--marker) + 0.75rem)); vertical-align:round(calc(0.273em - var(--marker) / 2), 1px); background:var(--color-teal); }
   /* Markers carry the scores page's colours: a strength clears the purple band by definition, a
      weak spot takes its own band, and flags stay muted. */
   .readout ul.good li::before { background:var(--color-purple); }

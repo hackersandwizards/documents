@@ -454,20 +454,7 @@ ul {
 }
 
 /* Points: every list takes document.css's own `ul li` marker, which composeOnepager inlines, so every
-   h&w document draws the identical square. On the onepager's own lines the base's position sits
-   high, measured at 4x on the cap-height centre (2026-10-28): takeaways (lead, 500) 2.9 px, agenda
-   points 3.2 px. Each lift below brings its list within 0.2 px on every item, the agenda's at a
-   value where Chrome's pixel rounding keeps every item in step. The client row is marks. */
-.deliverable-banner li {
-  --li-lift: -0.75pt;
-}
-.module li,
-.goals-box li,
-.contrast-col li,
-.scope-box li,
-.cover-box li {
-  --li-lift: -0.5pt;
-}
+   h&w document draws the identical square. The client row is marks. */
 
 /* ── Callout: document.css .callout, the twin of InShort.astro: a teal rule on the left of
    a teal/5 tint with the brand corner, a caps label, the text in weight 500 ── */
@@ -744,7 +731,10 @@ ul {
 .client-row li {
   display: flex;
   padding: 0;
-  background: none;
+}
+
+.client-row li::before {
+  content: none;
 }
 
 /* ── Price cards, where a variant keeps them beside the facts ── */

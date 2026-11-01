@@ -78,11 +78,20 @@
     var(--type-code-family);
 }
 ul li {
-  --li-lift: 0pt;
   padding: 1pt 0 1pt 12.5pt;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'%3E%3Cpath fill='%231a7285' d='M0 0H6V6H0Z'/%3E%3C/svg%3E")
-    no-repeat 0.5pt calc(1pt + 0.5lh - 0.09em - var(--li-lift) - var(--print-bullet) / 2) /
-    var(--print-bullet) var(--print-bullet);
+}
+ul li::before,
+ul li > p:first-child::before {
+  content: "";
+  display: inline-block;
+  width: var(--print-bullet);
+  height: var(--print-bullet);
+  margin: 0 6pt 0 -12pt;
+  vertical-align: round(calc(0.273em - var(--print-bullet) / 2), 1px);
+  background: var(--teal);
+}
+ul li:has(> p:first-child)::before {
+  content: none;
 }
 .brand .brand-name .wordmark {
   width: auto;
@@ -664,20 +673,7 @@ ul {
 }
 
 /* Points: every list takes document.css's own `ul li` marker, which composeOnepager inlines, so every
-   h&w document draws the identical square. On the onepager's own lines the base's position sits
-   high, measured at 4x on the cap-height centre (2026-10-28): takeaways (lead, 500) 2.9 px, agenda
-   points 3.2 px. Each lift below brings its list within 0.2 px on every item, the agenda's at a
-   value where Chrome's pixel rounding keeps every item in step. The client row is marks. */
-.deliverable-banner li {
-  --li-lift: -0.75pt;
-}
-.module li,
-.goals-box li,
-.contrast-col li,
-.scope-box li,
-.cover-box li {
-  --li-lift: -0.5pt;
-}
+   h&w document draws the identical square. The client row is marks. */
 
 /* ── Callout: document.css .callout, the twin of InShort.astro: a teal rule on the left of
    a teal/5 tint with the brand corner, a caps label, the text in weight 500 ── */
@@ -954,7 +950,10 @@ ul {
 .client-row li {
   display: flex;
   padding: 0;
-  background: none;
+}
+
+.client-row li::before {
+  content: none;
 }
 
 /* ── Price cards, where a variant keeps them beside the facts ── */

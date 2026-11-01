@@ -401,26 +401,30 @@ ul {
   list-style: none;
 }
 
-/* The marker is painted as an image on the item, which Chrome places at fractional positions,
-   where a box (absolute or inline-block) snaps to whole CSS pixels and jittered 0.75pt from item
-   to item. Its middle sits on the middle of the first line's cap height, the website's target
-   (patterns.css). By Inter's metrics that is 0.5lh from the line top; the glyphs render 0.09em
-   higher, so the offset is measured: within 1px at 4x on quote, rate card, briefing and
-   print-pdf output (2026-10-28). The image is the 6pt square in --color-teal (#1a7285), which a
-   data URI cannot read from a variable. */
+/* The marker is an inline box at the head of the first line, so Chrome rounds it to whole CSS
+   pixels together with the text beside it; a background image or an absolute box rounds on its
+   own and jumped a pixel from item to item. Its middle sits on the middle of the first line's
+   x-height, where Inter centres its own bullet glyph: 0.273em above the baseline. The lift stays
+   whole pixels, or the shared rounding is lost. Measured at 600 dpi on the specimen pages, every
+   item within 0.6px of the x-height middle (2026-11-01). A loose Markdown item opens with a
+   paragraph, which takes the marker instead. */
 ul li {
-  --li-lift: 0pt;
   padding: 1pt 0 1pt 12.5pt;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'%3E%3Cpath fill='%231a7285' d='M0 0H6V6H0Z'/%3E%3C/svg%3E")
-    no-repeat 0.5pt calc(1pt + 0.5lh - 0.09em - var(--li-lift) - var(--print-bullet) / 2) /
-    var(--print-bullet) var(--print-bullet);
 }
 
-/* A first line set at 500 or heavier renders 0.75pt higher still (measured at 4x): callout and
-   note text is 500. */
-.note li,
-.callout li {
-  --li-lift: 0.75pt;
+ul li::before,
+ul li > p:first-child::before {
+  content: "";
+  display: inline-block;
+  width: var(--print-bullet);
+  height: var(--print-bullet);
+  margin: 0 6pt 0 -12pt;
+  vertical-align: round(calc(0.273em - var(--print-bullet) / 2), 1px);
+  background: var(--teal);
+}
+
+ul li:has(> p:first-child)::before {
+  content: none;
 }
 
 ol {
