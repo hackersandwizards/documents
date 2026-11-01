@@ -81,7 +81,9 @@ const specimenBase = (html: string) =>
   html.replace(
     "<style data-hw-document></style>",
     () =>
-      `<link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
+      `<link rel="icon" href="${BRAND}/logos/favicon.ico" sizes="32x32" />
+<link rel="icon" href="${BRAND}/logos/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/print.css" />
 <style data-hw-document>
 ${base}
@@ -97,6 +99,8 @@ const index = (pages: typeof PAGES) => `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <title>hackers&amp;wizards Dokumente: Muster</title>
+<link rel="icon" href="${BRAND}/logos/favicon.ico" sizes="32x32" />
+<link rel="icon" href="${BRAND}/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/print.css" />
 <style>
