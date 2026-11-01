@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -43,7 +43,6 @@
     "LICENSE"
   ],
   "scripts": {
-    "preinstall": "node .claude/skills/engineering/only-bun.cjs",
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
     "check": "bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun test && bun scripts/specimen.ts --check && bun scripts/privacy.ts && brand-colours",
     "lint": "bun --bun eslint --cache --concurrency=auto .",
