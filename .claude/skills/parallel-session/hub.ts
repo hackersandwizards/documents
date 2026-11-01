@@ -1,10 +1,10 @@
 // Builds the one page that shows what needs a person, from every docs/tracking/decisions/items.js
-// found under ~/dev (no repo list): Entscheiden (open rows with options), Prüfen (open rows
-// without options), Erledigen (the person's GOAL.md rows, else TODO.md) and, collapsed, Annahmen
-// (assumed rows). Within each priority, and each repo's Annahmen, rows sit under their `area`'s
+// found under ~/dev (no repo list): Decide (open rows with options), Review (open rows
+// without options), To do (the person's GOAL.md rows, else TODO.md) and, collapsed, Assumptions
+// (assumed rows). Within each priority, and each repo's Assumptions, rows sit under their `area`'s
 // label from any list's window.DECISION_AREAS, clusters ordered by their most urgent row. Agent
 // work is left out. Answers stay in this browser until, once copied, their row leaves a rebuilt
-// page; "kopieren" puts them in one block for the chat.
+// page; "Copy answers" puts them in one block for the chat.
 // Usage: bun hub.ts [--check [<repo> ...]]   --check validates the found lists (or the given repos),
 // exit 1 on a defect. The build prints defects, and while a list is unreadable exits 1 unwritten.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -208,7 +208,6 @@ const linkPaths = (path: string, text: unknown) =>
   hubEscape(text).replace(/(docs\/tracking\/[\w./äöü-]*\w)/g, (p) =>
     existsSync(join(path, p)) ? `<a href="${hubEscape(fileHref(path, p))}">${p}</a>` : p,
   );
-const hubDate = (iso: string) => iso.split("-").reverse().join(".");
 const rowOwner = (r: Row) => r.owner ?? PEOPLE[0];
 
 // One <details> per point. Rows with options get radios (nothing preselected) and their images;
@@ -218,20 +217,20 @@ function rowHtml(list: List, r: Row, kind: string) {
   const opts = r.options ?? [];
   const choice = (o: Option) => {
     const img = r.images?.[o.key];
-    return `<label class="opt${o.key === r.recommended ? " rec" : ""}">${img ? `<a class="pic" href="${hubEscape(fileHref(list.path, img))}" target="_blank"><img loading="lazy" src="${hubEscape(fileHref(list.path, img))}" alt="${hubEscape(o.label)}"></a>` : ""}<span class="choice"><input type="radio" name="${hubEscape(k)}" value="${hubEscape(o.key)}"> <span>${o.key === r.recommended ? '<span class="tag">Empfehlung</span> ' : ""}<b>${hubEscape(o.label)}</b>${o.detail ? ` <span class="note">${hubEscape(o.detail)}</span>` : ""}</span></span></label>`;
+    return `<label class="opt${o.key === r.recommended ? " rec" : ""}">${img ? `<a class="pic" href="${hubEscape(fileHref(list.path, img))}" target="_blank"><img loading="lazy" src="${hubEscape(fileHref(list.path, img))}" alt="${hubEscape(o.label)}"></a>` : ""}<span class="choice"><input type="radio" name="${hubEscape(k)}" value="${hubEscape(o.key)}"> <span>${o.key === r.recommended ? '<span class="tag">Recommended</span> ' : ""}<b>${hubEscape(o.label)}</b>${o.detail ? ` <span class="note">${hubEscape(o.detail)}</span>` : ""}</span></span></label>`;
   };
   return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(rowOwner(r))}" data-kind="${kind}"><summary><span class="p p${hubEscape(r.priority)}">P${hubEscape(r.priority)}</span><span class="t">${hubEscape(r.title)} <small>${hubEscape(list.key)}</small></span><span class="mark"></span></summary>
-<div class="body">${r.assumption ? `<p class="recline"><b>Angenommen:</b> ${linkPaths(list.path, r.assumption)}</p>` : ""}<p>${linkPaths(list.path, r.context)}</p>${r.detail ? `<p class="note">${linkPaths(list.path, r.detail)}</p>` : ""}${
+<div class="body">${r.assumption ? `<p class="recline"><b>Assumed:</b> ${linkPaths(list.path, r.assumption)}</p>` : ""}<p>${linkPaths(list.path, r.context)}</p>${r.detail ? `<p class="note">${linkPaths(list.path, r.detail)}</p>` : ""}${
     opts.length
       ? `<div class="opts${Object.keys(r.images ?? {}).length ? " pics" : ""}">${opts.map(choice).join("")}</div>`
       : ""
-  }<label class="lbl" for="n-${hubEscape(k)}">${opts.length ? "Notiz oder eigene Antwort" : "Antwort, etwa „passt“ oder was zu ändern ist"}</label><textarea id="n-${hubEscape(k)}"></textarea>
-<p class="row-foot">${r.recommended ? `<button type="button" class="ghost pick" data-v="${hubEscape(r.recommended)}">Empfehlung wählen</button> ` : ""}<button type="button" class="ghost clear">Zurücksetzen</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
+  }<label class="lbl" for="n-${hubEscape(k)}">${opts.length ? "Note or your own answer" : "Answer, such as “fine” or what to change"}</label><textarea id="n-${hubEscape(k)}"></textarea>
+<p class="row-foot">${r.recommended ? `<button type="button" class="ghost pick" data-v="${hubEscape(r.recommended)}">Pick recommended</button> ` : ""}<button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 function taskHtml(t: Task) {
   const k = `${t.list.key}:GOAL ${t.point.replace(/\s+/g, " ")}`;
-  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">bis ${hubDate(t.due)}</span>` : ""}<span class="mark"></span></summary>
-<div class="body"><p>${linkPaths(t.list.path, t.point)}</p><p><b>Wer:</b> ${hubEscape(t.actor)}</p>${t.evidence ? `<p class="note"><b>Beleg:</b> ${linkPaths(t.list.path, t.evidence)}</p>` : ""}<label class="choice"><input type="checkbox" value="erledigt"> erledigt</label><label class="lbl" for="n-${hubEscape(k)}">Notiz</label><textarea id="n-${hubEscape(k)}"></textarea><p class="row-foot"><button type="button" class="ghost clear">Zurücksetzen</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
+  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">due ${t.due}</span>` : ""}<span class="mark"></span></summary>
+<div class="body"><p>${linkPaths(t.list.path, t.point)}</p><p><b>Who:</b> ${hubEscape(t.actor)}</p>${t.evidence ? `<p class="note"><b>Evidence:</b> ${linkPaths(t.list.path, t.evidence)}</p>` : ""}<label class="choice"><input type="checkbox" value="done"> done</label><label class="lbl" for="n-${hubEscape(k)}">Note</label><textarea id="n-${hubEscape(k)}"></textarea><p class="row-foot"><button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 
 const all = lists.flatMap((list) => list.rows.map((r) => ({ list, r })));
@@ -256,12 +255,12 @@ const groupHtml = (title: string, inner: string, open: boolean) =>
     ? `<details class="group"${open ? " open" : ""}><summary>${title}</summary>${inner}</details>`
     : "";
 const partHtml = (id: string, title: string, note: string, inner: string) =>
-  `<section class="part" id="${id}"><h2>${title} <span class="count" data-for="${id}"></span></h2><p class="note">${note}</p>${inner}<p class="note empty" hidden>Nichts offen.</p></section>`;
+  `<section class="part" id="${id}"><h2>${title} <span class="count" data-for="${id}"></span></h2><p class="note">${note}</p>${inner}<p class="note empty" hidden>Nothing open.</p></section>`;
 const decideHtml = [1, 2, 3]
   .map((p) => {
     const g = decide.filter(({ r }) => r.priority === p);
     return groupHtml(
-      `Priorität ${p} <small>${g.length}</small>`,
+      `Priority ${p} <small>${g.length}</small>`,
       clustersHtml(g, "decide"),
       p === 1,
     );
@@ -285,23 +284,23 @@ const assumedHtml = lists
     );
   })
   .join("");
-const stamp = new Date().toLocaleString("de-DE", {
+const stamp = new Date().toLocaleString("en-GB", {
   dateStyle: "medium",
   timeStyle: "short",
 });
 const fetchAge = (ms: number) => {
   const h = Math.round((Date.now() - ms) / 3.6e6);
   return h < 1
-    ? "vor unter einer Stunde"
+    ? "under an hour ago"
     : h < 48
-      ? `vor ${h} h`
-      : `vor ${Math.round(h / 24)} Tagen`;
+      ? `${h} h ago`
+      : `${Math.round(h / 24)} days ago`;
 };
 const sources = lists
   .map(({ path, key }) => {
     const fetched = join(path, ".git", "FETCH_HEAD");
     const behind = Number(gitRead(path, "rev-list", "--count", "HEAD..@{u}") || 0);
-    return `<li><b>${hubEscape(key)}</b> <span class="note">${hubEscape(path.replace(homedir(), "~"))} · geholt ${existsSync(fetched) ? fetchAge(statSync(fetched).mtimeMs) : "nie"}${behind ? ` · <span class="warn">${behind} Commits hinter origin</span>` : ""}</span></li>`;
+    return `<li><b>${hubEscape(key)}</b> <span class="note">${hubEscape(path.replace(homedir(), "~"))} · fetched ${existsSync(fetched) ? fetchAge(statSync(fetched).mtimeMs) : "never"}${behind ? ` · <span class="warn">${behind} commits behind origin</span>` : ""}</span></li>`;
   })
   .join("");
 const ids = Object.fromEntries(
@@ -337,7 +336,7 @@ mkdirSync(dirname(PAGE), { recursive: true });
 writeFileSync(
   PAGE,
   `<!doctype html>
-<html lang="de" data-theme="auto"><head><meta charset="utf-8"><title>Was dich braucht</title>
+<html lang="en" data-theme="auto"><head><meta charset="utf-8"><title>What needs you</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 ${hubBrandCss()}
@@ -414,20 +413,20 @@ h1{font-size:var(--text-heading);flex:1}#state{flex-basis:100%;order:3}
 .jump{position:sticky;top:var(--spacing-app-header);z-index:2;background:var(--bg);margin:6px -1rem 0;padding:0 8px;box-shadow:0 6px 8px -6px rgb(0 0 0/.3);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}.jump a{padding:0 7px}
 section.part,details.item{scroll-margin-top:120px}.opts.pics{grid-template-columns:1fr}}
 </style></head><body>
-<header class="hw-header"><div class="hw-header-strip"></div><div class="hw-header-row hw-container"><a class="hw-header-brand" href="#" aria-label="hackers&amp;wizards Entscheidungen"><img class="hw-header-logo" src="${hubLogo("lockup-screen.svg")}" alt="" width="8042" height="1489"><img class="hw-header-logo-night" src="${hubLogo("lockup-screen-night.svg")}" alt="" width="8196" height="1641"><span class="hw-header-product">Entscheidungen</span></a></div></header>
+<header class="hw-header"><div class="hw-header-strip"></div><div class="hw-header-row hw-container"><a class="hw-header-brand" href="#" aria-label="hackers&amp;wizards Decisions"><img class="hw-header-logo" src="${hubLogo("lockup-screen.svg")}" alt="" width="8042" height="1489"><img class="hw-header-logo-night" src="${hubLogo("lockup-screen-night.svg")}" alt="" width="8196" height="1641"><span class="hw-header-product">Decisions</span></a></div></header>
 <main class="hw-container">
-<div class="top"><h1>Was dich braucht</h1><p id="state" role="status"></p><button id="copy" type="button">Antworten kopieren</button></div>
-<div class="toolbar"><div class="row2"><div class="bar"><div class="who" role="group" aria-label="Für wen">${[...PEOPLE, "alle"].map((p) => `<button type="button" data-who="${p}" aria-pressed="false">${p}</button>`).join("")}</div>
-<div class="find"><input type="search" id="q" placeholder="Filtern" aria-label="Punkte filtern"><span id="hits" aria-live="polite"></span></div></div>
-<nav class="jump" aria-label="Abschnitte"><a href="#entscheiden">Entscheiden <span class="count" data-for="entscheiden"></span></a><a href="#pruefen">Prüfen <span class="count" data-for="pruefen"></span></a><a href="#erledigen">Erledigen <span class="count" data-for="erledigen"></span></a><a href="#annahmen">Annahmen <span class="count" data-for="annahmen"></span></a></nav>
+<div class="top"><h1>What needs you</h1><p id="state" role="status"></p><button id="copy" type="button">Copy answers</button></div>
+<div class="toolbar"><div class="row2"><div class="bar"><div class="who" role="group" aria-label="For whom">${[...PEOPLE, "all"].map((p) => `<button type="button" data-who="${p}" aria-pressed="false">${p === "all" ? "All" : p}</button>`).join("")}</div>
+<div class="find"><input type="search" id="q" placeholder="Filter" aria-label="Filter items"><span id="hits" aria-live="polite"></span></div></div>
+<nav class="jump" aria-label="Sections"><a href="#decide">Decide <span class="count" data-for="decide"></span></a><a href="#review">Review <span class="count" data-for="review"></span></a><a href="#todo">To do <span class="count" data-for="todo"></span></a><a href="#assumptions">Assumptions <span class="count" data-for="assumptions"></span></a></nav>
 </div></div>
-<details class="sources"><summary>${lists.length} Entscheidungslisten unter ~/dev, gebaut ${hubEscape(stamp)}</summary><ul>${sources}</ul>
-<p class="note">Wähle, schreib eine Notiz, oder hake ab: alles bleibt in diesem Browser. „Antworten kopieren“ legt alles als einen Block in die Zwischenablage; füg ihn in den Chat mit Ada ein. Ada trägt jede Zeile in ihr Repo ein, committet, baut die Seite neu und bestätigt jede id. Eine Antwort verschwindet hier, wenn ihre Zeile von der neuen Seite verschwindet. Fehlt ein Repo in der Liste, liegt es nicht unter ~/dev oder hat keine Entscheidungsliste.</p>
-<label class="lbl" for="block">Der Block zum Kopieren</label><textarea id="block" readonly></textarea></details>
-${partHtml("entscheiden", "Entscheiden", "Eine Frage mit Optionen. Nichts ist vorausgewählt.", decideHtml)}
-${partHtml("pruefen", "Prüfen", "Ansehen und antworten: „passt“ oder was zu ändern ist.", checkHtml)}
-${partHtml("erledigen", "Erledigen", "Deine Aufgaben aus GOAL.md. Abhaken, wenn erledigt.", tasks.map(taskHtml).join(""))}
-${partHtml("annahmen", "Annahmen", "Was Agenten selbst entschieden haben. Musst du nicht durchgehen; wähle eine andere Option nur, wenn du eine kippen willst.", assumedHtml)}
+<details class="sources"><summary>${lists.length} decision lists under ~/dev, built ${hubEscape(stamp)}</summary><ul>${sources}</ul>
+<p class="note">Pick an option, write a note or tick a box: everything stays in this browser. “Copy answers” puts it all on the clipboard as one block; paste it into the chat with Ada. Ada writes each line into its repo, commits, rebuilds the page and confirms every id. An answer disappears here once its row is gone from the rebuilt page. A repo missing from the list is not under ~/dev or has no decision list.</p>
+<label class="lbl" for="block">The block to copy</label><textarea id="block" readonly></textarea></details>
+${partHtml("decide", "Decide", "A question with options. Nothing is preselected.", decideHtml)}
+${partHtml("review", "Review", "Look and answer: “fine” or what to change.", checkHtml)}
+${partHtml("todo", "To do", "Your tasks from GOAL.md. Tick when done.", tasks.map(taskHtml).join(""))}
+${partHtml("assumptions", "Assumptions", "What agents decided on their own. No need to go through them; pick another option only to overturn one.", assumedHtml)}
 </main>
 <script>
 // Option labels per "repo:id", so the block names each choice.
@@ -446,7 +445,7 @@ for (let i = localStorage.length - 1; i >= 0; i--) {
   const id = k.slice(STORE.length), a = read(id);
   if (!known.has(id) && (!a || !a.at || a.at <= copiedAt)) localStorage.removeItem(k);
 }
-const hhmm = (iso) => new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+const hhmm = (iso) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 function load(d) {
   const a = read(d.dataset.k);
   for (const i of d.querySelectorAll("input")) i.checked = !!a && (i.type === "radio" ? a.option === i.value : !!a.done);
@@ -454,16 +453,16 @@ function load(d) {
   mark(d, a);
 }
 function mark(d, a) {
-  const label = a && (a.option ? (IDS[d.dataset.k] || {})[a.option] || a.option : a.done ? "erledigt" : a.note ? "Notiz" : "");
+  const label = a && (a.option ? (IDS[d.dataset.k] || {})[a.option] || a.option : a.done ? "done" : a.note ? "note" : "");
   d.querySelector(".mark").textContent = label ? "✓ " + label : "";
-  d.querySelector(".saved").textContent = a ? "gespeichert " + hhmm(a.at) : "";
+  d.querySelector(".saved").textContent = a ? "saved " + hhmm(a.at) : "";
 }
 function save(d) {
   const opt = d.querySelector("input[type=radio]:checked");
   const done = d.querySelector("input[type=checkbox]:checked");
   const note = d.querySelector("textarea").value.trim();
   const a = opt || done || note ? { option: opt ? opt.value : "", done: !!done, note, at: new Date().toISOString() } : null;
-  if (!write(d.dataset.k, a)) d.querySelector(".saved").textContent = "Nicht gespeichert: der Browser sperrt den Speicher";
+  if (!write(d.dataset.k, a)) d.querySelector(".saved").textContent = "Not saved: the browser blocks storage";
   else mark(d, a);
   state();
 }
@@ -481,42 +480,42 @@ const answered = () => [...items.map((d) => d.dataset.k), ...kept].filter((k) =>
 function block() {
   const lines = answered().map((k) => {
     const a = read(k);
-    const choice = a.option ? a.option + " (" + ((IDS[k] || {})[a.option] || "") + ")" : a.done ? "erledigt" : "";
-    return k + ": " + [choice, (a.note || "").replace(/\\s+/g, " "), known.has(k) ? "" : "(Zeile nicht auf dieser Seite)"].filter(Boolean).join(", ");
+    const choice = a.option ? a.option + " (" + ((IDS[k] || {})[a.option] || "") + ")" : a.done ? "done" : "";
+    return k + ": " + [choice, (a.note || "").replace(/\\s+/g, " "), known.has(k) ? "" : "(row not on this page)"].filter(Boolean).join(", ");
   });
-  return lines.length ? "Antworten von der Seite „Was dich braucht“:\\n" + lines.join("\\n") : "";
+  return lines.length ? "Answers from the page “What needs you”:\\n" + lines.join("\\n") : "";
 }
 // Answers changed since the last copy have not reached Ada.
 const uncopied = () => { const c = localStorage.getItem(STORE + "copied") || ""; return answered().filter((k) => read(k).at > c).length; };
 function state() {
   const n = answered().length, open = uncopied();
-  document.getElementById("copy").textContent = n ? n + (n === 1 ? " Antwort" : " Antworten") + " kopieren" : "Antworten kopieren";
+  document.getElementById("copy").textContent = n ? "Copy " + n + (n === 1 ? " answer" : " answers") : "Copy answers";
   document.getElementById("state").textContent = !n
-    ? "Wähle direkt an der Zeile. Antworten bleiben in diesem Browser, bis du sie kopierst und in den Chat mit Ada einfügst; Ada bestätigt jede mit Commit."
+    ? "Answer right at the row. Answers stay in this browser until you copy them and paste them into the chat with Ada; Ada confirms each with a commit."
     : open
-      ? open + " noch nicht kopiert, nur in diesem Browser. Kopieren, in den Chat mit Ada einfügen; Ada bestätigt jede mit Commit."
-      : "Alles kopiert um " + hhmm(localStorage.getItem(STORE + "copied")) + ". Eine Antwort verschwindet hier, wenn Ada sie eingetragen hat.";
+      ? open + " not copied yet, only in this browser. Copy, paste into the chat with Ada; Ada confirms each with a commit."
+      : "All copied at " + hhmm(localStorage.getItem(STORE + "copied")) + ". An answer disappears here once Ada has written it in.";
   document.getElementById("block").value = block();
 }
 addEventListener("beforeunload", (e) => { if (uncopied()) e.preventDefault(); });
 document.getElementById("copy").addEventListener("click", async () => {
   const text = block();
   const btn = document.getElementById("copy");
-  if (!text) { btn.textContent = "Noch nichts gewählt"; setTimeout(state, 1500); return; }
+  if (!text) { btn.textContent = "Nothing picked yet"; setTimeout(state, 1500); return; }
   try { await navigator.clipboard.writeText(text); }
   catch (e) { const t = document.getElementById("block"); t.closest("details").open = true; t.select(); document.execCommand("copy"); }
   try { localStorage.setItem(STORE + "copied", new Date().toISOString()); } catch (e) {}
   state();
-  btn.textContent = "Kopiert: in den Chat einfügen";
+  btn.textContent = "Copied: paste into the chat";
   setTimeout(state, 2500);
 });
-let who = localStorage.getItem(STORE + "who") || ${JSON.stringify(PEOPLE[0])};
+let who = (localStorage.getItem(STORE + "who") || ${JSON.stringify(PEOPLE[0])}).replace(/^alle$/, "all");
 const q = document.getElementById("q");
 function apply() {
   const term = q.value.trim().toLowerCase();
   let hits = 0;
   for (const d of items) {
-    d.hidden = (who !== "alle" && d.dataset.who !== who) || (!!term && !d.textContent.toLowerCase().includes(term));
+    d.hidden = (who !== "all" && d.dataset.who !== who) || (!!term && !d.textContent.toLowerCase().includes(term));
     if (!d.hidden) hits++;
   }
   for (const c of document.querySelectorAll(".cluster")) c.hidden = !c.querySelector("details.item:not([hidden])");
@@ -529,7 +528,7 @@ function apply() {
   for (const s of document.querySelectorAll(".count[data-for]")) s.textContent = document.querySelectorAll("#" + s.dataset.for + " details.item:not([hidden])").length;
   for (const p of document.querySelectorAll("section.part")) p.querySelector(".empty").hidden = !!p.querySelector("details.item:not([hidden])");
   for (const b of document.querySelectorAll(".who button")) b.setAttribute("aria-pressed", b.dataset.who === who);
-  document.getElementById("hits").textContent = term ? hits + " Treffer" : "";
+  document.getElementById("hits").textContent = term ? hits + (hits === 1 ? " hit" : " hits") : "";
   current();
 }
 for (const b of document.querySelectorAll(".who button")) b.addEventListener("click", () => { who = b.dataset.who; try { localStorage.setItem(STORE + "who", who); } catch (e) {} apply(); });
