@@ -54,8 +54,8 @@ Prefer these over their classic equivalents.
   `"packageManager": "bun@<version>"`, and those lines in its README and CLAUDE.md. The training
   repositories under `internal/trainings/` use npm and node instead, in commands, lockfile,
   `packageManager`, README and MCP config, because most participants have no bun.
-- `bun` instead of `node` for running scripts, and `bunx` instead of `npx` for one-off package
-  execution, outside a training repository
+- `bun` instead of `node` for running scripts, and `bunx` instead of `npx` for a package the project
+  does not install, outside a training repository
 - `bun install -g` for globals at `~/.bun/bin`
 - built-in `Bun.Image` for image processing (Sharp-shaped, JPEG/PNG/WebP/HEIC/AVIF, no npm deps)
 
