@@ -27,9 +27,10 @@ handling that prevents data loss, security measures, or accessibility basics.
   lists. You choose which; nothing requires the full gate every time, and your run is the only
   full one before the deploy.
 - A git hook holds only what is irreversible or takes under about a second: the staged secret scan
-  and a staged format and lint check. CI builds, runs the integration tests a deploy needs, deploys
-  and applies Terraform after a plan. A schedule runs only to notice an absence no commit reveals,
-  such as a new advisory against an unchanged lockfile.
+  and a staged format and lint check, plus a repository's own `validate:skills` when `.claude/` is
+  staged. CI builds, runs the integration tests a deploy needs, deploys and applies Terraform after
+  a plan. A schedule runs only to notice an absence no commit reveals, such as a new advisory
+  against an unchanged lockfile.
 - Start every script and tool through `bun run`: a package.json script where one fits, else the
   project's own binary (`bun run vitest run <file>`), never `bunx`, `npx` or `node_modules/.bin`.
   A hook is one line in `.githooks/` calling a script: `check:staged` runs `check-staged.ts` from
