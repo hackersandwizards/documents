@@ -46,8 +46,8 @@ language. They've seen every consulting deck; surprise them with specifics they 
 Primary headline: "Your whole company unstoppable, in flow with agentic engineering." (the claim,
 its results named in the copy under it). Flow is the emotional result.
 The result under the claim is the speed the teams gain reaching the customers, and it is stated as
-an outcome, lead time from request to production and the cost of a shipped change, never as output
-such as pull request counts or tool use.
+an outcome, lead time from a customer's request until customers use the change and the cost of a
+shipped change, never as output such as pull request counts or tool use.
 
 A pitch to a reader who does not yet know what h&w offers (website copy, a post, a deck, a cold
 pitch, a proposal's opening) names the buyer's problem in the words buyers use for it before the
@@ -92,25 +92,30 @@ the others transfer from.
 
 ## Measures and figures
 
-Until a reworked h&w KPI set replaces this section, copy states no figure as evidence of what h&w
-achieves: no number from our own engagements or operations, and no activity count (pull requests,
-merges, commits, diffs, lines of code, tokens, AI-tool usage, share of AI-assisted work) as proof of
-progress, ours or a third party's. The reason: these counts measure output, and which figures
-support a sound claim about our effect is not established. A third-party research finding that is
-not an activity count may be quoted with its source, fetched in the session, and never as h&w's
-result. Until then the example figures in `intro-framework.md` (Fame), `brand-vocabulary.md`
-(approved patterns) and `prose-style.md` (concrete over abstract) are suspended.
-
 Where the reader needs a measure (a proposal, an assessment, a CTO asking how to tell whether it
-works), name what the client should measure, at team or service level, against a baseline taken at
-the start, with no target number:
+works), name h&w's four KPIs, read per team against a baseline taken at the start, with no target
+number of ours:
 
-- Delivery outcome: lead time from request to production, deployment frequency, change failure
-  rate, recovery time and rework, read as one set so speed is held against stability (DORA).
-- Developer experience, surveyed over time: confidence in changes, cognitive load, where time is
-  lost. No single metric captures productivity, so system data is paired with what developers
-  report (SPACE, DX Core 4).
-- The client's own business outcome, agreed per engagement with its data source.
+- DORA: deployment frequency, change failure rate and recovery time as DORA defines them. Lead time
+  is the one difference: DORA measures it from commit to production, we measure it from the logged
+  idea to the first users, so the wait before the first commit counts and a feature behind a closed
+  flag has not arrived.
+- Rework rate: the share of changes redone after review or acceptance, before they reach users.
+  Not DORA's deployment rework rate, which counts unplanned deployments after production incidents.
+- Use: the share of target users active with what shipped, 30 days later.
+- Cost per change: tokens, agent time and review time per shipped change.
+
+The client names its own business outcome per engagement, with its data source.
+
+Until a pilot team has a baseline and a second measurement point, copy states no figure of our own
+as evidence of what h&w achieves. After that, a figure from an engagement may stand as evidence
+only as one of the four KPIs, with its baseline, period, team, source and the client's written
+approval. An activity count (pull requests, merges, commits, diffs, lines of code, tokens, AI-tool
+usage, share of AI-assisted work) is never proof of progress, ours or a third party's: it measures
+output. A third-party research finding that is not an activity count may be quoted with its
+source, fetched in the session, and never as h&w's result. Until that first measurement the
+example figures in `intro-framework.md` (Fame), `brand-vocabulary.md` (approved patterns) and
+`prose-style.md` (concrete over abstract) are suspended.
 
 The reasoning to give when the reader asks why:
 
@@ -120,9 +125,9 @@ The reasoning to give when the reader asks why:
   and never used to compare teams or rate individuals (DX Core 4, DORA).
 - Usage and pull request counts stay observability of adoption and cost, never the result.
 
-Default phrasing: *"measurable in your lead time to production, your change failure rate and how
-confident your engineers are in their changes, against a baseline we take together at the
-start."*
+Default phrasing: *"measurable in how long an idea takes to reach your users, how much work comes
+back, whether what ships gets used and what each change costs, against a baseline we take together
+at the start."*
 
 ## Developer well-being language
 
