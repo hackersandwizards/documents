@@ -37,7 +37,8 @@ handling that prevents data loss, security measures, or accessibility basics.
   this folder, `lfs:pre-push` runs `git lfs pre-push` where LFS is used. `check-lock.ts` here
   serialises `bun run check`, and `only-bun.cjs` is the `preinstall` guard. npm 7 writes
   `node_modules` and `package-lock.json` before `preinstall` runs, so `package.json` also sets
-  `"engines": {"npm": "please-use-bun"}` and `.npmrc` sets `engine-strict=true`.
+  `"engines": {"npm": "please-use-bun"}` and `.npmrc` sets `engine-strict=true`. A package other
+  repositories install carries no `preinstall`: a consumer's install-script check rejects it.
 - Remove or replace a dependency with a known vulnerability before excusing it. An audit
   exception names the advisory ID.
 - A browser that code, a script or an MCP server starts is Chrome for Testing, the build puppeteer or

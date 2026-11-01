@@ -22,6 +22,8 @@ Other sessions share this working tree and its index.
 - Before `--amend`, verify that `HEAD` is still your commit. Repair a wrong fold index-free with
   `git commit-tree` plus `git update-ref` and the expected old value, never `reset` or `rebase`.
   Abandon the repair if it races.
+- A commit from a private index (`GIT_INDEX_FILE`) reads that index from the commit's parent
+  immediately before writing the tree. Check: `git show --stat HEAD` lists only your paths.
 - `git checkout -- <path>` and `git restore` install whatever another session staged there. Revert
   with `git show HEAD:<path> > <path>`, after reading `HEAD` for that path, since it moves while
   your run is open. For a Git LFS file, follow it with `git lfs checkout <path>`. In a file

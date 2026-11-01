@@ -27,6 +27,9 @@ Cadence: a review per batch; a code, security and simplify review (`/code-review
 `/security-review`, `/simplify`, a fresh agent per pass) per milestone and before a repository is
 shared.
 
+A visible asset changed to conform to a rule gets a review like any new version: the rendered
+result scored against the version it replaces. Check: the report gives both scores and the noise.
+
 End your report with your choice in one line: "Review: small, because first contact" or "Review:
 none, because receipt".
 
@@ -38,7 +41,7 @@ none, because receipt".
    work "breathing room, not cramped" and "visual calm" are criteria of their own. Check: the
    criteria list is written before any score exists.
 3. Brief unprimed: each reviewer gets only its role, the artifacts and the same criteria, with no
-   score, rationale, hypothesis, preference, or hint of which version is current, new or whose.
+   score, rationale, hypothesis, preference, rule text under test, or hint of which version is current, new or whose.
    Use neutral labels and a shuffled order per reviewer. Score the unchanged current state
    alongside, where one exists. Quote one reviewer prompt verbatim in the report. Check: no prompt names an author or
    a version's age.
@@ -49,6 +52,8 @@ none, because receipt".
    legibility, typography or logo detail at full size or as a full-resolution crop of that detail.
    An image costs `⌈width / 28⌉ × ⌈height / 28⌉` tokens, up to 4,784 at a 2,576 px long edge.
    Check: every image is at its real display size in context, at 1000 px or at full resolution.
+   A change to how a control is operated is judged on measured task runs (clicks, keystrokes,
+   pointer travel per typical task) beside the screenshots. Check: the brief carries those numbers.
    Build every candidate to the system's current rules for that ground and surface (the asset cut,
    the type allowed on it), except the one rule the comparison tests. Check: before scoring, each
    candidate is checked against those rules and the report names any it breaks.
