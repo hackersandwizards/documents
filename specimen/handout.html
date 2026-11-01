@@ -271,9 +271,7 @@ h4 {
 
 
 .section-label {
-  display: flex;
-  align-items: center;
-  gap: 7.5pt;
+  display: block;
   margin: 15pt 0 6pt;
   font: var(--role-h4);
   font-weight: 600;
@@ -285,9 +283,11 @@ h4 {
 
 .section-label::before {
   content: "";
+  display: inline-block;
   width: var(--print-swatch);
   height: var(--print-swatch);
-  flex: none;
+  margin-right: 7.5pt;
+  vertical-align: round(calc(0.365em - var(--print-swatch) / 2), 1px);
   background: var(--teal);
 }
 
@@ -934,6 +934,7 @@ section h3 {
 
 .toc li {
   display: flex;
+  align-items: baseline;
   gap: 2mm;
   padding: 1mm 0;
   counter-increment: entry;
@@ -957,7 +958,6 @@ section h3 {
   content: counter(entry, decimal-leading-zero);
   flex: none;
   width: 7mm;
-  padding-top: 0.6mm;
   font: var(--role-label);
   letter-spacing: var(--type-label-tracking);
   color: var(--teal);
