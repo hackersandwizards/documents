@@ -1,0 +1,119 @@
+---
+// The preparation document a trainer sends attendees before a training: the header, the eyebrow
+// and title, a note with what to do by when, numbered steps as cards, a closing line. Each body is
+// HTML on the document base (code, pre, .grid-2 with .label columns, .small, .muted; in the note a
+// `<p class="it-line">` with `<span class="chip it-chip">` for the line to the IT department).
+import DocHeader from "./DocHeader.astro";
+
+interface Props {
+  lang?: "de" | "en";
+  title: string;
+  /** The tag in the header, e.g. "Vorbereitung". */
+  kind: string;
+  /** Lines under the tag, such as the training's dates and place. */
+  meta?: string[];
+  eyebrow?: string;
+  heading: string;
+  note?: { label: string; html: string };
+  steps: { title: string; html: string }[];
+  /** The closing line under the steps, as HTML. */
+  closing?: string;
+}
+const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astro.props;
+---
+
+<DocHeader kind={kind} meta={meta} lang={lang} />
+<div class="preparation">
+  {eyebrow && <span class="eyebrow">{eyebrow}</span>}
+  <h1>{heading}</h1>
+  {
+    note && (
+      <div class="note">
+        <span class="label">{note.label}</span>
+        <Fragment set:html={note.html} />
+      </div>
+    )
+  }
+  {
+    steps.map((step, i) => (
+      <div class="card keep">
+        <h3>
+          <span class="step">{i + 1}</span> {step.title}
+        </h3>
+        <Fragment set:html={step.html} />
+      </div>
+    ))
+  }
+  {closing && <div class="closing" set:html={closing} />}
+</div>
+
+<style>
+  .preparation :global(.card) {
+    margin-bottom: 2mm;
+    padding: 3mm 4mm;
+  }
+
+  .preparation :global(.card h3) {
+    margin-top: 0;
+  }
+
+  .note {
+    padding: 3mm 4mm;
+  }
+
+  .preparation :global(pre) {
+    margin: 1.5mm 0;
+    padding: 2mm 4mm;
+  }
+
+  .preparation :global(code) {
+    font-variant-ligatures: none;
+    white-space: nowrap;
+  }
+
+  .preparation :global(pre code) {
+    white-space: pre;
+    font-size: 8.8pt;
+  }
+
+  .preparation :global(.grid-2 pre) {
+    margin: 1mm 0;
+  }
+
+  .preparation :global(.grid-2 > div) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preparation :global(.grid-2 > div > pre) {
+    margin-top: auto;
+  }
+
+  .preparation :global(.it-line) {
+    margin-top: 4pt;
+  }
+
+  .preparation :global(.it-chip) {
+    margin: 0 5pt 0 0;
+    padding: 1pt 7pt;
+    background: var(--purple);
+    color: var(--color-white);
+    font-weight: 600;
+  }
+
+  .step {
+    display: inline-block;
+    min-width: 1.5em;
+    margin-right: 4pt;
+    padding: 0 4pt;
+    /* A mark too small for the brand corner at its full value takes it at 4px 1px. */
+    border-radius: 4px 1px;
+    background: var(--teal);
+    color: var(--color-white);
+    text-align: center;
+  }
+
+  .closing {
+    margin-top: 2mm;
+  }
+</style>

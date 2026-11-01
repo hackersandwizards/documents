@@ -1,0 +1,958 @@
+/* The onepager stylesheet, the training-offering onepager's own layout (DocOnepager).
+   composeOnepager (scripts/onepager.ts) inlines it after @hackersandwizards/brand's tokens.css and
+   print.css, document.css's print scale (its first :root block), list marker and wordmark rule,
+   and the scoped styles of the components the onepager composes (DocHeader, DocCard), so the
+   onepager takes those pieces of the document base, never all of it.
+   The layout is the onepager's own; colours, families, the corner and every type role come
+   from the brand files, the header and the card from their components, and each other box is
+   the print twin of the website component document.css names for it (callout, chip, swatch
+   bullet, quote, next-step band). Every non-type length and the print rule and tint colours are
+   document.css's print scale.
+
+   Each text takes one role below, never a size of its own. --density scales every print
+   role and the card padding by one factor, so the roles keep their ratios while an offering
+   fits its two A4 pages: 1, print.css's own sizes, and 0.85 under body.tight, the fallback
+   for an offering whose copy is not yet cut to two pages. Declared on body, so body.tight's
+   density reaches the role shorthands.
+
+   Colour: teal marks what a reader scans (labels, section heads, the facts box, the points),
+   purple marks the result (the day step and what participants take home), as the site's
+   gradient runs from teal to purple. Every box takes the brand corner, --radius-brand. */
+body {
+  --density: 1;
+  /* Two rhythms, as on the site: between sections and inside one. */
+  --section: 18px;
+  --stack: 8px;
+  /* The components' corner: the onepager keeps the website's brand corner. */
+  --radius: var(--radius-brand);
+  --card-pad: calc(var(--print-card-pad) * var(--density));
+  /* The onepager's own side margin, narrower than documents' --print-side; DocHeader's bar
+       bleeds by it to the paper edge. */
+  --side: 14mm;
+
+  --op-display: var(--type-display-weight) calc(var(--type-display-size) * var(--density)) /
+    var(--type-display-line-height) var(--type-display-family);
+  --op-stat: var(--type-stat-weight) calc(var(--type-stat-size) * var(--density)) /
+    var(--type-stat-line-height) var(--type-stat-family);
+  --op-h2: var(--type-h2-weight) calc(var(--type-h2-size) * var(--density)) /
+    var(--type-h2-line-height) var(--type-h2-family);
+  --op-h3: var(--type-h3-weight) calc(var(--type-h3-size) * var(--density)) /
+    var(--type-h3-line-height) var(--type-h3-family);
+  --op-h4: var(--type-h4-weight) calc(var(--type-h4-size) * var(--density)) /
+    var(--type-h4-line-height) var(--type-h4-family);
+  --op-lead: var(--type-lead-weight) calc(var(--type-lead-size) * var(--density)) /
+    var(--type-lead-line-height) var(--type-lead-family);
+  --op-body: var(--type-body-weight) calc(var(--type-body-size) * var(--density)) /
+    var(--type-body-line-height) var(--type-body-family);
+  --op-small: var(--type-small-weight) calc(var(--type-small-size) * var(--density)) /
+    var(--type-small-line-height) var(--type-small-family);
+  --op-label: var(--type-label-weight) calc(var(--type-label-size) * var(--density)) /
+    var(--type-label-line-height) var(--type-label-family);
+}
+
+/* The side margin sits on .page, not on @page: Chrome clips content to the page box, and
+   the header bar has to reach the paper edge. Page 1 has no top margin, so DocHeader's
+   gradient strip sits on the paper's top edge as on every h&w document. */
+@page {
+  size: A4;
+  margin: 11mm 0;
+}
+
+@page :first {
+  margin-top: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  font: var(--op-body);
+  color: var(--color-ink);
+  background: var(--color-white);
+  orphans: 3;
+  widows: 3;
+  font-synthesis-weight: none;
+}
+
+p {
+  text-wrap: pretty;
+}
+strong {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+ul {
+  list-style: none;
+}
+
+/* ── Type roles: every text in the onepager takes one of these ── */
+.document-title {
+  font: var(--op-display);
+  letter-spacing: var(--type-display-tracking);
+  word-spacing: var(--type-display-word-spacing);
+}
+
+.proof-number {
+  font: var(--op-stat);
+  letter-spacing: var(--type-stat-tracking);
+}
+
+.section-head,
+.po-track-box h3,
+.mentoring-section h2,
+.block-heading,
+.facts .price-value,
+.pricing-card .price-value {
+  font: var(--op-h3);
+  letter-spacing: var(--type-h3-tracking);
+}
+
+.claim,
+.module h4,
+.goals-columns h4,
+.contrast-col h4,
+.contact-footer h2,
+.mentoring-box h3,
+.format-box h3,
+.company-grid h3 {
+  font: var(--op-h4);
+  letter-spacing: var(--type-h4-tracking);
+}
+
+.intro,
+.testimonial p {
+  font: var(--op-lead);
+}
+
+.section-lead,
+.deliverable-banner p,
+.prereq-box p,
+.proof-box p,
+.scope-box p,
+.goals-lead,
+.po-track-box p,
+.mentoring-why,
+.path-note,
+.track-note,
+.executive-note,
+.block-lead,
+.mentoring-box p,
+.format-box p,
+.community-box p,
+.funding-box p,
+.references-lead {
+  font: var(--op-body);
+}
+
+.facts dd,
+.facts .price p,
+.module li,
+.cover-box li,
+.goals-box li,
+.contrast-col li,
+.scope-box li,
+.scope-item,
+.pricing-card .price-detail,
+.pricing-note,
+.contact-footer,
+.kpi-item,
+.planning dd {
+  font: var(--op-small);
+}
+
+.label,
+.module h3,
+.deliverable-banner h3,
+.kpi-section h3,
+.pricing-section h3,
+.scope-box h3,
+.cover-box h3,
+.prereq-box h3,
+.goals-box h3,
+.proof-box h3,
+.facts dt,
+.price-label,
+.proof-label,
+.testimonial cite,
+.references strong,
+.legal,
+.planning h3,
+.planning dt {
+  font: var(--op-label);
+  letter-spacing: var(--type-label-tracking);
+  text-transform: var(--type-label-case);
+  /* The website's eyebrow: a mono label in teal over the heading it introduces. */
+  color: var(--color-teal-dark);
+}
+
+/* No forced break: blocks never split, and the content flows onto the second page. */
+.page {
+  position: relative;
+  padding: 0 var(--side);
+}
+
+@media screen {
+  body {
+    background: var(--color-bg);
+  }
+  .page {
+    max-width: 794px;
+    margin: 20px auto;
+    padding: 42px 53px;
+    background: var(--color-white);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* ── Header: DocHeader, on the onepager's tighter rhythm ── */
+.page > .doc-header {
+  min-height: 0;
+  padding: calc(var(--print-strip) + 4pt) 0 4pt;
+  margin-bottom: var(--section);
+}
+
+/* ── Hero: a night section, as every page of the site opens ── */
+.hero {
+  /* One opaque gradient, teal at the foot to purple at the head. A stop with alpha makes
+       Chrome write the shading with a soft mask, which macOS Preview draws as a hard band
+       across the box. */
+  background: linear-gradient(
+    20deg,
+    color-mix(in srgb, var(--color-teal) 40%, var(--color-night)) 0%,
+    var(--color-night) 45%,
+    var(--color-night) 62%,
+    color-mix(in srgb, var(--color-purple) 25%, var(--color-night)) 100%
+  );
+  color: var(--color-night-ink);
+  border-radius: var(--radius);
+  padding: 20px 24px 22px;
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+.claim {
+  color: var(--color-teal-night);
+  margin-bottom: 6px;
+}
+
+/* The claim as a statement between blocks (AI Router): body text in ink, the claim itself bold. */
+.page > .claim {
+  font: var(--op-lead);
+  letter-spacing: 0;
+  color: var(--color-ink);
+  margin-bottom: var(--section);
+}
+.page > .claim strong {
+  color: var(--color-teal-dark);
+}
+
+.document-title {
+  color: var(--color-white);
+  margin-bottom: 8px;
+  text-wrap: balance;
+}
+
+.intro {
+  max-width: 150mm;
+  color: var(--color-night-ink);
+}
+
+/* ── Cards: DocCard (`card`, `tint` for its tinted surface), flush in its grid and padded on
+   the onepager's density ── */
+.page .card {
+  margin: 0;
+  padding: var(--card-pad);
+}
+
+.mentoring-box h3,
+.format-box h3,
+.company-grid h3,
+.contrast-col h4 {
+  color: var(--color-ink);
+  text-transform: none;
+  margin-bottom: 3px;
+}
+
+/* ── Facts: the site's facts box, every training the same rows in the same order ── */
+.page > .facts {
+  padding-block: calc(var(--card-pad) * 0.6);
+  margin-bottom: var(--section);
+}
+
+.facts dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  column-gap: 16px;
+}
+
+.facts dl > div {
+  border-top: var(--print-rule) solid var(--teal-line);
+  padding: 4px 0 5px;
+}
+
+.facts dl > div:nth-child(-n + 3) {
+  border-top: 0;
+}
+.facts dl > .wide {
+  grid-column: 1 / -1;
+}
+.facts dl > .span2 {
+  grid-column: span 2;
+}
+
+.facts dt {
+  margin-bottom: 1px;
+}
+.facts dd {
+  color: var(--color-ink);
+}
+
+/* The price takes the box's last row: the figure on one line, the terms beside it. */
+.facts .price {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: baseline;
+  border-top: var(--print-rule) solid var(--teal-line);
+  padding: 5px 0 1px;
+}
+
+.facts .price-value {
+  display: block;
+  color: var(--color-teal);
+  white-space: nowrap;
+}
+
+.facts .price-note {
+  color: var(--color-muted);
+}
+
+/* The decision rows: for whom across the box, then the website's first three facts (format,
+   group, price), in the lead role, with the price terms under them. A file without them keeps
+   the price row above. */
+.facts .key-row {
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  gap: 6px 28px;
+  padding-bottom: 4px;
+}
+
+.facts .key-row > div {
+  border-top: 0;
+}
+.facts .key-row dd {
+  font: var(--op-lead);
+  font-weight: 600;
+}
+.facts .key-row dd.price-value {
+  color: var(--color-teal);
+}
+.facts .key-row .price-cap,
+.facts .key-row .price-day3 {
+  display: block;
+  font: var(--op-small);
+  font-weight: 600;
+  color: var(--color-teal-dark);
+}
+.facts .key-row .price-day3 {
+  font-weight: 400;
+  color: var(--color-ink);
+}
+
+/* With a key card the box is one card: format, group and price with their terms on its teal
+   top, every other fact on white under a hairline, inside the same border. The card ends on its
+   own edge, so the purple rule under it is the only separator. */
+.facts:has(.facts-key) {
+  background: var(--color-white);
+  padding: 0;
+  overflow: hidden;
+}
+.facts-key {
+  background: var(--teal-soft);
+  border-bottom: var(--print-rule) solid var(--teal-line);
+  padding: 10px var(--card-pad) 4px;
+}
+.facts-key .key-row .price-day3 {
+  white-space: normal;
+  contain: inline-size;
+}
+.facts-key .key-row dd {
+  text-wrap: balance;
+}
+/* For whom spans the columns its neighbours size, and never widens them. */
+.facts-key .key-row > .span2,
+.facts-key .key-row > .wide {
+  contain: inline-size;
+}
+.facts:has(.facts-key) dl.details {
+  border-top: 0;
+  padding: 9px var(--card-pad) 10px;
+}
+
+.facts .price-terms {
+  font: var(--op-small);
+  padding-bottom: 6px;
+}
+
+/* Every other fact under one rule, three to a row in the small role, the labels in muted ink:
+   the decision row stays the only large text in the box. */
+.facts dl.details {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px 14px;
+  border-top: var(--print-rule) solid var(--teal-line);
+  padding-top: 8px;
+}
+
+.facts dl.details > div {
+  border-top: 0;
+  padding: 0;
+}
+/* The last row is full: a lone last fact spans the row, a pair takes it as one and two. */
+.facts dl.details > div:last-child:nth-child(3n + 1) {
+  grid-column: 1 / -1;
+}
+.facts dl.details > div:last-child:nth-child(3n + 2) {
+  grid-column: span 2;
+}
+.facts dl.details dt {
+  color: var(--color-muted);
+}
+.facts .url {
+  white-space: nowrap;
+}
+/* Read on screen: every address is a link. In the facts it shows as one, teal and underlined;
+   the header and footer domains keep the colour around them. */
+.facts a.url {
+  color: var(--color-teal-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.section-head {
+  color: var(--color-teal-dark);
+  margin-bottom: 8px;
+  break-after: avoid;
+}
+
+.section-lead {
+  color: var(--color-muted);
+  margin: -4px 0 8px;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: var(--section);
+}
+.module-grid.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.module h3 {
+  color: var(--color-purple);
+  font-weight: 700;
+  margin-bottom: 1px;
+}
+
+.page .module {
+  border-color: var(--teal-line);
+}
+
+.module h4 {
+  color: var(--color-ink);
+  margin-bottom: 6px;
+}
+
+.module-span {
+  grid-column: 1 / -1;
+}
+.module-span ul {
+  columns: 2;
+  column-gap: 22px;
+}
+.module-span li {
+  break-inside: avoid;
+}
+
+/* Points: every list takes document.css's own `ul li` marker, which composeOnepager inlines, so every
+   h&w document draws the identical square. On the onepager's own lines the base's position sits
+   high, measured at 4x on the cap-height centre (2026-10-28): takeaways (lead, 500) 2.9 px, agenda
+   points 3.2 px. Each lift below brings its list within 0.2 px on every item, the agenda's at a
+   value where Chrome's pixel rounding keeps every item in step. The client row is marks. */
+.deliverable-banner li {
+  --li-lift: -0.75pt;
+}
+.module li,
+.goals-box li,
+.contrast-col li,
+.scope-box li,
+.cover-box li {
+  --li-lift: -0.5pt;
+}
+
+/* ── Callout: document.css .callout, the twin of InShort.astro: a teal rule on the left of
+   a teal/5 tint with the brand corner, a caps label, the text in weight 500 ── */
+.deliverable-banner,
+.prereq-box,
+.cover-box,
+.goals-box,
+.proof-box,
+.scope-box {
+  border-left: var(--print-rule-accent) solid var(--color-teal);
+  background: var(--teal-soft);
+  border-radius: var(--radius);
+  padding: calc(var(--card-pad) * 0.8) var(--card-pad);
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+.deliverable-banner h3,
+.prereq-box h3,
+.cover-box h3,
+.goals-box h3,
+.proof-box h3,
+.scope-box h3 {
+  margin-bottom: 4px;
+}
+
+/* What participants take home is the result: a list under a purple rule, no box. A ruled
+   block's text starts on its rule's left edge, as every box's border does: no indent. */
+.deliverable-banner {
+  border-left: 0;
+  border-radius: 0;
+  background: none;
+  border-top: 2px solid var(--color-purple);
+  padding: 8px 0 0;
+}
+
+.deliverable-banner h3 {
+  color: var(--color-purple);
+}
+.deliverable-banner ul {
+  margin-top: 2px;
+}
+.deliverable-banner li {
+  font: var(--op-lead);
+  font-weight: 500;
+}
+
+.deliverable-banner p,
+.prereq-box p,
+.proof-box p,
+.scope-box p,
+.goals-lead {
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.scope-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 20px;
+}
+
+.goals-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 20px;
+  margin-top: 4px;
+}
+
+.goals-columns h4 {
+  margin-bottom: 2px;
+}
+
+.po-track-box {
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+.po-track-box h3 {
+  color: var(--color-ink);
+  margin-bottom: 4px;
+}
+
+.path-note,
+.track-note,
+.executive-note,
+.block-lead,
+.page > .module {
+  margin-bottom: var(--section);
+}
+
+.mentoring-section {
+  border-top: var(--print-rule) solid var(--line);
+  padding: 8px 0 0;
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+.mentoring-section h2,
+.block-heading {
+  margin-bottom: 5px;
+}
+/* A heading or lead between blocks stays with the block it introduces. */
+.block-heading,
+.block-lead {
+  break-after: avoid;
+}
+.mentoring-why {
+  margin-bottom: 8px;
+}
+
+.mentoring-columns,
+.format-columns,
+.contrast-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: var(--stack);
+}
+
+.contrast-col.before h4 {
+  color: var(--color-muted);
+}
+.contrast-col.after h4 {
+  color: var(--color-teal-dark);
+}
+
+/* ── KPIs: named metrics as chips, no figures implied, between thin section rules ── */
+.kpi-section {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 7px 0;
+  border-block: var(--print-rule) solid var(--line);
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+.kpi-section h3 {
+  color: var(--color-ink);
+  font-weight: 700;
+  margin-right: 4px;
+}
+.kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5pt;
+}
+
+/* Chip: document.css .chip, teal-light with ink, weight 500, a pill. */
+.kpi-item {
+  display: inline-flex;
+  gap: 0.3em;
+  padding: var(--print-chip-pad);
+  border-radius: var(--radius-pill);
+  background: var(--color-teal-light);
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
+.kpi-number,
+.kpi-label {
+  font: inherit;
+  color: inherit;
+}
+
+.proof-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(70px, auto);
+  gap: 18px;
+  margin-top: 6px;
+}
+
+.proof-number {
+  color: var(--color-teal);
+}
+
+/* Quote: document.css blockquote, the prose blockquote's purple rule. */
+.testimonial {
+  border-left: var(--print-rule-accent) solid var(--color-purple);
+  padding: 2px 0 2px 12.5pt;
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+.testimonial p {
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.testimonial cite {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+}
+
+.section-divider {
+  display: none;
+}
+
+.community-box,
+.funding-box {
+  border-top: var(--print-rule) solid var(--line);
+  padding: 7px 0;
+  break-inside: avoid;
+}
+
+.community-box p,
+.funding-box p {
+  color: var(--color-ink);
+}
+/* Standing alone between blocks, a ruled row or a contrast pair keeps the section rhythm. */
+.page > .community-box,
+.page > .funding-box,
+.page > .contrast-grid {
+  margin-bottom: var(--section);
+}
+
+.planning {
+  border-top: var(--print-rule) solid var(--line);
+  padding-top: 7px;
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+.planning h3 {
+  margin-bottom: 7px;
+}
+.planning dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px 14px;
+}
+.planning dt {
+  color: var(--color-muted);
+  margin-bottom: 1px;
+}
+.planning dd {
+  color: var(--color-ink);
+}
+.planning dl > div:last-child:nth-child(3n + 2) {
+  grid-column: span 2;
+}
+.planning dl > div:last-child:nth-child(3n + 1) {
+  grid-column: 1 / -1;
+}
+
+.company-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+/* The website's client strip: its marks in its colours and weights (the consumer sets each
+   height, as an inline style), wrapping onto a second row. */
+.references {
+  border-top: var(--print-rule) solid var(--line);
+  padding-top: 7px;
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+
+.references strong {
+  display: block;
+}
+.references-lead {
+  color: var(--color-ink);
+  margin-bottom: 8px;
+}
+.references-lead strong {
+  display: inline;
+  margin-right: 6px;
+}
+
+.client-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 20px;
+  margin-top: 8px;
+}
+
+.client-row li {
+  display: flex;
+  padding: 0;
+  background: none;
+}
+
+/* ── Price cards, where a variant keeps them beside the facts ── */
+.pricing-section {
+  margin-bottom: var(--section);
+  break-inside: avoid;
+}
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 4px 0;
+}
+.pricing-card:only-child {
+  grid-column: 1 / -1;
+}
+.pricing-card .price-value {
+  color: var(--color-teal);
+  margin: 2px 0;
+}
+.pricing-card .price-detail,
+.pricing-note {
+  color: var(--color-muted);
+}
+
+/* ── Closing: document.css .next-step, the twin of NextStepCard.astro, night with white ── */
+.closing {
+  break-inside: avoid;
+}
+
+.contact-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: var(--color-night);
+  color: var(--color-night-muted);
+  border-radius: var(--radius);
+  padding: var(--card-pad);
+  break-inside: avoid;
+}
+
+.contact-footer h2 {
+  color: var(--color-white);
+  margin-bottom: 2px;
+}
+
+.contact-footer a {
+  color: var(--color-teal-night);
+  text-decoration: none;
+  font-weight: 600;
+}
+.contact-footer .cta-links {
+  text-align: right;
+  white-space: nowrap;
+  line-height: 2;
+}
+
+/* The button: document.css .doc-tag, the twin of Cta.astro primary: brand corner, teal
+   fill, white text in weight 500. */
+.contact-footer a.button {
+  display: inline-block;
+  background: var(--color-teal);
+  color: var(--color-white);
+  border-radius: var(--radius);
+  padding: 3pt 10pt;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.legal {
+  margin-top: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+/* The consumer's fit pass gives page 1's blocks after the hero a top margin of --lift-gap and every block
+   after the first one on page 2 one of --air-gap, each at the widest level that keeps the page
+   breaks: free space goes between the blocks instead of under the last one. A margin under
+   --section collapses into it, so every level starts above it. */
+body.air0 {
+  --air-gap: 22px;
+}
+body.air1 {
+  --air-gap: 28px;
+}
+body.air2 {
+  --air-gap: 36px;
+}
+body.air3 {
+  --air-gap: 46px;
+}
+body.air4 {
+  --air-gap: 58px;
+}
+body.lift0 {
+  --lift-gap: 22px;
+}
+body.lift1 {
+  --lift-gap: 26px;
+}
+body.lift2 {
+  --lift-gap: 34px;
+}
+body.lift3 {
+  --lift-gap: 44px;
+}
+body.lift4 {
+  --lift-gap: 56px;
+}
+
+/* The consumer's fit pass sets class="tight" on the body element where the file runs over two pages: every
+   role drops to the tight density, body text takes the small role, and the rhythm closes up. */
+body.tight {
+  --density: 0.85;
+  --section: 7px;
+  --card-pad: calc(var(--print-card-pad) * 0.5);
+}
+body.tight .page > .doc-header {
+  padding-block: calc(var(--print-strip) + 2pt) 2pt;
+}
+body.tight .hero {
+  padding: 13px 18px 14px;
+}
+body.tight .facts dl > div {
+  padding: 3px 0 4px;
+}
+body.tight .deliverable-banner li {
+  font: var(--op-small);
+  font-weight: 500;
+}
+body.tight .intro {
+  font: var(--op-body);
+}
+body.tight .po-track-box p,
+body.tight .mentoring-why,
+body.tight .path-note,
+body.tight .track-note,
+body.tight .executive-note,
+body.tight .mentoring-box p,
+body.tight .format-box p,
+body.tight .community-box p,
+body.tight .funding-box p,
+body.tight .deliverable-banner p,
+body.tight .prereq-box p,
+body.tight .testimonial p {
+  font: var(--op-small);
+}
+body.tight .deliverable-banner p,
+body.tight .prereq-box p,
+body.tight .testimonial p {
+  font-weight: 500;
+}
+body.tight .references {
+  padding-top: 5px;
+}
+
+.kpi-section + .community-box,
+.kpi-section + .funding-box,
+.testimonial + .community-box {
+  border-top: 0;
+  padding-top: 0;
+}

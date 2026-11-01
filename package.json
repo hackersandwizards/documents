@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -16,7 +16,10 @@
     "./document.css": "./document.css",
     "./components/*": "./components/*",
     "./compose": "./scripts/compose.ts",
-    "./render-pdf": "./scripts/render-pdf.ts"
+    "./render-pdf": "./scripts/render-pdf.ts",
+    "./onepager": "./scripts/onepager.ts",
+    "./onepager.css": "./onepager.css",
+    "./survey-readout": "./scripts/survey-readout.ts"
   },
   "bin": {
     "documents-compose": "scripts/compose.ts",
@@ -24,7 +27,10 @@
   },
   "files": [
     "document.css",
+    "onepager.css",
     "components",
+    "scripts/onepager.ts",
+    "scripts/survey-readout.ts",
     "scripts/compose.ts",
     "scripts/render-pdf.ts",
     "scripts/privacy.ts",
@@ -54,7 +60,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v0.17.0",
+    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v0.20.0",
     "@types/bun": "1.4.4",
     "astro": "7.4.4",
     "eslint": "10.14.0",

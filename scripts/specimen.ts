@@ -5,14 +5,25 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composePage, escapeHtml, openComposer } from "./compose";
+import { composeOnepager } from "./onepager";
+import { composeSurveyReadout } from "./survey-readout";
 import * as s from "./samples";
 
 const ROOT = resolve(import.meta.dir, "..");
 const OUT = join(ROOT, "specimen");
 const BRAND = "../node_modules/@hackersandwizards/brand";
 
-// pages: the sheets the document prints on, so the overview's frame shows it whole.
-const PAGES: { file: string; title: string; component: string; props: object; pages?: number }[] = [
+// pages: the sheets the document prints on, so the overview's frame shows it whole. A page that is
+// no A4 document names its frame's size in `frame` and builds itself in `build`.
+const PAGES: {
+  file: string;
+  title: string;
+  component?: string;
+  props?: object;
+  pages?: number;
+  frame?: string;
+  build?: () => string;
+}[] = [
   { file: "angebot", pages: 3, title: "Angebot", component: "DocProposal", props: s.proposalDe },
   {
     file: "quote",
@@ -60,6 +71,47 @@ const PAGES: { file: string; title: string; component: string; props: object; pa
     props: { ...s.certificate, lang: "de", title: "Zertifikat Agentic Engineering Training" },
   },
   {
+    file: "onepager",
+    pages: 2,
+    title: "Onepager",
+    component: "DocOnepager",
+    props: s.onepager,
+  },
+  {
+    file: "vorbereitung",
+    title: "Vorbereitung",
+    component: "DocPreparation",
+    props: s.preparation,
+  },
+  {
+    file: "survey-readout",
+    title: "Survey Readout (English, slides)",
+    frame: "width: 1280px; height: 5208px",
+    build: () => composeSurveyReadout(s.surveyReadout, BRAND),
+  },
+  {
+    file: "delivery-briefing",
+    title: "Delivery Briefing",
+    component: "DocMarkdown",
+    props: {
+      title: "Delivery Briefing: Musterwerk Training",
+      kind: "Delivery Briefing",
+      html: s.deliveryBriefingHtml,
+    },
+  },
+  {
+    file: "trainer-briefing",
+    title: "Trainer Briefing (English, with meta)",
+    component: "DocMarkdown",
+    props: {
+      title: "Trainer Briefing — Musterwerk AG",
+      lang: "en",
+      kind: "Trainer Briefing",
+      meta: ["November 2, 2026"],
+      html: s.trainerBriefingHtml,
+    },
+  },
+  {
     file: "dokument",
     title: "Dokument aus Markdown",
     component: "DocMarkdown",
@@ -103,21 +155,29 @@ const index = (pages: typeof PAGES) => `<!doctype html>
 <link rel="icon" href="${BRAND}/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/print.css" />
+<link rel="stylesheet" href="${BRAND}/expert/header.css" />
 <style>
 body { margin: 0; font-family: var(--font-sans); color: var(--color-ink); background: var(--color-bg); }
-.layout { display: grid; grid-template-columns: 16rem auto; gap: 2.5rem; max-width: calc(210mm + 21rem); margin: 0 auto; padding: 2rem; }
-nav { position: sticky; top: 2rem; align-self: start; }
+.layout { display: grid; grid-template-columns: 16rem auto; gap: 2.5rem; padding-block: 1.5rem 4rem; }
+.layout > nav { position: sticky; top: calc(3.5rem + 4px + 1.5rem); align-self: start; }
 nav ul { list-style: none; padding: 0; margin: 0; }
 nav li { margin: 0.4rem 0; }
 a { color: var(--color-teal-dark); }
-h1 { font-size: var(--type-h2-size); margin-top: 0; }
+h1 { font: 700 1.5rem/1.25 var(--font-mono); letter-spacing: -0.01em; margin-top: 0; }
+h2 { scroll-margin-top: calc(3.5rem + 4px + 1rem); }
 h2 { font-size: var(--type-h4-size); margin-top: 3rem; }
 p { color: var(--color-muted); }
 iframe { display: block; width: 210mm; border: 1px solid var(--color-border-strong); background: white; }
 </style>
 </head>
 <body>
-<div class="layout">
+<header class="hw-header">
+<div class="hw-header-strip"></div>
+<div class="hw-header-row hw-container">
+<a class="hw-header-brand" href="#" aria-label="hackers&amp;wizards Dokumente"><img class="hw-header-logo" src="${BRAND}/logos/lockup-screen.svg" alt="" width="8042" height="1489" /><img class="hw-header-logo-night" src="${BRAND}/logos/lockup-screen-night.svg" alt="" width="8196" height="1641" /><span class="hw-header-product">Dokumente</span></a>
+</div>
+</header>
+<div class="layout hw-container">
 <nav aria-label="Dokumenttypen">
 <ul>
 ${pages.map((p) => `<li><a href="#${p.file}">${escapeHtml(p.title)}</a></li>`).join("\n")}
@@ -126,7 +186,7 @@ ${pages.map((p) => `<li><a href="#${p.file}">${escapeHtml(p.title)}</a></li>`).j
 <main>
 <h1>hackers&amp;wizards Dokumente: Muster</h1>
 <p>Jeder Dokumenttyp aus <code>@hackersandwizards/documents</code>, mit erfundenen Daten. Jeder Betrag ist ein Platzhalter. Das Gate baut diese Seiten neu und vergleicht sie.</p>
-${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" style="height: ${(p.pages ?? 1) * 297}mm" loading="lazy"></iframe>`).join("\n")}
+${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" style="${p.frame ?? `height: ${(p.pages ?? 1) * 297}mm`}" loading="lazy"></iframe>`).join("\n")}
 </main>
 </div>
 </body>
@@ -151,12 +211,16 @@ export async function buildSpecimen(): Promise<Map<string, string>> {
     try {
       files.set(
         `${page.file}.html`,
-        await composePage(
-          composer,
-          page.component,
-          page.props as Record<string, unknown>,
-          specimenBase,
-        ),
+        page.build
+          ? page.build()
+          : page.component === "DocOnepager"
+            ? await composeOnepager(composer, s.onepager, BRAND, true)
+            : await composePage(
+                composer,
+                page.component!,
+                page.props as Record<string, unknown>,
+                specimenBase,
+              ),
       );
     } finally {
       await composer.close();
@@ -167,7 +231,10 @@ export async function buildSpecimen(): Promise<Map<string, string>> {
 }
 
 if (import.meta.main) {
-  const covered = PAGES.reduce((all, p) => shown(p.component, all), new Set<string>());
+  const covered = PAGES.reduce(
+    (all, p) => (p.component ? shown(p.component, all) : all),
+    new Set<string>(),
+  );
   const missing = readdirSync(join(ROOT, "components"))
     .map((f) => f.replace(/\.astro$/, ""))
     .filter((c) => !covered.has(c));

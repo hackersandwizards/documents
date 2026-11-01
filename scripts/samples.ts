@@ -287,3 +287,207 @@ export const proseHtml = `<span class="eyebrow">Interne Notiz</span>
 <table><thead><tr><th>Spalte</th><th>Wert</th></tr></thead><tbody><tr><td>A</td><td>1</td></tr></tbody></table>
 <blockquote><p>Ein Zitat.</p></blockquote>
 <pre><code>$ bun run check</code></pre>`;
+
+/** A training-offering onepager: an invented offering, placeholder prices, an invented testimonial,
+ * no client marks. Each block onepager.css styles once. */
+export const onepager = {
+  lang: "de" as const,
+  title: "Beispieltraining: Agenten im Teamalltag",
+  html: `<header class="hero">
+  <p class="claim">Ein Satz, der das Versprechen des Angebots trägt.</p>
+  <h1 class="document-title">Beispieltraining: Agenten im Teamalltag</h1>
+  <p class="intro">Zwei bis drei Sätze, für wen das Angebot ist und was sich nach ihm ändert. Der Text steht hier als Muster und beschreibt kein echtes Angebot.</p>
+</header>
+<div class="card tint facts">
+  <div class="facts-key">
+    <dl class="key-row">
+      <div class="wide"><dt>Für wen</dt><dd>Teams, die mit Coding-Agenten anfangen</dd></div>
+      <div><dt>Format</dt><dd>Zwei Tage, remote oder vor Ort</dd></div>
+      <div><dt>Gruppe</dt><dd>8 bis 12 Teilnehmende</dd></div>
+      <div><dt>Preis</dt><dd class="price-value">X.XXX € pro Person<span class="price-cap">höchstens XX.XXX € pro Team</span></dd></div>
+    </dl>
+    <p class="price-terms"><span class="price-note">Netto zzgl. USt. Jeder Betrag in diesem Muster ist ein Platzhalter.</span></p>
+  </div>
+  <dl class="details">
+    <div><dt>Voraussetzung</dt><dd>Erste Erfahrung mit einem Coding-Agenten</dd></div>
+    <div><dt>Hands-on</dt><dd>Übungen auf einer Beispiel-Codebasis</dd></div>
+    <div><dt>Zuschnitt</dt><dd>Im Vorgespräch auf das Team</dd></div>
+    <div><dt>Sprache</dt><dd>Deutsch oder Englisch</dd></div>
+    <div><dt>Abschluss</dt><dd>Teilnahmezertifikat</dd></div>
+    <div><dt>Einkauf und Recht</dt><dd><a class="url" href="https://example.com/einkauf">Vertrag und NDA</a></dd></div>
+  </dl>
+</div>
+<div class="deliverable-banner">
+  <h3>Was euer Team mitnimmt</h3>
+  <ul>
+    <li>Ein erster Workflow, den das Team selbst trägt</li>
+    <li>Das Handout zum Training</li>
+  </ul>
+</div>
+<div class="mentoring-section">
+  <h2>Mentoring nach dem Training</h2>
+  <p class="mentoring-why">Separat zu XXX € pro Stunde. Ein Absatz, wie die Begleitung nach dem Training läuft.</p>
+</div>
+<div class="module-grid">
+  <div class="card module">
+    <h3>Tag 1</h3>
+    <h4>Grundlagen und erste Übungen</h4>
+    <ul>
+      <li><strong>Einstieg:</strong> was ein Agent im Alltag übernimmt</li>
+      <li><strong>Spezifikation:</strong> die Aufgabe so stellen, dass sie prüfbar ist</li>
+      <li><strong>Tests zuerst:</strong> der Agent arbeitet gegen ein Ziel</li>
+    </ul>
+  </div>
+  <div class="card module">
+    <h3>Tag 2</h3>
+    <h4>Review und eigene Vorhaben</h4>
+    <ul>
+      <li><strong>Review:</strong> Ergebnisse des Agenten prüfen</li>
+      <li><strong>Regeln:</strong> was das Team festhält</li>
+      <li><strong>Eigene Vorhaben:</strong> echte Arbeit aus dem Backlog</li>
+    </ul>
+  </div>
+</div>
+<p class="path-note"><strong>Ein Hinweis zwischen den Blöcken:</strong> ein Satz, der eine Frage vorwegnimmt.</p>
+<div class="planning">
+  <h3>Gut zu wissen</h3>
+  <dl>
+    <div><dt>Tageszeiten</dt><dd>Nach Absprache</dd></div>
+    <div><dt>Vorlauf</dt><dd>Nach Absprache</dd></div>
+    <div><dt>Mehrere Teams</dt><dd>Team für Team in Wellen</dd></div>
+    <div><dt>Absage</dt><dd>Wie im Angebot vereinbart</dd></div>
+  </dl>
+</div>
+<div class="testimonial">
+  <p>„Ein erfundenes Zitat, ein bis zwei Sätze lang, wie es eine Teilnehmerin nach dem Training sagen könnte.“</p>
+  <cite>Mara Beispiel, Engineering Lead, Musterwerk AG</cite>
+</div>
+<div class="references">
+  <p class="references-lead"><strong>Über den Anbieter</strong> Zwei Sätze über den Anbieter stehen hier als Platzhalter.</p>
+</div>
+<div class="closing">
+  <div class="contact-footer">
+    <div>
+      <h2>Dieses Training für euer Team?</h2>
+      <p>Erzählt uns von eurem Team, und wir schicken euch ein Angebot.</p>
+    </div>
+    <div class="cta-links">
+      <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a><br />
+      <a class="button" href="https://example.com/call">Gespräch buchen</a>
+    </div>
+  </div>
+  <p class="legal">hackers&amp;wizards GmbH · Osterstraße 95 · 20259 Hamburg · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
+</div>`,
+};
+
+/** An attendee-feedback readout: invented responses for an invented team. */
+const ratings = (title: string, dist: number[], start = 1, group?: string) => {
+  const n = dist.reduce((a, b) => a + b, 0);
+  const mean = dist.reduce((sum, c, i) => sum + c * (start + i), 0) / n;
+  return { title, n, mean, start, end: start + dist.length - 1, dist, group };
+};
+export const surveyReadout = {
+  customerName: "Musterwerk AG",
+  training: "Agentic Engineering Training",
+  days: 2,
+  dateRange: "Training date 12 Nov 2026",
+  attendees: 12,
+  teams: 1,
+  counts: { all: 11, completed: 10 },
+  headline: ratings("How satisfied are you with the training overall?", [0, 0, 1, 4, 5]),
+  scales: [
+    ratings("The exercises fit our daily work.", [0, 1, 5, 4]),
+    ratings("The pace was right for me.", [0, 2, 6, 2]),
+    ratings("The trainer explained clearly.", [0, 0, 3, 7], 1, "Trainer"),
+    ratings("The trainer answered our questions.", [0, 0, 2, 8], 1, "Trainer"),
+    ratings("I feel confident using agents at work.", [0, 3, 5, 2], 1, "Confidence & application"),
+  ],
+  risks: [
+    { label: "Review effort grows", n: 5 },
+    { label: "Unclear rules in the team", n: 3 },
+    { label: "Tool access", n: 2 },
+  ],
+  noRisk: { label: "I do not see a major risk", n: 1 },
+  asked: { liked: "What did you like most?", improve: "What should we improve?" },
+  liked: [
+    "An invented answer: the exercises on a real codebase made the difference for me.",
+    "An invented answer: clear structure and room for questions.",
+    "An invented answer: the review loop.",
+  ],
+  improve: [
+    "An invented answer: more time for the second exercise.",
+    "An invented answer: a short summary at the end of each day.",
+  ],
+  readout: {
+    strengths: [
+      "Overall satisfaction (4.4)",
+      "The exercises fit our daily work. (3.3)",
+      "The trainer explained clearly. (3.7)",
+      "The trainer answered our questions. (3.8)",
+    ],
+    weak: ["I feel confident using agents at work. (2.9)"],
+    weakColors: ["var(--color-teal)"],
+    flags: ["Top perceived risk: Review effort grows (5×)"],
+  },
+};
+
+/** A preparation document for the attendees of an invented training. */
+export const preparation = {
+  lang: "de" as const,
+  title: "Vorbereitung Training: Musterwerk",
+  kind: "Vorbereitung",
+  meta: ["12. und 13. November 2026", "Musterwerk AG, Hamburg"],
+  eyebrow: "Agentic Engineering Training",
+  heading: "Vorbereitung für das Training",
+  note: {
+    label: "Gut vorbereitet",
+    html: `<p><strong>Einmal vorab, dann legen wir entspannt los.</strong> Spielt das Setup bis eine Woche vor dem Training einmal durch, dann bleibt Zeit für Fragen.</p>
+<p class="it-line"><span class="chip it-chip">Für eure IT</span>Dürft ihr nicht selbst installieren, gebt diese Seite an eure IT weiter.</p>`,
+  },
+  steps: [
+    {
+      title: "Werkzeuge prüfen",
+      html: `<p>Schaut, ob beides da ist: <code>node --version</code> und <code>git --version</code>.</p>
+<div class="grid-2">
+<div><span class="label">Windows</span><p class="small">In der PowerShell als Admin:</p><pre><code>choco install nodejs-lts git</code></pre></div>
+<div><span class="label">Mac</span><p class="small">Im Terminal:</p><pre><code>brew install node git</code></pre></div>
+</div>`,
+    },
+    {
+      title: "Beispielprojekt starten",
+      html: `<pre><code>git clone https://example.com/beispielprojekt.git
+cd beispielprojekt
+npm install
+npm run dev</code></pre>
+<p>Dann öffnet ihr <a href="http://localhost:3000">http://localhost:3000</a>.</p>`,
+    },
+    {
+      title: "Coding-Agent bereit",
+      html: `<p>Startet euren Coding-Agenten im Projektordner und stellt ihm eine Frage.</p>
+<p class="small muted">Beim ersten Start meldet ihr euch mit eurem Firmenzugang an.</p>`,
+    },
+  ],
+  closing: `<p>Bis bald, ich freue mich. <strong>Mara</strong> <span class="muted">· mara@example.com</span></p>`,
+};
+
+/** A delivery briefing as pandoc writes the Markdown: hard facts, soft facts, open items. */
+export const deliveryBriefingHtml = `<h1>Delivery Briefing: Musterwerk Training</h1>
+<p class="subtitle">What the trainer needs to know before the first day, from the records.</p>
+<h2>Hard facts</h2>
+<dl><dt>Dates</dt><dd>12 and 13 November 2026, 09:00 to 17:00</dd><dt>Place</dt><dd>On site, Hamburg</dd><dt>Group</dt><dd>12 developers, one team</dd><dt>Stack</dt><dd>TypeScript, a monorepo</dd></dl>
+<h2>Soft facts</h2>
+<ul><li>The team has used a coding agent for a few weeks, each person in their own way.</li><li>The team lead wants shared rules more than speed.</li></ul>
+<h2>What is special here</h2>
+<p>An invented paragraph: the exercises run on a copy of the team's codebase.</p>
+<h2>Open items</h2>
+<table><thead><tr><th>Item</th><th>Owner</th></tr></thead><tbody><tr><td>Licences for every attendee</td><td>Client</td></tr><tr><td>Room with a projector</td><td>Client</td></tr></tbody></table>`;
+
+/** A trainer briefing as the deal page's button builds it: English, the date under the tag. */
+export const trainerBriefingHtml = `<span class="eyebrow">Trainer Briefing</span>
+<h1>Musterwerk AG</h1>
+<h2>Hard Facts</h2>
+<p><strong>Location:</strong> On site, Hamburg<br /><strong>Language:</strong> German<br /><strong>Programming languages:</strong> TypeScript<br /><strong>Planned group size:</strong> 12</p>
+<h2>Training Content</h2>
+<p><strong>Tools:</strong> the team's own coding agent<br /><strong>Level:</strong> first weeks with agents</p>
+<h2>Open Decisions</h2>
+<ul><li>Which repository the exercises use</li></ul>`;

@@ -64,6 +64,8 @@ const props: Record<string, Record<string, unknown>> = {
     total: P,
   },
   DocMarkdown: { kind: P, html: `<p>${P}</p>` },
+  DocOnepager: { lang: "de", html: `<p>${P}</p>` },
+  DocPreparation: { title: P, kind: P, heading: P, steps: [{ title: P, html: `<p>${P}</p>` }] },
   DocPriceTable: {
     columns: [{ label: P }, { label: P, num: true }],
     rows: [{ item: P, cells: [P] }],
