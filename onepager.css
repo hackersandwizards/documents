@@ -12,7 +12,7 @@
    where the role shorthands are declared.
 
    Colour: teal marks what a reader scans (labels, section heads, the facts box, the points),
-   purple marks the result (the day step and what participants take home), as the site's
+   purple marks the result (the day step, the quote's rule), as the site's
    gradient runs from teal to purple. Every box takes the brand corner. */
 /* The onepager's own values on the base roles: the website's brand corner, its narrower side
    margin, which DocHeader's bar bleeds by to the paper edge, and the density the fit pass sets. */
@@ -81,7 +81,6 @@ ul {
   letter-spacing: var(--tracking-h3);
 }
 
-.claim,
 .module h4,
 .goals-columns h4,
 .contrast-col h4,
@@ -132,6 +131,7 @@ ul {
 }
 
 .label,
+.claim,
 .module h3,
 .deliverable-banner h3,
 .kpi-section h3,
@@ -192,6 +192,8 @@ ul {
   break-inside: avoid;
 }
 
+/* The claim over the title is the hero's kicker: the label role in teal-night, the sentence as
+   written, in caps (os decision onepager-hero-tagline). */
 .claim {
   color: var(--night-accent);
   margin-bottom: var(--op-6);
@@ -201,6 +203,7 @@ ul {
 .page > .claim {
   font: var(--role-lead);
   letter-spacing: 0;
+  text-transform: none;
   color: var(--ink);
   margin-bottom: var(--op-section);
 }
@@ -446,19 +449,16 @@ ul {
   margin-bottom: var(--op-4);
 }
 
-/* What participants take home is the result: a list under a purple rule, no box. A ruled
+/* What participants take home: a list under a teal rule, no box, its label teal as every label. A ruled
    block's text starts on its rule's left edge, as every box's border does: no indent. */
 .deliverable-banner {
   border-left: 0;
   border-radius: 0;
   background: none;
-  border-top: var(--op-2) solid var(--result);
+  border-top: var(--op-2) solid var(--accent);
   padding: var(--op-8) 0 0;
 }
 
-.deliverable-banner h3 {
-  color: var(--result);
-}
 .deliverable-banner ul {
   margin-top: var(--op-2);
 }
