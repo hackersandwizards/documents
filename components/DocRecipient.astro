@@ -1,5 +1,5 @@
 ---
-// The recipient card, Card.astro's tint surface: a label in caps, the company bold, then the
+// The recipient card, the base's .prepared on Card.astro's tint surface: a label in caps, the company bold, then the
 // person and the address, one per line.
 interface Props {
   label: string;
@@ -22,39 +22,8 @@ const { label, company, lines, contact } = Astro.props;
   ))}
   {contact && (
     <>
-      <span class="label second">{contact.label}</span>
+      <span class="label">{contact.label}</span>
       {contact.name}
     </>
   )}
 </div>
-
-<style>
-  .prepared {
-    align-self: start;
-    padding: var(--card-pad);
-    border: var(--rule) solid var(--accent-line);
-    border-radius: var(--radius);
-    background: var(--accent-soft);
-    font: var(--role-small);
-    break-inside: avoid;
-  }
-
-  /* typography.css .label-caps, in ink as the footer's group headings set it. */
-  .label {
-    display: block;
-    margin-bottom: var(--space-label);
-    font: var(--role-label);
-    letter-spacing: var(--tracking-caps);
-    text-transform: var(--case-label);
-    color: var(--ink);
-  }
-
-  .second {
-    margin-top: var(--space-group);
-  }
-
-  /* The contact label is the card's last element, its name a bare text after it: no gap under it. */
-  .prepared > :last-child {
-    margin-bottom: 0;
-  }
-</style>

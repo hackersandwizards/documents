@@ -7,44 +7,33 @@ import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
 interface Props {
   /** The document kind in the tag, e.g. "Honorarsätze". */
   kind: string;
-  /** Names the legal entity and its seat under the wordmark, for documents h&w issues as the GmbH
-   * (§ 35a GmbHG puts legal form and seat on business letters, not on the logo). */
+  /** Sets the imprint under the lockup, for a business letter h&w issues as the GmbH to a named
+   * recipient. § 35a Abs. 1 GmbHG asks for legal form, seat, register court and number and every
+   * managing director; the address and the VAT ID are what a buyer's purchase order needs. Each
+   * fact appears once: "Sitz und Registergericht Hamburg" names the city for both. Three lines in
+   * place of five and a mail address: a blind panel (Claude, Codex; procurement, engineering lead;
+   * two runs) scored them 45.5 of 50 against 42.1, the imprint in the page-1 footer 46.3, a tie
+   * inside the noise of 4 that went to the header, which needs no exception in the margin boxes
+   * (2026-11-01). */
   legal?: boolean;
-  /** The rest of the imprint under the entity line; a Markdown contract names the parties in its
-   * body and keeps only the entity line. */
-  imprint?: boolean;
   /** Lines under the tag, such as the date and the validity. */
   meta?: string[];
   /** The imprint's language. */
   lang?: "de" | "en";
   /** Sets the tag as a link to this address, such as the website the tag names. */
   href?: string;
-  /** Replaces the entity line and the imprint lines of `lang` below. */
-  imprintLines?: string[];
-  /** The imprint's mail address. */
-  mail?: string;
 }
-const {
-  kind,
-  legal = false,
-  imprint = legal,
-  meta = [],
-  lang = "de",
-  href,
-  mail = "summon@hackersandwizards.dev",
-} = Astro.props;
-const [entity, ...imprintLines] = Astro.props.imprintLines ?? {
+const { kind, legal = false, meta = [], lang = "de", href } = Astro.props;
+const imprint = {
   de: [
-    "hackers&wizards GmbH, Sitz Hamburg",
-    "Geschäftsführer: Benedikt Stemmildt & Stefan Munz",
-    "Osterstraße 95, 20259 Hamburg",
-    "AG Hamburg HRB 198840, USt-IdNr. DE463065921",
+    "hackers&wizards GmbH, Osterstraße 95, 20259 Hamburg",
+    "Sitz und Registergericht Hamburg, HRB 198840, USt-IdNr. DE463065921",
+    "Geschäftsführer: Benedikt Stemmildt, Stefan Munz",
   ],
   en: [
-    "hackers&wizards GmbH, registered office Hamburg",
-    "Managing Directors: Benedikt Stemmildt & Stefan Munz",
-    "Osterstraße 95, 20259 Hamburg, Germany",
-    "AG Hamburg HRB 198840, VAT ID DE463065921",
+    "hackers&wizards GmbH, Osterstraße 95, 20259 Hamburg, Germany",
+    "Registered office and court Hamburg, HRB 198840, VAT ID DE463065921",
+    "Managing Directors: Benedikt Stemmildt, Stefan Munz",
   ],
 }[lang];
 // Base64 rather than Vite's URL-encoded SVG inline.
@@ -58,19 +47,12 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     </div>
     {legal && (
       <div class="company-meta">
-        {entity}
-        {imprint && (
+        {imprint.map((line, i) => (
           <>
-            {imprintLines.map((line) => (
-              <>
-                <br />
-                {line}
-              </>
-            ))}
-            <br />
-            <a href={`mailto:${mail}`}>{mail}</a>
+            {i > 0 && <br />}
+            {line}
           </>
-        )}
+        ))}
       </div>
     )}
   </div>

@@ -45,6 +45,16 @@ const proposal = {
   orderTerm: "[ORDER-TERM]",
 };
 const props: Record<string, Record<string, unknown>> = {
+  DocAgreement: {
+    lang: "de",
+    title: P,
+    date: P,
+    heading: P,
+    parties: [{ label: P, company: P, lines: [P] }],
+    clauses: [{ title: P, html: `<p>${P}</p>` }],
+    signatures: [{ label: P, party: P, name: P }],
+    counterparty: P,
+  },
   DocCallout: { title: P },
   DocCard: { title: P },
   DocCertificate: {
@@ -97,6 +107,7 @@ const props: Record<string, Record<string, unknown>> = {
   },
   DocRecipient: { label: P, company: P, lines: [P] },
   DocSectionHead: { title: P },
+  DocSignatures: { signatures: [{ label: P, party: P, name: P }], placeDate: P, signature: P },
   DocSteps: { steps: [{ when: P, name: P }] },
   DocTitle: { title: P },
   DocTotalRow: { label: P, span: 1, figures: [P] },
@@ -169,23 +180,31 @@ test("styles() returns each scoped style once, however often it is called", asyn
   expect(await composer.styles()).toBe(await composer.styles());
 });
 
-// § 35a GmbHG puts legal form and seat on business letters: every document issued as the GmbH names
-// both in the imprint's first line, and nothing stands beside the lockup.
+// § 35a GmbHG puts legal form, seat, register court and number and every managing director on
+// business letters: every document issued as the GmbH carries them in the imprint, each fact once.
 test.each([
+  ["DocProposal", { ...proposal, lang: "en" }, "Registered office and court Hamburg, HRB 198840"],
   [
-    "DocProposal",
-    { ...proposal, lang: "en" },
-    "hackers&amp;wizards GmbH, registered office Hamburg",
+    "DocLeistungsnachweis",
+    props.DocLeistungsnachweis,
+    "Sitz und Registergericht Hamburg, HRB 198840",
   ],
-  ["DocLeistungsnachweis", props.DocLeistungsnachweis, "hackers&amp;wizards GmbH, Sitz Hamburg"],
-  ["DocRateCard", props.DocRateCard, "hackers&amp;wizards GmbH, Sitz Hamburg"],
-  ["DocMarkdown", { ...props.DocMarkdown, legal: true }, "hackers&amp;wizards GmbH, Sitz Hamburg"],
+  ["DocRateCard", props.DocRateCard, "Sitz und Registergericht Hamburg, HRB 198840"],
+  ["DocAgreement", props.DocAgreement, "Sitz und Registergericht Hamburg, HRB 198840"],
+  [
+    "DocMarkdown",
+    { ...props.DocMarkdown, legal: true },
+    "Sitz und Registergericht Hamburg, HRB 198840",
+  ],
 ])(
-  "%s names the legal entity and its seat in the imprint",
-  async (name, componentProps, entity) => {
+  "%s carries the imprint of § 35a GmbHG",
+  async (name, componentProps, register) => {
     const html = await composer.render(name, componentProps as Record<string, unknown>);
-    expect(html).toMatch(new RegExp(`class="company-meta"[^>]*>\\s*${entity}`));
-    expect(html).not.toContain('class="legal"');
+    const imprint = html.match(/class="company-meta"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? "";
+    expect(imprint).toContain("hackers&amp;wizards GmbH");
+    expect(imprint).toContain(register);
+    expect(imprint).toContain("Benedikt Stemmildt, Stefan Munz");
+    expect(imprint.match(/Hamburg/g)).toHaveLength(2);
   },
   30_000,
 );
@@ -221,4 +240,23 @@ test.each([
 ])("%s keeps a running head's text inside its style element", async (name, componentProps) => {
   const html = await composer.render(name, componentProps as Record<string, unknown>);
   expect(html).not.toContain("</style><b>x");
+});
+
+// An agreement is a contract with parties or a letter with a recipient, never both; its clauses
+// number themselves.
+test("DocAgreement numbers its clauses and takes one form", async () => {
+  const two = {
+    ...props.DocAgreement,
+    clauses: [
+      { title: "A", html: "<p>a</p>" },
+      { title: "B", html: "<p>b</p>" },
+    ],
+  };
+  const html = await composer.render("DocAgreement", two);
+  expect(html).toContain("§ 1 A");
+  expect(html).toContain("§ 2 B");
+  const letter = { recipient: { label: P, company: P, lines: [P] }, greeting: [P] };
+  await expect(composer.render("DocAgreement", { ...props.DocAgreement, letter })).rejects.toThrow(
+    "either parties or letter",
+  );
 });

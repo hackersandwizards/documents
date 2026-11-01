@@ -1,0 +1,164 @@
+---
+// An agreement signed by hand, German or English: a contract, an NDA, a framework agreement, a
+// statement of work, a change order or an order confirmation. Two forms of one type: a contract
+// names its parties in cards under the title, a letter (an order confirmation) opens with the
+// greeting beside the recipient's card. Both follow with the facts, the preamble, the clauses
+// numbered "§ n" and the signature block. A clause body is Markdown HTML, so it carries lists and
+// tables; the engine sets it like any Markdown body.
+import DocHeader from "./DocHeader.astro";
+import DocLead from "./DocLead.astro";
+import DocProse from "./DocProse.astro";
+import DocRecipient from "./DocRecipient.astro";
+import DocSignatures from "./DocSignatures.astro";
+import DocTitle from "./DocTitle.astro";
+import { cssString, fill } from "../scripts/fill";
+
+// The agreement's own words, German and English; `labels` replaces any of them, `{name}` marks a
+// value filled in.
+const DE = {
+  kind: "Vereinbarung",
+  number: "Nr. {number}",
+  date: "Datum: {date}",
+  between: "Zwischen",
+  facts: "Eckdaten",
+  preamble: "Präambel",
+  clause: "§ {n} {title}",
+  placeDate: "Ort, Datum",
+  signature: "Unterschrift: {name}",
+  runningBrand: "hackers&wizards GmbH",
+};
+const EN: typeof DE = {
+  kind: "Agreement",
+  number: "No. {number}",
+  date: "Date: {date}",
+  between: "Between",
+  facts: "Key facts",
+  preamble: "Preamble",
+  clause: "§ {n} {title}",
+  placeDate: "Place, date",
+  signature: "Signature: {name}",
+  runningBrand: "hackers&wizards GmbH",
+};
+
+interface Party {
+  /** The party's role, "Auftraggeber". */
+  label: string;
+  company: string;
+  /** The representative and the address, one per line. */
+  lines: string[];
+}
+interface Props {
+  lang: "de" | "en";
+  /** The document title, "Geheimhaltungsvereinbarung Mara Beispiel". */
+  title: string;
+  /** The header tag, "Geheimhaltungsvereinbarung"; defaults to the type's own word. */
+  kind?: string;
+  number?: string;
+  date: string;
+  eyebrow?: string;
+  heading: string;
+  subtitle?: string;
+  /** The contract form: the parties in cards under the title. */
+  parties?: Party[];
+  /** The letter form: the greeting, its salutation first, beside the recipient's card. */
+  letter?: { recipient: Party; greeting: string[] };
+  facts?: { term: string; value: string }[];
+  preamble?: string[];
+  /** Numbered "§ 1" on; `html` is a sanitized Markdown body. */
+  clauses?: { title: string; html: string }[];
+  signatures: { label: string; party: string; name: string }[];
+  /** The running footer, the counterparty's short name. */
+  counterparty: string;
+  /** Replaces any of the agreement's own words (DE, EN above). */
+  labels?: Partial<typeof DE>;
+}
+const p = Astro.props;
+if (!p.parties === !p.letter) throw new Error("DocAgreement: give either parties or letter");
+const t = { ...(p.lang === "de" ? DE : EN), ...p.labels };
+const kind = p.kind ?? t.kind;
+// The running header and footer, as the proposal sets them; off on page 1, under the header.
+const running = `@page {
+  @top-left { content: ${cssString(t.runningBrand)}; }
+  @top-right { content: ${cssString(p.title)}; }
+  @bottom-left { content: ${cssString(p.counterparty)}; }
+}
+@page :first { @top-left { content: none; } @top-right { content: none; } }`;
+---
+
+<style is:inline data-hw-page set:html={running} />
+<DocHeader
+  kind={kind}
+  legal
+  lang={p.lang}
+  meta={[p.number && fill(t.number, p), fill(t.date, p)].filter(
+    (line): line is string => !!line,
+  )}
+/>
+<DocTitle eyebrow={p.eyebrow} title={p.heading} subtitle={p.subtitle} />
+{
+  p.parties && (
+    <div class="section">
+      <span class="label">{t.between}</span>
+      <div class="grid-2">
+        {p.parties.map((party) => (
+          <DocRecipient label={party.label} company={party.company} lines={party.lines} />
+        ))}
+      </div>
+    </div>
+  )
+}
+{
+  p.letter && (
+    <DocLead>
+      {p.letter.greeting.map((text) => (
+        <p>{text}</p>
+      ))}
+      <DocRecipient
+        slot="aside"
+        label={p.letter.recipient.label}
+        company={p.letter.recipient.company}
+        lines={p.letter.recipient.lines}
+      />
+    </DocLead>
+  )
+}
+{
+  p.facts && (
+    <div class="section">
+      <h2>{t.facts}</h2>
+      <dl>
+        {p.facts.map((fact) => (
+          <>
+            <dt>{fact.term}</dt>
+            <dd>{fact.value}</dd>
+          </>
+        ))}
+      </dl>
+    </div>
+  )
+}
+{
+  p.preamble && (
+    <div class="section">
+      <h2>{t.preamble}</h2>
+      {p.preamble.map((text) => (
+        <p>{text}</p>
+      ))}
+    </div>
+  )
+}
+{
+  p.clauses?.map((clause, i) => (
+    <div>
+      <h2>{fill(t.clause, { n: String(i + 1), title: clause.title })}</h2>
+      <DocProse html={clause.html} />
+    </div>
+  ))
+}
+<DocSignatures signatures={p.signatures} placeDate={t.placeDate} signature={t.signature} />
+
+<style>
+  .section {
+    margin-top: var(--section-space);
+  }
+</style>

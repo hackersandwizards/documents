@@ -14,17 +14,6 @@ const { eyebrow, title, subtitle } = Astro.props;
 {subtitle && <p class="subtitle">{subtitle}</p>}
 
 <style>
-  .eyebrow {
-    display: block;
-    margin-bottom: var(--space-heading);
-    font: var(--role-small);
-    font-family: var(--label-family);
-    font-weight: var(--weight-label);
-    letter-spacing: var(--tracking-caps);
-    text-transform: var(--case-label);
-    color: var(--accent-text);
-  }
-
   .subtitle {
     max-width: var(--measure);
     margin-bottom: var(--subtitle-space-after);

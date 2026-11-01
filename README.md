@@ -23,16 +23,18 @@ Bun fetches the `git+https://` form through GitHub's tarball API without any Git
 
 | Import or command                                         | What                                                                  |
 | --------------------------------------------------------- | --------------------------------------------------------------------- |
+| `@hackersandwizards/documents/tokens.css`                 | the document tokens: every value a role on the brand's tokens         |
 | `@hackersandwizards/documents/document.css`               | the print base                                                        |
 | `@hackersandwizards/documents/onepager.css`               | the onepager's own stylesheet                                         |
 | `@hackersandwizards/documents/handout.css`                | the handout's print stylesheet                                        |
 | `@hackersandwizards/documents/components/<Doc*.astro>`    | a document component                                                  |
 | `@hackersandwizards/documents/render-pdf`                 | `renderPdf`, `bakeDocumentCss`, `composeDocument`, `assertBrandFonts` |
 | `@hackersandwizards/documents/compose`                    | `openComposer`, `composePage`                                         |
-| `@hackersandwizards/documents/onepager`                   | `composeOnepager`: `DocOnepager` on the onepager's own stylesheet     |
+| `@hackersandwizards/documents/onepager`                   | `composeOnepager`, `fitOnepager`: the onepager and its two-page fit   |
 | `@hackersandwizards/documents/survey-readout`             | `composeSurveyReadout`: the attendee-feedback readout deck            |
 | `bun run documents-compose <Doc> <props.json> <out.html>` | one component with its props as standalone HTML                       |
 | `bun run documents-privacy [--deny <terms.txt>]`          | fails on private data in the package, and on each term of the file    |
+| `bun run documents-styles <file or dir>...`               | fails on a style in a document HTML file that the engine did not draw |
 
 Astro and Vite are peer dependencies: the consumer's own copies compile the components.
 

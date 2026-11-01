@@ -59,6 +59,19 @@ const PAGES: {
     props: s.leistungsnachweisLumpSum,
   },
   {
+    file: "geheimhaltungsvereinbarung",
+    pages: 2,
+    title: "Vereinbarung: Geheimhaltung (Vertrag)",
+    component: "DocAgreement",
+    props: s.agreementNda,
+  },
+  {
+    file: "auftragsbestaetigung",
+    title: "Vereinbarung: Auftragsbestätigung (Brief)",
+    component: "DocAgreement",
+    props: s.agreementOrder,
+  },
+  {
     file: "certificate",
     title: "Certificate (English)",
     component: "DocCertificate",
@@ -157,6 +170,52 @@ ${base}${extra}
 </style>`,
   );
 
+/** A component's purpose: the first sentence of its leading comment. */
+function purpose(component: string): string {
+  const source = readFileSync(join(ROOT, "components", `${component}.astro`), "utf8");
+  const comment = [...source.matchAll(/^\/\/ ?(.*)$/gm)].map((m) => m[1]).join(" ");
+  return comment.split(/(?<=\.)\s/)[0] ?? "";
+}
+
+/** The catalogue: the layers, then every component with the types that compose it. */
+function catalogue(pages: typeof PAGES): string {
+  const types = [...new Set(pages.flatMap((p) => (p.component ? [p.component] : [])))];
+  const components = readdirSync(join(ROOT, "components"))
+    .map((f) => f.replace(/\.astro$/, ""))
+    .filter((c) => !types.includes(c));
+  const users = (c: string) =>
+    types
+      .filter((t) => shown(t).has(c))
+      .map((t) => {
+        const page = pages.find((p) => p.component === t)!;
+        return `<a href="#${page.file}">${t}</a>`;
+      })
+      .join(", ");
+  const row = (c: string, used: string) =>
+    `<tr><td><code>${c}</code></td><td>${escapeHtml(purpose(c))}</td><td>${used}</td></tr>`;
+  return `<h2 id="aufbau">Aufbau</h2>
+<p>Drei Ebenen. <strong>Tokens</strong>: <code>tokens.css</code> gibt jedem Wert eine Rolle (Farbe, Schrift, Abstand, Seite) aus <code>@hackersandwizards/brand</code>. <strong>Basis</strong>: <code>document.css</code> setzt Seite, Laufkopf und die Elemente, die jeder Typ und jeder Markdown-Text nutzt (Überschriften, Tabellen, Label, Callout, Karten). <strong>Komponenten</strong> setzen sich nur aus Tokens und Basis zusammen, <strong>Typen</strong> nur aus Komponenten. Jeder Typ beginnt mit <code>DocHeader</code>; das Gate <code>documents-styles</code> lehnt jeden Stil außerhalb dieser Ebenen ab.</p>
+<h3>Typen</h3>
+<table><thead><tr><th>Typ</th><th>Zweck</th><th>Muster</th></tr></thead><tbody>
+${types
+  .map((t) =>
+    row(
+      t,
+      pages
+        .filter((p) => p.component === t)
+        .map((p) => `<a href="#${p.file}">${escapeHtml(p.title)}</a>`)
+        .join(", "),
+    ),
+  )
+  .join("\n")}
+<tr><td><code>composeSurveyReadout</code></td><td>Die Auswertung einer Teilnehmerumfrage als Folien (1280 × 720), auf denselben Tokens.</td><td><a href="#survey-readout">Survey Readout</a></td></tr>
+</tbody></table>
+<h3>Komponenten</h3>
+<table><thead><tr><th>Komponente</th><th>Zweck</th><th>Genutzt von</th></tr></thead><tbody>
+${components.map((c) => row(c, users(c))).join("\n")}
+</tbody></table>`;
+}
+
 const index = (pages: typeof PAGES) => `<!doctype html>
 <html lang="de">
 <head>
@@ -178,6 +237,8 @@ h1 { font: 700 1.5rem/1.25 var(--font-mono); letter-spacing: -0.01em; margin-top
 h2 { scroll-margin-top: calc(3.5rem + 4px + 1rem); }
 h2 { font-size: var(--type-h4-size); margin-top: 3rem; }
 p { color: var(--color-muted); }
+table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--color-border); }
 iframe { display: block; width: 210mm; border: 1px solid var(--color-border-strong); background: white; }
 /* A frame wider than the column (the readout's 1280px slides) zooms down to fit it, so the page never scrolls sideways. */
 main { min-width: 0; container-type: inline-size; }
@@ -199,12 +260,14 @@ iframe.wide { zoom: min(1, calc(100cqw / 1282px)); }
 <div class="layout hw-container">
 <nav aria-label="Dokumenttypen">
 <ul>
+<li><a href="#aufbau">Aufbau</a></li>
 ${pages.map((p) => `<li><a href="#${p.file}">${escapeHtml(p.title)}</a></li>`).join("\n")}
 </ul>
 </nav>
 <main>
 <h1>hackers&amp;wizards Dokumente: Muster</h1>
 <p>Jeder Dokumenttyp aus <code>@hackersandwizards/documents</code>, mit erfundenen Daten. Jeder Betrag ist ein Platzhalter. Das Gate baut diese Seiten neu und vergleicht sie.</p>
+${catalogue(pages)}
 ${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html"${p.frame ? ' class="wide"' : ""} title="${escapeHtml(p.title)}" style="${p.frame ?? `height: ${(p.pages ?? 1) * 297}mm`}" loading="lazy"></iframe>`).join("\n")}
 </main>
 </div>

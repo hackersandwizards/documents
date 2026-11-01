@@ -4,6 +4,7 @@
 // HTML on the document base (code, pre, .grid-2 with .label columns, .small, .muted; in the note a
 // `<p class="it-line">` with `<span class="chip it-chip">` for the line to the IT department).
 import DocHeader from "./DocHeader.astro";
+import DocTitle from "./DocTitle.astro";
 
 interface Props {
   lang?: "de" | "en";
@@ -24,8 +25,7 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
 
 <DocHeader kind={kind} meta={meta} lang={lang} />
 <div class="preparation">
-  {eyebrow && <span class="eyebrow">{eyebrow}</span>}
-  <h1>{heading}</h1>
+  <DocTitle eyebrow={eyebrow} title={heading} />
   {
     note && (
       <div class="note">

@@ -112,7 +112,7 @@ describe("scripts/compose.ts", () => {
       expect(deSample).not.toContain(english);
   }, 20_000);
 
-  it("composes a Markdown document: escaped kind, the entity line without the imprint, no style of the body's", () => {
+  it("composes a Markdown document: escaped kind, the imprint, no style of the body's", () => {
     writeFileSync(
       join(dir, "md.json"),
       JSON.stringify({
@@ -125,9 +125,7 @@ describe("scripts/compose.ts", () => {
     execFileSync("bun", [SCRIPT, "DocMarkdown", join(dir, "md.json"), join(dir, "md.html")]);
     const html = readFileSync(join(dir, "md.html"), "utf8");
     expect(html).toMatch(/<span class="doc-tag"[^>]*>A &amp; B<\/span>/);
-    expect(html).toContain("hackers&amp;wizards GmbH, Sitz Hamburg");
-    expect(html).not.toContain(">GmbH<");
-    expect(html).not.toContain("Geschäftsführer");
+    expect(html).toContain("Sitz und Registergericht Hamburg, HRB 198840");
     // The former css door is gone, a body's style attribute too; pandoc's alignment is a class.
     expect(html).not.toContain(".x { color: red; }");
     expect(html).not.toContain("color: red");

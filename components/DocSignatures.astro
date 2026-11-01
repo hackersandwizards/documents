@@ -1,0 +1,36 @@
+---
+// The signature block of a document signed by hand: one column per party, its role in caps and
+// its name, then a line for place and date and a line for the signature, each with room above it
+// for the pen. The base's .signatures sets the columns, so a Markdown body's block looks the same.
+interface Props {
+  signatures: { label: string; party: string; name: string }[];
+  /** The captions under the two lines; `{name}` marks the signer. */
+  placeDate: string;
+  signature: string;
+}
+const { signatures, placeDate, signature } = Astro.props;
+---
+
+<div class="signatures">
+  {signatures.map((s) => (
+    <div class="signer">
+      <span class="label">{s.label}</span>
+      <strong>{s.party}</strong>
+      <div class="signature-line" />
+      <p class="small muted">{placeDate}</p>
+      <div class="signature-line" />
+      <p class="small muted">{signature.replace("{name}", s.name)}</p>
+    </div>
+  ))}
+</div>
+
+<style>
+  .signer {
+    break-inside: avoid;
+  }
+
+
+  .signature-line {
+    margin-top: var(--signature-room);
+  }
+</style>

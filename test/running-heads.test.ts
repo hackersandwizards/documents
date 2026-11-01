@@ -55,11 +55,11 @@ function headerLinesPerPage(pdf: string): number[] {
       const tops = [...page.matchAll(/<word xMin="[\d.]+" yMin="(-?[\d.]+)"/g)].map((m) =>
         Number(m[1]),
       );
-      // The running head sits at 25.6 pt, or clipped at 1.3 pt on a page 1 with no top margin;
-      // page 1's document tag starts at 35.8 pt, a handout chapter's eyebrow at 50.8 pt. A wrapped
-      // title prints its two lines either side of the brand name, three baselines in all. A
-      // handout's cover holds its document tag at 25.6 pt.
-      return new Set(tops.filter((y) => y < 30).map((y) => y.toFixed(1))).size;
+      // The running head's words start at 14.1 pt, or clipped at 1.3 pt on a page 1 with no top
+      // margin; page 1's document tag starts at 21.3 pt under the three-line imprint, a handout
+      // chapter's eyebrow lower still. A wrapped title prints its two lines either side of the
+      // brand name, three baselines in all (measured 01.11.2026).
+      return new Set(tops.filter((y) => y < 20).map((y) => y.toFixed(1))).size;
     });
 }
 
