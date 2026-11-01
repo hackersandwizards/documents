@@ -307,7 +307,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
 
   const list = (items: string[], cls: string, colors?: string[]) =>
     items.length
-      ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${colors[k]}"` : ""}>${esc(i)}</li>`).join("")}</ul>`
+      ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${esc(colors[k] ?? "")}"` : ""}>${esc(i)}</li>`).join("")}</ul>`
       : '<div class="caption">—</div>';
   const s7 = slideShell(
     `<h2>Readout</h2>
@@ -514,8 +514,8 @@ __BRAND__
         }
       }
       const parts = [...body.children].filter((el) => !el.matches(".kicker, h2"));
-      for (let zoom = 0.95; bottom() > limit + 1 && zoom >= 0.5; zoom -= 0.05)
-        for (const el of parts) el.style.zoom = String(zoom);
+      for (let step = 19; bottom() > limit + 1 && step >= 10; step--)
+        for (const el of parts) el.style.zoom = String(step / 20);
     }
   });
 </script>

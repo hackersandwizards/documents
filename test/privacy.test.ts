@@ -25,9 +25,13 @@ test("every text rule hits a planted case", () => {
       "+49 40" + " 1234567",
       "DE89 3704" + " 0044 0532 0130 00",
       "Haupt" + "straße 5",
+      "1.800,-" + " €",
+      "1.500" + " Euro",
+      "EUR" + " 1.800",
+      "040" + " 1234567",
     ].join("\n"),
   );
-  expect(scanText(planted).map((f) => f.line)).toEqual([1, 2, 3, 4, 5]);
+  expect(scanText(planted).map((f) => f.line)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 });
 
 test("a deny term hits as a whole word only", () => {
@@ -40,5 +44,8 @@ test("a deny term hits as a whole word only", () => {
 test("a person in the samples outside the invented names fails", () => {
   expect(scanSamples({ rateCard: { personName: "Anna Echt" } })).toEqual([
     "rateCard.personName: Anna Echt",
+  ]);
+  expect(scanSamples({ surveyReadout: { customerName: "Echtfirma GmbH" } })).toEqual([
+    "surveyReadout.customerName: Echtfirma",
   ]);
 });
