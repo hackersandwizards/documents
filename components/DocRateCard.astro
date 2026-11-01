@@ -40,7 +40,7 @@ const p = Astro.props;
 const running = `@page {
   @top-left { content: "hackers&wizards GmbH"; }
   @top-right { content: ${JSON.stringify(`Honorarsätze ${p.personName}`)}; }
-  @bottom-left { content: ${JSON.stringify(`${p.client.shortName} | Persönliche Honorarsätze`)}; }
+  @bottom-left { content: ${JSON.stringify(p.client.shortName)}; }
 }`;
 ---
 

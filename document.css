@@ -86,27 +86,30 @@
 }
 
 /* Running header and footer, the twin of Footer.astro's muted small text. A document names
-   their content in its own style element: @top-left and @top-right for the topic,
-   @bottom-left for client and title; the page number is here. Page 1 carries the full
-   header instead. A margin box draws a face only if the page content loads it, so these use
-   the small role, whose face every body text loads. From page 2 the header's gradient strip
-   returns as a 1.5pt rail on the paper edge, split across the two top boxes at half the width
-   each: a blind A/B on the quote (Opus, Codex; brand and buyer) preferred it 4 of 4, brand
-   recognition +2 to +10 (2026-10-28). */
+   their content in its own style element: @top-left the brand, @top-right the document's title
+   on one line, @bottom-left the recipient; the page number is here. Nothing repeats between them:
+   a blind panel on the handout and the proposal (Claude, Codex; participant and procurement)
+   ranked that first, 44 of 50 against 28 for brand and title repeated (2026-11-01). The title
+   gets 70 % of the width, the brand name needs no more than 30 (test/running-heads.test.ts holds
+   the longest title to one line). Page 1 carries the full header
+   instead. A margin box draws a face only if the page content loads it, so these use the small
+   role, whose face every body text loads. From page 2 the header's gradient strip returns as a
+   1.5pt rail on the paper edge, one gradient across the two top boxes: a blind A/B on the quote
+   (Opus, Codex; brand and buyer) preferred it 4 of 4, brand recognition +2 to +10 (2026-10-28). */
 @page {
   @top-left {
-    width: 50%;
+    width: 30%;
     padding-left: var(--side);
     font: var(--role-small);
     color: var(--muted);
-    background: var(--gradient) left top / 200% 1.5pt no-repeat;
+    background: var(--gradient) left top / calc(100% / 0.3) 1.5pt no-repeat;
   }
   @top-right {
-    width: 50%;
+    width: 70%;
     padding-right: var(--side);
     font: var(--role-small);
     color: var(--muted);
-    background: var(--gradient) right top / 200% 1.5pt no-repeat;
+    background: var(--gradient) right top / calc(100% / 0.7) 1.5pt no-repeat;
   }
   @bottom-left {
     padding-left: var(--side);

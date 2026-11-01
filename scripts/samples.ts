@@ -558,7 +558,8 @@ export const trainerBriefingHtml = `<span class="eyebrow">Trainer Briefing</span
 /** A training handout: an invented training, three chapters with each element a handout styles
  * (margin note, key box, code, table, the ruled notes), the cover with a recipient. */
 export const handout = {
-  label: "Example Training: Agents in Team Practice",
+  title: "Example Training: Agents in Team Practice",
+  client: "Musterwerk 2026-11",
   subtitle: "What we covered, to look up again when you work with your agent.",
   company: "Musterwerk AG",
   date: "November 12, 2026",

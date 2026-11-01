@@ -169,7 +169,7 @@ const acceptance =
 const running = `@page {
   @top-left { content: "hackers&wizards GmbH"; }
   @top-right { content: ${JSON.stringify(`${t.kind} ${p.number}`)}; }
-  @bottom-left { content: ${JSON.stringify(`${p.clientShort} | ${p.heading}`)}; }
+  @bottom-left { content: ${JSON.stringify(p.clientShort)}; }
 }`;
 ---
 

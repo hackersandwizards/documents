@@ -11,9 +11,12 @@ import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
 
 interface Props {
-  /** The handout's name: the cover title and the running heads. */
-  label: string;
-  /** The document kind in the header tag and the running head. */
+  /** The product's title: the running header, and the cover title. */
+  title: string;
+  /** A delivery's client and month ("Musterwerk 2026-11"): the running footer, and the cover title
+   *  after the product's. A standard handout has none, so its footer shows the page number alone. */
+  client?: string;
+  /** The document kind in the header tag. */
   kind?: string;
   subtitle: string;
   /** Each chapter's title and its Markdown body as sanitized HTML. */
@@ -32,7 +35,8 @@ interface Props {
   flow?: string;
 }
 const {
-  label,
+  title,
+  client,
   kind = "Training Handout",
   subtitle,
   chapters,
@@ -45,14 +49,14 @@ const {
 
 const htmlText = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-/** The margin boxes take their text from CSS alone, so the label lands there as a CSS string.
+/** The margin boxes take their text from CSS alone, so title and client land there as CSS strings.
  *  This style follows the base's, and Chrome lets the later margin-box content win over the
  *  base's `@page :first`, so the cover's running head is switched off again here: on the cover's
  *  zero top margin it would print clipped, invisible but in the PDF's text. */
 const cssString = (text: string) => JSON.stringify(text).replace(/</g, "\\3C ");
 const pageCss = `@page { @top-left { content: "hackers&wizards"; } @top-right { content: ${cssString(
-  `${label}, ${kind}`,
-)}; } @bottom-left { content: ${cssString(`hackers&wizards, ${label}`)}; } }
+  title,
+)}; } @bottom-left { content: ${cssString(client ?? "")}; } }
 @page :first { @top-left { content: none; } @top-right { content: none; } }`;
 ---
 
@@ -60,7 +64,7 @@ const pageCss = `@page { @top-left { content: "hackers&wizards"; } @top-right { 
 <div class="cover">
   <DocHeader kind={kind} />
   <div class="title">
-    <DocTitle title={label} subtitle={subtitle} />
+    <DocTitle title={client ? `${title}, ${client}` : title} subtitle={subtitle} />
   </div>
   {(company || date) && (
     <DocRecipient
