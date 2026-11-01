@@ -170,6 +170,7 @@ export const proposalDe = {
     ],
     subtotal: "XX.XXX,XX €",
     vat: "X.XXX,XX €",
+    vatLabel: "zzgl. Umsatzsteuer 19 %",
     gross: "XX.XXX,XX €",
     calculation:
       "Das Training rechnet je teilnehmender Person, das Mentoring nach Aufwand. Reisekosten sind nicht enthalten.",
@@ -191,7 +192,12 @@ export const proposalDe = {
       items: ["Review der ersten eigenen Agenten-Workflows", "Fragen aus dem Alltag"],
     },
   ],
-  community: { price: "XXX", seats: "12", value: "X.XXX" },
+  community: {
+    price: "XXX",
+    seats: "12",
+    value: "X.XXX",
+    meta: "Dauerhaft kostenlos für alle Teilnehmenden von Musterwerk",
+  },
   sequence: {
     headline: "Zwei Tage Training, dann vier Wochen Begleitung",
     steps: [
@@ -224,6 +230,7 @@ export const proposalDe = {
   ],
   signOff: "Viele Grüße",
   personName: "Mara Beispiel",
+  orderTerm: "Das genügt als Beauftragung, eine Unterschrift brauchen wir nicht.",
 };
 
 export const proposalEn = {
@@ -258,6 +265,7 @@ export const proposalEn = {
     ],
     subtotal: "XX,XXX.XX €",
     vat: "X,XXX.XX €",
+    vatLabel: "plus VAT 19%",
     gross: "XX,XXX.XX €",
     calculation:
       "The training is priced per participant, the mentoring as delivered. Travel is not included.",
@@ -279,7 +287,7 @@ export const proposalEn = {
       items: ["Review of the team's first own agent workflows", "Questions from everyday work"],
     },
   ],
-  community: { price: "XXX" },
+  community: { price: "XXX", meta: "Lifetime free access for all Musterwerk participants" },
   sequence: undefined,
   outcome: {
     result: "The team uses agents in its everyday work and checks their results itself.",
@@ -287,6 +295,7 @@ export const proposalEn = {
   },
   terms: [{ title: "Payment", paragraphs: ["All invoices: 15 days net."] }],
   signOff: "Best regards",
+  orderTerm: "That counts as the order; no signature needed.",
 };
 
 export const proposalDeNoPrice = {

@@ -3,6 +3,7 @@
 // optional sequence, the outcome, terms, closing and acceptance, in that fixed order. The canonical
 // props with the standard terms are .claude/skills/quote/proposal-de.json and proposal-en.json.
 // A proposal without a rate in any row is the price-free variant: the table keeps item and basis.
+// Every term is a prop: the VAT label, the community's access and the order by reply.
 import DocCallout from "./DocCallout.astro";
 import DocCard from "./DocCard.astro";
 import DocClosing from "./DocClosing.astro";
@@ -39,14 +40,16 @@ interface Props {
     rows: { item: string; detail?: string; basis: string; rate?: Amount; amount?: Amount }[];
     subtotal?: string;
     vat?: string;
+    /** The VAT line's label, "zzgl. Umsatzsteuer 19 %"; required with `vat`. */
+    vatLabel?: string;
     gross?: string;
     calculation?: string;
   };
   scopeHeadline: string;
   services: { name: string; format?: string; items: string[] }[];
   /** Trainings only: the yearly community price, with the seats and their value where the price is
-   *  computed from the participant count. */
-  community?: { price: string; seats?: string; value?: string };
+   *  computed from the participant count, and `meta`, who gets it for how long. */
+  community?: { price: string; seats?: string; value?: string; meta?: string };
   sequence?: { headline: string; steps: { when: string; name: string; text?: string }[] };
   outcome: { result: string; measures: string };
   terms: { title: string; paragraphs: string[] }[];
@@ -54,8 +57,11 @@ interface Props {
   personName: string;
   /** Omitted with false; an object replaces the total line, as in the price-free variant. */
   acceptance?: false | { label: string; value: string };
+  /** The acceptance's last sentence, after the ask to reply: what the reply counts as. */
+  orderTerm?: string;
 }
 const p = Astro.props;
+if (p.price.vat && !p.price.vatLabel) throw new Error("DocProposal: price.vat needs price.vatLabel");
 const de = p.lang === "de";
 const t = de
   ? {
@@ -66,7 +72,6 @@ const t = de
       price: "Preis",
       columns: ["Leistung", "Basis", "Preis", "Betrag"],
       subtotal: "Summe netto",
-      vat: "zzgl. Umsatzsteuer 19 %",
       gross: "Gesamtbetrag brutto",
       about: "Über hackers&wizards",
       aboutText: [
@@ -75,7 +80,6 @@ const t = de
       ],
       scope: "Leistungsumfang",
       community: "Inklusive: hackers&wizards Community",
-      communityMeta: `Dauerhaft kostenlos für alle Teilnehmenden von ${p.clientShort}`,
       communityItems: [
         "Wöchentliche Best Practice Sessions und Erfahrungsaustausch",
         "Direkter Draht zu anderen AI-Pilot-Teams",
@@ -95,7 +99,7 @@ const t = de
       total: "Summe",
       totalValue: `${p.price.subtotal} netto zzgl. USt.`,
       valid: "Gültig bis",
-      reply: `Passt das so? Dann antworte einfach auf diese Mail mit deiner Zusage${p.validUntil ? ` bis zum ${p.validUntil}` : ""}. Das genügt als Beauftragung, eine Unterschrift brauchen wir nicht.`,
+      reply: `Passt das so? Dann antworte einfach auf diese Mail mit deiner Zusage${p.validUntil ? ` bis zum ${p.validUntil}` : ""}.`,
     }
   : {
       kind: "Quote",
@@ -105,7 +109,6 @@ const t = de
       price: "Price",
       columns: ["Item", "Basis", "Rate", "Amount"],
       subtotal: "Net total",
-      vat: "plus VAT 19%",
       gross: "Total incl. VAT",
       about: "About hackers&wizards",
       aboutText: [
@@ -114,7 +117,6 @@ const t = de
       ],
       scope: "Scope",
       community: "Included: hackers&wizards Community",
-      communityMeta: `Lifetime free access for all ${p.clientShort} participants`,
       communityItems: [
         "Weekly curated best practices and experience exchange",
         "Direct access to other AI pilot teams",
@@ -134,7 +136,7 @@ const t = de
       total: "Total",
       totalValue: `${p.price.subtotal} net plus VAT`,
       valid: "Valid until",
-      reply: `Does this work for you? Then simply reply to this email with your go-ahead${p.validUntil ? ` by ${p.validUntil}` : ""}. That counts as the order; no signature needed.`,
+      reply: `Does this work for you? Then simply reply to this email with your go-ahead${p.validUntil ? ` by ${p.validUntil}` : ""}.`,
     };
 // A fixed-price row carries an amount and no rate; the price-free variant drops both.
 const priced = p.price.rows.some((row) => row.rate !== undefined || row.amount !== undefined);
@@ -155,7 +157,7 @@ const rows = p.price.rows.map((row) => ({
   cells: priced ? [row.basis, row.rate ?? "", row.amount ?? ""] : [row.basis],
 }));
 const foot = [
-  p.price.vat && { label: t.vat, figure: p.price.vat },
+  p.price.vat && { label: p.price.vatLabel!, figure: p.price.vat },
   p.price.gross && { label: t.gross, figure: p.price.gross },
 ].filter((row): row is { label: string; figure: string } => !!row);
 // Without a subtotal and an acceptance object the block carries no total line.
@@ -224,7 +226,7 @@ const running = `@page {
   {p.community && (
     <div class="included wide">
       <h3>{t.community}</h3>
-      <p class="meta">{t.communityMeta}</p>
+      {p.community.meta && <p class="meta">{p.community.meta}</p>}
       <ul>
         {t.communityItems.map((item) => (
           <li>{item}</li>
@@ -284,7 +286,7 @@ const running = `@page {
         </>
       )}
     </dl>
-    <p>{t.reply}</p>
+    <p>{p.orderTerm ? `${t.reply} ${p.orderTerm}` : t.reply}</p>
   </div>
 )}
 
@@ -378,8 +380,7 @@ const running = `@page {
     margin: 0 0 1.5mm;
   }
 
-  /* Acceptance: what is ordered in three facts, then the reply that confirms it: nobody signs, a
-     reply to the mail is the order (Benedikt, 2026-10-29). */
+  /* Acceptance: what is ordered in three facts, then the reply that confirms it. */
   .acceptance {
     margin: 4mm 0 6pt;
     padding: var(--print-card-pad);

@@ -27,15 +27,22 @@ const proposal = {
   greeting: [P],
   client: { company: P, lines: [P] },
   contact: P,
-  price: { rows: [{ item: P, basis: P, rate: P, amount: P }], subtotal: P, vat: P, gross: P },
+  price: {
+    rows: [{ item: P, basis: P, rate: P, amount: P }],
+    subtotal: P,
+    vat: P,
+    vatLabel: "[VAT-LABEL]",
+    gross: P,
+  },
   scopeHeadline: P,
   services: [{ name: P, items: [P] }],
-  community: { price: P },
+  community: { price: P, meta: "[COMMUNITY-META]" },
   sequence: { headline: P, steps: [{ when: P, name: P }] },
   outcome: { result: P, measures: P },
   terms: [{ title: P, paragraphs: [P] }],
   signOff: P,
   personName: P,
+  orderTerm: "[ORDER-TERM]",
 };
 const props: Record<string, Record<string, unknown>> = {
   DocCallout: { title: P },
@@ -141,6 +148,20 @@ test("DocProposal prints the amount of a fixed-price row that has no rate", asyn
   });
   expect(html).toContain("X.XXX €");
   expect(html).not.toContain("undefined");
+});
+
+// The VAT label, the community's access and the order by reply are terms, so the props carry them.
+test.each(["de", "en"])("DocProposal %s prints its terms from props only", async (lang) => {
+  const html = await composer.render("DocProposal", { ...proposal, lang });
+  for (const term of ["[VAT-LABEL]", "[COMMUNITY-META]", "[ORDER-TERM]"])
+    expect(html).toContain(term);
+  expect(html).not.toMatch(/19.?%|kostenlos|Lifetime|Unterschrift|signature/);
+  await expect(
+    composer.render("DocProposal", {
+      ...proposal,
+      price: { ...proposal.price, vatLabel: undefined },
+    }),
+  ).rejects.toThrow("vatLabel");
 });
 
 test("styles() returns each scoped style once, however often it is called", async () => {
