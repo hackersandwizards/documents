@@ -71,7 +71,7 @@ right context: *"SPAs sind legacy"*, *"Microservices verhindern Geschwindigkeit"
   it. A mail passing on a third party's event or offer opens on what it answers in the recipient's
   work; the sender's tie to that party follows as the reason he passes it on, unless a person the
   recipient knows sent him to them.
-- Quick logistics replies and same-thread follow-ups: no sign-off.
+- Quick logistics replies: no sign-off. A same-thread follow-up takes the sign-off above.
 - Authorities, vendors, banks: `BG` + newline + the signer's surname.
 
 ## Hedges and particles
