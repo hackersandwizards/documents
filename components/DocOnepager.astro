@@ -11,11 +11,19 @@ interface Props {
   lang: "de" | "en";
   /** The body: the blocks after the header, as HTML. */
   html: string;
+  /** The header's tag and the address it links to. */
+  site?: string;
+  siteUrl?: string;
 }
-const { lang, html } = Astro.props;
+const {
+  lang,
+  html,
+  site = "hackersandwizards.dev",
+  siteUrl = "https://hackersandwizards.dev",
+} = Astro.props;
 ---
 
 <div class="page">
-  <DocHeader kind="hackersandwizards.dev" href="https://hackersandwizards.dev" lang={lang} />
+  <DocHeader kind={site} href={siteUrl} lang={lang} />
   <Fragment set:html={html} />
 </div>

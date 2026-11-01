@@ -11,6 +11,17 @@
   margin-top: 18mm;
 }
 
+/* A chapter's opening page shows its title, so it carries no running head, only the rail:
+   DocHandout names its blocks `opening` and switches that page's head off after its own. The
+   content box's height, 18 mm and the base's 16 mm off A4, is the page it measures them against. */
+.opening {
+  page: opening;
+}
+
+:root {
+  --page-content-height: calc(297mm - 18mm - 16mm);
+}
+
 /* The text runs the full page width: paper has no sidebar, and a gutter kept free for notes
    stood empty on every page without one. */
 :root {
@@ -79,7 +90,7 @@ section :is(h2, h3) {
 
 /* Every chapter opens under an eyebrow carrying its number. */
 section h1::before {
-  content: "Chapter " counter(chapter, decimal-leading-zero);
+  content: var(--chapter-label, "Chapter ") counter(chapter, decimal-leading-zero);
   display: block;
   margin-bottom: 2mm;
   font: var(--role-label);

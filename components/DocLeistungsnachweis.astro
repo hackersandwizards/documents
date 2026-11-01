@@ -8,6 +8,40 @@ import DocConfirmation from "./DocConfirmation.astro";
 import DocHeader from "./DocHeader.astro";
 import DocTitle from "./DocTitle.astro";
 import DocTotalRow from "./DocTotalRow.astro";
+import { fill } from "../scripts/fill";
+
+// The document's own words; `labels` replaces any of them, `{name}` marks a value filled in.
+const TEXT = {
+  kind: "Leistungsnachweis",
+  title: "Leistungsnachweis",
+  client: "Kunde",
+  project: "Projekt",
+  team: "Team",
+  employee: "Leistung erbracht von",
+  period: "Zeitraum",
+  created: "Erstellt",
+  references: "Referenz",
+  lumpSum: "Pauschal abgerechnet laut Angebot {lumpSumQuote}; der Aufwand dient zur Information.",
+  date: "Datum",
+  day: "Tag",
+  time: "Uhrzeit",
+  hours: "Stunden",
+  /** The hours column's head on a lump-sum item. */
+  effort: "Aufwand (Std.)",
+  billed: "Abgerechnet",
+  activity: "Tätigkeit",
+  total: "Gesamt Stunden",
+  totalNote: "Stunden dezimal (0,50 = 30 Minuten)",
+  confirmation: "Bestätigung des Kunden",
+  /** `{hours}` takes `confirmationHours`, left out on a lump-sum item. */
+  confirmationText: "Die aufgeführten Leistungen{hours} im Zeitraum {period} wurden erbracht.",
+  confirmationHours: " ({total} Stunden)",
+  /** `{confirmedOn}` is the mail's date, or `unconfirmed` before it arrived. */
+  confirmedLine: "Bestätigt per Mail am {confirmedOn}",
+  unconfirmed: "____________",
+  /** The running footer. */
+  running: "Leistungsnachweis {clientShort} {periodLabel}",
+};
 
 interface Entry {
   /** "01.07." for a day, or the period of a lump-sum item without days. */
@@ -51,24 +85,27 @@ interface Props {
   totalBilled?: string;
   /** The date of the client's confirming mail, once it arrived. */
   confirmedOn?: string;
+  /** Replaces any of the document's own words (TEXT above). */
+  labels?: Partial<typeof TEXT>;
 }
 const p = Astro.props;
+const t = { ...TEXT, ...p.labels };
 const billed = p.rounding !== undefined;
 const fields = [
-  ["Kunde", p.client],
-  ["Projekt", p.project],
-  ["Team", p.team],
-  ["Leistung erbracht von", p.employee],
-  ["Zeitraum", p.period],
-  ["Erstellt", p.created],
+  [t.client, p.client],
+  [t.project, p.project],
+  [t.team, p.team],
+  [t.employee, p.employee],
+  [t.period, p.period],
+  [t.created, p.created],
 ].filter((f): f is [string, string] => !!f[1]);
-const running = `@page { @bottom-left { content: ${JSON.stringify(`Leistungsnachweis ${p.clientShort} ${p.periodLabel}`)}; } }`;
-const hoursText = p.lumpSumQuote ? "" : ` (${p.total} Stunden)`;
+const running = `@page { @bottom-left { content: ${JSON.stringify(fill(t.running, p))}; } }`;
+const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
 ---
 
 <style is:inline set:html={running} />
-<DocHeader kind="Leistungsnachweis" legal meta={[p.created]} />
-<DocTitle eyebrow={p.periodLabel} title="Leistungsnachweis" />
+<DocHeader kind={t.kind} legal meta={[p.created]} />
+<DocTitle eyebrow={p.periodLabel} title={t.title} />
 <dl class="meta">
   {fields.map(([label, value]) => (
     <div>
@@ -78,26 +115,24 @@ const hoursText = p.lumpSumQuote ? "" : ` (${p.total} Stunden)`;
   ))}
   {p.references?.length ? (
     <div class="refs">
-      <dt class="label">Referenz</dt>
+      <dt class="label">{t.references}</dt>
       <dd class="ref">{p.references.join(" · ")}</dd>
     </div>
   ) : null}
 </dl>
 {p.lumpSumQuote && (
-  <p class="note">
-    Pauschal abgerechnet laut Angebot {p.lumpSumQuote}; der Aufwand dient zur Information.
-  </p>
+  <p class="note">{fill(t.lumpSum, p)}</p>
 )}
 {billed && <p class="note">{p.rounding}</p>}
 <table>
   <thead>
     <tr>
-      <th class="date">Datum</th>
-      <th class="day">Tag</th>
-      <th class="time">Uhrzeit</th>
-      <th class="hours num">{p.lumpSumQuote ? "Aufwand (Std.)" : "Stunden"}</th>
-      {billed && <th class="hours num">Abgerechnet</th>}
-      <th>Tätigkeit</th>
+      <th class="date">{t.date}</th>
+      <th class="day">{t.day}</th>
+      <th class="time">{t.time}</th>
+      <th class="hours num">{p.lumpSumQuote ? t.effort : t.hours}</th>
+      {billed && <th class="hours num">{t.billed}</th>}
+      <th>{t.activity}</th>
     </tr>
   </thead>
   <tbody>
@@ -131,17 +166,17 @@ const hoursText = p.lumpSumQuote ? "" : ` (${p.total} Stunden)`;
       ),
     )}
     <DocTotalRow
-      label="Gesamt Stunden"
+      label={t.total}
       span={3}
       figures={billed ? [p.total, p.totalBilled ?? ""] : [p.total]}
-      note="Stunden dezimal (0,50 = 30 Minuten)"
+      note={t.totalNote}
     />
   </tbody>
 </table>
 <DocConfirmation
-  label="Bestätigung des Kunden"
-  text={`Die aufgeführten Leistungen${hoursText} im Zeitraum ${p.period} wurden erbracht.`}
-  line={`Bestätigt per Mail am ${p.confirmedOn ?? "____________"}`}
+  label={t.confirmation}
+  text={fill(t.confirmationText, { hours: hoursText, period: p.period })}
+  line={fill(t.confirmedLine, { confirmedOn: p.confirmedOn ?? t.unconfirmed })}
 />
 
 <style>

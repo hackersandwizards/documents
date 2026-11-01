@@ -63,3 +63,15 @@ test("every slide's title sits at the same height", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 }, 60_000);
+
+// Submissions an attendee left unfinished score nothing, so the deck says so rather than printing a
+// bare "total" beside the completed count; and every word it prints itself is replaceable.
+test("the deck names unfinished submissions and takes its words from `text`", () => {
+  const html = composeSurveyReadout(surveyReadout);
+  expect(html).toContain("1 unfinished, not scored");
+  expect(html).not.toContain(" total<");
+  expect(html).toContain("flag, not a score");
+  const german = composeSurveyReadout({ ...surveyReadout, text: { glance: "Auf einen Blick" } });
+  expect(german).toContain("<h2>Auf einen Blick</h2>");
+  expect(german).not.toContain("At a glance");
+});

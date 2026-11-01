@@ -189,3 +189,19 @@ test.each([
   },
   30_000,
 );
+
+// Every word a component prints itself is a prop with today's text as its default: a reverse-charge
+// offer sets the acceptance's total line, an English timesheet every label.
+test.each([
+  ["DocProposal", proposal, "totalValue", "netto zzgl. USt."],
+  ["DocRateCard", props.DocRateCard, "terms", "Konditionen"],
+  ["DocLeistungsnachweis", props.DocLeistungsnachweis, "confirmation", "Bestätigung des Kunden"],
+  ["DocCertificate", props.DocCertificate, "preamble", "This is to certify that"],
+  ["DocHandout", props.DocHandout, "contents", "Contents"],
+])("%s takes `labels.%s` in place of its default", async (name, componentProps, key, text) => {
+  const base = componentProps as Record<string, unknown>;
+  expect(await composer.render(name, base)).toContain(text);
+  const html = await composer.render(name, { ...base, labels: { [key]: "[LABEL]" } });
+  expect(html).toContain("[LABEL]");
+  expect(html).not.toContain(text);
+});

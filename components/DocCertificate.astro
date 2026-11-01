@@ -5,6 +5,50 @@
 // in Inter: only Inter carries latin-ext (Ł, ř), at 400 and 600. The generator in
 // .claude/skills/certificates/generator/ writes these props.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
+import { fill } from "../scripts/fill";
+
+// The certificate's own words, German and English; `labels` replaces any of them, `{name}` marks a
+// value filled in.
+const DE = {
+  heading: "Abschlusszertifikat",
+  preamble: "Hiermit wird bestätigt, dass",
+  attended: "erfolgreich teilgenommen hat an dem",
+  /** `{place}` takes `remote` or `location`, `{hours}` takes `duration`. */
+  details: "am {date}{place}{hours}.",
+  remote: " (Remote)",
+  location: " in {location}",
+  duration: ", {durationHours} Stunden",
+  topics: "Behandelte Themen",
+  /** The signer's title; empty takes each signer's own `title`. */
+  signerTitle: "Mitgründer, hackers&wizards",
+  qrAlt: "Certificate verification QR code",
+  cta: "Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen",
+  scan: "Scannen: verifizieren & zu LinkedIn hinzufügen",
+  linkedin: "Zum LinkedIn-Profil hinzufügen",
+  credential: "Credential ID: {credentialId}",
+  issuedBy: "Ausgestellt von hackers&wizards GmbH · Osterstraße 95, 20259 Hamburg ·",
+  site: "hackersandwizards.dev",
+  siteUrl: "https://hackersandwizards.dev",
+};
+const EN: typeof DE = {
+  heading: "Certificate of Completion",
+  preamble: "This is to certify that",
+  attended: "has successfully attended the",
+  details: "on {date}{place}{hours}.",
+  remote: " (Remote)",
+  location: " in {location}",
+  duration: ", {durationHours} hours",
+  topics: "Topics covered",
+  signerTitle: "",
+  qrAlt: "Certificate verification QR code",
+  cta: "Verify this certificate and add it to your LinkedIn profile",
+  scan: "Scan to verify & add to LinkedIn",
+  linkedin: "Add to LinkedIn profile",
+  credential: "Credential ID: {credentialId}",
+  issuedBy: "Issued by hackers&wizards GmbH · Osterstraße 95, 20259 Hamburg ·",
+  site: "hackersandwizards.dev",
+  siteUrl: "https://hackersandwizards.dev",
+};
 
 interface Signer {
   name: string;
@@ -30,14 +74,16 @@ interface Props {
   verificationUrl?: string;
   qrCodeUri?: string;
   linkedinUrl?: string;
+  /** Replaces any of the certificate's own words (DE, EN above). */
+  labels?: Partial<typeof DE>;
 }
 const p = Astro.props;
 // A data URI, not a file:// one, which would print at its full source size.
 const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("base64")}`;
-const de = p.lang === "de";
-const place = p.remote ? " (Remote)" : p.location ? ` in ${p.location}` : "";
-const hours = p.durationHours ? `, ${p.durationHours} ${de ? "Stunden" : "hours"}` : "";
-const details = `${de ? "am" : "on"} ${p.date}${place}${hours}.`;
+const t = { ...(p.lang === "de" ? DE : EN), ...p.labels };
+const place = p.remote ? t.remote : p.location ? fill(t.location, p) : "";
+const hours = p.durationHours ? fill(t.duration, p) : "";
+const details = fill(t.details, { date: p.date, place, hours });
 const topicClass = [
   "topics",
   `topics-count-${p.topics.length}`,
@@ -62,10 +108,10 @@ const topicClass = [
     <img src={lockup} alt="hackers&wizards" class="logo" />
   </div>
   <div class="title">
-    <h1>{de ? "Abschlusszertifikat" : "Certificate of Completion"}</h1>
+    <h1>{t.heading}</h1>
   </div>
   <div class="body-text">
-    <p class="preamble">{de ? "Hiermit wird bestätigt, dass" : "This is to certify that"}</p>
+    <p class="preamble">{t.preamble}</p>
     <p class="attendee-name">
       {p.attendeeName
         .split(/\s+/)
@@ -77,16 +123,14 @@ const topicClass = [
         ))}
     </p>
     {p.attendeeCompany && <p class="attendee-company">{p.attendeeCompany}</p>}
-    <p class="attended">
-      {de ? "erfolgreich teilgenommen hat an dem" : "has successfully attended the"}
-    </p>
+    <p class="attended">{t.attended}</p>
     <p class="training-title">{p.trainingTitle}</p>
     {p.trainingSubtitle && <p class="training-subtitle">{p.trainingSubtitle}</p>}
     <p class="details">{details}</p>
   </div>
   {p.topics.length > 0 && (
     <div class:list={topicClass}>
-      <p class="eyebrow">{de ? "Behandelte Themen" : "Topics covered"}</p>
+      <p class="eyebrow">{t.topics}</p>
       <ul>
         {p.topics.map((topic) => (
           <li>{topic}</li>
@@ -104,7 +148,7 @@ const topicClass = [
         )}
         <div class="signature-line" />
         <p class="signer-name">{signer.name}</p>
-        <p class="signer-title">{de ? "Mitgründer, hackers&wizards" : signer.title}</p>
+        <p class="signer-title">{t.signerTitle || signer.title}</p>
       </div>
     ))}
   </div>
@@ -113,35 +157,28 @@ const topicClass = [
       <div class="verification">
         {p.qrCodeUri && (
           <a href={p.verificationUrl}>
-            <img src={p.qrCodeUri} alt="Certificate verification QR code" class="qr-code" />
+            <img src={p.qrCodeUri} alt={t.qrAlt} class="qr-code" />
           </a>
         )}
         <div class="verification-text">
           <p class="footer-cta">
-            {de
-              ? "Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen"
-              : "Verify this certificate and add it to your LinkedIn profile"}
-            <span>
-              {de
-                ? "Scannen: verifizieren & zu LinkedIn hinzufügen"
-                : "Scan to verify & add to LinkedIn"}
-            </span>
+            {t.cta}
+            <span>{t.scan}</span>
           </p>
           {p.linkedinUrl && (
             <a class="linkedin-link" href={p.linkedinUrl}>
-              {de ? "Zum LinkedIn-Profil hinzufügen" : "Add to LinkedIn profile"}
+              {t.linkedin}
             </a>
           )}
           <p class="footer-url">
             <a href={p.verificationUrl}>{p.verificationUrl}</a>
           </p>
-          <p class="footer-credential">Credential ID: {p.credentialId}</p>
+          <p class="footer-credential">{fill(t.credential, p)}</p>
         </div>
       </div>
     )}
     <p class="footer-contact">
-      {de ? "Ausgestellt von" : "Issued by"} hackers&amp;wizards GmbH · Osterstraße 95, 20259
-      Hamburg · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a>
+      {t.issuedBy} <a href={t.siteUrl}>{t.site}</a>
     </p>
   </div>
 </div>

@@ -19,9 +19,21 @@ interface Props {
   lang?: "de" | "en";
   /** Sets the tag as a link to this address, such as the website the tag names. */
   href?: string;
+  /** Replaces the entity line and the imprint lines of `lang` below. */
+  imprintLines?: string[];
+  /** The imprint's mail address. */
+  mail?: string;
 }
-const { kind, legal = false, imprint = legal, meta = [], lang = "de", href } = Astro.props;
-const [entity, ...imprintLines] = {
+const {
+  kind,
+  legal = false,
+  imprint = legal,
+  meta = [],
+  lang = "de",
+  href,
+  mail = "summon@hackersandwizards.dev",
+} = Astro.props;
+const [entity, ...imprintLines] = Astro.props.imprintLines ?? {
   de: [
     "hackers&wizards GmbH, Sitz Hamburg",
     "Geschäftsführer: Benedikt Stemmildt & Stefan Munz",
@@ -56,7 +68,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
               </>
             ))}
             <br />
-            <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a>
+            <a href={`mailto:${mail}`}>{mail}</a>
           </>
         )}
       </div>

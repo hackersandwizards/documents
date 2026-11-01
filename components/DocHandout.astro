@@ -10,6 +10,20 @@ import DocProse from "./DocProse.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
 
+// The handout's own words; `labels` replaces any of them.
+const TEXT = {
+  /** The running header's left box. */
+  runningBrand: "hackers&wizards",
+  recipient: "For",
+  date: "Training date",
+  /** Stand in for the company or the date where only the other is given. */
+  noCompany: "[COMPANY]",
+  noDate: "[DATE]",
+  contents: "Contents",
+  /** The eyebrow before each chapter's number. */
+  chapter: "Chapter ",
+};
+
 interface Props {
   /** The product's title: the running header, and the cover title. */
   title: string;
@@ -33,6 +47,8 @@ interface Props {
   /** The 1-based chapters, comma-separated, that run on under the one before instead of opening a
    *  page. */
   flow?: string;
+  /** Replaces any of the handout's own words (TEXT above). */
+  labels?: Partial<typeof TEXT>;
 }
 const {
   title,
@@ -45,19 +61,24 @@ const {
   toc = [],
   notes,
   flow,
+  labels,
 } = Astro.props;
+const t = { ...TEXT, ...labels };
 
 const htmlText = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /** The margin boxes take their text from CSS alone, so title and client land there as CSS strings.
  *  This style follows the base's, and Chrome lets the later margin-box content win over the
  *  base's `@page :first`, so the cover's running head is switched off again here: on the cover's
- *  zero top margin it would print clipped, invisible but in the PDF's text. */
+ *  zero top margin it would print clipped, invisible but in the PDF's text. So is a chapter's
+ *  opening page's (`opening` below). */
 const cssString = (text: string) => JSON.stringify(text).replace(/</g, "\\3C ");
-const pageCss = `@page { @top-left { content: "hackers&wizards"; } @top-right { content: ${cssString(
+const pageCss = `@page { @top-left { content: ${cssString(t.runningBrand)}; } @top-right { content: ${cssString(
   title,
 )}; } @bottom-left { content: ${cssString(client ?? "")}; } }
-@page :first { @top-left { content: none; } @top-right { content: none; } }`;
+@page :first { @top-left { content: none; } @top-right { content: none; } }
+@page opening { @top-left { content: ""; } @top-right { content: ""; } }
+section { --chapter-label: ${cssString(t.chapter)}; }`;
 ---
 
 <style is:inline set:html={pageCss}></style>
@@ -68,14 +89,14 @@ const pageCss = `@page { @top-left { content: "hackers&wizards"; } @top-right { 
   </div>
   {(company || date) && (
     <DocRecipient
-      label="For"
-      company={company ?? "[COMPANY]"}
+      label={t.recipient}
+      company={company ?? t.noCompany}
       lines={[]}
-      contact={{ label: "Training date", name: date ?? "[DATE]" }}
+      contact={{ label: t.date, name: date ?? t.noDate }}
     />
   )}
   <div class="toc">
-    <span class="label">Contents</span>
+    <span class="label">{t.contents}</span>
     <ol>
       {chapters.map((chapter, i) => (
         <li>
@@ -167,4 +188,32 @@ const pageCss = `@page { @top-left { content: "hackers&wizards"; } @top-right { 
     const first = opening.nextElementSibling;
     if (first?.matches(".keep")) opening.append(first);
   });
+  // A chapter's opening page carries no running head (handout.css, `@page opening`). Chrome has no
+  // selector for a chapter's first page (`@page name:first` matches only the document's first page,
+  // measured 01.11.2026), and a page takes its name from its first block, so every block on the
+  // opening page is named `opening`: the change of name after the last one forces the break that
+  // falls there anyway. Which blocks fit is measured by laying the chapter out in columns of the
+  // page's content box, Chrome's own fragmentation: the first block that starts in the second
+  // column, or runs into it, opens the rest. A chapter whose whole text fits before a chapter that
+  // runs on under it is left alone, since the change of name would force that one onto a page.
+  // Measured at once rather than after `document.fonts.ready`: the CLI prints at the window's load,
+  // which work after it raced.
+  {
+    const sections = [...document.querySelectorAll("section")];
+    const body = document.body.style.width;
+    document.body.style.width = "210mm";
+    const named = sections.map((section, i) => {
+      if (section.classList.contains("flow")) return [];
+      const blocks = [...section.querySelector(".doc-prose").children];
+      const width = section.getBoundingClientRect().width;
+      section.style.cssText = `column-width:${width}px;column-gap:0;column-fill:auto;height:var(--page-content-height)`;
+      const edge = section.getBoundingClientRect().left + width + 0.5;
+      const rest = blocks.findIndex((block) => block.getBoundingClientRect().right > edge);
+      section.style.cssText = "";
+      if (rest < 0 && sections[i + 1]?.classList.contains("flow")) return [];
+      return rest < 0 ? blocks : blocks.slice(0, rest);
+    });
+    document.body.style.width = body;
+    named.flat().forEach((block) => block.classList.add("opening"));
+  }
 </script>

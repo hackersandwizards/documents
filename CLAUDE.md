@@ -15,7 +15,8 @@ matching `package.json`. Nothing here writes into another repo.
 
 **Anyone can read this whole repo, its history included.** Nothing goes in that may not be public:
 no client document, price, rate, discount, client term, personal data or secret. Every rate or term
-is a prop; the samples are fictitious and every euro figure in them is a placeholder.
+is a prop, and so is every word a component prints itself (`labels`, the survey readout's `text`,
+today's words the default); the samples are fictitious and every euro figure in them is a placeholder.
 `scripts/privacy.ts` (the `documents-privacy` command) holds that line without private data: euro
 figures only as placeholders, mail only on example domains or ours, no phone, IBAN or street but
 the imprint's and the invented ones, and every person or client in the samples' props from its
@@ -69,8 +70,11 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
 
 ## Releasing a change
 
-1. Change the engine here, `bun run check` green, raise `version`, commit, tag `v<version>`, push
-   with the tag.
+1. Change the engine here, `bun run check` green, raise `version`. Before the commit, run Company
+   OS's real names over this checkout: in os, `bun scripts/repo/documents-privacy.ts --package
+<this checkout>`. Every push is public at once, so its gate in os, which reads the pinned
+   release, comes too late (a client name reached history that way in v0.1.14). Then commit, tag
+   `v<version>`, push with the tag.
 2. In each consumer (os, trainer-hub), raise the tag in `package.json`, `bun install`, run its gate.
    A changed component changes rendered PDFs: render a real document of each changed type before
    and after and compare the pages.

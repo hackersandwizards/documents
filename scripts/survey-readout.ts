@@ -5,6 +5,7 @@
 // included, which the caller's readout reuses so a weak spot's marker matches its bar. A slide
 // deck, not an A4 document: it sits on the brand files alone, never on document.css.
 import { readFileSync } from "node:fs";
+import { fill } from "./fill";
 import { brandCss, brandFile } from "./render-pdf";
 
 /** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
@@ -41,7 +42,60 @@ export interface SurveyReadout {
   liked: string[];
   improve: string[];
   readout: { strengths: string[]; weak: string[]; weakColors: string[]; flags: string[] };
+  /** Replaces any of the deck's own words, READOUT_TEXT; `{name}` marks a figure filled in. */
+  text?: Partial<ReadoutText>;
 }
+
+/** Every word the deck prints itself, in English. */
+export const READOUT_TEXT = {
+  lang: "en",
+  documentTitle: "Survey Readout — {customer}",
+  eyebrow: "Attendee Feedback Readout · Internal",
+  days: "{days}-day training",
+  responses: "responses",
+  attendees: "attendees",
+  responseRate: "response rate",
+  team: "team",
+  teams: "teams",
+  verbatim: "Questions and answers appear verbatim, as the form asked them.",
+  kicker: "Attendee feedback · {customer}",
+  glance: "At a glance",
+  overall: "/ {end} overall satisfaction",
+  distribution:
+    "Distribution across {n} responses — small sample, read the spread not the decimal.",
+  answersKey: "answers",
+  ratingKey: "rating",
+  completed: "completed",
+  /** Submissions an attendee left before the end: they score nothing. */
+  unfinished: "{n} unfinished, not scored",
+  ofAttendees: "of {attendees} attendees",
+  scores: "Scores by dimension",
+  /** The scores slide's sections in order; the first takes a scale without a group. */
+  groups: ["Content & format", "Trainer", "Confidence & application"],
+  noDimension: "No dimension resolved for this form — see Flags on the readout slide.",
+  barKey: "Bar = mean on {start}–{end}",
+  bandFrom: "from {value}",
+  bandBelow: "below",
+  overallScale: "Overall satisfaction (page 2): {start}–{end}",
+  stripKey: "Strip = share of answers per rating",
+  risks: "Biggest perceived risk for applying agentic engineering",
+  noRisk: "“{label}”: {n} ({share}%), not ranked as a risk",
+  riskCaption: "Multi-select · {n} respondents · bar = share of respondents",
+  liked: "What they liked",
+  improve: "What to improve",
+  asked: "Asked: “{question}”",
+  noAnswers: "No free-text responses.",
+  more: "Longest answers first. + {n} more in the raw snapshot.",
+  readout: "Readout",
+  strengths: "Strengths",
+  weakSpots: "Weak spots",
+  flags: "Flags",
+  markerKey: "Marker = the score's band on page 3:",
+  /** The four bands, strong to weak. */
+  bands: ["strong", "good", "middling", "weak"],
+  flagKey: "flag, not a score",
+};
+export type ReadoutText = typeof READOUT_TEXT;
 
 const esc = (text: string) =>
   text.replace(
@@ -87,6 +141,7 @@ export function bandColor(value: number, scale: { start: number; end: number }):
 
 /** The key under the scores title: what the bar, its colour and the strip mean, per scale present. */
 function scoreLegend(
+  t: ReadoutText,
   scales: { start: number; end: number }[],
   overall?: { start: number; end: number },
 ): string {
@@ -95,21 +150,23 @@ function scoreLegend(
     (s.start + from * (s.end - s.start)).toFixed(2).replace(/0$/, "");
   const keys = ranges.map((s) => {
     const steps = BANDS.map(([from, col], i) => {
-      const label = i === BANDS.length - 1 ? "below" : `from ${cut(from, s)}`;
+      const label = esc(
+        i === BANDS.length - 1 ? t.bandBelow : fill(t.bandFrom, { value: cut(from, s) }),
+      );
       return `<span class="lkey"><i style="background:${col}"></i>${label}</span>`;
     }).join("");
-    return `<span class="lscale">Bar = mean on ${s.start}–${s.end}</span>${steps}`;
+    return `<span class="lscale">${esc(fill(t.barKey, s))}</span>${steps}`;
   });
   // Page 2's overall score may run on another scale; say so where the rows' scale differs.
   const other =
     overall && !ranges.some((s) => s.start === overall.start && s.end === overall.end)
-      ? `<span class="lsep"></span><span class="lscale">Overall satisfaction (page 2): ${overall.start}–${overall.end}</span>`
+      ? `<span class="lsep"></span><span class="lscale">${esc(fill(t.overallScale, overall))}</span>`
       : "";
   const strips = ranges.map((s) => {
     const steps = Array.from({ length: s.end - s.start + 1 }, (_, i) => s.start + i)
       .map((v) => `<span class="lkey"><i style="background:${rampColor(v, s)}"></i>${v}</span>`)
       .join("");
-    return `<span class="lscale">Strip = share of answers per rating</span>${steps}`;
+    return `<span class="lscale">${esc(t.stripKey)}</span>${steps}`;
   });
   return `<div class="legend">${keys.join('<span class="lsep"></span>')}${other}</div><div class="legend">${strips.join('<span class="lsep"></span>')}</div>`;
 }
@@ -158,14 +215,15 @@ function quoteCard(t: string): string {
 
 // Each answer stays under the question the attendee typed it into, praise and criticism alike: the
 // slide quotes the question, so a critical answer under "liked" reads as the attendee's choice.
-const askedLine = (q: string) => (q ? `<div class="asked">Asked: “${esc(q)}”</div>` : "");
+const askedLine = (t: ReadoutText, q: string) =>
+  q ? `<div class="asked">${esc(fill(t.asked, { question: q }))}</div>` : "";
 
-function quoteList(texts: string[]): string {
-  if (texts.length === 0) return '<div class="caption">No free-text responses.</div>';
+function quoteList(t: ReadoutText, texts: string[]): string {
+  if (texts.length === 0) return `<div class="caption">${esc(t.noAnswers)}</div>`;
   // Longest first, the most specific answers, ties in submission order. Every answer goes in; the
   // page's fit script keeps as many as fit and counts the rest in the caption.
   const ordered = [...texts].sort((x, y) => y.length - x.length);
-  return `${ordered.map(quoteCard).join("")}<div class="caption more" hidden></div>`;
+  return `${ordered.map(quoteCard).join("")}<div class="caption more" data-text="${esc(t.more)}" hidden></div>`;
 }
 
 // Title, at a glance, scores, risks, liked, improve, readout.
@@ -186,6 +244,7 @@ function slideShell(inner: string, kicker: string, page: number): string {
  * given `brand` (the brand package's folder as the page reaches it), linked, as the specimen does. */
 export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   const { counts, headline, scales, risks, noRisk, asked, liked, improve, readout: r } = d;
+  const t: ReadoutText = { ...READOUT_TEXT, ...d.text };
   const a = {
     counts,
     headline,
@@ -204,41 +263,41 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   const s1 = `<section class="slide title">
     <div class="strip"></div>
     <div class="sbody center">
-      <div class="eyebrow">Attendee Feedback Readout · Internal</div>
+      <div class="eyebrow">${esc(t.eyebrow)}</div>
       <h1>${esc(customerName)}</h1>
       <div class="subtitle">${esc(
-        [a.training, m.days ? `${m.days}-day training` : ""].filter(Boolean).join(" · "),
+        [a.training, m.days ? fill(t.days, m) : ""].filter(Boolean).join(" · "),
       )}</div>
       <div class="dates">${esc(m.dateRange)}</div>
       <div class="metarow">
-        <div class="metabig"><b>${a.counts.completed}</b><span>responses</span></div>
-        <div class="metabig"><b>${m.attendees || "—"}</b><span>attendees</span></div>
-        <div class="metabig"><b>${rate != null ? rate + "%" : "—"}</b><span>response rate</span></div>
-        <div class="metabig"><b>${m.teams}</b><span>${m.teams === 1 ? "team" : "teams"}</span></div>
+        <div class="metabig"><b>${a.counts.completed}</b><span>${esc(t.responses)}</span></div>
+        <div class="metabig"><b>${m.attendees || "—"}</b><span>${esc(t.attendees)}</span></div>
+        <div class="metabig"><b>${rate != null ? rate + "%" : "—"}</b><span>${esc(t.responseRate)}</span></div>
+        <div class="metabig"><b>${m.teams}</b><span>${esc(m.teams === 1 ? t.team : t.teams)}</span></div>
       </div>
       <div class="rule"></div>
-      <div class="langnote">Questions and answers appear verbatim, as the form asked them.</div>
+      <div class="langnote">${esc(t.verbatim)}</div>
     </div>
     <footer class="chrome"><!--LOCKUP--></footer>
   </section>`;
 
-  const kicker = `Attendee feedback · ${customerName}`;
+  const kicker = fill(t.kicker, { customer: customerName });
   const h = a.headline;
   const s2 = slideShell(
-    `<h2>At a glance</h2>
+    `<h2>${esc(t.glance)}</h2>
      <div class="glance">
        <div class="bignum" style="color:${h.n ? bandColor(h.mean, h) : "inherit"}">
-         <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>/ ${h.end} overall satisfaction</span>
+         <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>${esc(fill(t.overall, { end: h.end }))}</span>
        </div>
        <div class="glancedist">
-         ${distScale(h)}
-         <div class="caption">Distribution across ${h.n} responses — small sample, read the spread not the decimal.</div>
+         ${distScale(t, h)}
+         <div class="caption">${esc(fill(t.distribution, { n: h.n }))}</div>
        </div>
      </div>
      <div class="glancefoot">
-       <div><b>${a.counts.completed}</b> completed${a.counts.all !== a.counts.completed ? ` · ${a.counts.all} total` : ""}</div>
-       <div><b>${rate != null ? rate + "%" : "—"}</b> of ${m.attendees || "?"} attendees</div>
-       <div><b>${m.teams}</b> ${m.teams === 1 ? "team" : "teams"}</div>
+       <div><b>${a.counts.completed}</b> ${esc(t.completed)}${a.counts.all > a.counts.completed ? ` · ${esc(fill(t.unfinished, { n: a.counts.all - a.counts.completed }))}` : ""}</div>
+       <div><b>${rate != null ? rate + "%" : "—"}</b> ${esc(fill(t.ofAttendees, { attendees: m.attendees || "?" }))}</div>
+       <div><b>${m.teams}</b> ${esc(m.teams === 1 ? t.team : t.teams)}</div>
      </div>`,
     kicker,
     2,
@@ -246,16 +305,15 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
 
   const groups = new Map<string, ReadoutScale[]>();
   for (const s of a.scales) {
-    const g = s.group ?? "Content & format";
+    const g = s.group ?? t.groups[0]!;
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g)!.push(s);
   }
-  const order = ["Content & format", "Trainer", "Confidence & application"];
-  const groupsHtml = order
+  const groupsHtml = t.groups
     .filter((g) => groups.has(g))
     .map(
       (g) =>
-        `<div class="sgroup"><div class="gtitle">${g}</div>${groups
+        `<div class="sgroup"><div class="gtitle">${esc(g)}</div>${groups
           .get(g)!
           .map(scaleRow)
           .join("")}</div>`,
@@ -263,11 +321,8 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
     .join("");
   // Rows mix 1-4 and 1-5 scales, so the key lists the ranges present rather than a fixed one.
   const s3 = slideShell(
-    `<h2>Scores by dimension</h2>${a.scales.length ? scoreLegend(a.scales, a.headline) : ""}
-     <div class="scols">${
-       groupsHtml ||
-       '<div class="caption">No dimension resolved for this form — see Flags on the readout slide.</div>'
-     }</div>`,
+    `<h2>${esc(t.scores)}</h2>${a.scales.length ? scoreLegend(t, a.scales, a.headline) : ""}
+     <div class="scols">${groupsHtml || `<div class="caption">${esc(t.noDimension)}</div>`}</div>`,
     kicker,
     3,
   );
@@ -275,7 +330,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   // Bars run on the share of respondents, the figure printed beside them, so a full track is 100%.
   const respondents = Math.max(1, a.counts.completed, ...a.risks.map((x) => x.n));
   const s4 = slideShell(
-    `<h2>Biggest perceived risk for applying agentic engineering</h2>
+    `<h2>${esc(t.risks)}</h2>
      <div class="risks">
        ${a.risks
          .map(
@@ -287,20 +342,20 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
          )
          .join("")}
      </div>
-     ${a.noRisk ? `<div class="norisk">“${esc(a.noRisk.label)}”: ${a.noRisk.n} (${Math.round((a.noRisk.n / respondents) * 100)}%), not ranked as a risk</div>` : ""}
-     <div class="caption">Multi-select · ${a.counts.completed} respondents · bar = share of respondents</div>`,
+     ${a.noRisk ? `<div class="norisk">${esc(fill(t.noRisk, { ...a.noRisk, share: Math.round((a.noRisk.n / respondents) * 100) }))}</div>` : ""}
+     <div class="caption">${esc(fill(t.riskCaption, { n: a.counts.completed }))}</div>`,
     kicker,
     4,
   );
 
   const s5 = slideShell(
-    `<h2>What they liked</h2>${askedLine(a.asked.liked)}<div class="quotes">${quoteList(a.liked)}</div>`,
+    `<h2>${esc(t.liked)}</h2>${askedLine(t, a.asked.liked)}<div class="quotes">${quoteList(t, a.liked)}</div>`,
     kicker,
     5,
   );
 
   const s6 = slideShell(
-    `<h2>What to improve</h2>${askedLine(a.asked.improve)}<div class="quotes">${quoteList(a.improve)}</div>`,
+    `<h2>${esc(t.improve)}</h2>${askedLine(t, a.asked.improve)}<div class="quotes">${quoteList(t, a.improve)}</div>`,
     kicker,
     6,
   );
@@ -309,12 +364,19 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
     items.length
       ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${esc(colors[k] ?? "")}"` : ""}>${esc(i)}</li>`).join("")}</ul>`
       : '<div class="caption">—</div>';
+  // The markers' key: blind runs read the band colours and the hollow flag only with it (marker
+  // score 4.75 without, 8.38 with, eight runs, os docs/tracking/2026-11-01-survey-readout-engine.md).
+  const bands = BANDS.map(
+    ([, col], i) =>
+      `<span class="lkey"><i style="background:${col}"></i>${esc(t.bands[i] ?? "")}</span>`,
+  ).join("");
   const s7 = slideShell(
-    `<h2>Readout</h2>
+    `<h2>${esc(t.readout)}</h2>
+     <div class="legend"><span class="lscale">${esc(t.markerKey)}</span>${bands}<span class="lsep"></span><span class="lkey"><i class="hollow"></i>${esc(t.flagKey)}</span></div>
      <div class="readout">
-       <div class="rcol"><div class="rhead good">Strengths</div>${list(r.strengths, "good")}</div>
-       <div class="rcol"><div class="rhead bad">Weak spots</div>${list(r.weak, "bad", r.weakColors)}</div>
-       <div class="rcol"><div class="rhead flag">Flags</div>${list(r.flags, "flag")}</div>
+       <div class="rcol"><div class="rhead good">${esc(t.strengths)}</div>${list(r.strengths, "good")}</div>
+       <div class="rcol"><div class="rhead bad">${esc(t.weakSpots)}</div>${list(r.weak, "bad", r.weakColors)}</div>
+       <div class="rcol"><div class="rhead flag">${esc(t.flags)}</div>${list(r.flags, "flag")}</div>
      </div>`,
     kicker,
     7,
@@ -336,7 +398,8 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
     : "";
   return PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
     .replace("<style>", () => `${links}<style>`)
-    .replace("__TITLE__", () => `Survey Readout — ${esc(customerName)}`)
+    .replace('lang="en"', () => `lang="${esc(t.lang)}"`)
+    .replace("__TITLE__", () => esc(fill(t.documentTitle, { customer: customerName })))
     .replace("__SLIDES__", () =>
       slides
         .replace(
@@ -347,11 +410,11 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
     );
 }
 
-function distScale(s: ReadoutScale): string {
+function distScale(t: ReadoutText, s: ReadoutScale): string {
   // Bars scale to the most-chosen value, so the chart uses its height: scaled to the total, the
   // tallest bar stood at 40% and the chart read as a strip under an empty band.
   const total = Math.max(1, ...s.dist);
-  const key = `<div class="dcol dkey"><div class="dbarwrap"></div><div class="dn">answers</div><div class="dv">rating</div></div>`;
+  const key = `<div class="dcol dkey"><div class="dbarwrap"></div><div class="dn">${esc(t.answersKey)}</div><div class="dv">${esc(t.ratingKey)}</div></div>`;
   return `<div class="dscale">${key}${s.dist
     .map((c, i) => {
       const val = s.start + i;
@@ -436,6 +499,7 @@ __BRAND__
   .legend .lkey { display:inline-flex; align-items:center; gap:0.375rem; }
   .legend i { width:var(--marker); height:var(--marker); }
   .legend .lsep { width:var(--hairline); height:1rem; background:var(--color-border); }
+  .legend i.hollow { box-shadow:inset 0 0 0 0.125rem var(--color-muted); }
   .glancefoot { display:flex; gap:3rem; border-top:var(--hairline) solid var(--color-border); padding-top:1rem; }
   .glancefoot b { color:var(--color-ink); }
   .glancefoot div { font-size:1.25rem; color:var(--color-muted); }
@@ -453,7 +517,8 @@ __BRAND__
   .dist:empty { background:var(--color-border); }
   .dist .seg { height:100%; }
 
-  .risks { display:flex; flex-direction:column; gap:1rem; flex:1; justify-content:center; }
+  /* The bars start under the title, as every slide's body does: centred, a two-line title left a gap above them. */
+  .risks { display:flex; flex-direction:column; gap:1rem; flex:1; }
   /* Labels take a fixed column and the bars the rest, so no gutter opens between a label and its bar. */
   .risk { display:grid; grid-template-columns:minmax(0,28rem) 1fr 7rem; align-items:center; gap:16px; }
   .rlabel { font-size:1.5rem; line-height:1.3; color:var(--color-ink); }
@@ -512,7 +577,7 @@ __BRAND__
         while (bottom() > limit + 1 && shown > 1) {
           quotes[--shown].remove();
           more.hidden = false;
-          more.textContent = "Longest answers first. + " + (quotes.length - shown) + " more in the raw snapshot.";
+          more.textContent = more.dataset.text.replace("{n}", quotes.length - shown);
         }
       }
       const parts = [...body.children].filter((el) => !el.matches(".kicker, h2"));
