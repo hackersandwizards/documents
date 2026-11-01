@@ -218,7 +218,7 @@ function rowHtml(list: List, r: Row, kind: string) {
     const img = r.images?.[o.key];
     return `<label class="opt${o.key === r.recommended ? " rec" : ""}">${img ? `<a class="pic" href="${hubEscape(fileHref(list.path, img))}" target="_blank"><img loading="lazy" src="${hubEscape(fileHref(list.path, img))}" alt="${hubEscape(o.label)}"></a>` : ""}<span class="choice"><input type="radio" name="${hubEscape(k)}" value="${hubEscape(o.key)}"> <span>${o.key === r.recommended ? '<span class="tag">Empfehlung</span> ' : ""}<b>${hubEscape(o.label)}</b>${o.detail ? ` <span class="note">${hubEscape(o.detail)}</span>` : ""}</span></span></label>`;
   };
-  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(rowOwner(r))}" data-kind="${kind}"><summary><span class="p p${r.priority}">P${r.priority}</span><span class="t">${hubEscape(r.title)} <small>${hubEscape(list.key)}</small></span><span class="mark"></span></summary>
+  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(rowOwner(r))}" data-kind="${kind}"><summary><span class="p p${hubEscape(r.priority)}">P${hubEscape(r.priority)}</span><span class="t">${hubEscape(r.title)} <small>${hubEscape(list.key)}</small></span><span class="mark"></span></summary>
 <div class="body">${r.assumption ? `<p class="recline"><b>Angenommen:</b> ${linkPaths(list.path, r.assumption)}</p>` : ""}<p>${linkPaths(list.path, r.context)}</p>${r.detail ? `<p class="note">${linkPaths(list.path, r.detail)}</p>` : ""}${
     opts.length
       ? `<div class="opts${Object.keys(r.images ?? {}).length ? " pics" : ""}">${opts.map(choice).join("")}</div>`
