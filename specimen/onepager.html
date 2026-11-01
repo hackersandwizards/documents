@@ -515,7 +515,11 @@
    beside it is shortened. A float starts at the top of the line box, and --_hw-baseline is where
    Chrome sets that line's baseline for the brand's Inter (ascent 0.96875em, descent 0.2421875em):
    ascent and descent each rounded to the pixel, half the leading in Chrome's 1/64px layout units,
-   rounded down, above them. Another face needs its own two metrics.
+   rounded down, above them. Another face needs its own two metrics. Where the font size times the
+   line height is a whole number of pixels, Chrome's single-precision line height can land just
+   under it while CSS sees the same value as 1lh: 10pt at 1.35 and at 1.5 put the marker 1.07px
+   high, which no rule from 1lh can tell apart from 9.5pt at 1.5, where it sits right. brand-markers
+   reports it; choose another line height there.
 
    Measured with brand-markers on the documents specimen at 4x and in its PDF at 600 dpi, every
    item within 0.21px of the x-height middle (2026-11-01, documents v0.1.25, where this rule was
@@ -560,6 +564,13 @@
 
   ul > li:has(> p:first-child)::before {
     content: none;
+  }
+
+  /* Code in JetBrains Mono, whose ascent and descent round apart from Inter's, made the first line
+     a pixel taller at some sizes (11pt at 1.35 to 1.75: the marker 0.94px low), moving the baseline the
+     marker is placed on. Its inline box takes no height; its background still covers the glyphs. */
+  ul > li :is(code, kbd, samp) {
+    line-height: 0;
   }
 }
 
