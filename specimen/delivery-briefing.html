@@ -208,9 +208,10 @@ body {
   padding: var(--print-chip-pad);
   border-radius: var(--radius-pill);
   background: var(--color-teal-light);
-  font: var(--role-small);
-  font-weight: 500;
+  font: var(--role-label);
   line-height: 1.5;
+  letter-spacing: var(--type-label-tracking);
+  text-transform: var(--type-label-case);
   color: var(--color-ink);
 }
 
@@ -373,12 +374,18 @@ ul li {
 
 ul li::before,
 ul li > p:first-child::before {
+  --marker-ascent: round(0.96875em, 1px);
+  --marker-baseline: calc(
+    round(down, round((1lh - var(--marker-ascent) - round(0.2421875em, 1px)) / 2, 1px / 64), 1px) +
+      var(--marker-ascent)
+  );
+  --marker-top: calc(0.5ex + var(--print-bullet) / 2);
   content: "";
-  display: inline-block;
+  float: left;
   width: var(--print-bullet);
   height: var(--print-bullet);
-  margin: 0 6pt 0 -12pt;
-  vertical-align: round(calc(0.273em - var(--print-bullet) / 2), 1px);
+  margin: calc(var(--marker-baseline) - round(var(--marker-top), 1px)) 6pt 0 -12pt;
+  transform: translateY(calc(round(var(--marker-top), 1px) - var(--marker-top)));
   background: var(--teal);
 }
 
@@ -826,9 +833,10 @@ pre code {
   padding: var(--print-chip-pad);
   border-radius: var(--radius-pill);
   background: var(--color-teal-light);
-  font: var(--role-small);
-  font-weight: 500;
+  font: var(--role-label);
   line-height: 1.5;
+  letter-spacing: var(--type-label-tracking);
+  text-transform: var(--type-label-case);
   color: var(--color-ink);
 }
 

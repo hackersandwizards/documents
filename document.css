@@ -232,17 +232,19 @@ body {
 }
 
 /* The document tag: TrainingList.astro's .tl-chip, the website's category pill (in print the
-   40% teal tint, teal-light, under ink, weight 500). The header's filled CTA was tried first
-   and dropped: two of three blind reviewers named it a button shape that a title does not take. */
+   40% teal tint, teal-light, under ink), its words in the label role (mono caps), as every label
+   on a document. The header's filled CTA was tried first and dropped: two of three blind
+   reviewers named it a button shape that a title does not take. */
 .doc-tag {
   display: inline-block;
   margin-bottom: 3pt;
   padding: var(--print-chip-pad);
   border-radius: var(--radius-pill);
   background: var(--color-teal-light);
-  font: var(--role-small);
-  font-weight: 500;
+  font: var(--role-label);
   line-height: 1.5;
+  letter-spacing: var(--type-label-tracking);
+  text-transform: var(--type-label-case);
   color: var(--color-ink);
 }
 
@@ -404,25 +406,39 @@ ul {
   list-style: none;
 }
 
-/* The marker is an inline box at the head of the first line, so Chrome rounds it to whole CSS
-   pixels together with the text beside it; a background image or an absolute box rounds on its
-   own and jumped a pixel from item to item. Its middle sits on the middle of the first line's
-   x-height, where Inter centres its own bullet glyph: 0.273em above the baseline. The lift stays
-   whole pixels, or the shared rounding is lost. Measured at 600 dpi on the specimen pages, every
-   item within 0.6px of the x-height middle (2026-11-01). A loose Markdown item opens with a
-   paragraph, which takes the marker instead. */
+/* The marker floats, so the whitespace a newline after <li> leaves starts the line and drops out,
+   where an inline-block kept it as a space and put the first line 3.5px right of the wrapped ones;
+   its margins add up to no width, so no line beside it is shortened. Its middle sits on the middle
+   of the first line's x-height, half an ex above the baseline, where Inter centres its own bullet
+   glyph. Chrome paints boxes and text on whole CSS pixels, each rounded on its own, screen and PDF
+   alike, so the float sits a whole number of pixels from the baseline and rounds with the text,
+   and a transform, which Chrome does not round, moves it the rest of the way; a lift rounded to the
+   pixel alone sat up to 0.56px off. A float starts at the top of the line, and --marker-baseline is
+   where Chrome sets that line's baseline for the brand's Inter (ascent 0.96875em, descent
+   0.2421875em, which give the baselines Chrome set at 12.67, 13.33 and 16px): ascent and descent
+   each rounded to the pixel, half the leading, in Chrome's 1/64px layout units, rounded down
+   above them. Measured at 4x and in the PDF at 600 dpi on the specimen
+   pages, as composed and with a newline opening every item, every item within 0.21px of the
+   x-height middle (2026-11-01). A loose Markdown item opens with a paragraph, which takes the
+   marker instead. */
 ul li {
   padding: 1pt 0 1pt 12.5pt;
 }
 
 ul li::before,
 ul li > p:first-child::before {
+  --marker-ascent: round(0.96875em, 1px);
+  --marker-baseline: calc(
+    round(down, round((1lh - var(--marker-ascent) - round(0.2421875em, 1px)) / 2, 1px / 64), 1px) +
+      var(--marker-ascent)
+  );
+  --marker-top: calc(0.5ex + var(--print-bullet) / 2);
   content: "";
-  display: inline-block;
+  float: left;
   width: var(--print-bullet);
   height: var(--print-bullet);
-  margin: 0 6pt 0 -12pt;
-  vertical-align: round(calc(0.273em - var(--print-bullet) / 2), 1px);
+  margin: calc(var(--marker-baseline) - round(var(--marker-top), 1px)) 6pt 0 -12pt;
+  transform: translateY(calc(round(var(--marker-top), 1px) - var(--marker-top)));
   background: var(--teal);
 }
 

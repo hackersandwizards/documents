@@ -123,9 +123,10 @@
   .readout ul { list-style:none; display:flex; flex-direction:column; gap:0.5rem; }
   .readout li { padding-left:calc(var(--marker) + 0.75rem); font-size:1.375rem; line-height:1.35; color:var(--color-muted); }
   /* The list marker: the website's small teal square on the middle of the first line's x-height,
-     0.273em above the baseline for Inter, as in the document base: an inline box lifted by whole
-     pixels, so Chrome rounds it together with the text. */
-  .readout li::before { content:""; display:inline-block; width:var(--marker); height:var(--marker); margin:0 0.75rem 0 calc(-1 * (var(--marker) + 0.75rem)); vertical-align:round(calc(0.273em - var(--marker) / 2), 1px); background:var(--color-teal); }
+     half an ex above the baseline, as in the document base: an inline box lifted by whole pixels,
+     so Chrome rounds it together with the text, and moved the rest of the way by a transform,
+     which Chrome does not round. */
+  .readout li::before { --lift:calc(0.5ex - var(--marker) / 2); content:""; display:inline-block; width:var(--marker); height:var(--marker); margin:0 0.75rem 0 calc(-1 * (var(--marker) + 0.75rem)); vertical-align:round(var(--lift), 1px); transform:translateY(calc(round(var(--lift), 1px) - var(--lift))); background:var(--color-teal); }
   /* Markers carry the scores page's colours: a strength clears the purple band by definition, a
      weak spot takes its own band, and flags stay muted. */
   .readout ul.good li::before { background:var(--color-purple); }

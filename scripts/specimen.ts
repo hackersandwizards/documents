@@ -178,6 +178,9 @@ h2 { scroll-margin-top: calc(3.5rem + 4px + 1rem); }
 h2 { font-size: var(--type-h4-size); margin-top: 3rem; }
 p { color: var(--color-muted); }
 iframe { display: block; width: 210mm; border: 1px solid var(--color-border-strong); background: white; }
+/* A frame wider than the column (the readout's 1280px slides) zooms down to fit it, so the page never scrolls sideways. */
+main { min-width: 0; container-type: inline-size; }
+iframe.wide { zoom: min(1, calc(100cqw / 1282px)); }
 </style>
 </head>
 <body>
@@ -201,7 +204,7 @@ ${pages.map((p) => `<li><a href="#${p.file}">${escapeHtml(p.title)}</a></li>`).j
 <main>
 <h1>hackers&amp;wizards Dokumente: Muster</h1>
 <p>Jeder Dokumenttyp aus <code>@hackersandwizards/documents</code>, mit erfundenen Daten. Jeder Betrag ist ein Platzhalter. Das Gate baut diese Seiten neu und vergleicht sie.</p>
-${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" style="${p.frame ?? `height: ${(p.pages ?? 1) * 297}mm`}" loading="lazy"></iframe>`).join("\n")}
+${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html"${p.frame ? ' class="wide"' : ""} title="${escapeHtml(p.title)}" style="${p.frame ?? `height: ${(p.pages ?? 1) * 297}mm`}" loading="lazy"></iframe>`).join("\n")}
 </main>
 </div>
 <script>

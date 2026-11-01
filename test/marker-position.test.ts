@@ -9,16 +9,27 @@ import { chromeBinary } from "../scripts/render-pdf";
 // step number's baseline on that line's baseline. Markers drifted 1.2 to 3.4 px off for months
 // while every check passed, since only a render shows where they land. The line's first words
 // become "xxxx", so its ink is the x-height band itself (the cap band under text-transform).
+// Each page runs twice: as composed, and with a newline and indent opening every list item, as
+// hand-written HTML has it (30 of 43 os onepagers, 2026-11-01), where an inline-block marker kept
+// the newline as a space and pushed the first line 3.5 px right of the wrapped ones.
 const TOLERANCE = 0.6; // CSS px; the fix measured within 0.6 px at 600 dpi (2026-11-01)
+// A list's square, cut to the exact half ex (document.css), measured within 0.1 px (2026-11-01);
+// the lift rounded to whole pixels before sat up to 0.56 px off.
+const LIST_TOLERANCE = 0.25;
 const SCALE = 4;
 const SPECIMEN = resolve(import.meta.dir, "..", "specimen");
 const pages = readdirSync(SPECIMEN).filter((f) => f.endsWith(".html") && f !== "index.html");
 
 type Box = { x: number; y: number; width: number; height: number };
-type Probe = { label: string; edge: "middle" | "bottom"; marker: Box; text: Box };
+type Probe = { label: string; edge: "middle" | "bottom"; marker: Box; text: Box; indent: number };
 
-/** Runs in the page: rewrites the line beside each marker and returns the boxes to read. */
-function collect(): Probe[] {
+/** Runs in the page: rewrites the line beside each marker and returns the boxes to read, and for
+ * a square marker how far its first line starts right of the item's content edge, where wrapped
+ * lines start. `newline` first opens every list item with a newline and an indent. */
+function collect(newline: boolean): Probe[] {
+  if (newline)
+    for (const li of document.querySelectorAll("li"))
+      li.insertBefore(document.createTextNode("\n      "), li.firstChild);
   const firstText = (el: Element) => {
     const list = el.closest("ul, ol");
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
@@ -29,14 +40,20 @@ function collect(): Probe[] {
     });
     return walker.nextNode() as Text | null;
   };
+  // A marker's side: an inline box's width is its padding (its clip-path cuts the square), an
+  // inline-block's its size.
+  const markerSize = (before: CSSStyleDeclaration) =>
+    before.display === "inline"
+      ? parseFloat(before.paddingLeft) + parseFloat(before.paddingRight)
+      : before.height === before.width
+        ? parseFloat(before.width)
+        : 0;
   const label = (el: Element) =>
     `${el.tagName.toLowerCase()}.${el.className.toString().split(" ")[0]} "${el.textContent!.trim().slice(0, 30)}"`;
   const marked: { host: Element; text: Text; edge: Probe["edge"]; mark?: Element }[] = [];
   for (const host of document.querySelectorAll("body *")) {
     const before = getComputedStyle(host, "::before");
-    const size = parseFloat(before.width);
-    const square =
-      before.content === '""' && size > 0 && size <= 16 && before.height === before.width;
+    const square = before.content === '""' && markerSize(before) > 0 && markerSize(before) <= 16;
     const counter = host.tagName === "LI" && /^counter\(/.test(before.content);
     if (!square && !counter) continue;
     const text = firstText(host);
@@ -65,6 +82,7 @@ function collect(): Probe[] {
   return marked.map(({ host, text, edge, mark }) => {
     const t = rectOf(text, 4);
     let marker: Box;
+    let indent = 0;
     if (mark) {
       const n = rectOf(mark.firstChild!);
       marker = box(n.left, n.right, n.top, n.bottom);
@@ -74,10 +92,24 @@ function collect(): Probe[] {
       const gap = flex ? parseFloat(getComputedStyle(host).columnGap) || 0 : 0;
       const right = t.left - (parseFloat(before.marginRight) || 0) - gap;
       const left =
-        edge === "middle" ? right - parseFloat(before.width) : host.getBoundingClientRect().left;
+        edge === "middle" ? right - markerSize(before) : host.getBoundingClientRect().left;
       marker = box(left - 1, right + 1, t.top - 3, t.bottom + 3);
+      if (edge === "middle" && host.closest("li")) {
+        const hostStyle = getComputedStyle(host);
+        indent =
+          t.left -
+          host.getBoundingClientRect().left -
+          parseFloat(hostStyle.borderLeftWidth) -
+          parseFloat(hostStyle.paddingLeft);
+      }
     }
-    return { label: label(host), edge, marker, text: box(t.left, t.right, t.top, t.bottom) };
+    return {
+      label: label(host),
+      edge,
+      marker,
+      text: box(t.left, t.right, t.top, t.bottom),
+      indent,
+    };
   });
 }
 
@@ -126,8 +158,12 @@ beforeAll(async () => {
 });
 afterAll(() => browser?.close());
 
-/** Each marker on a specimen page and how far it sits off its line in CSS px, after `css` is added. */
-async function measure(file: string, css = "") {
+/** A list square is held to its own tolerance, every other marker to the page-wide one. */
+const tolerance = (label: string) => (/^(li|p)\./.test(label) ? LIST_TOLERANCE : TOLERANCE);
+
+/** Each marker on a specimen page, how far it sits off its line in CSS px and how far its first
+ * line starts right of the wrapped lines, after `css` is added. */
+async function measure(file: string, newline: boolean, css = "") {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width: 1100, height: 1400, deviceScaleFactor: SCALE });
@@ -142,11 +178,12 @@ async function measure(file: string, css = "") {
         SCALE,
         edge,
       ));
-    const offsets: { label: string; offset: number }[] = [];
-    for (const p of await page.evaluate(collect))
+    const offsets: { label: string; offset: number; indent: number }[] = [];
+    for (const p of await page.evaluate(collect, newline))
       offsets.push({
         label: p.label,
         offset: (await read(p.marker, p.edge)) - (await read(p.text, p.edge)),
+        indent: p.indent,
       });
     return offsets;
   } finally {
@@ -154,28 +191,59 @@ async function measure(file: string, css = "") {
   }
 }
 
-test.each(pages)(
-  "%s: every marker sits on its line",
-  async (file) => {
-    const off = (await measure(file)).filter((m) => Math.abs(m.offset) > TOLERANCE);
+// The survey readout writes its own markup, every item on one line, so it runs as composed only.
+const cases = pages.flatMap((file) =>
+  file === "survey-readout.html"
+    ? [[file, false]]
+    : [
+        [file, false],
+        [file, true],
+      ],
+) as [string, boolean][];
+
+test.each(cases)(
+  "%s (newline after <li>: %p): every marker sits on its line, first lines start on the wrapped ones",
+  async (file, newline) => {
+    const measured = await measure(file, newline);
+    const off = measured.filter((m) => Math.abs(m.offset) > tolerance(m.label));
     expect(off.map((m) => `${m.label}: ${m.offset.toFixed(2)} px`)).toEqual([]);
+    const indented = measured.filter((m) => Math.abs(m.indent) > TOLERANCE);
+    expect(indented.map((m) => `${m.label}: first line ${m.indent.toFixed(2)} px in`)).toEqual([]);
   },
   60_000,
 );
 
-// The control: Chrome paints a marker on whole CSS pixels, so a misplaced one sits a pixel or more
-// off. The onepager's markers rest furthest below centre and the document's furthest above, so a
-// pixel down there and up here is the move that must fail.
+// The control: a marker moved a pixel down on one page and up on the other must fail.
 test.each([
   ["onepager.html", 1],
   ["dokument.html", -1],
 ])(
   "%s with every square marker moved by %d px fails",
   async (file, px) => {
-    const moved = await measure(file, `li::before { position: relative; top: ${px}px }`);
+    const moved = await measure(file, false, `li::before { position: relative; top: ${px}px }`);
     const squares = moved.filter((m) => m.label.startsWith("li."));
     expect(squares.length).toBeGreaterThan(0);
     for (const m of squares) expect(Math.abs(m.offset)).toBeGreaterThan(TOLERANCE);
   },
   60_000,
 );
+
+// The control for the list checks: document.css's marker before 2026-11-01, an inline-block lifted
+// by whole pixels, fails both on the onepager, off centre beyond the list tolerance as composed and
+// its first lines indented once a newline opens the items.
+const OLD_MARKER = `ul li::before, ul li > p:first-child::before { display: inline-block;
+  float: none; margin: 0 6pt 0 -12pt; transform: none;
+  vertical-align: round(calc(0.273em - var(--print-bullet) / 2), 1px) }`;
+
+test("onepager.html with the old inline-block marker fails centring and first-line alignment", async () => {
+  const composed = (await measure("onepager.html", false, OLD_MARKER)).filter((m) =>
+    m.label.startsWith("li."),
+  );
+  expect(composed.length).toBeGreaterThan(0);
+  for (const m of composed) expect(Math.abs(m.offset)).toBeGreaterThan(LIST_TOLERANCE);
+  const newline = (await measure("onepager.html", true, OLD_MARKER)).filter((m) =>
+    m.label.startsWith("li."),
+  );
+  expect(newline.length).toBeGreaterThan(0);
+  for (const m of newline) expect(m.indent).toBeGreaterThan(TOLERANCE);
+}, 60_000);

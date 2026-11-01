@@ -20,6 +20,9 @@ h2 { scroll-margin-top: calc(3.5rem + 4px + 1rem); }
 h2 { font-size: var(--type-h4-size); margin-top: 3rem; }
 p { color: var(--color-muted); }
 iframe { display: block; width: 210mm; border: 1px solid var(--color-border-strong); background: white; }
+/* A frame wider than the column (the readout's 1280px slides) zooms down to fit it, so the page never scrolls sideways. */
+main { min-width: 0; container-type: inline-size; }
+iframe.wide { zoom: min(1, calc(100cqw / 1282px)); }
 </style>
 </head>
 <body>
@@ -83,7 +86,7 @@ iframe { display: block; width: 210mm; border: 1px solid var(--color-border-stro
 <h2 id="vorbereitung">Vorbereitung <a href="vorbereitung.html">einzeln öffnen</a></h2>
 <iframe src="vorbereitung.html" title="Vorbereitung" style="height: 297mm" loading="lazy"></iframe>
 <h2 id="survey-readout">Survey Readout (English, slides) <a href="survey-readout.html">einzeln öffnen</a></h2>
-<iframe src="survey-readout.html" title="Survey Readout (English, slides)" style="width: 1280px; height: 5208px" loading="lazy"></iframe>
+<iframe src="survey-readout.html" class="wide" title="Survey Readout (English, slides)" style="width: 1280px; height: 5208px" loading="lazy"></iframe>
 <h2 id="delivery-briefing">Delivery Briefing <a href="delivery-briefing.html">einzeln öffnen</a></h2>
 <iframe src="delivery-briefing.html" title="Delivery Briefing" style="height: 297mm" loading="lazy"></iframe>
 <h2 id="trainer-briefing">Trainer Briefing (English, with meta) <a href="trainer-briefing.html">einzeln öffnen</a></h2>

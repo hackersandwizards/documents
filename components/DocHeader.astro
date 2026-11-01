@@ -148,16 +148,18 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
   }
 
   /* The website's category pill (TrainingList.astro .tl-chip): in print the 40% teal tint,
-     teal-light, under ink, weight 500. A filled CTA shape was dropped: blind reviewers read it as a button. */
+     teal-light, under ink, its words in the label role (mono caps), as every label on a document.
+     A filled CTA shape was dropped: blind reviewers read it as a button. */
   .doc-tag {
     display: inline-block;
     margin-bottom: 3pt;
     padding: var(--print-chip-pad);
     border-radius: var(--radius-pill);
     background: var(--color-teal-light);
-    font: var(--role-small);
-    font-weight: 500;
+    font: var(--role-label);
     line-height: 1.5;
+    letter-spacing: var(--type-label-tracking);
+    text-transform: var(--type-label-case);
     color: var(--color-ink);
   }
 </style>
