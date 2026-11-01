@@ -9,7 +9,6 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-// The one setting: where the page goes.
 const PAGE =
   process.env.STAND_PAGE ?? join(homedir(), "Downloads", "stand-entscheidungen", "index.html");
 const SCAN = join(homedir(), "dev");
@@ -292,7 +291,7 @@ const ids = Object.fromEntries(
 );
 
 // Brand values come from @hackersandwizards/brand, pinned in ~/.claude/package.json (`bun install` there), through its exports:
-// the tokens and print.css's font faces, inlined so the page opens offline from disk.
+// the tokens, print.css's font faces and the internal header (header.css), inlined so the page opens offline from disk.
 function hubBrandCss() {
   const at = (f: string) => Bun.resolveSync(`@hackersandwizards/brand/${f}`, import.meta.dir);
   const faces = readFileSync(at("print.css"), "utf8").match(/@font-face\s*{[^}]*}/g);
@@ -302,32 +301,43 @@ function hubBrandCss() {
       /url\("fonts\/([^"]+)"\)/g,
       (_, f) => `url(data:font/woff2;base64,${readFileSync(at(`fonts/${f}`)).toString("base64")})`,
     );
-  return [readFileSync(at("tokens.root.css"), "utf8"), ...faces.map(inline)].join("\n");
+  return [
+    readFileSync(at("tokens.root.css"), "utf8"),
+    ...faces.map(inline),
+    readFileSync(at("header.css"), "utf8"),
+  ].join("\n");
 }
+
+// The internal header's lockup cuts, inlined as data URIs like the fonts.
+const hubLogo = (f: string) =>
+  `data:image/svg+xml;base64,${readFileSync(Bun.resolveSync(`@hackersandwizards/brand/logos/${f}`, import.meta.dir)).toString("base64")}`;
 
 mkdirSync(dirname(PAGE), { recursive: true });
 writeFileSync(
   PAGE,
   `<!doctype html>
-<html lang="de"><head><meta charset="utf-8"><title>Was dich braucht</title>
+<html lang="de" data-theme="auto"><head><meta charset="utf-8"><title>Was dich braucht</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 ${hubBrandCss()}
 /* Page roles on brand tokens. Dark follows the system, on the night tones: teal-night accent with night text on it. */
 :root{--bg:var(--color-bg);--surface:var(--color-white);--on-accent:var(--color-white);--ink:var(--color-ink);--muted:var(--color-muted);--line:var(--color-border);--tint:var(--color-tint);--accent:var(--color-teal);--accent-2:var(--color-purple);--error:color-mix(in srgb,var(--color-red) 70%,var(--color-ink));--warning:color-mix(in srgb,var(--color-amber-dark) 70%,var(--color-ink));
 --text-page:1.5rem;--text-heading:1.25rem;--text-subheading:1rem;--text-ui:.875rem;--text-micro:.75rem;color-scheme:light;
---field-line:color-mix(in srgb,var(--muted) 70%,var(--bg))/* field borders at 3:1, the non-text minimum */}
+--field-line:color-mix(in srgb,var(--muted) 70%,var(--bg))/* field borders at 3:1, the non-text minimum */;
+--background:var(--bg);--foreground:var(--ink);--border:var(--line)/* the roles header.css reads */}
 @media (prefers-color-scheme:dark){:root{--bg:var(--color-night);--surface:var(--color-night-2);--on-accent:var(--color-night);--ink:var(--color-night-ink);--muted:var(--color-night-muted);
 --line:color-mix(in srgb,white 18%,var(--color-night));--tint:color-mix(in srgb,white 7%,var(--color-night-2));
 --accent:var(--color-teal-night);--accent-2:var(--color-purple-night);--error:var(--color-red-night);--warning:var(--color-amber);color-scheme:dark}}
 [hidden]{display:none!important}
 :focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
 body{font:var(--text-subheading)/1.5 var(--font-sans);color:var(--ink);background:var(--bg);margin:0}
-main{max-width:1040px;margin:0 auto;padding:0 24px 64px;overflow-wrap:anywhere}
-header{position:sticky;top:0;z-index:2;background:var(--bg);border-top:3px solid;border-image:var(--gradient-magic) 1;border-bottom:1px solid var(--line);padding:10px 0 8px}
-.top{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap}
+main{padding-bottom:64px;overflow-wrap:anywhere}
+/* The page title row and its sticky toolbar under the internal header, as on the internal apps. */
+.top{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap;min-height:3.875rem;padding-top:8px}
+.toolbar{position:sticky;top:calc(3.5rem + 4px);z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:2px 0 6px}
 h1,h2,summary,button{font-family:var(--font-mono);font-weight:600;margin:0}
-h1{font-size:var(--text-page)}
+h1{font-size:var(--text-page);font-weight:700;line-height:1.25;letter-spacing:-.01em}
+details.item .body>p,.recline{max-width:80ch}
 #state{font-size:var(--text-ui);margin:0;flex:1;color:var(--muted)}
 .row2{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:6px}.bar{display:contents}.jump{order:1}.find{order:2;display:flex;gap:6px;align-items:center}
 .jump .count{color:inherit;margin-left:4px}
@@ -374,19 +384,21 @@ p{margin:6px 0}a{color:var(--accent)}.note{color:var(--muted);font-size:var(--te
 #block{width:100%;min-height:120px;font:var(--text-micro)/1.5 var(--font-mono)}
 .sources summary{font:var(--text-ui) var(--font-sans);color:var(--muted);cursor:pointer;padding:6px 0}
 .sources ul{margin:0;padding-left:20px;font-size:var(--text-ui)}
-@media (max-width:640px){main{padding:0 14px 48px}
-/* On the phone only the jump bar stays: header and bar dissolve so it sticks to main. */
-header,.row2{display:contents}.top{padding-top:12px;border-top:3px solid;border-image:var(--gradient-magic) 1;margin:0 -14px;padding-inline:14px}
+@media (max-width:640px){main{padding-bottom:48px}
+/* On the phone only the jump bar stays under the header: toolbar and bar dissolve so it sticks to main. */
+.toolbar,.row2{display:contents}
 h1{font-size:var(--text-heading);flex:1}#state{flex-basis:100%;order:3}
 .bar{display:flex;gap:6px;margin-top:6px}.find{flex:1;min-width:0}.find input{flex:1;width:auto;min-width:0}.who button{padding:0 10px}
-.jump{position:sticky;top:0;z-index:2;background:var(--bg);margin:6px -14px 0;padding:0 8px;box-shadow:0 6px 8px -6px rgb(0 0 0/.3);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}.jump a{padding:0 7px}
+.jump{position:sticky;top:calc(3.5rem + 4px);z-index:2;background:var(--bg);margin:6px -1rem 0;padding:0 8px;box-shadow:0 6px 8px -6px rgb(0 0 0/.3);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}.jump a{padding:0 7px}
 section.part,details.item{scroll-margin-top:120px}.opts.pics{grid-template-columns:1fr}}
-</style></head><body><main>
-<header><div class="top"><h1>Was dich braucht</h1><p id="state" role="status"></p><button id="copy" type="button">Antworten kopieren</button></div>
-<div class="row2"><div class="bar"><div class="who" role="group" aria-label="Für wen">${[...PEOPLE, "alle"].map((p) => `<button type="button" data-who="${p}" aria-pressed="false">${p}</button>`).join("")}</div>
+</style></head><body>
+<header class="hw-header"><div class="hw-header-strip"></div><div class="hw-header-row hw-container"><a class="hw-header-brand" href="#" aria-label="hackers&amp;wizards Entscheidungen"><img class="hw-header-logo" src="${hubLogo("lockup-screen.svg")}" alt="" width="8042" height="1489"><img class="hw-header-logo-night" src="${hubLogo("lockup-screen-night.svg")}" alt="" width="8196" height="1641"><span class="hw-header-product">Entscheidungen</span></a></div></header>
+<main class="hw-container">
+<div class="top"><h1>Was dich braucht</h1><p id="state" role="status"></p><button id="copy" type="button">Antworten kopieren</button></div>
+<div class="toolbar"><div class="row2"><div class="bar"><div class="who" role="group" aria-label="Für wen">${[...PEOPLE, "alle"].map((p) => `<button type="button" data-who="${p}" aria-pressed="false">${p}</button>`).join("")}</div>
 <div class="find"><input type="search" id="q" placeholder="Filtern" aria-label="Punkte filtern"><span id="hits" aria-live="polite"></span></div></div>
 <nav class="jump" aria-label="Abschnitte"><a href="#entscheiden">Entscheiden <span class="count" data-for="entscheiden"></span></a><a href="#pruefen">Prüfen <span class="count" data-for="pruefen"></span></a><a href="#erledigen">Erledigen <span class="count" data-for="erledigen"></span></a><a href="#annahmen">Annahmen <span class="count" data-for="annahmen"></span></a></nav>
-</div></header>
+</div></div>
 <details class="sources"><summary>${lists.length} Entscheidungslisten unter ~/dev, gebaut ${hubEscape(stamp)}</summary><ul>${sources}</ul>
 <p class="note">Wähle, schreib eine Notiz, oder hake ab: alles bleibt in diesem Browser. „Antworten kopieren“ legt alles als einen Block in die Zwischenablage; füg ihn in den Chat mit Ada ein. Ada trägt jede Zeile in ihr Repo ein, committet, baut die Seite neu und bestätigt jede id. Eine Antwort verschwindet hier, wenn ihre Zeile von der neuen Seite verschwindet. Fehlt ein Repo in der Liste, liegt es nicht unter ~/dev oder hat keine Entscheidungsliste.</p>
 <label class="lbl" for="block">Der Block zum Kopieren</label><textarea id="block" readonly></textarea></details>
@@ -476,7 +488,6 @@ document.getElementById("copy").addEventListener("click", async () => {
   btn.textContent = "Kopiert: in den Chat einfügen";
   setTimeout(state, 2500);
 });
-// Person filter and text filter; counts follow what is visible.
 let who = localStorage.getItem(STORE + "who") || ${JSON.stringify(PEOPLE[0])};
 const q = document.getElementById("q");
 function apply() {
@@ -500,8 +511,7 @@ function apply() {
 }
 for (const b of document.querySelectorAll(".who button")) b.addEventListener("click", () => { who = b.dataset.who; try { localStorage.setItem(STORE + "who", who); } catch (e) {} apply(); });
 q.addEventListener("input", apply);
-// Jump bar: the section under the bar is the filled pill.
-const header = document.querySelector("header"), jump = document.querySelector(".jump"), links = [...jump.querySelectorAll("a")];
+const header = document.querySelector(".toolbar"), jump = document.querySelector(".jump"), links = [...jump.querySelectorAll("a")];
 let shown;
 function current() {
   const edge = Math.max((matchMedia("(max-width:640px)").matches ? jump : header).getBoundingClientRect().bottom + 8, innerHeight * 0.3);
