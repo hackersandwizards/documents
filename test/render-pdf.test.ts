@@ -110,7 +110,7 @@ describe("renderPdf with an empty Chrome cache", () => {
     );
     writeFileSync(
       join(bin, "bunx"),
-      `#!/bin/sh\nsleep 0.5\n[ -e "${flag}" ] && exit 1\necho "${chrome}"\n`,
+      `#!/bin/sh\necho "$1" > "${flag}.pkg"\nsleep 0.5\n[ -e "${flag}" ] && exit 1\necho "${chrome}"\n`,
       { mode: 0o755 },
     );
     writeFileSync(join(dir, "install.html"), "<!doctype html><html><body>x</body></html>");
@@ -135,6 +135,11 @@ describe("renderPdf with an empty Chrome cache", () => {
     const result = JSON.parse(await new Response(child.stdout).text());
     expect(result.failed).toContain("Chrome for Testing is required");
     expect(result.retried).toBe("ok");
+    // bunx runs the package it is given from the registry: a version range would run whatever
+    // was published last.
+    expect(readFileSync(`${flag}.pkg`, "utf8").trim()).toMatch(
+      /^@puppeteer\/browsers@\d+\.\d+\.\d+$/,
+    );
     // Two installs of 0.5 s each: a blocking install leaves the 50 ms timer near zero.
     expect(result.ticks).toBeGreaterThan(10);
   });

@@ -9,6 +9,7 @@ import DocHeader from "./DocHeader.astro";
 import DocProse from "./DocProse.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
+import { cssString } from "../scripts/fill";
 
 // The handout's own words; `labels` replaces any of them.
 const TEXT = {
@@ -72,7 +73,6 @@ const htmlText = (text: string) =>
  *  base's `@page :first`, so the cover's running head is switched off again here: on the cover's
  *  zero top margin it would print clipped, invisible but in the PDF's text. So is a chapter's
  *  opening page's (`opening` below). */
-const cssString = (text: string) => JSON.stringify(text).replace(/</g, "\\3C ");
 const pageCss = `@page { @top-left { content: ${cssString(t.runningBrand)}; } @top-right { content: ${cssString(
   title,
 )}; } @bottom-left { content: ${cssString(client ?? "")}; } }

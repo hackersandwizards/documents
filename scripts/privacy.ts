@@ -34,12 +34,12 @@ const INVENTED = new Set(
 );
 // The props naming a person or a client.
 const PERSON_KEYS =
-  /^(personName|recipientName|recipientFirstName|attendeeName|attendeeCompany|employee|contact|company|client|clientShort|customerName)$/;
+  /^(personName|recipientName|recipientFirstName|attendeeName|attendeeCompany|employee|contact|company|client|clientShort|shortName|customerName)$/;
 
 const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boolean }[] = [
   {
     what: "a euro figure that is not a placeholder",
-    pattern: /\d[\d.,]*(?:,-)?\s?(€|EUR\b|Euro\b)|(€|EUR)\s?\d/gi,
+    pattern: /\d[\d.,]*(?:,[-–])?\s?[kT]?(€|EUR\b|Euro\b)|(€|EUR)\s?\d/gi,
   },
   {
     what: "a mail address outside the example domains and ours",
@@ -48,7 +48,8 @@ const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boole
   },
   {
     what: "a phone number",
-    pattern: /(?<!\w)\+\d{2}[\s/-]?\(?0?\d{2,5}\)?[\s/-]?\d{3,}|(?<![\w.,])0\d{2,4}[\s/-]?\d{5,}/g,
+    pattern:
+      /(?<!\w)\+\d{2}[\s/-]?\(?0?\d{2,5}\)?[\s/-]?\d{3,}|(?<![\w.,])0\d{2,4}(?: ?[/-] ?|\s)?\d{5,}|(?<![\w.,])0\d{2,4}\s[1-9]\d{1,3}(?:\s\d{2,4})+/g,
   },
   { what: "an IBAN", pattern: /\b[A-Z]{2}\d{2}(?: ?[A-Z\d]{4}){3,}/g },
   {

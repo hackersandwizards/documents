@@ -29,9 +29,13 @@ test("every text rule hits a planted case", () => {
       "2.345" + " Euro",
       "EUR" + " 1.800",
       "040" + " 1234567",
+      "1.400,–" + " €",
+      "12 k" + "€",
+      "040 123" + " 456 78",
+      "040 / " + "1234567",
     ].join("\n"),
   );
-  expect(scanText(planted).map((f) => f.line)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  expect(scanText(planted).map((f) => f.line)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 });
 
 test("a deny term hits as a whole word only", () => {
@@ -47,5 +51,8 @@ test("a person in the samples outside the invented names fails", () => {
   ]);
   expect(scanSamples({ surveyReadout: { customerName: "Echtfirma GmbH" } })).toEqual([
     "surveyReadout.customerName: Echtfirma",
+  ]);
+  expect(scanSamples({ rateCard: { client: { shortName: "Echtfirma" } } })).toEqual([
+    "rateCard.client.shortName: Echtfirma",
   ]);
 });

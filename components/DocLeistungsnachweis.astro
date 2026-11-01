@@ -8,7 +8,7 @@ import DocConfirmation from "./DocConfirmation.astro";
 import DocHeader from "./DocHeader.astro";
 import DocTitle from "./DocTitle.astro";
 import DocTotalRow from "./DocTotalRow.astro";
-import { fill } from "../scripts/fill";
+import { cssString, fill } from "../scripts/fill";
 
 // The document's own words; `labels` replaces any of them, `{name}` marks a value filled in.
 const TEXT = {
@@ -99,7 +99,7 @@ const fields = [
   [t.period, p.period],
   [t.created, p.created],
 ].filter((f): f is [string, string] => !!f[1]);
-const running = `@page { @bottom-left { content: ${JSON.stringify(fill(t.running, p))}; } }`;
+const running = `@page { @bottom-left { content: ${cssString(fill(t.running, p))}; } }`;
 const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
 ---
 

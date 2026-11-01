@@ -309,7 +309,8 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g)!.push(s);
   }
-  const groupsHtml = t.groups
+  // The words' order first, then any group they do not name, so no scale drops off the slide.
+  const groupsHtml = [...new Set([...t.groups, ...groups.keys()])]
     .filter((g) => groups.has(g))
     .map(
       (g) =>

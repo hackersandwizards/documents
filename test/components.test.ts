@@ -205,3 +205,20 @@ test.each([
   expect(html).toContain("[LABEL]");
   expect(html).not.toContain(text);
 });
+
+// A running head's text lands in a raw <style>: a caller's `</style>` must stay inside it.
+test.each([
+  ["DocProposal", { ...proposal, clientShort: "</style><b>x" }],
+  [
+    "DocRateCard",
+    {
+      ...props.DocRateCard,
+      client: { ...(props.DocRateCard.client as object), shortName: "</style><b>x" },
+    },
+  ],
+  ["DocLeistungsnachweis", { ...props.DocLeistungsnachweis, clientShort: "</style><b>x" }],
+  ["DocHandout", { ...props.DocHandout, client: "</style><b>x" }],
+])("%s keeps a running head's text inside its style element", async (name, componentProps) => {
+  const html = await composer.render(name, componentProps as Record<string, unknown>);
+  expect(html).not.toContain("</style><b>x");
+});

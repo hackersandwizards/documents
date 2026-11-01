@@ -15,7 +15,7 @@ import DocRecipient from "./DocRecipient.astro";
 import DocSectionHead from "./DocSectionHead.astro";
 import DocSteps from "./DocSteps.astro";
 import DocTitle from "./DocTitle.astro";
-import { fill } from "../scripts/fill";
+import { cssString, fill } from "../scripts/fill";
 
 // The proposal's own words, German and English; `labels` replaces any of them, `{name}` marks a
 // value filled in.
@@ -189,9 +189,9 @@ const acceptance =
 // :first` loses to this later rule, and on page 1's zero top margin it printed clipped, invisible
 // but in the PDF's text.
 const running = `@page {
-  @top-left { content: ${JSON.stringify(t.runningBrand)}; }
-  @top-right { content: ${JSON.stringify(fill(t.runningTitle, { kind: t.kind, number: p.number }))}; }
-  @bottom-left { content: ${JSON.stringify(p.clientShort)}; }
+  @top-left { content: ${cssString(t.runningBrand)}; }
+  @top-right { content: ${cssString(fill(t.runningTitle, { kind: t.kind, number: p.number }))}; }
+  @bottom-left { content: ${cssString(p.clientShort)}; }
 }
 @page :first { @top-left { content: none; } @top-right { content: none; } }`;
 ---

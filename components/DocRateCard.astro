@@ -8,7 +8,7 @@ import DocLead from "./DocLead.astro";
 import DocPriceTable from "./DocPriceTable.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
-import { fill } from "../scripts/fill";
+import { cssString, fill } from "../scripts/fill";
 
 // The rate card's own words; `labels` replaces any of them, `{name}` marks a value filled in.
 const TEXT = {
@@ -62,9 +62,9 @@ const t = { ...TEXT, ...p.labels };
 // :first` loses to this later rule, and on page 1's zero top margin it printed clipped, invisible
 // but in the PDF's text.
 const running = `@page {
-  @top-left { content: ${JSON.stringify(t.runningBrand)}; }
-  @top-right { content: ${JSON.stringify(fill(t.runningTitle, p))}; }
-  @bottom-left { content: ${JSON.stringify(p.client.shortName)}; }
+  @top-left { content: ${cssString(t.runningBrand)}; }
+  @top-right { content: ${cssString(fill(t.runningTitle, p))}; }
+  @bottom-left { content: ${cssString(p.client.shortName)}; }
 }
 @page :first { @top-left { content: none; } @top-right { content: none; } }`;
 ---

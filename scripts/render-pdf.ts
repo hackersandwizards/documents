@@ -19,7 +19,8 @@ let resolvedChrome: string | undefined;
 let installingChrome: Promise<string | undefined> | undefined;
 const chromeCache = () => process.env.PUPPETEER_CACHE_DIR ?? join(homedir(), ".cache", "puppeteer");
 const installArgs = (cache: string) => [
-  "@puppeteer/browsers",
+  // Pinned: bunx runs the newest published release of an unpinned package.
+  "@puppeteer/browsers@3.2.6",
   "install",
   "chrome@stable",
   "--path",
@@ -124,7 +125,7 @@ export async function renderPdf(
   const chrome = await chromeBinaryAsync();
   if (!chrome) {
     throw new Error(
-      "Chrome for Testing is required to render PDFs: bunx @puppeteer/browsers install chrome@stable --path ~/.cache/puppeteer, or set CHROME_BINARY.",
+      "Chrome for Testing is required to render PDFs: bunx @puppeteer/browsers@3.2.6 install chrome@stable --path ~/.cache/puppeteer, or set CHROME_BINARY.",
     );
   }
   const html = readFileSync(htmlPath, "utf-8");

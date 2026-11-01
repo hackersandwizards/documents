@@ -17,6 +17,16 @@ test("a mark colour cannot open an attribute", () => {
   expect(html).toContain("--mark:red&quot; onmouseover=&quot;x");
 });
 
+// A scale whose group the deck's words do not list still reaches the scores slide.
+test("a scale in a group outside text.groups is shown, not dropped", () => {
+  const html = composeSurveyReadout({
+    ...surveyReadout,
+    scales: [{ ...surveyReadout.scales[0], title: "[OWN-GROUP-ROW]", group: "[OWN-GROUP]" }],
+  });
+  expect(html).toContain("[OWN-GROUP]");
+  expect(html).toContain("[OWN-GROUP-ROW]");
+});
+
 // A free-text page a few pixels too full squeezed its kicker, a flex item of fixed height, and the
 // title rose 3px on that slide alone (a real os readout, 01.11.). Twelve invented answers of these
 // lengths reproduce it in Chrome; every slide's title must sit at the same height.
