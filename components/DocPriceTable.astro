@@ -116,8 +116,19 @@ const span = columns.length - 1;
     background: var(--accent-soft);
   }
 
-  .sums td:first-child {
-    padding-left: var(--space-cell);
+  /* A sums table bleeds as the base's banded table does: band and rules reach --band-bleed past
+     the text edge on each side, every row's text stays on the heading's edge. */
+  table.sums {
+    width: calc(100% + 2 * var(--band-bleed));
+    margin-inline: calc(-1 * var(--band-bleed));
+  }
+
+  .sums :is(th, td):first-child {
+    padding-left: var(--band-bleed);
+  }
+
+  .sums :is(th, td):last-child {
+    padding-right: var(--band-bleed);
   }
 
   .sums td.num {

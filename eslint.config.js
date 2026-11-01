@@ -7,5 +7,10 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { rules: { "no-empty": ["error", { allowEmptyCatch: true }] } },
+  // The decision list is a browser script the parallel-session hub page loads.
+  {
+    files: ["docs/tracking/decisions/items.js"],
+    languageOptions: { globals: { window: "writable" } },
+  },
   prettier,
 );

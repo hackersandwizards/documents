@@ -429,8 +429,21 @@ tr.total td {
   font-variant-numeric: tabular-nums;
 }
 
-tr.total td:first-child {
-  padding-left: var(--space-cell);
+/* A table holding a band (a total row; DocPriceTable's sums alike) reaches --band-bleed past the
+   text edge on each side, rules and band included, and pads its outer cells by as much: the band
+   gets equal room left and right, and every row's text stays on the edge of the heading above
+   (Benedikt, 01.11.: the total sat indented and its amount ran into the band's right edge). */
+table:has(tr.total) {
+  width: calc(100% + 2 * var(--band-bleed));
+  margin-inline: calc(-1 * var(--band-bleed));
+}
+
+table:has(tr.total) :is(th, td):first-child {
+  padding-left: var(--band-bleed);
+}
+
+table:has(tr.total) :is(th, td):last-child {
+  padding-right: var(--band-bleed);
 }
 
 tr.total td.num {

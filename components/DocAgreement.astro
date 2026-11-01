@@ -161,4 +161,10 @@ const running = `@page {
   .section {
     margin-top: var(--section-space);
   }
+
+  /* The party cards side by side take one height, however many address lines each carries
+     (Benedikt, 01.11.). */
+  .grid-2 > :global(.prepared) {
+    align-self: stretch;
+  }
 </style>

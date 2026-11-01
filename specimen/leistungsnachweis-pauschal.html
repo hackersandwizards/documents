@@ -177,6 +177,8 @@
   --card-grid-gap: 12.5pt 15pt;
   --dl-gap: 2pt 10pt;
   --total-pad-top: 7pt;
+  
+  --band-bleed: var(--space-cell);
   --timeline-when: 36mm;
   --header-gap: 8mm;
   --header-pad: 8pt;
@@ -823,8 +825,18 @@ tr.total td {
   font-variant-numeric: tabular-nums;
 }
 
-tr.total td:first-child {
-  padding-left: var(--space-cell);
+
+table:has(tr.total) {
+  width: calc(100% + 2 * var(--band-bleed));
+  margin-inline: calc(-1 * var(--band-bleed));
+}
+
+table:has(tr.total) :is(th, td):first-child {
+  padding-left: var(--band-bleed);
+}
+
+table:has(tr.total) :is(th, td):last-child {
+  padding-right: var(--band-bleed);
 }
 
 tr.total td.num {
@@ -1317,10 +1329,6 @@ td[data-astro-cid-embgifaj] {
   font: var(--role-h4);
   letter-spacing: var(--tracking-h4);
   font-variant-numeric: tabular-nums;
-}
-
-td[data-astro-cid-embgifaj]:first-child {
-  padding-left: var(--space-cell);
 }
 
 .num[data-astro-cid-embgifaj] {
