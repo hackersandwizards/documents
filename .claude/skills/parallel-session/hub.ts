@@ -2,7 +2,7 @@
 // found under ~/dev (no repo list): Entscheiden (open rows with options), Prüfen (open rows
 // without options), Erledigen (the person's GOAL.md rows, else TODO.md) and, collapsed, Annahmen
 // (assumed rows). Agent work is left out. Answers stay in this browser until, once copied, their row
-// leaves a rebuilt page that still lists its repo; "kopieren" puts them in one block for the chat.
+// leaves a rebuilt page; "kopieren" puts them in one block for the chat.
 // Usage: bun hub.ts [--check [<repo> ...]]   --check validates the found lists (or the given repos),
 // exit 1 on a defect. The build prints defects, and while a list is unreadable exits 1 unwritten.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -82,13 +82,13 @@ type List = { path: string; key: string; rows: Row[] };
 const lists: List[] = [];
 const defects: string[] = [];
 // items.js is read as data, never run: ~/dev holds third-party clones. Allowed are the
-// `window.DECISION_REPOS = window.DECISION_REPOS || {};` line and assignments of a JSON5 literal
-// to `window.DECISION_REPOS["<repo>"]` or `window.DECISION_AREAS`; anything else is a defect.
+// `window.DECISION_REPOS = window.DECISION_REPOS || {};` line, `//` comment lines and assignments
+// of a JSON5 literal to `window.DECISION_REPOS["<repo>"]` or `window.DECISION_AREAS`; anything
+// else is a defect.
 function readDecisionList(file: string): Record<string, Row[]> {
-  const src = readFileSync(file, "utf8").replace(
-    /^window\.DECISION_REPOS = window\.DECISION_REPOS \|\| \{\};$/m,
-    "",
-  );
+  const src = readFileSync(file, "utf8")
+    .replace(/^window\.DECISION_REPOS = window\.DECISION_REPOS \|\| \{\};$/m, "")
+    .replace(/^\s*\/\/.*$/gm, "");
   const head = /^window\.(?:DECISION_REPOS\[("[^"\n]+"|'[^'\n]+')\]|DECISION_AREAS)\s*=/gm;
   const heads = [...src.matchAll(head)];
   if (src.slice(0, heads[0]?.index ?? src.length).trim())
@@ -227,7 +227,7 @@ function rowHtml(list: List, r: Row, kind: string) {
 <p class="row-foot">${r.recommended ? `<button type="button" class="ghost pick" data-v="${hubEscape(r.recommended)}">Empfehlung wählen</button> ` : ""}<button type="button" class="ghost clear">Zurücksetzen</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 function taskHtml(t: Task) {
-  const k = `${t.list.key}:GOAL ${t.point.replace(/\s+/g, " ").slice(0, 60)}`;
+  const k = `${t.list.key}:GOAL ${t.point.replace(/\s+/g, " ")}`;
   return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">bis ${hubDate(t.due)}</span>` : ""}<span class="mark"></span></summary>
 <div class="body"><p>${linkPaths(t.list.path, t.point)}</p><p><b>Wer:</b> ${hubEscape(t.actor)}</p>${t.evidence ? `<p class="note"><b>Beleg:</b> ${linkPaths(t.list.path, t.evidence)}</p>` : ""}<label class="choice"><input type="checkbox" value="erledigt"> erledigt</label><label class="lbl" for="n-${hubEscape(k)}">Notiz</label><textarea id="n-${hubEscape(k)}"></textarea><p class="row-foot"><button type="button" class="ghost clear">Zurücksetzen</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
@@ -403,15 +403,14 @@ const read = (k) => { try { return JSON.parse(localStorage.getItem(STORE + k)) |
 const write = (k, v) => { try { v ? localStorage.setItem(STORE + k, JSON.stringify(v)) : localStorage.removeItem(STORE + k); return true; } catch (e) { return false; } };
 const items = [...document.querySelectorAll("details.item")];
 const known = new Set(items.map((d) => d.dataset.k));
-// An answer whose row left the page was carried out: drop it, but only once copied and only where
-// its repo is on this page, since a repo missing from one build says nothing about its rows.
-const REPOS = new Set(${JSON.stringify(lists.map((l) => l.key)).replace(/</g, "\\u003c")});
+// An answer whose row left the page, or whose repo did, was carried out or has nowhere to go: drop it
+// once copied.
 const copiedAt = localStorage.getItem(STORE + "copied") || "";
 for (let i = localStorage.length - 1; i >= 0; i--) {
   const k = localStorage.key(i);
   if (!k.startsWith(STORE) || k === STORE + "who" || k === STORE + "copied") continue;
   const id = k.slice(STORE.length), a = read(id);
-  if (!known.has(id) && REPOS.has(id.split(":")[0]) && (!a || !a.at || a.at <= copiedAt)) localStorage.removeItem(k);
+  if (!known.has(id) && (!a || !a.at || a.at <= copiedAt)) localStorage.removeItem(k);
 }
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 function load(d) {

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { linkSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -28,14 +29,24 @@ interface Holder {
 
 const sleep = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms));
 
-function readHolder(): Holder | undefined {
+function readLock(): string | undefined {
   try {
-    const holder = JSON.parse(readFileSync(LOCK, "utf8")) as Holder;
+    return readFileSync(LOCK, "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
+function parseHolder(raw: string | undefined): Holder | undefined {
+  try {
+    const holder = JSON.parse(raw ?? "") as Holder;
     return typeof holder.pid === "number" ? holder : undefined;
   } catch {
     return undefined;
   }
 }
+
+const readHolder = (): Holder | undefined => parseHolder(readLock());
 
 function running(pid: number): boolean {
   try {
@@ -67,12 +78,26 @@ function acquire(): boolean {
 }
 
 function dropIfStale(): void {
-  const holder = readHolder();
+  const raw = readLock();
+  if (raw === undefined) return;
+  const holder = parseHolder(raw);
   // An unreadable lock is a half-written or corrupt one, and nobody can prove it is live. A live
   // holder is never reclaimed on age: a slow run under load outlasted any bound and a second check
   // ran beside it. A reused pid reads as live too, which ends in the wait timeout, not an overlap.
-  if (!holder || !running(holder.pid)) {
-    rmSync(LOCK, { force: true });
+  if (holder && running(holder.pid)) return;
+  // Deleting by name after the read deleted a fresh lock another waiter wrote in between. The claim,
+  // named for these exact contents, lets one waiter delete them, and while they sit at the lock path
+  // no acquire can replace them, so the re-read under the claim stays true until the delete.
+  const claim = `${LOCK}.reclaim-${createHash("sha1").update(raw).digest("hex")}`;
+  try {
+    writeFileSync(claim, String(process.pid), { flag: "wx" });
+  } catch {
+    return;
+  }
+  try {
+    if (readLock() === raw) rmSync(LOCK, { force: true });
+  } finally {
+    rmSync(claim, { force: true });
   }
 }
 

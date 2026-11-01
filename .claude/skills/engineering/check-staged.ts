@@ -5,6 +5,7 @@
 // neither pass nor block this commit.
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { availableParallelism } from "node:os";
 
 function refuseCommit(message: string): never {
   console.error(`[check:staged] ${message}`);
@@ -45,14 +46,8 @@ const tools: Record<string, string[]> = {
   eslint: ["--cache", "--no-warn-ignored", "--no-error-on-unmatched-pattern"],
 };
 const stdinFlags: Record<string, (path: string) => string[]> = {
-  prettier: (path) => [
-    "--check",
-    "--ignore-unknown",
-    "--log-level",
-    "warn",
-    "--stdin-filepath",
-    path,
-  ],
+  // No --check: prettier --check on stdin exits 0 on a syntax error. The output is compared instead.
+  prettier: (path) => ["--ignore-unknown", "--log-level", "warn", "--stdin-filepath", path],
   eslint: (path) => ["--cache", "--no-warn-ignored", "--stdin", "--stdin-filename", path],
 };
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
@@ -70,20 +65,45 @@ for (const path of whole) {
   bytes += path.length + 1;
 }
 
-function runStagedTool(
-  bin: string,
-  args: string[],
-  stdin?: Buffer,
-): Promise<{ out: string; code: number }> {
-  return new Promise((done) => {
+// Bounded to the core count: unbounded, 400 partly staged files started 400 processes on 16 cores.
+let free = availableParallelism();
+const waiting: (() => void)[] = [];
+type ToolRun = { out: string; code: number; stdout: Buffer };
+
+async function runStagedTool(bin: string, args: string[], stdin?: Buffer): Promise<ToolRun> {
+  if (free === 0) await new Promise<void>((go) => waiting.push(go));
+  else free--;
+  const result = await new Promise<ToolRun>((done) => {
     const child = spawn(bin, args, { stdio: "pipe" });
     child.stdin.end(stdin);
     let out = "";
-    child.stdout.on("data", (data) => (out += data));
+    const stdout: Buffer[] = [];
+    child.stdout.on("data", (data) => stdout.push(data));
     child.stderr.on("data", (data) => (out += data));
-    child.on("error", (error) => done({ out: `${String(error)}\n`, code: 1 }));
-    child.on("close", (code) => done({ out, code: code ?? 1 }));
+    child.on("error", (error) =>
+      done({ out: `${String(error)}\n`, code: 1, stdout: Buffer.alloc(0) }),
+    );
+    child.on("close", (code) => {
+      const bytes = Buffer.concat(stdout);
+      done({ out: `${bytes}${out}`, code: code ?? 1, stdout: bytes });
+    });
   });
+  const next = waiting.shift();
+  if (next) next();
+  else free++;
+  return result;
+}
+
+function stagedContent(path: string): Buffer {
+  // spawnSync's default maxBuffer cuts a file over about 1 MB off without failing.
+  const shown = spawnSync("git", ["show", `:${path}`], { maxBuffer: Infinity });
+  if (shown.status !== 0) refuseCommit(`git show :${path} failed`);
+  return shown.stdout;
+}
+
+// Prettier prints nothing for a file it has no parser for and echoes an ignored file unchanged.
+function prettierPasses(input: Buffer, r: ToolRun): boolean {
+  return !r.code && (r.stdout.equals(input) || (!r.stdout.length && /\S/.test(`${input}`)));
 }
 
 const runs = Object.entries(tools)
@@ -96,18 +116,16 @@ const runs = Object.entries(tools)
       ...chunks
         .filter((paths) => paths.length)
         .map((paths) => runStagedTool(bin, [...flags, ...paths])),
-      // Prettier prints a parser notice for an unknown file even when it passes: report failures only.
-      ...partial.map((path) =>
-        runStagedTool(
-          bin,
-          stdinFlags[tool](path),
-          spawnSync("git", ["show", `:${path}`]).stdout,
-        ).then((r) =>
-          r.code
-            ? { out: `[check:staged] ${tool}: ${path} as staged\n${r.out}`, code: r.code }
-            : { out: "", code: 0 },
-        ),
-      ),
+      ...partial.map(async (path) => {
+        const input = stagedContent(path);
+        const r = await runStagedTool(bin, stdinFlags[tool](path), input);
+        if (tool === "prettier" ? prettierPasses(input, r) : !r.code) return { out: "", code: 0 };
+        const why = tool === "prettier" && !r.code ? "not formatted\n" : r.out;
+        return {
+          out: `[check:staged] ${tool}: ${path} as staged\n${why}`,
+          code: r.code || 1,
+        };
+      }),
     ];
   });
 
