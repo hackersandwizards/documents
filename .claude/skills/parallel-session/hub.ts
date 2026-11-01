@@ -1,8 +1,10 @@
 // Builds the one page that shows what needs a person, from every docs/tracking/decisions/items.js
 // found under ~/dev (no repo list): Entscheiden (open rows with options), Prüfen (open rows
 // without options), Erledigen (the person's GOAL.md rows, else TODO.md) and, collapsed, Annahmen
-// (assumed rows). Agent work is left out. Answers stay in this browser until, once copied, their row
-// leaves a rebuilt page; "kopieren" puts them in one block for the chat.
+// (assumed rows). Within each priority, and each repo's Annahmen, rows sit under their `area`'s
+// label from any list's window.DECISION_AREAS, clusters ordered by their most urgent row. Agent
+// work is left out. Answers stay in this browser until, once copied, their row leaves a rebuilt
+// page; "kopieren" puts them in one block for the chat.
 // Usage: bun hub.ts [--check [<repo> ...]]   --check validates the found lists (or the given repos),
 // exit 1 on a defect. The build prints defects, and while a list is unreadable exits 1 unwritten.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -84,6 +86,7 @@ const defects: string[] = [];
 // `window.DECISION_REPOS = window.DECISION_REPOS || {};` line, `//` comment lines and assignments
 // of a JSON5 literal to `window.DECISION_REPOS["<repo>"]` or `window.DECISION_AREAS`; anything
 // else is a defect.
+const AREAS: Record<string, string> = {};
 function readDecisionList(file: string): Record<string, Row[]> {
   const src = readFileSync(file, "utf8")
     .replace(/^window\.DECISION_REPOS = window\.DECISION_REPOS \|\| \{\};$/m, "")
@@ -96,7 +99,7 @@ function readDecisionList(file: string): Record<string, Row[]> {
   heads.forEach((m, i) => {
     const literal = src.slice(m.index + m[0].length, heads[i + 1]?.index ?? src.length).trim();
     const value = Bun.JSON5.parse(literal.replace(/;$/, ""));
-    if (!m[1]) return;
+    if (!m[1]) return void Object.assign(AREAS, value);
     if (!Array.isArray(value)) throw new Error(`${m[1]} is not an array`);
     repos[Bun.JSON5.parse(m[1]) as string] = value;
   });
@@ -238,6 +241,16 @@ const decide = all.filter(({ r }) => r.status === "open" && r.options?.length).s
 const check = all.filter(({ r }) => r.status === "open" && !r.options?.length).sort(byPriority);
 const assumed = all.filter(({ r }) => r.status === "assumed");
 tasks.sort((a, b) => a.prio - b.prio || (a.due ?? "9").localeCompare(b.due ?? "9"));
+// Rows arrive sorted by priority and order, so a cluster's first row is its most urgent one.
+const clustersHtml = (rows: { list: List; r: Row }[], kind: string) => {
+  const byArea = Map.groupBy(rows, ({ r }) => String(r.area));
+  return [...byArea]
+    .map(
+      ([area, g]) =>
+        `<div class="cluster"><h3 class="cl">${hubEscape(AREAS[area] ?? area)}</h3>${g.map(({ list, r }) => rowHtml(list, r, kind)).join("")}</div>`,
+    )
+    .join("");
+};
 const groupHtml = (title: string, inner: string, open: boolean) =>
   inner
     ? `<details class="group"${open ? " open" : ""}><summary>${title}</summary>${inner}</details>`
@@ -249,17 +262,25 @@ const decideHtml = [1, 2, 3]
     const g = decide.filter(({ r }) => r.priority === p);
     return groupHtml(
       `Priorität ${p} <small>${g.length}</small>`,
-      g.map(({ list, r }) => rowHtml(list, r, "decide")).join(""),
+      clustersHtml(g, "decide"),
       p === 1,
     );
   })
+  .join("");
+const checkHtml = [1, 2, 3]
+  .map((p) =>
+    clustersHtml(
+      check.filter(({ r }) => r.priority === p),
+      "check",
+    ),
+  )
   .join("");
 const assumedHtml = lists
   .map((list) => {
     const g = assumed.filter((a) => a.list === list).sort(byPriority);
     return groupHtml(
       `${hubEscape(list.key)} <small>${g.length}</small>`,
-      g.map(({ r }) => rowHtml(list, r, "assumed")).join(""),
+      clustersHtml(g, "assumed"),
       false,
     );
   })
@@ -357,6 +378,7 @@ small{color:var(--muted);font-weight:400;font-size:var(--text-micro);margin-left
 section.part,details.item{scroll-margin-top:130px}
 details.group{margin:8px 0}
 details.group>summary{font-size:var(--text-subheading);padding:10px 0;cursor:pointer;min-height:24px}
+.cl{font:600 var(--text-micro) var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
 details.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);margin-bottom:6px}
 details.item>summary{display:flex;gap:10px;align-items:flex-start;list-style:none;font:500 var(--text-subheading)/1.4 var(--font-sans);padding:11px 12px;cursor:pointer}
 details.item>summary::-webkit-details-marker{display:none}
@@ -403,7 +425,7 @@ section.part,details.item{scroll-margin-top:120px}.opts.pics{grid-template-colum
 <p class="note">Wähle, schreib eine Notiz, oder hake ab: alles bleibt in diesem Browser. „Antworten kopieren“ legt alles als einen Block in die Zwischenablage; füg ihn in den Chat mit Ada ein. Ada trägt jede Zeile in ihr Repo ein, committet, baut die Seite neu und bestätigt jede id. Eine Antwort verschwindet hier, wenn ihre Zeile von der neuen Seite verschwindet. Fehlt ein Repo in der Liste, liegt es nicht unter ~/dev oder hat keine Entscheidungsliste.</p>
 <label class="lbl" for="block">Der Block zum Kopieren</label><textarea id="block" readonly></textarea></details>
 ${partHtml("entscheiden", "Entscheiden", "Eine Frage mit Optionen. Nichts ist vorausgewählt.", decideHtml)}
-${partHtml("pruefen", "Prüfen", "Ansehen und antworten: „passt“ oder was zu ändern ist.", check.map(({ list, r }) => rowHtml(list, r, "check")).join(""))}
+${partHtml("pruefen", "Prüfen", "Ansehen und antworten: „passt“ oder was zu ändern ist.", checkHtml)}
 ${partHtml("erledigen", "Erledigen", "Deine Aufgaben aus GOAL.md. Abhaken, wenn erledigt.", tasks.map(taskHtml).join(""))}
 ${partHtml("annahmen", "Annahmen", "Was Agenten selbst entschieden haben. Musst du nicht durchgehen; wähle eine andere Option nur, wenn du eine kippen willst.", assumedHtml)}
 </main>
@@ -497,6 +519,7 @@ function apply() {
     d.hidden = (who !== "alle" && d.dataset.who !== who) || (!!term && !d.textContent.toLowerCase().includes(term));
     if (!d.hidden) hits++;
   }
+  for (const c of document.querySelectorAll(".cluster")) c.hidden = !c.querySelector("details.item:not([hidden])");
   for (const g of document.querySelectorAll("details.group")) {
     const shown = g.querySelectorAll("details.item:not([hidden])").length;
     g.hidden = !shown;
