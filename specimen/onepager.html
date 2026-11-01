@@ -441,6 +441,10 @@
   --deck-leading-quote: 1.4;
   --deck-leading-item: 1.35;
   --deck-leading-key: 2rem;
+  /* Bar colours, the slide engine's rule (slides v0.20.0): teal is the data hue, a bar that is
+     context takes the ink at the ladder's 40 % on the page, a step between takes teal at 70 %. */
+  --deck-bar-step: color-mix(in srgb, var(--color-teal) 70%, var(--color-bg));
+  --deck-bar-context: color-mix(in srgb, var(--color-ink) 40%, var(--color-bg));
   /* The charts' own pixel geometry. */
   --deck-px-2: 2px;
   --deck-px-3: 3px;

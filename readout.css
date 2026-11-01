@@ -389,15 +389,15 @@ h2 {
   border-radius: var(--pill);
   overflow: hidden;
 }
-/* In ink, not the brand gradient: teal and purple are score bands on page 3. */
+/* As every highlighted bar: the top risk in teal, the rest in the context grey. */
 .rfill {
   width: var(--share);
   height: 100%;
-  background: var(--muted);
+  background: var(--deck-bar-context);
   border-radius: var(--pill);
 }
 .rfill.top {
-  background: var(--ink);
+  background: var(--accent);
 }
 .rn {
   font-family: var(--stat-family);

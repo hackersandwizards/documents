@@ -119,19 +119,20 @@ export const scalePosition = (value: number, s: { start: number; end: number }):
  */
 export const STRENGTH_AT = 0.75;
 
-// Brand colours (@hackersandwizards/brand tokens.css), low to high along the brand gradient: the design guide's
-// Error Red (--color-red) for weak, muted slate for middling (neither good nor bad, and 7:1 so the weakest mean
-// stays readable), teal for good, purple, the gradient's end, for strong.
+// The bar colours of every h&w bar (slides v0.20.0, os docs/tracking/2026-11-01-bar-colours.md):
+// teal for strong, teal at the ladder's 70 % for good, the context grey for middling, the design
+// guide's Error Red for weak. A mean's figure takes its band's colour where the band is a full
+// colour and ink on a tint, which reaches no 4.5:1 as text.
 const RED = "var(--negative)";
-const SLATE = "var(--muted)";
 const TEAL = "var(--accent)";
-const PURPLE = "var(--result)";
+const STEP = "var(--deck-bar-step)";
+const CONTEXT = "var(--deck-bar-context)";
 
-/** Bands by position on the value's own scale, so a 1-4 row listed as a strength renders purple. */
+/** Bands by position on the value's own scale, so a 1-4 row listed as a strength renders teal. */
 const BANDS: [number, string][] = [
-  [STRENGTH_AT, PURPLE], // 4.0 on 1-5, 3.25 on 1-4
-  [0.5625, TEAL], // 3.25 on 1-5, 2.6875 on 1-4
-  [0.375, SLATE], // 2.5 on 1-5, 2.125 on 1-4
+  [STRENGTH_AT, TEAL], // 4.0 on 1-5, 3.25 on 1-4
+  [0.5625, STEP], // 3.25 on 1-5, 2.6875 on 1-4
+  [0.375, CONTEXT], // 2.5 on 1-5, 2.125 on 1-4
   [-Infinity, RED],
 ];
 
@@ -139,6 +140,9 @@ export function bandColor(value: number, scale: { start: number; end: number }):
   const at = scalePosition(value, scale);
   return BANDS.find(([from]) => at >= from)![1];
 }
+
+/** A mean's figure: its band's colour, or ink where the band is a tint. */
+const figureColor = (band: string) => (band === STEP || band === CONTEXT ? "var(--ink)" : band);
 
 /** The key under the scores title: what the bar, its colour and the strip mean, per scale present. */
 function scoreLegend(
@@ -176,11 +180,13 @@ function shortDim(title: string): string {
   return title.replace(/\.$/, "");
 }
 
-/** A rating's shade, light to dark ink along its scale: answer distributions carry no band colour,
- * which on 1-4 painted ratings 1 and 2 the same red and gave purple a second meaning. */
+/** A rating's shade, ink on the opacity ladder, the top step for the top rating: answer
+ * distributions carry no band colour, which on 1-4 painted ratings 1 and 2 the same red. */
+const LADDER = [15, 25, 40, 70, 100];
 function rampColor(val: number, s: { start: number; end: number }): string {
-  const pct = Math.round(30 + 65 * scalePosition(val, s));
-  return `color-mix(in srgb, var(--ink) ${pct}%, var(--line-soft))`;
+  const steps = LADDER.slice(-Math.min(LADDER.length, s.end - s.start + 1));
+  const pct = steps[Math.round(scalePosition(val, s) * (steps.length - 1))];
+  return `color-mix(in srgb, var(--ink) ${pct}%, var(--tint))`;
 }
 
 function distBar(s: ReadoutScale): string {
@@ -205,7 +211,7 @@ function scaleRow(s: ReadoutScale): string {
       <div class="strack">
         <div class="sfill" style="--share:${fill.toFixed(1)}%;--band:${col}"></div>
       </div>
-      <div class="smean" style="--band:${col}">${s.n ? s.mean.toFixed(1) : "–"}</div>
+      <div class="smean" style="--band:${figureColor(col)}">${s.n ? s.mean.toFixed(1) : "–"}</div>
       ${distBar(s)}
     </div>`;
 }
@@ -287,7 +293,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   const s2 = slideShell(
     `<h2>${esc(t.glance)}</h2>
      <div class="glance">
-       <div class="bignum" style="--band:${h.n ? bandColor(h.mean, h) : "inherit"}">
+       <div class="bignum" style="--band:${h.n ? figureColor(bandColor(h.mean, h)) : "inherit"}">
          <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>${esc(fill(t.overall, { end: h.end }))}</span>
        </div>
        <div class="glancedist">
