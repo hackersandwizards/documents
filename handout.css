@@ -216,6 +216,7 @@ section h3 {
 
 .toc li {
   display: flex;
+  align-items: baseline;
   gap: 2mm;
   padding: 1mm 0;
   counter-increment: entry;
@@ -239,7 +240,6 @@ section h3 {
   content: counter(entry, decimal-leading-zero);
   flex: none;
   width: 7mm;
-  padding-top: 0.6mm;
   font: var(--role-label);
   letter-spacing: var(--type-label-tracking);
   color: var(--teal);
