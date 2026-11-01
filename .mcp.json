@@ -5,8 +5,8 @@
       "args": [
         "-i",
         "-e",
-        "import{detectBrowserPlatform as d,getInstalledBrowsers as g,install as i,resolveBuildId as r}from'@puppeteer/browsers';import{spawn}from'node:child_process';import{homedir}from'node:os';import{join}from'node:path';const c=process.env.PUPPETEER_CACHE_DIR??join(homedir(),'.cache','puppeteer'),p=d(),b=(await g({cacheDir:c})).filter(function(x){return x.browser=='chrome'}).filter(function(x){return x.platform==p}).sort(function(x,y){return x.buildId.localeCompare(y.buildId,'en',{numeric:true})}).at(-1)??await i({browser:'chrome',buildId:await r('chrome',p,'stable'),cacheDir:c}),m=spawn(process.execPath,['x',...process.argv.slice(1),'--executablePath',b.executablePath],{stdio:'inherit'});for(const s of['SIGINT','SIGTERM'])process.on(s,function(){m.kill(s)});m.on('exit',function(n){process.exit(n??1)})",
-        "chrome-devtools-mcp@latest",
+        "import{detectBrowserPlatform as d,getInstalledBrowsers as g,install as i,resolveBuildId as r}from'@puppeteer/browsers@3.2.6';import{spawn}from'node:child_process';import{homedir}from'node:os';import{join}from'node:path';const c=process.env.PUPPETEER_CACHE_DIR??join(homedir(),'.cache','puppeteer'),p=d(),b=(await g({cacheDir:c})).filter(function(x){return x.browser=='chrome'}).filter(function(x){return x.platform==p}).sort(function(x,y){return x.buildId.localeCompare(y.buildId,'en',{numeric:true})}).at(-1)??await i({browser:'chrome',buildId:await r('chrome',p,'stable'),cacheDir:c}),m=spawn(process.execPath,['x',...process.argv.slice(1),'--executablePath',b.executablePath],{stdio:'inherit'});for(const s of['SIGINT','SIGTERM'])process.on(s,function(){m.kill(s)});m.on('exit',function(n){process.exit(n??1)})",
+        "chrome-devtools-mcp@1.12.0",
         "--headless",
         "--isolated",
         "--viewport=1920x1080",
