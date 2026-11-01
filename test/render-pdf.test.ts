@@ -8,6 +8,7 @@ import {
   assertBrandFonts,
   bakeDocumentCss,
   chromeBinary,
+  composeDocument,
   documentCss,
   renderPdf,
 } from "../scripts/render-pdf";
@@ -200,5 +201,30 @@ describe.skipIf(!chromeBinary())("renderPdf", () => {
       `@font-face { font-family: Inter; src: url(data:font/woff2;base64,${readFileSync(font).toString("base64")}); } body { font-family: Inter; }`,
     );
     expect(() => assertBrandFonts(variable)).toThrow(/Type 3/);
+  }, 60_000);
+});
+
+// A briefing writes each question as a bold paragraph over its answer. Sections of varied length
+// put such a label at many heights on the page, so some reach a page foot: none ends a page alone.
+describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
+  it("stays on the page with the text under it", async () => {
+    const sections = Array.from({ length: 48 }, (_, i) => {
+      const filler = "<p>An invented line of filler.</p>".repeat(i % 6);
+      return `<p><strong>Label ${i}</strong></p><p>Answer ${i} runs over two lines of the page measure, long enough to wrap once at the body size of the base.</p>${filler}`;
+    });
+    const html = bakeDocumentCss(
+      await composeDocument("DocMarkdown", { kind: "Delivery Briefing", html: sections.join("") }),
+    );
+    writeFileSync(join(dir, "labels.html"), html);
+    await renderPdf(join(dir, "labels.html"), join(dir, "labels.pdf"));
+    const pages = execFileSync("pdftotext", [join(dir, "labels.pdf"), "-"], {
+      encoding: "utf8",
+    }).split("\f");
+    expect(pages.length).toBeGreaterThan(3);
+    const page = (text: string) => pages.findIndex((p) => p.includes(text));
+    const stranded = sections
+      .map((_, i) => i)
+      .filter((i) => page(`Label ${i}\n`) !== page(`Answer ${i} `));
+    expect(stranded).toEqual([]);
   }, 60_000);
 });

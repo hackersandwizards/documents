@@ -6,7 +6,9 @@ import { afterAll, describe, expect, it } from "bun:test";
 import {
   certificate,
   leistungsnachweisLumpSum,
+  proposalDe,
   proposalDeNoPrice,
+  proposalEn,
   rateCard,
 } from "../scripts/samples";
 
@@ -120,4 +122,11 @@ describe("scripts/compose.ts", () => {
       execFileSync("bun", [SCRIPT, "Header", "x.json", "y.html"], { stdio: "pipe" }),
     ).toThrow();
   });
+});
+
+// The English quote sample spreads the German one: every block of German prose it shows needs its
+// own English value, or the specimen prints German line items under an English header.
+it("the English quote sample overrides every German prose block", () => {
+  for (const key of ["price", "scopeHeadline", "services", "outcome", "terms", "greeting"] as const)
+    expect(proposalEn[key]).not.toEqual(proposalDe[key]);
 });

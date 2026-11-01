@@ -841,6 +841,10 @@ pre code {
   break-after: avoid;
 }
 
+:where(.doc-prose) p:has( > strong:only-child) {
+  break-after: avoid;
+}
+
 :where(.doc-prose) h1 {
   margin-bottom: 4pt;
   font: var(--role-h1);

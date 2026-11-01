@@ -24,6 +24,12 @@ const { html } = Astro.props;
     break-after: avoid;
   }
 
+  /* A paragraph that is one bold run is a label heading the text under it, as a briefing writes
+     each question: it stays on the page with that text. */
+  :global(:where(.doc-prose) p:has(> strong:only-child)) {
+    break-after: avoid;
+  }
+
   :global(:where(.doc-prose) h1) {
     margin-bottom: 4pt;
     font: var(--role-h1);

@@ -239,8 +239,52 @@ export const proposalEn = {
     company: "Musterwerk Ltd",
     lines: ["Jonas Probst", "Example Road 12", "SW1A 1AA London", "United Kingdom"],
   },
+  price: {
+    rows: [
+      {
+        item: "Agentic Engineering training",
+        detail: "Two days on site, exercises on your codebase",
+        basis: "12 participants, 2 days",
+        rate: "X,XXX.XX €",
+        amount: "XX,XXX.XX €",
+      },
+      {
+        item: "Mentoring after the training",
+        detail: "Four sessions of two hours each",
+        basis: "8 h, estimated",
+        rate: { list: "XXX.XX €", offer: "XXX.XX €" },
+        amount: { list: "X,XXX.XX €", offer: "X,XXX.XX €" },
+      },
+    ],
+    subtotal: "XX,XXX.XX €",
+    vat: "X,XXX.XX €",
+    gross: "XX,XXX.XX €",
+    calculation:
+      "The training is priced per participant, the mentoring as delivered. Travel is not included.",
+  },
+  scopeHeadline: "From the training into the team's everyday work",
+  services: [
+    {
+      name: "Agentic Engineering training",
+      format: "2 days on site, 12 participants",
+      items: [
+        "Specification, tests and review with agents",
+        "Exercises on the team's codebase",
+        "Rules for everyday use",
+      ],
+    },
+    {
+      name: "Mentoring",
+      format: "4 remote sessions",
+      items: ["Review of the team's first own agent workflows", "Questions from everyday work"],
+    },
+  ],
   community: { price: "XXX" },
   sequence: undefined,
+  outcome: {
+    result: "The team uses agents in its everyday work and checks their results itself.",
+    measures: "Lead time to production and change failure rate against the starting point.",
+  },
   terms: [{ title: "Payment", paragraphs: ["All invoices: 15 days net."] }],
   signOff: "Best regards",
 };
