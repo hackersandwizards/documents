@@ -321,6 +321,16 @@ export const certificate = {
   linkedinUrl: "https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME",
 };
 
+/** The German certificate: German title, topics and date on the same fictitious attendee. */
+export const certificateDe = {
+  ...certificate,
+  lang: "de" as const,
+  title: "Zertifikat Agentic Engineering Training: Mara Beispiel",
+  trainingTitle: "hackers&wizards Training (2 Tage)",
+  date: "12.–13. November 2026",
+  topics: ["Spezifikation mit Agenten", "Tests zuerst", "Review-Schleifen", "Regeldateien"],
+};
+
 /** A Markdown body as pandoc writes it, with the eyebrow and lead in place. */
 export const proseHtml = `<span class="eyebrow">Interne Notiz</span>
 <h1>Probelauf und Ergebnis</h1>

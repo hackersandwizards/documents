@@ -68,7 +68,7 @@ const PAGES: {
     file: "zertifikat",
     title: "Zertifikat",
     component: "DocCertificate",
-    props: { ...s.certificate, lang: "de", title: "Zertifikat Agentic Engineering Training" },
+    props: s.certificateDe,
   },
   {
     file: "onepager",

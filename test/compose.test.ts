@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "bun:test";
 import {
   certificate,
+  certificateDe,
   leistungsnachweisLumpSum,
   proposalDe,
   proposalDeNoPrice,
@@ -101,6 +102,13 @@ describe("scripts/compose.ts", () => {
     expect(de).not.toContain("Teilnahmezertifikat");
     expect(de).toContain("Scannen: verifizieren &amp; zu LinkedIn hinzufügen");
     expect(de).toContain("Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen");
+    // The German sample carries German data, not the English sample's title, topics and date.
+    const deSample = compose(certificateDe);
+    expect(deSample).toContain("Training (2 Tage)");
+    expect(deSample).toContain("Spezifikation mit Agenten");
+    expect(deSample).toContain("12.–13. November 2026");
+    for (const english of ["Days", "Specification", "Rules files", "12–13 November"])
+      expect(deSample).not.toContain(english);
   });
 
   it("composes a Markdown document: escaped kind, GmbH without the imprint, its own CSS", () => {
