@@ -13,13 +13,14 @@
 
 /* A chapter's opening page shows its title, so it carries no running head, only the rail:
    DocHandout names its blocks `opening` and switches that page's head off after its own. The
-   content box's height, 18 mm and the base's 16 mm off A4, is the page it measures them against. */
+   content box's height, the 18 mm above and the brand's bottom margin off A4, is the page it
+   measures them against. */
 .opening {
   page: opening;
 }
 
 :root {
-  --page-content-height: calc(297mm - 18mm - 16mm);
+  --page-content-height: calc(var(--print-page-height) - 18mm - var(--print-margin-bottom));
 }
 
 /* The text runs the full page width: paper has no sidebar, and a gutter kept free for notes
