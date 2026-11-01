@@ -65,7 +65,10 @@ function cachedChrome(cache: string): string | undefined {
     process.platform === "darwin"
       ? "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
       : "chrome";
-  return (existsSync(builds) ? readdirSync(builds) : [])
+  // @puppeteer/browsers 3 keeps a .metadata file beside the build folders.
+  return (existsSync(builds) ? readdirSync(builds, { withFileTypes: true }) : [])
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
     .sort((a, b) => b.localeCompare(a, "en", { numeric: true }))
     .flatMap((build) =>
       readdirSync(join(builds, build))
