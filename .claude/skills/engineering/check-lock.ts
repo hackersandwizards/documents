@@ -21,7 +21,7 @@ const WAIT_MS = Number(process.env.CHECK_LOCK_WAIT_MS ?? 15 * 60 * 1000);
 if (!Number.isFinite(WAIT_MS)) throw new Error("CHECK_LOCK_WAIT_MS must be a number of ms");
 const POLL_MS = 2_000;
 const SPEAK_MS = 30_000;
-// A live waiter holds its reclaim claim for microseconds, so a claim this old is a dead waiter's.
+// A claim without a pid this old was left half-written by a waiter that died writing it.
 const CLAIM_STALE_MS = 60_000;
 
 interface Holder {
@@ -62,15 +62,15 @@ function running(pid: number): boolean {
 /**
  * Link fails when the name exists, so the filesystem decides the winner of a race, and the
  * contents are complete before the name appears. Creating the file and then writing it would
- * leave a window where the lock reads as empty, which the staleness check would clear.
+ * leave a window where it reads as empty, which the staleness checks would clear.
  */
-function acquire(): boolean {
-  const staging = `${LOCK}.${process.pid}`;
+function create(path: string, contents: string): boolean {
+  const staging = `${path}.${process.pid}`;
   // Deliberately outside the catch: a path we cannot write is a broken lock, not a busy one, and
   // must abandon serialising instead of polling until the deadline.
-  writeFileSync(staging, JSON.stringify({ pid: process.pid, startedAt: Date.now() }));
+  writeFileSync(staging, contents);
   try {
-    linkSync(staging, LOCK);
+    linkSync(staging, path);
     return true;
   } catch {
     return false;
@@ -78,6 +78,9 @@ function acquire(): boolean {
     rmSync(staging, { force: true });
   }
 }
+
+const acquire = (): boolean =>
+  create(LOCK, JSON.stringify({ pid: process.pid, startedAt: Date.now() }));
 
 function dropIfStale(): void {
   const raw = readLock();
@@ -91,15 +94,18 @@ function dropIfStale(): void {
   // named for these exact contents, lets one waiter delete them, and while they sit at the lock path
   // no acquire can replace them, so the re-read under the claim stays true until the delete.
   const claim = `${LOCK}.reclaim-${createHash("sha1").update(raw).digest("hex")}`;
-  try {
-    writeFileSync(claim, String(process.pid), { flag: "wx" });
-  } catch {
+  if (!create(claim, String(process.pid))) {
     // A waiter that died inside its claim left it behind, and every later waiter would back off
-    // from it until the wait ran out. Age, not pid: a reused pid would keep it live for good. A
-    // replacement claim landing between this stat and delete would need two waiters inside that
-    // microsecond window at once, and even then the re-read under the claim guards the lock.
+    // from it until the wait ran out. A live claimant's claim stays however old: clearing it on age
+    // let a waiter paused after its re-read wake and delete the fresh lock another waiter had
+    // taken meanwhile. A reused pid reads as live, which ends in the wait timeout, not an overlap.
+    // Age only for a claim without a pid, half-written by an older copy of this script.
     try {
-      if (Date.now() - statSync(claim).mtimeMs > CLAIM_STALE_MS) rmSync(claim, { force: true });
+      const owner = Number.parseInt(readFileSync(claim, "utf8"), 10);
+      const dead = Number.isInteger(owner)
+        ? !running(owner)
+        : Date.now() - statSync(claim).mtimeMs > CLAIM_STALE_MS;
+      if (dead) rmSync(claim, { force: true });
     } catch {
       /* gone already, or unreadable: the next poll tries again */
     }

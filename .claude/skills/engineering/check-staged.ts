@@ -108,9 +108,13 @@ function stagedContent(path: string): Buffer {
   return shown.stdout;
 }
 
-// Prettier prints nothing for a file it has no parser for and echoes an ignored file unchanged.
-function prettierPasses(input: Buffer, r: ToolRun): boolean {
-  return !r.code && (r.stdout.equals(input) || (!r.stdout.length && /\S/.test(`${input}`)));
+// Prettier prints nothing for a file it has no parser for and echoes an ignored file unchanged. A
+// blank file it has a parser for formats to nothing as well, so a blank one asks which it is.
+async function prettierPasses(bin: string, path: string, input: Buffer, r: ToolRun) {
+  if (r.code || (r.stdout.length && !r.stdout.equals(input))) return false;
+  if (r.stdout.length || /\S/.test(`${input}`)) return true;
+  const info = await runStagedTool(bin, ["--file-info", path]);
+  return !info.code && JSON.parse(`${info.stdout}`).inferredParser === null;
 }
 
 const runs = Object.entries(tools)
@@ -126,7 +130,8 @@ const runs = Object.entries(tools)
       ...partial.map(async (path) => {
         const input = stagedContent(path);
         const r = await runStagedTool(bin, stdinFlags[tool](path), input);
-        if (tool === "prettier" ? prettierPasses(input, r) : !r.code) return { out: "", code: 0 };
+        if (tool === "prettier" ? await prettierPasses(bin, path, input, r) : !r.code)
+          return { out: "", code: 0 };
         const why = tool === "prettier" && !r.code ? "not formatted\n" : r.out;
         return {
           out: `[check:staged] ${tool}: ${path} as staged\n${why}`,

@@ -4,7 +4,7 @@
 // (assumed rows). Within each priority, and each repo's Assumptions, rows sit under their `area`'s
 // label from any list's window.DECISION_AREAS, clusters ordered by their most urgent row. Agent
 // work is left out. Answers stay in this browser until, once copied, their row leaves a rebuilt
-// page; "Copy answers" puts them in one block for the chat.
+// page that lists their repo; "Copy answers" puts them in one block for the chat.
 // Usage: bun hub.ts [--check [<repo> ...]]   --check validates the found lists (or the given repos),
 // exit 1 on a defect. The build prints defects, and while a list is unreadable exits 1 unwritten.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -45,9 +45,7 @@ function findLists(dir: string, depth: number, out: string[]) {
 }
 const args = process.argv.slice(2);
 const checkOnly = args[0] === "--check";
-let paths: string[];
-if (checkOnly && args.length > 1) paths = args.slice(1).map((p) => resolve(p));
-else {
+function scanRepos() {
   const found: string[] = [];
   findLists(SCAN, 0, found);
   const byRemote = new Map<string, string>();
@@ -60,8 +58,10 @@ else {
     )
       byRemote.set(remote, p);
   }
-  paths = [...byRemote.values()];
+  return [...byRemote.values()];
 }
+const scanned = scanRepos();
+const paths = checkOnly && args.length > 1 ? args.slice(1).map((p) => resolve(p)) : scanned;
 
 type Option = { key: string; label: string; detail?: string };
 type Row = {
@@ -79,15 +79,14 @@ type Row = {
   images?: Record<string, string>;
   [k: string]: unknown;
 };
-type List = { path: string; key: string; rows: Row[] };
+type List = { path: string; key: string; rows: Row[]; areas: Record<string, string> };
 const lists: List[] = [];
 const defects: string[] = [];
 // items.js is read as data, never run: ~/dev holds third-party clones. Allowed are the
 // `window.DECISION_REPOS = window.DECISION_REPOS || {};` line, `//` comment lines and assignments
 // of a JSON5 literal to `window.DECISION_REPOS["<repo>"]` or `window.DECISION_AREAS`; anything
 // else is a defect.
-const AREAS: Record<string, string> = {};
-function readDecisionList(file: string): Record<string, Row[]> {
+function readDecisionList(file: string) {
   const src = readFileSync(file, "utf8")
     .replace(/^window\.DECISION_REPOS = window\.DECISION_REPOS \|\| \{\};$/m, "")
     .replace(/^\s*\/\/.*$/gm, "");
@@ -96,27 +95,48 @@ function readDecisionList(file: string): Record<string, Row[]> {
   if (src.slice(0, heads[0]?.index ?? src.length).trim())
     throw new Error("unexpected code before the first assignment");
   const repos: Record<string, Row[]> = {};
+  const areas: Record<string, string> = {};
   heads.forEach((m, i) => {
     const literal = src.slice(m.index + m[0].length, heads[i + 1]?.index ?? src.length).trim();
     const value = Bun.JSON5.parse(literal.replace(/;$/, ""));
-    if (!m[1]) return void Object.assign(AREAS, value);
+    if (!m[1]) return void Object.assign(areas, value);
     if (!Array.isArray(value)) throw new Error(`${m[1]} is not an array`);
     repos[Bun.JSON5.parse(m[1]) as string] = value;
   });
   if (!Object.keys(repos).length) throw new Error("no window.DECISION_REPOS[...] assignment");
-  return repos;
+  return { repos, areas };
 }
+// Labels merged across lists, for a row whose own list lacks its area; the first list wins and
+// --check names every conflict, so no label depends on scan order unnoticed.
+const AREAS: Record<string, string> = {};
+const areaFrom: Record<string, string> = {};
 let unreadable = 0;
-for (const path of paths) {
-  let repos;
+// Area labels are one vocabulary across the page, most defined in one list, so a check of some
+// repos still reads the labels of every scanned list; only a conflict with a checked list counts.
+for (const path of scanned.filter((p) => !paths.includes(p)))
   try {
-    repos = readDecisionList(join(path, LIST));
+    for (const [area, label] of Object.entries(readDecisionList(join(path, LIST)).areas))
+      if (!(area in AREAS)) [AREAS[area], areaFrom[area]] = [label, path];
+  } catch {
+    /* an unreadable list is that repo's own check's defect */
+  }
+for (const path of paths) {
+  let repos, areas;
+  try {
+    ({ repos, areas } = readDecisionList(join(path, LIST)));
   } catch (e) {
     defects.push(`${path}/${LIST}: ${(e as Error).message}`);
     unreadable++;
     continue;
   }
-  for (const [key, rows] of Object.entries(repos)) lists.push({ path, key, rows });
+  for (const [key, rows] of Object.entries(repos)) lists.push({ path, key, rows, areas });
+  for (const [area, label] of Object.entries(areas)) {
+    if (!(area in AREAS)) [AREAS[area], areaFrom[area]] = [label, path];
+    else if (AREAS[area] !== label)
+      defects.push(
+        `area ${area} labelled "${AREAS[area]}" in ${areaFrom[area]} and "${label}" in ${path}`,
+      );
+  }
 }
 
 const REQUIRED = ["id", "title", "area", "priority", "order", "status", "context"];
@@ -127,6 +147,8 @@ for (const { path, key, rows } of lists) {
     for (const k of REQUIRED)
       if (r[k] === undefined || r[k] === "") defects.push(`${at} lacks ${k}`);
     if (seen.has(r.id)) defects.push(`${at} duplicate id`);
+    if (r.area && !(String(r.area) in AREAS))
+      defects.push(`${at} area ${r.area} has no label in any window.DECISION_AREAS`);
     seen.add(r.id);
     if (!["open", "assumed", "decided"].includes(r.status))
       defects.push(`${at} status ${r.status}`);
@@ -227,9 +249,25 @@ function rowHtml(list: List, r: Row, kind: string) {
   }<label class="lbl" for="n-${hubEscape(k)}">${opts.length ? "Note or your own answer" : "Answer, such as “fine” or what to change"}</label><textarea id="n-${hubEscape(k)}"></textarea>
 <p class="row-foot">${r.recommended ? `<button type="button" class="ghost pick" data-v="${hubEscape(r.recommended)}">Pick recommended</button> ` : ""}<button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
+// A GOAL row is keyed by its first 60 characters, so an edit further on keeps its saved answer, and
+// by its whole text where another row of its list starts the same, so the two never share one.
+const goalText = (t: Task) => t.point.replace(/\s+/g, " ");
+const goalKey = (t: Task) => {
+  const start = goalText(t).slice(0, 60);
+  const shared = tasks.some((o) => o !== t && o.list === t.list && goalText(o).startsWith(start));
+  return `${t.list.key}:GOAL ${shared ? goalText(t) : start}`;
+};
+// The day as decision rows write it ("3 Nov"), with the year only where it is not this one.
+const day = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: iso.startsWith(String(new Date().getFullYear())) ? undefined : "numeric",
+    timeZone: "UTC",
+  });
 function taskHtml(t: Task) {
-  const k = `${t.list.key}:GOAL ${t.point.replace(/\s+/g, " ")}`;
-  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">due ${t.due}</span>` : ""}<span class="mark"></span></summary>
+  const k = goalKey(t);
+  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">due ${day(t.due)}</span>` : ""}<span class="mark"></span></summary>
 <div class="body"><p>${linkPaths(t.list.path, t.point)}</p><p><b>Who:</b> ${hubEscape(t.actor)}</p>${t.evidence ? `<p class="note"><b>Evidence:</b> ${linkPaths(t.list.path, t.evidence)}</p>` : ""}<label class="choice"><input type="checkbox" value="done"> done</label><label class="lbl" for="n-${hubEscape(k)}">Note</label><textarea id="n-${hubEscape(k)}"></textarea><p class="row-foot"><button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 
@@ -240,40 +278,32 @@ const decide = all.filter(({ r }) => r.status === "open" && r.options?.length).s
 const check = all.filter(({ r }) => r.status === "open" && !r.options?.length).sort(byPriority);
 const assumed = all.filter(({ r }) => r.status === "assumed");
 tasks.sort((a, b) => a.prio - b.prio || (a.due ?? "9").localeCompare(b.due ?? "9"));
-// Rows arrive sorted by priority and order, so a cluster's first row is its most urgent one.
-const clustersHtml = (rows: { list: List; r: Row }[], kind: string) => {
-  const byArea = Map.groupBy(rows, ({ r }) => String(r.area));
-  return [...byArea]
+// The row's own list labels its area first. Rows arrive sorted by priority and order, so a
+// cluster's first row is its most urgent one.
+const areaLabel = ({ list, r }: { list: List; r: Row }) =>
+  r.area === undefined || r.area === ""
+    ? "Without area"
+    : (list.areas[String(r.area)] ?? AREAS[String(r.area)] ?? String(r.area));
+const clustersHtml = (rows: { list: List; r: Row }[], kind: string) =>
+  [...Map.groupBy(rows, areaLabel)]
     .map(
-      ([area, g]) =>
-        `<div class="cluster"><h3 class="cl">${hubEscape(AREAS[area] ?? area)}</h3>${g.map(({ list, r }) => rowHtml(list, r, kind)).join("")}</div>`,
+      ([label, g]) =>
+        `<div class="cluster"><h3 class="cl">${hubEscape(label)}</h3>${g.map(({ list, r }) => rowHtml(list, r, kind)).join("")}</div>`,
     )
     .join("");
-};
 const groupHtml = (title: string, inner: string, open: boolean) =>
   inner
     ? `<details class="group"${open ? " open" : ""}><summary>${title}</summary>${inner}</details>`
     : "";
 const partHtml = (id: string, title: string, note: string, inner: string) =>
   `<section class="part" id="${id}"><h2>${title} <span class="count" data-for="${id}"></span></h2><p class="note">${note}</p>${inner}<p class="note empty" hidden>Nothing open.</p></section>`;
-const decideHtml = [1, 2, 3]
-  .map((p) => {
-    const g = decide.filter(({ r }) => r.priority === p);
-    return groupHtml(
-      `Priority ${p} <small>${g.length}</small>`,
-      clustersHtml(g, "decide"),
-      p === 1,
-    );
-  })
-  .join("");
-const checkHtml = [1, 2, 3]
-  .map((p) =>
-    clustersHtml(
-      check.filter(({ r }) => r.priority === p),
-      "check",
-    ),
-  )
-  .join("");
+const byPriorityHtml = (rows: { list: List; r: Row }[], kind: string) =>
+  [1, 2, 3]
+    .map((p) => {
+      const g = rows.filter(({ r }) => r.priority === p);
+      return groupHtml(`Priority ${p} <small>${g.length}</small>`, clustersHtml(g, kind), p === 1);
+    })
+    .join("");
 const assumedHtml = lists
   .map((list) => {
     const g = assumed.filter((a) => a.list === list).sort(byPriority);
@@ -419,8 +449,8 @@ section.part,details.item{scroll-margin-top:120px}.opts.pics{grid-template-colum
 <details class="sources"><summary>${lists.length} decision lists under ~/dev, built ${hubEscape(stamp)}</summary><ul>${sources}</ul>
 <p class="note">Pick an option, write a note or tick a box: everything stays in this browser. “Copy answers” puts it all on the clipboard as one block; paste it into the chat with Ada. Ada writes each line into its repo, commits, rebuilds the page and confirms every id. An answer disappears here once its row is gone from the rebuilt page. A repo missing from the list is not under ~/dev or has no decision list.</p>
 <label class="lbl" for="block">The block to copy</label><textarea id="block" readonly></textarea></details>
-${partHtml("decide", "Decide", "A question with options. Nothing is preselected.", decideHtml)}
-${partHtml("review", "Review", "Look and answer: “fine” or what to change.", checkHtml)}
+${partHtml("decide", "Decide", "A question with options. Nothing is preselected.", byPriorityHtml(decide, "decide"))}
+${partHtml("review", "Review", "Look and answer: “fine” or what to change.", byPriorityHtml(check, "check"))}
 ${partHtml("todo", "To do", "Your tasks from GOAL.md. Tick when done.", tasks.map(taskHtml).join(""))}
 ${partHtml("assumptions", "Assumptions", "What agents decided on their own. No need to go through them; pick another option only to overturn one.", assumedHtml)}
 </main>
@@ -432,14 +462,17 @@ const read = (k) => { try { return JSON.parse(localStorage.getItem(STORE + k)) |
 const write = (k, v) => { try { v ? localStorage.setItem(STORE + k, JSON.stringify(v)) : localStorage.removeItem(STORE + k); return true; } catch (e) { return false; } };
 const items = [...document.querySelectorAll("details.item")];
 const known = new Set(items.map((d) => d.dataset.k));
-// An answer whose row left the page, or whose repo did, was carried out or has nowhere to go: drop it
-// once copied.
+// An answer whose row left the page was carried out: drop it once copied. A repo missing from one
+// build says nothing about its rows, so its answers stay until 30 days after their last change.
+const REPOS = new Set(${JSON.stringify(lists.map((l) => l.key)).replace(/</g, "\\u003c")});
 const copiedAt = localStorage.getItem(STORE + "copied") || "";
+const monthAgo = new Date(Date.now() - 30 * 864e5).toISOString();
 for (let i = localStorage.length - 1; i >= 0; i--) {
   const k = localStorage.key(i);
   if (!k.startsWith(STORE) || k === STORE + "who" || k === STORE + "copied") continue;
   const id = k.slice(STORE.length), a = read(id);
-  if (!known.has(id) && (!a || !a.at || a.at <= copiedAt)) localStorage.removeItem(k);
+  const gone = REPOS.has(id.split(":")[0]) || !a || !a.at || a.at <= monthAgo;
+  if (!known.has(id) && gone && (!a || !a.at || a.at <= copiedAt)) localStorage.removeItem(k);
 }
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 function load(d) {
