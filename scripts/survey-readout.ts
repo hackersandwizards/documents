@@ -397,7 +397,8 @@ __BRAND__
   .chrome .lockup { width:auto; height:calc(1.63rem * 1489 / 952); }
   /* A titled slide: the 5% safe margin at the sides, the kicker hung above the title line. */
   .sbody { flex:1; padding:5.5rem 4.5rem 4.25rem; display:flex; flex-direction:column; min-height:0; }
-  .kicker { height:2.5rem; margin:-3rem 0 0.5rem; font-size:1.6875rem; line-height:1.25; font-weight:500; color:var(--color-teal); }
+  /* Never shrunk: a body a few pixels too full squeezed the kicker instead, and the title rose by 3px on that slide alone. */
+  .kicker { flex-shrink:0; height:2.5rem; margin:-3rem 0 0.5rem; font-size:1.6875rem; line-height:1.25; font-weight:500; color:var(--color-teal); }
   h1 { font-family:var(--type-h1-family); font-weight:700; letter-spacing:-0.03em; font-size:6rem; line-height:1.02; color:var(--color-ink); }
   h2 { font-family:var(--type-h1-family); font-weight:var(--type-h1-weight); letter-spacing:var(--type-h1-tracking); font-size:3.375rem; line-height:1.1; color:var(--color-ink); margin-bottom:1.5rem; display:flex; align-items:baseline; gap:1rem; }
   .label-caps, .eyebrow, .gtitle { font-family:var(--type-label-family); font-weight:var(--type-label-weight); letter-spacing:var(--type-label-tracking); text-transform:var(--type-label-case); }
