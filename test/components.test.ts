@@ -134,9 +134,9 @@ test.each(["de", "en"])(
 test("DocProposal prints the amount of a fixed-price row that has no rate", async () => {
   const html = await composer.render("DocProposal", {
     ...proposal,
-    price: { rows: [{ item: P, basis: "Pauschal", amount: "1.234 €" }] },
+    price: { rows: [{ item: P, basis: "Pauschal", amount: "X.XXX €" }] },
   });
-  expect(html).toContain("1.234 €");
+  expect(html).toContain("X.XXX €");
   expect(html).not.toContain("undefined");
 });
 

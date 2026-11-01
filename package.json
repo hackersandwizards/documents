@@ -19,19 +19,23 @@
     "./render-pdf": "./scripts/render-pdf.ts"
   },
   "bin": {
-    "documents-compose": "scripts/compose.ts"
+    "documents-compose": "scripts/compose.ts",
+    "documents-privacy": "scripts/privacy.ts"
   },
   "files": [
     "document.css",
     "components",
     "scripts/compose.ts",
     "scripts/render-pdf.ts",
+    "scripts/privacy.ts",
+    "scripts/samples.ts",
+    "specimen",
     "LICENSE"
   ],
   "scripts": {
     "preinstall": "node .claude/skills/engineering/only-bun.cjs",
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
-    "check": "bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun test && bun scripts/specimen.ts --check && brand-colours",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun test && bun scripts/specimen.ts --check && bun scripts/privacy.ts && brand-colours",
     "lint": "bun --bun eslint --cache --concurrency=auto .",
     "typecheck": "bun --bun tsc --noEmit",
     "format": "bun --bun prettier --write .",
