@@ -18,7 +18,7 @@ test("a mark colour cannot open an attribute", () => {
 });
 
 // A free-text page a few pixels too full squeezed its kicker, a flex item of fixed height, and the
-// title rose 3px on that slide alone (os, Bünting readout, 01.11.). Twelve invented answers of these
+// title rose 3px on that slide alone (a real os readout, 01.11.). Twelve invented answers of these
 // lengths reproduce it in Chrome; every slide's title must sit at the same height.
 test("every slide's title sits at the same height", () => {
   const chrome = chromeBinary();
