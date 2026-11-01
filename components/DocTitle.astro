@@ -16,18 +16,18 @@ const { eyebrow, title, subtitle } = Astro.props;
 <style>
   .eyebrow {
     display: block;
-    margin-bottom: 4pt;
+    margin-bottom: var(--space-heading);
     font: var(--role-small);
-    font-family: var(--type-label-family);
-    font-weight: var(--type-label-weight);
-    letter-spacing: var(--type-label-tracking);
-    text-transform: var(--type-label-case);
-    color: var(--teal-dark);
+    font-family: var(--label-family);
+    font-weight: var(--weight-label);
+    letter-spacing: var(--tracking-caps);
+    text-transform: var(--case-label);
+    color: var(--accent-text);
   }
 
   .subtitle {
-    max-width: 150mm;
-    margin-bottom: 10pt;
+    max-width: var(--measure);
+    margin-bottom: var(--subtitle-space-after);
     font: var(--role-lead);
     color: var(--muted);
   }

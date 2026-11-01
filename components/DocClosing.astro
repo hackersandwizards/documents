@@ -30,23 +30,23 @@ const { text, signOff, name, tight = false } = Astro.props;
 
 <style>
   .closing {
-    margin-top: 6mm;
+    margin-top: var(--closing-space);
     break-inside: avoid;
   }
 
   p {
-    margin: 0 0 1mm;
+    margin: 0 0 var(--closing-line);
   }
 
   .sign-off {
-    margin-top: 4mm;
+    margin-top: var(--closing-space-tight);
   }
 
   .tight {
-    margin-top: 4mm;
+    margin-top: var(--closing-space-tight);
   }
 
   .tight .sign-off {
-    margin-top: 3mm;
+    margin-top: var(--closing-sign-off-tight);
   }
 </style>

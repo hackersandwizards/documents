@@ -49,8 +49,8 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
 
 <style>
   .preparation :global(.card) {
-    margin-bottom: 2mm;
-    padding: 3mm 4mm;
+    margin-bottom: var(--step-space);
+    padding: var(--note-pad);
   }
 
   .preparation :global(.card h3) {
@@ -58,12 +58,12 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
   }
 
   .note {
-    padding: 3mm 4mm;
+    padding: var(--note-pad);
   }
 
   .preparation :global(pre) {
-    margin: 1.5mm 0;
-    padding: 2mm 4mm;
+    margin: var(--step-code-margin);
+    padding: var(--step-code-pad);
   }
 
   .preparation :global(code) {
@@ -73,11 +73,11 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
 
   .preparation :global(pre code) {
     white-space: pre;
-    font-size: 8.8pt;
+    font-size: var(--step-code-size);
   }
 
   .preparation :global(.grid-2 pre) {
-    margin: 1mm 0;
+    margin: var(--step-code-margin-grid);
   }
 
   .preparation :global(.grid-2 > div) {
@@ -90,28 +90,28 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
   }
 
   .preparation :global(.it-line) {
-    margin-top: 4pt;
+    margin-top: var(--space-heading);
   }
 
   .preparation :global(.it-chip) {
-    margin: 0 5pt 0 0;
-    padding: 1pt 7pt;
-    background: var(--purple);
-    color: var(--color-white);
-    font-weight: 600;
+    margin: 0 var(--space-cell) 0 0;
+    padding: var(--chip-pad-slim);
+    background: var(--result);
+    color: var(--on-dark);
+    font-weight: var(--weight-semibold);
   }
 
   .step {
     display: inline-block;
-    min-width: 1.5em;
-    margin-right: 4pt;
-    padding: 0 4pt;
-    background: var(--teal);
-    color: var(--color-white);
+    min-width: var(--step-number-width);
+    margin-right: var(--space-heading);
+    padding: 0 var(--space-heading);
+    background: var(--accent);
+    color: var(--on-dark);
     text-align: center;
   }
 
   .closing {
-    margin-top: 2mm;
+    margin-top: var(--step-space);
   }
 </style>

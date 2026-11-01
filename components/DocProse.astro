@@ -5,10 +5,12 @@
 // it on the page.
 // Each rule keeps an element's specificity (:where), so a class in the body, such as .subtitle or
 // .signature-line, still wins as it does over the document base's element rules.
+import { proseHtml } from "../scripts/prose";
+
 interface Props {
   html: string;
 }
-const { html } = Astro.props;
+const html = proseHtml(Astro.props.html);
 ---
 
 <div class="doc-prose">
@@ -32,54 +34,54 @@ const { html } = Astro.props;
   }
 
   :global(:where(.doc-prose) h1) {
-    margin-bottom: 4pt;
+    margin-bottom: var(--h1-space-after);
     font: var(--role-h1);
-    letter-spacing: var(--type-h1-tracking);
+    letter-spacing: var(--tracking-h1);
   }
 
   :global(:where(.doc-prose) h2) {
-    margin: 20pt 0 6pt;
+    margin: var(--h2-margin);
     font: var(--role-h2);
-    letter-spacing: var(--type-h2-tracking);
+    letter-spacing: var(--tracking-h2);
   }
 
   :global(:where(.doc-prose) h3) {
-    margin: 12.5pt 0 4pt;
+    margin: var(--h3-margin);
     font: var(--role-h3);
-    letter-spacing: var(--type-h3-tracking);
+    letter-spacing: var(--tracking-h3);
   }
 
   :global(:where(.doc-prose) h4) {
-    margin: 10pt 0 3pt;
+    margin: var(--h4-margin);
     font: var(--role-h4);
-    letter-spacing: var(--type-h4-tracking);
+    letter-spacing: var(--tracking-h4);
   }
 
   :global(:where(.doc-prose) p) {
-    margin: 0 0 6pt;
+    margin: 0 0 var(--space-paragraph);
   }
 
   :global(:where(.doc-prose) strong),
   :global(:where(.doc-prose) b) {
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
   }
 
   :global(:where(.doc-prose) a) {
-    color: var(--teal-dark);
+    color: var(--accent-text);
     text-decoration: underline;
-    text-decoration-thickness: var(--print-underline);
-    text-underline-offset: 0.2em;
+    text-decoration-thickness: var(--underline);
+    text-underline-offset: var(--underline-offset);
   }
 
   :global(:where(.doc-prose) hr) {
-    margin: 12.5pt 0;
+    margin: var(--rule-margin);
     border: 0;
-    border-top: var(--print-rule) solid var(--line);
+    border-top: var(--rule) solid var(--line);
   }
 
   :global(:where(.doc-prose) table) {
     width: 100%;
-    margin: 4pt 0 10pt;
+    margin: var(--table-margin);
     border-collapse: collapse;
     font: var(--role-small);
   }
@@ -93,18 +95,18 @@ const { html } = Astro.props;
   }
 
   :global(:where(.doc-prose) th) {
-    padding: 5pt 7.5pt 5pt 0;
-    border-bottom: var(--print-rule) solid var(--line);
+    padding: var(--cell-pad);
+    border-bottom: var(--rule) solid var(--line);
     font: var(--role-label);
-    letter-spacing: var(--type-label-tracking);
+    letter-spacing: var(--tracking-caps);
     text-align: left;
-    text-transform: var(--type-label-case);
+    text-transform: var(--case-label);
     color: var(--muted);
   }
 
   :global(:where(.doc-prose) td) {
-    padding: 5pt 7.5pt 5pt 0;
-    border-bottom: var(--print-rule) solid var(--line);
+    padding: var(--cell-pad);
+    border-bottom: var(--rule) solid var(--line);
     vertical-align: top;
   }
 
@@ -114,9 +116,9 @@ const { html } = Astro.props;
   }
 
   :global(:where(.doc-prose) blockquote) {
-    margin: 8pt 0;
-    padding-left: 12.5pt;
-    border-left: var(--print-rule-accent) solid var(--purple);
+    margin: var(--callout-margin);
+    padding-left: var(--space-list);
+    border-left: var(--rule-accent) solid var(--result);
     color: var(--muted);
     break-inside: avoid;
   }
@@ -124,8 +126,8 @@ const { html } = Astro.props;
   :global(:where(.doc-prose) dl) {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 2pt 10pt;
-    margin: 6pt 0;
+    gap: var(--dl-gap);
+    margin: var(--block-margin);
     font: var(--role-small);
   }
 
@@ -134,20 +136,20 @@ const { html } = Astro.props;
   }
 
   :global(:where(.doc-prose) pre) {
-    margin: 8pt 0;
-    padding: var(--print-card-pad);
-    border: var(--print-rule) solid color-mix(in srgb, var(--color-white) 18%, var(--color-night));
+    margin: var(--callout-margin);
+    padding: var(--card-pad);
+    border: var(--rule) solid var(--night-line);
     border-radius: var(--radius);
-    background: var(--color-night-2);
+    background: var(--night-raised);
     font: var(--role-code);
-    color: var(--color-night-ink);
+    color: var(--night-ink);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     break-inside: avoid;
   }
 
   :global(:where(.doc-prose) pre .prompt) {
-    color: var(--color-green);
+    color: var(--prompt);
   }
 
   :global(:where(.doc-prose) pre),
@@ -156,7 +158,7 @@ const { html } = Astro.props;
   }
 
   :global(:where(.doc-prose) code) {
-    font-family: var(--type-code-family);
+    font-family: var(--code-family);
   }
 
   :global(:where(.doc-prose) pre code) {

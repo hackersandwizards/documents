@@ -1,40 +1,38 @@
 /* The printed training handout (DocHandout): the document base plus the one layout only a handout
    has, margin notes set into the text, the cover with its contents and the chapter openings. Every
-   text takes a type role from the base. The base's brand tokens.css holds an @theme block: a
+   text takes a type role from the base, every value is a token (tokens.css, its Handout heading). The base's brand tokens.css holds an @theme block: a
    consumer compiles it, as the trainer hub does with Tailwind's theme layer imported ahead of this
    file. */
 @import "./document.css";
-/* The base draws the gradient rail from page 2. 4 mm more top margin than the base's 14 mm, so
-   the running header stands apart from the text under it: at 14 mm, reviewers read a page's
-   first heading as its header. */
-@page {
-  margin-top: 18mm;
+/* The handout prints on tokens.css's `handout` page box: 4 mm more top margin than the base's
+   14 mm, so the running header stands apart from the text under it: at 14 mm, reviewers read a
+   page's first heading as its header. */
+body {
+  page: handout;
 }
 
 /* A chapter's opening page shows its title, so it carries no running head, only the rail:
    DocHandout names its blocks `opening` and switches that page's head off after its own. The
-   content box's height, the 18 mm above and the brand's bottom margin off A4, is the page it
-   measures them against. */
+   content box's height, the handout's top margin and the brand's bottom margin off A4, is the
+   page it measures them against. */
 .opening {
   page: opening;
 }
 
 :root {
-  --page-content-height: calc(var(--print-page-height) - 18mm - var(--print-margin-bottom));
+  --page-content-height: calc(
+    var(--page-height) - var(--handout-margin-top) - var(--page-margin-bottom)
+  );
 }
 
 /* The text runs the full page width: paper has no sidebar, and a gutter kept free for notes
    stood empty on every page without one. */
 :root {
-  --note-width: 46mm;
-  --note-gap: 6mm;
-  /* The handout is read as a PDF on a laptop or an iPad, never printed: on an 11-inch iPad in
-     portrait an A4 page shows at 1.4 times, so 10pt body text reads as 14px. One point more on
-     the text roles brings it to 15px and a full-width line under 90 characters. */
-  --type-body-size: 11pt;
-  --type-small-size: 10pt;
-  --type-code-size: 10pt;
-  --type-label-size: 9pt;
+  /* The reading size, a point above print on the text roles (tokens.css). */
+  --type-body-size: var(--handout-body-size);
+  --type-small-size: var(--handout-small-size);
+  --type-code-size: var(--handout-code-size);
+  --type-label-size: var(--handout-label-size);
 }
 
 /* A chapter opens a page, so a participant finds it by flicking. The exporter lets a chapter run
@@ -48,7 +46,7 @@ section {
 
 section.flow {
   break-before: auto;
-  margin-top: 12mm;
+  margin-top: var(--handout-flow-space);
 }
 
 /* A heading, and a sentence leading into code, stay with the block they introduce, and a table
@@ -74,8 +72,8 @@ section pre {
 pre.astro-code .line {
   display: inline-block;
   width: 100%;
-  padding-left: 4ch;
-  text-indent: -4ch;
+  padding-left: var(--handout-code-hang);
+  text-indent: calc(-1 * var(--handout-code-hang));
 }
 
 :not(pre) > code {
@@ -93,26 +91,26 @@ section :is(h2, h3) {
 section h1::before {
   content: var(--chapter-label, "Chapter ") counter(chapter, decimal-leading-zero);
   display: block;
-  margin-bottom: 2mm;
+  margin-bottom: var(--handout-eyebrow-space);
   font: var(--role-label);
-  letter-spacing: var(--type-label-tracking);
-  text-transform: var(--type-label-case);
-  color: var(--teal);
+  letter-spacing: var(--tracking-caps);
+  text-transform: var(--case-label);
+  color: var(--accent);
 }
 
 /* A chapter title closes on a short brand gradient bar, not a grey rule: a grey rule read as one
    more table line, or on the notes page as the first writing line. Blind A/B, 28.10.2026: three
    of four reviewers preferred the bar. */
 section h1 {
-  margin-bottom: 5mm;
+  margin-bottom: var(--handout-title-space);
 }
 
 section h1::after {
   content: "";
   display: block;
-  width: 24mm;
-  height: var(--print-rule-strong);
-  margin-top: 3mm;
+  width: var(--handout-title-bar);
+  height: var(--rule-strong);
+  margin-top: var(--handout-title-bar-space);
   background: var(--gradient);
 }
 
@@ -124,16 +122,16 @@ section :is(h2, h3) {
 
 /* A chapter is one step down the base's scale: its sections take the h3 role, their parts h4. */
 section h2 {
-  margin: 6mm 0 2mm;
+  margin: var(--handout-h2-margin);
   font: var(--role-h3);
-  letter-spacing: var(--type-h3-tracking);
+  letter-spacing: var(--tracking-h3);
   color: var(--ink);
 }
 
 section h3 {
-  margin: 4mm 0 1.5mm;
+  margin: var(--handout-h3-margin);
   font: var(--role-h4);
-  letter-spacing: var(--type-h4-tracking);
+  letter-spacing: var(--tracking-h4);
   color: var(--ink);
 }
 
@@ -143,10 +141,10 @@ section h3 {
 .margin-note {
   float: right;
   clear: right;
-  width: var(--note-width);
-  margin: 0 0 3mm var(--note-gap);
-  padding-left: 3mm;
-  border-left: 3px solid var(--purple);
+  width: var(--handout-note-width);
+  margin: 0 0 var(--handout-note-space) var(--handout-note-gap);
+  padding-left: var(--handout-note-pad);
+  border-left: var(--handout-note-rule) solid var(--result);
   font: var(--role-small);
   color: var(--muted);
   break-inside: avoid;
@@ -157,7 +155,7 @@ section h3 {
 .margin-note:is(:has(+ table), :has(+ p + table)) {
   float: none;
   width: auto;
-  margin: 0 0 3mm;
+  margin: 0 0 var(--handout-note-space);
 }
 
 .margin-note strong {
@@ -168,11 +166,11 @@ section h3 {
    brand corner. Its own block formatting context keeps the tint beside a note, not under it. */
 .keybox {
   display: flow-root;
-  margin: 3mm 0;
-  padding: 4mm 5mm;
-  border-left: 3px solid var(--teal);
+  margin: var(--handout-keybox-margin);
+  padding: var(--handout-keybox-pad);
+  border-left: var(--handout-note-rule) solid var(--accent);
   border-radius: var(--radius);
-  background: var(--teal-soft);
+  background: var(--accent-soft);
   break-inside: avoid;
 }
 
@@ -186,8 +184,8 @@ section h3 {
    the heading. */
 .note-lines > span {
   display: block;
-  height: 8mm;
-  border-bottom: var(--print-rule) solid var(--line);
+  height: var(--handout-note-line);
+  border-bottom: var(--rule) solid var(--line);
 }
 
 /* The cover: the brand header, the title block, the recipient card and the contents. */
@@ -196,17 +194,17 @@ section h3 {
 }
 
 .cover .title {
-  margin-top: 24mm;
+  margin-top: var(--handout-cover-space);
 }
 
 .cover .prepared {
-  width: 80mm;
-  margin-top: 8mm;
+  width: var(--handout-cover-card);
+  margin-top: var(--handout-cover-card-space);
 }
 
 /* The contents, numbered as the chapter eyebrows are. */
 .toc {
-  margin-top: 10mm;
+  margin-top: var(--handout-toc-space);
   counter-reset: entry;
 }
 
@@ -218,8 +216,8 @@ section h3 {
 .toc li {
   display: flex;
   align-items: baseline;
-  gap: 2mm;
-  padding: 1mm 0;
+  gap: var(--handout-toc-gap);
+  padding: var(--handout-toc-pad);
   counter-increment: entry;
   break-inside: avoid;
 }
@@ -227,7 +225,7 @@ section h3 {
 .toc a {
   display: flex;
   flex: 1;
-  gap: 2mm;
+  gap: var(--handout-toc-gap);
   color: inherit;
   text-decoration: none;
 }
@@ -240,8 +238,8 @@ section h3 {
 .toc li::before {
   content: counter(entry, decimal-leading-zero);
   flex: none;
-  width: 7mm;
+  width: var(--handout-toc-number);
   font: var(--role-label);
-  letter-spacing: var(--type-label-tracking);
-  color: var(--teal);
+  letter-spacing: var(--tracking-caps);
+  color: var(--accent);
 }

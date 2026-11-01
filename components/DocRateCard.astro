@@ -69,7 +69,7 @@ const running = `@page {
 @page :first { @top-left { content: none; } @top-right { content: none; } }`;
 ---
 
-<style is:inline set:html={running} />
+<style is:inline data-hw-page set:html={running} />
 <DocHeader kind={t.kind} legal meta={[fill(t.date, p), fill(t.validUntil, p)]} />
 <DocTitle eyebrow={fill(t.eyebrow, p)} title={fill(t.title, p)} />
 <DocLead>

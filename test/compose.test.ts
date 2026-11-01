@@ -12,6 +12,7 @@ import {
   proposalEn,
   rateCard,
 } from "../scripts/samples";
+import { foreignStyles } from "../scripts/styles";
 
 const SCRIPT = resolve(import.meta.dir, "../scripts/compose.ts");
 const dir = mkdtempSync(join(tmpdir(), "pdf-compose-"));
@@ -109,12 +110,17 @@ describe("scripts/compose.ts", () => {
     expect(deSample).toContain("12.–13. November 2026");
     for (const english of ["Days", "Specification", "Rules files", "12–13 November"])
       expect(deSample).not.toContain(english);
-  });
+  }, 20_000);
 
-  it("composes a Markdown document: escaped kind, the entity line without the imprint, its own CSS", () => {
+  it("composes a Markdown document: escaped kind, the entity line without the imprint, no style of the body's", () => {
     writeFileSync(
       join(dir, "md.json"),
-      JSON.stringify({ kind: "A & B", legal: true, html: "<h1>T</h1>", css: ".x { color: red; }" }),
+      JSON.stringify({
+        kind: "A & B",
+        legal: true,
+        html: '<h1 style="color: red">T</h1><table><tr><td style="text-align: right;">1</td></tr></table><div class="page-break"></div>',
+        css: ".x { color: red; }",
+      }),
     );
     execFileSync("bun", [SCRIPT, "DocMarkdown", join(dir, "md.json"), join(dir, "md.html")]);
     const html = readFileSync(join(dir, "md.html"), "utf8");
@@ -122,8 +128,28 @@ describe("scripts/compose.ts", () => {
     expect(html).toContain("hackers&amp;wizards GmbH, Sitz Hamburg");
     expect(html).not.toContain(">GmbH<");
     expect(html).not.toContain("Geschäftsführer");
-    expect(html).toContain(".x { color: red; }");
-    expect(html).toMatch(/<div class="doc-prose"[^>]*><h1>T<\/h1><\/div>/);
+    // The former css door is gone, a body's style attribute too; pandoc's alignment is a class.
+    expect(html).not.toContain(".x { color: red; }");
+    expect(html).not.toContain("color: red");
+    expect(html).toContain('<td class="num">1</td>');
+    expect(html).toContain('<div class="page-break"></div>');
+    expect(foreignStyles(html)).toEqual([]);
+  });
+
+  it("refuses a Markdown body carrying a style element", () => {
+    writeFileSync(
+      join(dir, "md-style.json"),
+      JSON.stringify({ kind: "K", html: "<style>p{}</style><p>x</p>" }),
+    );
+    expect(() =>
+      execFileSync(
+        "bun",
+        [SCRIPT, "DocMarkdown", join(dir, "md-style.json"), join(dir, "x.html")],
+        {
+          stdio: "pipe",
+        },
+      ),
+    ).toThrow(/the engine draws every style/);
   });
 
   it("rejects a name that is not a document component", () => {

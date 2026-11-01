@@ -15,21 +15,21 @@ const { title } = Astro.props;
 
 <style>
   .callout {
-    margin: 8pt 0;
-    padding: var(--print-card-pad);
-    border-left: var(--print-rule-accent) solid var(--purple);
+    margin: var(--callout-margin);
+    padding: var(--card-pad);
+    border-left: var(--rule-accent) solid var(--result);
     border-radius: var(--radius);
-    background: var(--purple-soft);
+    background: var(--result-soft);
     break-inside: avoid;
   }
 
   .callout > :global(*) {
-    font-weight: 500;
+    font-weight: var(--weight-medium);
   }
 
   h3 {
     margin-top: 0;
-    color: var(--purple);
+    color: var(--result);
   }
 
   .callout > :global(:last-child) {

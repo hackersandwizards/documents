@@ -92,7 +92,7 @@ const topicClass = [
 ];
 ---
 
-<style is:inline>
+<style is:inline data-hw-page>
   @page {
     margin: 0;
     @bottom-right {
@@ -249,16 +249,13 @@ const topicClass = [
      groups of the statement, --cert-section between sections. The name is the focal point, then
      the title in teal and the course in purple; the phrases between them share the lead role. */
   .certificate {
-    --cert-tight: 3pt;
-    --cert-related: 12pt;
-    --cert-section: 24pt;
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 210mm;
-    height: 297mm;
-    padding: 16mm 25mm 14mm;
+    width: var(--page-width);
+    height: var(--page-height);
+    padding: var(--cert-pad);
     text-align: center;
   }
 
@@ -268,12 +265,12 @@ const topicClass = [
     top: 0;
     left: 0;
     right: 0;
-    height: var(--print-strip);
+    height: var(--strip);
     background: var(--gradient);
   }
 
   .logo {
-    height: 16mm;
+    height: var(--cert-logo);
     margin-bottom: var(--cert-section);
   }
 
@@ -282,7 +279,7 @@ const topicClass = [
   }
 
   .title h1 {
-    color: var(--teal);
+    color: var(--accent);
   }
 
   .preamble,
@@ -297,8 +294,9 @@ const topicClass = [
      stays whole. */
   .attendee-name {
     margin-top: var(--cert-tight);
-    font: 600 calc(var(--type-display-size) * 1.75) / 1.15 var(--type-lead-family);
-    letter-spacing: var(--type-h1-tracking);
+    font: var(--weight-semibold) calc(var(--display-size) * var(--cert-name-scale)) / var(--cert-name-leading)
+      var(--lead-family);
+    letter-spacing: var(--tracking-h1);
     text-wrap: balance;
     color: var(--ink);
   }
@@ -325,8 +323,8 @@ const topicClass = [
   .training-title,
   .training-subtitle {
     font: var(--role-h2);
-    letter-spacing: var(--type-h2-tracking);
-    color: var(--purple);
+    letter-spacing: var(--tracking-h2);
+    color: var(--result);
   }
 
   .details {
@@ -336,7 +334,7 @@ const topicClass = [
   .topics {
     flex: 1 1 auto;
     width: 100%;
-    max-width: 130mm;
+    max-width: var(--cert-topics);
     margin-top: var(--cert-section);
     text-align: left;
   }
@@ -346,9 +344,9 @@ const topicClass = [
     display: block;
     margin-bottom: calc(2 * var(--cert-tight));
     font: var(--role-label);
-    letter-spacing: var(--type-label-tracking);
+    letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    color: var(--teal-dark);
+    color: var(--accent-text);
   }
 
   .topics li {
@@ -357,21 +355,21 @@ const topicClass = [
   }
 
   .topics-compact {
-    max-width: 145mm;
+    max-width: var(--cert-topics-compact);
   }
 
   .topics-compact li {
-    padding-top: 0.3mm;
-    padding-bottom: 0.3mm;
+    padding-top: var(--cert-topic-pad);
+    padding-bottom: var(--cert-topic-pad);
   }
 
   .topics-columns {
-    max-width: 160mm;
+    max-width: var(--cert-topics-wide);
   }
 
   .topics-columns ul {
     columns: 2;
-    column-gap: 10mm;
+    column-gap: var(--cert-column-gap);
   }
 
   .topics-columns li {
@@ -382,7 +380,7 @@ const topicClass = [
   .signatures {
     display: flex;
     justify-content: space-around;
-    gap: 16mm;
+    gap: var(--cert-signature-gap);
     width: 100%;
     margin: var(--cert-section) 0;
   }
@@ -391,29 +389,29 @@ const topicClass = [
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 72mm;
+    width: var(--cert-signature);
   }
 
   .signature-image,
   .signature-placeholder {
-    height: 22mm;
+    height: var(--cert-signature-image);
     margin-bottom: var(--cert-tight);
   }
 
   .signature-image {
-    max-width: 70mm;
+    max-width: var(--cert-signature-image-width);
     object-fit: contain;
   }
 
   .signature-line {
-    width: 66mm;
+    width: var(--cert-signature-line);
     margin-bottom: var(--cert-tight);
-    border-top: var(--print-rule) solid var(--ink);
+    border-top: var(--rule) solid var(--ink);
   }
 
   .signer-name {
     font: var(--role-small);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
   }
 
   .signer-title {
@@ -431,18 +429,18 @@ const topicClass = [
   }
 
   .qr-code {
-    width: 26mm;
-    height: 26mm;
+    width: var(--cert-qr);
+    height: var(--cert-qr);
   }
 
   .footer-cta {
     font: var(--role-small);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
   }
 
   .footer-cta span {
     display: block;
-    font-weight: 400;
+    font-weight: var(--weight-regular);
     color: var(--muted);
   }
 
@@ -458,12 +456,12 @@ const topicClass = [
   .linkedin-link {
     display: inline-block;
     margin: calc(2 * var(--cert-tight)) 0 var(--cert-tight);
-    padding: 2.8mm 7mm;
+    padding: var(--cert-button-pad);
     font: var(--role-lead);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     border-radius: var(--radius);
-    background: var(--teal);
-    color: var(--color-white);
+    background: var(--accent);
+    color: var(--on-dark);
     text-decoration: none;
   }
 
@@ -485,12 +483,12 @@ const topicClass = [
 
   .fit-columns .topics,
   .fit-wide .topics {
-    max-width: 160mm;
+    max-width: var(--cert-topics-wide);
   }
 
   .fit-columns .topics ul {
     columns: 2;
-    column-gap: 10mm;
+    column-gap: var(--cert-column-gap);
   }
 
   .fit-columns .topics li {
@@ -498,29 +496,29 @@ const topicClass = [
   }
 
   .fit-name .attendee-name {
-    font-size: calc(var(--type-display-size) * 1.5);
+    font-size: calc(var(--display-size) * var(--cert-name-scale-fit));
   }
 
   .fit-gaps {
-    --cert-section: 16pt;
+    --cert-section: var(--cert-section-fit);
   }
 
   .fit-signature :is(.signature-image, .signature-placeholder) {
-    height: 16mm;
+    height: var(--cert-signature-image-fit);
   }
 
   .fit-name-small .attendee-name {
-    font-size: calc(var(--type-display-size) * 1.25);
+    font-size: calc(var(--display-size) * var(--cert-name-scale-small));
   }
 
   .fit-logo .logo {
-    height: 12mm;
+    height: var(--cert-logo-fit);
   }
 
   /* The label role's size and leading in the small role's face: the topics stay in Inter. */
   .fit-topics .topics li {
-    font-size: var(--type-label-size);
-    line-height: var(--type-label-line-height);
+    font-size: var(--label-size);
+    line-height: var(--label-leading);
   }
 
   .certificate-overflow {

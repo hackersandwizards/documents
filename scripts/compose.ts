@@ -78,7 +78,7 @@ export async function composePage(
 <head>
 <meta charset="utf-8" />
 ${title}<style data-hw-document></style>
-<style>
+<style data-hw-components>
 ${await composer.styles()}
 </style>
 </head>

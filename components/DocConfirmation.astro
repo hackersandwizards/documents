@@ -24,21 +24,21 @@ const { label, text, line } = Astro.props;
   }
 
   .statement {
-    font-weight: 500;
+    font-weight: var(--weight-medium);
   }
 
   /* typography.css .label-caps, in ink as the footer's group headings set it. */
   .label {
     display: block;
-    margin-bottom: 2pt;
+    margin-bottom: var(--space-label);
     font: var(--role-label);
-    letter-spacing: var(--type-label-tracking);
-    text-transform: var(--type-label-case);
+    letter-spacing: var(--tracking-caps);
+    text-transform: var(--case-label);
     color: var(--ink);
   }
 
   .line {
-    margin-top: 4mm;
+    margin-top: var(--confirmation-space);
     font: var(--role-small);
     color: var(--muted);
   }

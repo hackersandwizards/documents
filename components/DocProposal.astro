@@ -196,7 +196,7 @@ const running = `@page {
 @page :first { @top-left { content: none; } @top-right { content: none; } }`;
 ---
 
-<style is:inline set:html={running} />
+<style is:inline data-hw-page set:html={running} />
 <DocHeader
   kind={t.kind}
   legal
@@ -319,7 +319,7 @@ const running = `@page {
 
 <style>
   .section {
-    margin-top: 7mm;
+    margin-top: var(--section-space);
   }
 
   .calc {
@@ -331,8 +331,8 @@ const running = `@page {
   .grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10pt;
-    margin: 6pt 0;
+    gap: var(--space-grid);
+    margin: var(--block-margin);
   }
 
   .grid-2 > :global(.card) {
@@ -346,27 +346,27 @@ const running = `@page {
   /* The community: Card.astro's tint surface across the row, its benefits in three columns. */
   .included {
     grid-column: 1 / -1;
-    padding: var(--print-card-pad);
-    border: var(--print-rule) solid var(--teal-line);
+    padding: var(--card-pad);
+    border: var(--rule) solid var(--accent-line);
     border-radius: var(--radius);
-    background: var(--teal-soft);
+    background: var(--accent-soft);
     break-inside: avoid;
   }
 
   .included h3 {
-    margin: 0 0 1mm;
+    margin: 0 0 var(--card-title-space);
     font: var(--role-h4);
   }
 
   .included .meta {
-    margin-bottom: 1.5mm;
+    margin-bottom: var(--dense-title-space);
     font: var(--role-small);
     color: var(--muted);
   }
 
   .included ul {
     columns: 3;
-    column-gap: 6mm;
+    column-gap: var(--community-column-gap);
   }
 
   .included li {
@@ -374,46 +374,46 @@ const running = `@page {
   }
 
   .included .value {
-    margin: 2mm 0 0;
+    margin: var(--card-meta-space) 0 0;
     font: var(--role-small);
     color: var(--muted);
   }
 
   /* Terms: Card.astro's tint in two columns, breaking between terms, never inside one. */
   .terms {
-    margin: 6pt 0;
-    padding: var(--print-card-pad);
-    border: var(--print-rule) solid var(--teal-line);
+    margin: var(--block-margin);
+    padding: var(--card-pad);
+    border: var(--rule) solid var(--accent-line);
     border-radius: var(--radius);
-    background: var(--teal-soft);
+    background: var(--accent-soft);
     columns: 2;
-    column-gap: 8mm;
+    column-gap: var(--terms-column-gap);
     font: var(--role-small);
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
   }
 
   .term {
-    margin-bottom: 3mm;
+    margin-bottom: var(--term-space);
     break-inside: avoid;
   }
 
   .term h3 {
-    margin: 0 0 1.5mm;
+    margin: 0 0 var(--dense-title-space);
     font: var(--role-h4);
   }
 
   .term p {
-    margin: 0 0 1.5mm;
+    margin: 0 0 var(--dense-title-space);
   }
 
   /* Acceptance: what is ordered in three facts, then the reply that confirms it. */
   .acceptance {
-    margin: 4mm 0 6pt;
-    padding: var(--print-card-pad);
-    border: var(--print-rule) solid var(--line);
+    margin: var(--acceptance-margin);
+    padding: var(--card-pad);
+    border: var(--rule) solid var(--line);
     border-radius: var(--radius);
-    background: white;
+    background: var(--surface);
     break-inside: avoid;
   }
 
@@ -422,12 +422,12 @@ const running = `@page {
   }
 
   .acceptance dl {
-    grid-template-columns: 28mm 1fr;
-    margin: 2mm 0 3mm;
+    grid-template-columns: var(--acceptance-term) 1fr;
+    margin: var(--acceptance-facts-margin);
   }
 
   .acceptance dd {
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
   }
 
   .acceptance p {

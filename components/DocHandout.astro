@@ -81,7 +81,7 @@ const pageCss = `@page { @top-left { content: ${cssString(t.runningBrand)}; } @t
 section { --chapter-label: ${cssString(t.chapter)}; }`;
 ---
 
-<style is:inline set:html={pageCss}></style>
+<style is:inline data-hw-page set:html={pageCss}></style>
 <div class="cover">
   <DocHeader kind={kind} />
   <div class="title">

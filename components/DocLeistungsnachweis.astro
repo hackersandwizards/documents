@@ -103,7 +103,7 @@ const running = `@page { @bottom-left { content: ${cssString(fill(t.running, p))
 const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
 ---
 
-<style is:inline set:html={running} />
+<style is:inline data-hw-page set:html={running} />
 <DocHeader kind={t.kind} legal meta={[p.created]} />
 <DocTitle eyebrow={p.periodLabel} title={t.title} />
 <dl class="meta">
@@ -184,28 +184,28 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
   .meta {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 3mm 6mm;
-    margin: 0 0 5mm;
-    padding: var(--print-card-pad);
-    border: var(--print-rule) solid var(--teal-line);
+    gap: var(--meta-gap);
+    margin: 0 0 var(--meta-space-after);
+    padding: var(--card-pad);
+    border: var(--rule) solid var(--accent-line);
     border-radius: var(--radius);
-    background: var(--teal-soft);
+    background: var(--accent-soft);
     font: var(--role-small);
     break-inside: avoid;
   }
 
   dd {
     margin: 0;
-    font-weight: 500;
+    font-weight: var(--weight-medium);
   }
 
   /* typography.css .label-caps, in ink as the footer's group headings set it. */
   .label {
     display: block;
-    margin-bottom: 2pt;
+    margin-bottom: var(--space-label);
     font: var(--role-label);
-    letter-spacing: var(--type-label-tracking);
-    text-transform: var(--type-label-case);
+    letter-spacing: var(--tracking-caps);
+    text-transform: var(--case-label);
     color: var(--ink);
   }
 
@@ -223,18 +223,18 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
   }
 
   .ref {
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
   }
 
   .note {
-    margin: 0 0 3mm;
+    margin: 0 0 var(--note-space-after);
     font: var(--role-small);
     color: var(--muted);
   }
 
   td {
-    padding-top: 0.2mm;
-    padding-bottom: 0.2mm;
+    padding-top: var(--hours-row-pad);
+    padding-bottom: var(--hours-row-pad);
   }
 
   .num {
@@ -251,41 +251,41 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
   }
 
   .date {
-    width: 16mm;
+    width: var(--hours-date);
   }
 
   .day {
-    width: 11mm;
+    width: var(--hours-day);
   }
 
   .time {
-    width: 27mm;
+    width: var(--hours-time);
   }
 
   .hours {
-    width: 18mm;
+    width: var(--hours-figure);
   }
 
   .section td {
-    padding-top: 2mm;
+    padding-top: var(--hours-section-pad);
     white-space: nowrap;
     font: var(--role-label);
-    letter-spacing: var(--type-label-tracking);
-    text-transform: var(--type-label-case);
-    color: var(--teal-dark);
+    letter-spacing: var(--tracking-caps);
+    text-transform: var(--case-label);
+    color: var(--accent-text);
   }
 
   .section td.hours {
     font: var(--role-small);
-    font-weight: 600;
-    letter-spacing: 0;
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-none);
     text-transform: none;
     color: var(--ink);
   }
 
   /* The hours total sits 4pt over its band's edge, not the quote's 5pt, for the 22-row page. */
   table :global(tr.total td) {
-    padding-bottom: 4pt;
+    padding-bottom: var(--space-heading);
     vertical-align: baseline;
   }
 </style>

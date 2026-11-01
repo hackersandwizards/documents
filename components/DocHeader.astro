@@ -92,10 +92,10 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8mm;
-    min-height: calc(var(--print-row) + var(--print-strip));
-    margin-bottom: 8mm;
-    padding: calc(var(--print-strip) + 8pt) 0 8pt;
+    gap: var(--header-gap);
+    min-height: calc(var(--header-row) + var(--strip));
+    margin-bottom: var(--header-gap);
+    padding: calc(var(--strip) + var(--header-pad)) 0 var(--header-pad);
   }
 
   .doc-header::before {
@@ -103,18 +103,18 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     position: absolute;
     z-index: -1;
     inset: 0 calc(-1 * var(--side));
-    border-top: var(--print-strip) solid transparent;
-    border-bottom: var(--print-rule) solid var(--line);
+    border-top: var(--strip) solid transparent;
+    border-bottom: var(--rule) solid var(--line);
     background:
-      var(--gradient) top / 100% var(--print-strip) no-repeat border-box,
-      var(--color-bg) padding-box;
+      var(--gradient) top / 100% var(--strip) no-repeat border-box,
+      var(--tint) padding-box;
   }
 
   /* The lockup at the print logo's height, the header row's mark, which sets its wordmark at 952 of
      the lockup's 1489 units, 1.25 times the print wordmark: at the print wordmark's own height the
      letters were hard to read at 80% zoom. The imprint lines sit under it. */
   .brand {
-    --lockup-height: var(--print-logo);
+    --lockup-height: var(--logo);
     display: block;
   }
 
@@ -130,13 +130,13 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
   }
 
   .company-meta {
-    margin-top: 1.5pt;
+    margin-top: var(--space-imprint);
     font: var(--role-small);
     color: var(--muted);
   }
 
   .doc-meta {
-    max-width: 70mm;
+    max-width: var(--header-meta-width);
     font: var(--role-small);
     text-align: right;
     color: var(--muted);
@@ -152,14 +152,14 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
      A filled CTA shape was dropped: blind reviewers read it as a button. */
   .doc-tag {
     display: inline-block;
-    margin-bottom: 3pt;
-    padding: var(--print-chip-pad);
-    border-radius: var(--radius-pill);
-    background: var(--color-teal-light);
+    margin-bottom: var(--space-tag);
+    padding: var(--chip-pad);
+    border-radius: var(--pill);
+    background: var(--accent-chip);
     font: var(--role-label);
-    line-height: 1.5;
-    letter-spacing: var(--type-label-tracking);
-    text-transform: var(--type-label-case);
-    color: var(--color-ink);
+    line-height: var(--leading-chip);
+    letter-spacing: var(--tracking-caps);
+    text-transform: var(--case-label);
+    color: var(--ink);
   }
 </style>

@@ -14,6 +14,7 @@
     "npm": "please-use-bun"
   },
   "exports": {
+    "./tokens.css": "./tokens.css",
     "./document.css": "./document.css",
     "./components/*": "./components/*",
     "./compose": "./scripts/compose.ts",
@@ -25,11 +26,14 @@
   },
   "bin": {
     "documents-compose": "scripts/compose.ts",
-    "documents-privacy": "scripts/privacy.ts"
+    "documents-privacy": "scripts/privacy.ts",
+    "documents-styles": "scripts/styles.ts"
   },
   "files": [
+    "tokens.css",
     "document.css",
     "onepager.css",
+    "readout.css",
     "handout.css",
     "components",
     "scripts/onepager.ts",
@@ -38,6 +42,8 @@
     "scripts/compose.ts",
     "scripts/render-pdf.ts",
     "scripts/privacy.ts",
+    "scripts/prose.ts",
+    "scripts/styles.ts",
     "scripts/samples.ts",
     "specimen",
     "LICENSE"

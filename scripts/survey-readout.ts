@@ -3,8 +3,9 @@
 // readout), as one standalone HTML page with the brand's tokens and faces inlined. The caller
 // analyses its survey and passes the figures; this module owns how they are drawn, the score bands
 // included, which the caller's readout reuses so a weak spot's marker matches its bar. A slide
-// deck, not an A4 document: it sits on the brand files alone, never on document.css.
+// deck, not an A4 document: it sits on the document tokens and readout.css, never on document.css.
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fill } from "./fill";
 import { brandCss, brandFile } from "./render-pdf";
 
@@ -121,10 +122,10 @@ export const STRENGTH_AT = 0.75;
 // Brand colours (@hackersandwizards/brand tokens.css), low to high along the brand gradient: the design guide's
 // Error Red (--color-red) for weak, muted slate for middling (neither good nor bad, and 7:1 so the weakest mean
 // stays readable), teal for good, purple, the gradient's end, for strong.
-const RED = "var(--color-red)";
-const SLATE = "var(--color-muted)";
-const TEAL = "var(--color-teal)";
-const PURPLE = "var(--color-purple)";
+const RED = "var(--negative)";
+const SLATE = "var(--muted)";
+const TEAL = "var(--accent)";
+const PURPLE = "var(--result)";
 
 /** Bands by position on the value's own scale, so a 1-4 row listed as a strength renders purple. */
 const BANDS: [number, string][] = [
@@ -153,7 +154,7 @@ function scoreLegend(
       const label = esc(
         i === BANDS.length - 1 ? t.bandBelow : fill(t.bandFrom, { value: cut(from, s) }),
       );
-      return `<span class="lkey"><i style="background:${col}"></i>${label}</span>`;
+      return `<span class="lkey"><i style="--band:${col}"></i>${label}</span>`;
     }).join("");
     return `<span class="lscale">${esc(fill(t.barKey, s))}</span>${steps}`;
   });
@@ -164,7 +165,7 @@ function scoreLegend(
       : "";
   const strips = ranges.map((s) => {
     const steps = Array.from({ length: s.end - s.start + 1 }, (_, i) => s.start + i)
-      .map((v) => `<span class="lkey"><i style="background:${rampColor(v, s)}"></i>${v}</span>`)
+      .map((v) => `<span class="lkey"><i style="--band:${rampColor(v, s)}"></i>${v}</span>`)
       .join("");
     return `<span class="lscale">${esc(t.stripKey)}</span>${steps}`;
   });
@@ -179,7 +180,7 @@ function shortDim(title: string): string {
  * which on 1-4 painted ratings 1 and 2 the same red and gave purple a second meaning. */
 function rampColor(val: number, s: { start: number; end: number }): string {
   const pct = Math.round(30 + 65 * scalePosition(val, s));
-  return `color-mix(in srgb, var(--color-ink) ${pct}%, var(--color-border))`;
+  return `color-mix(in srgb, var(--ink) ${pct}%, var(--line-soft))`;
 }
 
 function distBar(s: ReadoutScale): string {
@@ -188,7 +189,7 @@ function distBar(s: ReadoutScale): string {
       const val = s.start + i;
       if (c === 0) return "";
       const col = rampColor(val, s);
-      return `<span class="seg" style="flex:${c};background:${col}" title="${val}: ${c}"></span>`;
+      return `<span class="seg" style="--count:${c};--band:${col}" title="${val}: ${c}"></span>`;
     })
     .join("");
   return `<div class="dist">${segs}</div>`;
@@ -202,9 +203,9 @@ function scaleRow(s: ReadoutScale): string {
     <div class="srow">
       <div class="slabel">${esc(shortDim(s.title))}</div>
       <div class="strack">
-        <div class="sfill" style="width:${fill.toFixed(1)}%;background:${col}"></div>
+        <div class="sfill" style="--share:${fill.toFixed(1)}%;--band:${col}"></div>
       </div>
-      <div class="smean" style="color:${col}">${s.n ? s.mean.toFixed(1) : "–"}</div>
+      <div class="smean" style="--band:${col}">${s.n ? s.mean.toFixed(1) : "–"}</div>
       ${distBar(s)}
     </div>`;
 }
@@ -286,7 +287,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   const s2 = slideShell(
     `<h2>${esc(t.glance)}</h2>
      <div class="glance">
-       <div class="bignum" style="color:${h.n ? bandColor(h.mean, h) : "inherit"}">
+       <div class="bignum" style="--band:${h.n ? bandColor(h.mean, h) : "inherit"}">
          <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>${esc(fill(t.overall, { end: h.end }))}</span>
        </div>
        <div class="glancedist">
@@ -337,7 +338,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
          .map(
            (x) => `<div class="risk">
              <div class="rlabel">${esc(x.label)}</div>
-             <div class="rtrack"><div class="rfill${x.n === a.risks[0].n ? " top" : ""}" style="width:${(x.n / respondents) * 100}%"></div></div>
+             <div class="rtrack"><div class="rfill${x.n === a.risks[0].n ? " top" : ""}" style="--share:${(x.n / respondents) * 100}%"></div></div>
              <div class="rn">${x.n}<span class="rpct">${Math.round((x.n / respondents) * 100)}%</span></div>
            </div>`,
          )
@@ -369,7 +370,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   // score 4.75 without, 8.38 with, eight runs, os docs/tracking/2026-11-01-survey-readout-engine.md).
   const bands = BANDS.map(
     ([, col], i) =>
-      `<span class="lkey"><i style="background:${col}"></i>${esc(t.bands[i] ?? "")}</span>`,
+      `<span class="lkey"><i style="--band:${col}"></i>${esc(t.bands[i] ?? "")}</span>`,
   ).join("");
   const s7 = slideShell(
     `<h2>${esc(t.readout)}</h2>
@@ -399,7 +400,8 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
 `
     : "";
   return PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
-    .replace("<style>", () => `${links}<style>`)
+    .replace("__STYLE__", () => STYLE)
+    .replace("<style data-hw-readout>", () => `${links}<style data-hw-readout>`)
     .replace('lang="en"', () => `lang="${esc(t.lang)}"`)
     .replace("__TITLE__", () => esc(fill(t.documentTitle, { customer: customerName })))
     .replace("__SLIDES__", () =>
@@ -423,142 +425,27 @@ function distScale(t: ReadoutText, s: ReadoutScale): string {
       const h = (c / total) * 100;
       // A value nobody chose draws no bar: the sliver a minimum height kept read as a response.
       const bar = c
-        ? `<div class="dbar" style="height:${h}%;background:${rampColor(val, s)}"></div>`
+        ? `<div class="dbar" style="--share:${h}%;--band:${rampColor(val, s)}"></div>`
         : "";
       return `<div class="dcol"><div class="dbarwrap">${bar}</div><div class="dn">${c}</div><div class="dv">${val}</div></div>`;
     })
     .join("")}</div>`;
 }
 
+/** The deck's stylesheet: the document tokens (the brand files apart, which brandCss inlines) and
+ * readout.css. */
+const STYLE = ["tokens.css", "readout.css"]
+  .map((f) =>
+    readFileSync(join(import.meta.dir, "..", f), "utf8").replace(/^@import [^;]+;\n/gm, ""),
+  )
+  .join("\n");
+
 const PAGE = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
 <title>__TITLE__</title>
-<style>
+<style data-hw-readout>
 __BRAND__
-  /* The slide engine's look (talks styles/slides.css): its stage is 1440x810 with a rem of
-     1/90 of the width, so this 1280px page takes a rem of 14.2222px and every engine length below
-     is copied in rem, never as a pixel value. Colour, families, weights and label tracking come from
-     the brand tokens and type roles above; the charts keep their own pixel geometry. */
-  @page { size: 1280px 720px; margin: 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { font-size: 14.2222px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { font-family:var(--font-sans); color:var(--color-ink); background:var(--color-night); font-synthesis-weight:none; }
-  .slide {
-    /* The engine's slide scale: hairline, brand corner, list marker. */
-    --hairline: 0.09375rem; --corner: 1.875rem 0.46875rem;
-    --marker: 0.5625rem;
-    position:relative; width:1280px; height:720px; background:var(--color-bg);
-    page-break-after:always; overflow:hidden; display:flex; flex-direction:column;
-    margin:0 auto 24px;
-  }
-  .slide:last-child { page-break-after:auto; }
-  /* The website's teal-to-purple strip, the one mark every slide shares. */
-  .strip { position:absolute; inset:0 0 auto; height:0.75rem; background:linear-gradient(90deg,var(--color-teal),var(--color-purple)); }
-  .chrome { position:absolute; right:1.5rem; bottom:1.5rem; display:flex; align-items:center; gap:1.25rem; }
-  .chrome .page { font-family:var(--font-mono); font-size:1.625rem; font-weight:700; color:var(--color-muted); font-variant-numeric:tabular-nums; }
-  /* The slide engine's corner: the lockup on the title slide, its letters at the wordmark's size (the
-     wordmark is 952 of the lockup's 1489 units), and the wordmark alone on every other slide. */
-  .chrome .wordmark { width:auto; height:1.63rem; }
-  .chrome .lockup { width:auto; height:calc(1.63rem * 1489 / 952); }
-  /* A titled slide: the 5% safe margin at the sides, the kicker hung above the title line. */
-  .sbody { flex:1; padding:5.5rem 4.5rem 4.25rem; display:flex; flex-direction:column; min-height:0; }
-  /* Never shrunk: a body a few pixels too full squeezed the kicker instead, and the title rose by 3px on that slide alone. */
-  .kicker { flex-shrink:0; height:2.5rem; margin:-3rem 0 0.5rem; font-size:1.6875rem; line-height:1.25; font-weight:500; color:var(--color-teal); }
-  h1 { font-family:var(--type-h1-family); font-weight:700; letter-spacing:-0.03em; font-size:6rem; line-height:1.02; color:var(--color-ink); }
-  h2 { font-family:var(--type-h1-family); font-weight:var(--type-h1-weight); letter-spacing:var(--type-h1-tracking); font-size:3.375rem; line-height:1.1; color:var(--color-ink); margin-bottom:1.5rem; display:flex; align-items:baseline; gap:1rem; }
-  .label-caps, .eyebrow, .gtitle { font-family:var(--type-label-family); font-weight:var(--type-label-weight); letter-spacing:var(--type-label-tracking); text-transform:var(--type-label-case); }
-  /* The engine's title slide: centred, its subtitle, the short gradient rule below. */
-  .center { align-items:center; justify-content:center; text-align:center; padding-bottom:5.5rem; }
-  .eyebrow { font-size:1.125rem; color:var(--color-teal); margin-bottom:1.5rem; }
-  .subtitle { font-size:1.875rem; font-weight:500; color:var(--color-muted); margin-top:2rem; }
-  .dates { font-size:1.375rem; color:var(--color-muted); margin-top:0.75rem; }
-  .langnote { font-size:1.125rem; color:var(--color-muted); margin-top:2rem; }
-  .asked { font-size:1.25rem; color:var(--color-muted); margin:-0.75rem 0 1.25rem; }
-  .norisk { font-size:1.25rem; color:var(--color-muted); margin-top:1.5rem; }
-  .rule { width:10rem; height:0.375rem; margin-top:3rem; background:linear-gradient(90deg,var(--color-teal),var(--color-purple)); }
-  .metarow { display:flex; gap:3.5rem; margin-top:3rem; }
-  .metabig { display:flex; flex-direction:column; align-items:center; }
-  .metabig b { font-family:var(--type-stat-family); font-weight:700; font-size:3rem; color:var(--color-ink); line-height:1; }
-  .metabig span { font-size:1.125rem; color:var(--color-muted); margin-top:0.5rem; }
-
-  .glance { display:flex; gap:48px; align-items:center; flex:1; }
-  .bignum { display:flex; flex-direction:column; min-width:300px; }
-  .bignum b { font-family:var(--type-stat-family); font-weight:700; font-size:140px; line-height:.9; }
-  .bignum span { font-size:1.5rem; color:var(--color-muted); margin-top:0.75rem; }
-  .glancedist { flex:1; }
-  .dscale { display:flex; gap:18px; align-items:flex-end; height:24rem; }
-  .dcol { flex:1; display:flex; flex-direction:column; align-items:center; height:100%; }
-  .dbarwrap { flex:1; width:100%; display:flex; align-items:flex-end; }
-  .dbar { width:100%; border-radius:0; min-height:3px; }
-  .dn { font-family:var(--type-stat-family); font-weight:700; font-size:1.5rem; margin-top:8px; }
-  .dv { font-size:1.125rem; color:var(--color-muted); }
-  /* Names the two number rows under the bars, on the axis side, which read as interchangeable without it. */
-  .dcol.dkey { flex:0 0 auto; align-items:flex-end; }
-  .dkey .dn { font-family:var(--font-sans); font-weight:400; font-size:1.125rem; color:var(--color-muted); line-height:2rem; }
-  .caption { font-size:1.125rem; color:var(--color-muted); margin-top:0.75rem; }
-  .legend { display:flex; flex-wrap:wrap; align-items:center; gap:0.375rem 1rem; font-size:1.125rem; color:var(--color-muted); margin:-0.5rem 0 1rem; }
-  .legend + .legend { margin-top:-0.5rem; }
-  .legend .lkey { display:inline-flex; align-items:center; gap:0.375rem; }
-  .legend i { width:var(--marker); height:var(--marker); }
-  .legend .lsep { width:var(--hairline); height:1rem; background:var(--color-border); }
-  .legend i.hollow { outline:0.125rem solid var(--color-muted); outline-offset:-0.125rem; }
-  .glancefoot { display:flex; gap:3rem; border-top:var(--hairline) solid var(--color-border); padding-top:1rem; }
-  .glancefoot b { color:var(--color-ink); }
-  .glancefoot div { font-size:1.25rem; color:var(--color-muted); }
-
-  .scols { display:flex; flex-direction:column; gap:0.5rem; flex:1; }
-  /* Group labels in muted ink: teal and purple are score bands on this page. */
-  .gtitle { font-size:1.125rem; color:var(--color-muted); margin-bottom:0.25rem; }
-  .srow { display:grid; grid-template-columns:30rem 1fr 3.5rem 180px; align-items:center; gap:14px; margin-bottom:0.25rem; }
-  .slabel { font-size:1.125rem; line-height:1.3; color:var(--color-ink); }
-  .strack { height:12px; background:var(--color-border); border-radius:var(--radius-pill); overflow:hidden; }
-  .sfill { height:100%; border-radius:var(--radius-pill); }
-  .smean { font-family:var(--type-stat-family); font-weight:700; font-size:1.5rem; text-align:right; }
-  /* Segments grow by their count, so the 2px gaps parting neighbouring shades never clip the last. */
-  .dist { display:flex; gap:2px; height:16px; border-radius:var(--radius-pill); overflow:hidden; }
-  .dist:empty { background:var(--color-border); }
-  .dist .seg { height:100%; }
-
-  /* The bars start under the title, as every slide's body does: centred, a two-line title left a gap above them. */
-  .risks { display:flex; flex-direction:column; gap:1rem; flex:1; }
-  /* Labels take a fixed column and the bars the rest, so no gutter opens between a label and its bar. */
-  .risk { display:grid; grid-template-columns:minmax(0,28rem) 1fr 7rem; align-items:center; gap:16px; }
-  .rlabel { font-size:1.5rem; line-height:1.3; color:var(--color-ink); }
-  .rtrack { height:18px; background:var(--color-border); border-radius:var(--radius-pill); overflow:hidden; }
-  /* In ink, not the brand gradient: teal and purple are score bands on page 3. */
-  .rfill { height:100%; background:var(--color-muted); border-radius:var(--radius-pill); }
-  .rfill.top { background:var(--color-ink); }
-  .rn { font-family:var(--type-stat-family); font-weight:700; font-size:1.5rem; text-align:right; }
-  /* The share of respondents beside the count, since a multi-select count alone has no base. */
-  .rpct { font-family:var(--font-sans); font-weight:400; font-size:1.125rem; color:var(--color-muted); margin-left:0.5rem; display:inline-block; min-width:2.75rem; text-align:right; font-variant-numeric:tabular-nums; }
-
-  /* Two columns keep a line near 65 characters; full width ran to 130. */
-  .quotes { columns:2; column-gap:1.75rem; }
-  .quotes .quote { break-inside:avoid; margin-bottom:0.75rem; }
-  .quotes .caption { column-span:all; }
-  /* Cards as the website draws them: white, a hairline, the brand corner. */
-  .quote, .rcol { background:var(--color-white); border:var(--hairline) solid var(--color-border); border-radius:var(--corner); }
-  .quote { font-size:1.25rem; line-height:1.4; color:var(--color-ink); padding:1rem 1.75rem; }
-
-  /* Strengths on the left, weak spots and flags stacked on the right, each card ending with its
-     content: three equal full-height cards left two of them mostly empty. */
-  .readout { display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:auto 1fr; gap:1.75rem; align-items:start; }
-  .readout .rcol:first-child { grid-row:span 2; }
-  .rcol { padding:1.5rem 1.75rem; }
-  /* Headings in ink on a hairline, as the engine's card titles: the band colours stay on the
-     charts, where each band has one meaning. */
-  .rhead { font-family:var(--type-h3-family); font-weight:var(--type-h3-weight); font-size:1.6875rem; color:var(--color-ink); margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:var(--hairline) solid var(--color-border); }
-  /* The list marker: the brand's small square on the middle of the first line's x-height
-     (marker.css), at the readout's size. */
-  .readout ul { --hw-markers:on; --hw-marker-size:var(--marker); --hw-marker-gap:0.75rem; display:flex; flex-direction:column; gap:0.5rem; }
-  .readout li { font-size:1.375rem; line-height:1.35; color:var(--color-muted); }
-  /* Markers carry the scores page's colours: a strength clears the purple band by definition, a
-     weak spot takes its own band, and flags stay muted. */
-  .readout ul.good { --hw-marker-color:var(--color-purple); }
-  .readout ul.bad { --hw-marker-color:var(--mark); }
-  /* Hollow, so a flag never reads as the slate band a weak spot can carry. */
-  .readout ul.flag { --hw-marker-color:transparent; }
-  .readout ul.flag li::before { outline:0.125rem solid var(--color-muted); outline-offset:-0.125rem; }
+__STYLE__
 </style></head>
 <body>__SLIDES__
 <script>

@@ -20,23 +20,23 @@ const { title, meta, tint = false, small = false, dense = false } = Astro.props;
 
 <style>
   .card {
-    margin: 6pt 0;
-    padding: var(--print-card-pad);
-    border: var(--print-rule) solid var(--line);
+    margin: var(--block-margin);
+    padding: var(--card-pad);
+    border: var(--rule) solid var(--line);
     border-radius: var(--radius);
-    background: var(--color-white);
+    background: var(--surface);
     break-inside: avoid;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
   }
 
   .tint {
-    border-color: var(--teal-line);
-    background: var(--teal-soft);
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
   }
 
   h3 {
-    margin: 0 0 1mm;
+    margin: 0 0 var(--card-title-space);
   }
 
   .small,
@@ -45,18 +45,18 @@ const { title, meta, tint = false, small = false, dense = false } = Astro.props;
   }
 
   .meta {
-    margin-bottom: 2mm;
+    margin-bottom: var(--card-meta-space);
     font: var(--role-small);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--muted);
   }
 
   .dense h3 {
-    margin-bottom: 1.5mm;
+    margin-bottom: var(--dense-title-space);
   }
 
   .dense :global(p) {
-    margin: 0 0 1mm;
+    margin: 0 0 var(--card-title-space);
   }
 
   .card > :global(:last-child) {

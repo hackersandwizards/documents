@@ -31,10 +31,10 @@ const { label, company, lines, contact } = Astro.props;
 <style>
   .prepared {
     align-self: start;
-    padding: var(--print-card-pad);
-    border: var(--print-rule) solid var(--teal-line);
+    padding: var(--card-pad);
+    border: var(--rule) solid var(--accent-line);
     border-radius: var(--radius);
-    background: var(--teal-soft);
+    background: var(--accent-soft);
     font: var(--role-small);
     break-inside: avoid;
   }
@@ -42,15 +42,15 @@ const { label, company, lines, contact } = Astro.props;
   /* typography.css .label-caps, in ink as the footer's group headings set it. */
   .label {
     display: block;
-    margin-bottom: 2pt;
+    margin-bottom: var(--space-label);
     font: var(--role-label);
-    letter-spacing: var(--type-label-tracking);
-    text-transform: var(--type-label-case);
+    letter-spacing: var(--tracking-caps);
+    text-transform: var(--case-label);
     color: var(--ink);
   }
 
   .second {
-    margin-top: 7pt;
+    margin-top: var(--space-group);
   }
 
   /* The contact label is the card's last element, its name a bare text after it: no gap under it. */

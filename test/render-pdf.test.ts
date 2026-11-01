@@ -35,12 +35,13 @@ describe("documentCss", () => {
 });
 
 describe("bakeDocumentCss", () => {
-  const doc = "<html><head><style data-hw-document></style><style>.own{}</style></head></html>";
+  const doc =
+    "<html><head><style data-hw-document></style><style data-hw-components>.own{}</style></head></html>";
 
-  it("fills the marked style element and leaves the document's own styles alone", () => {
+  it("fills the marked style element and leaves the engine's component styles alone", () => {
     const baked = bakeDocumentCss(doc);
     expect(baked).toContain(".doc-header");
-    expect(baked).toContain("<style>.own{}</style>");
+    expect(baked).toContain("<style data-hw-components>.own{}</style>");
   });
 
   it("re-bakes to the same bytes, so a re-render touches no stored file", () => {
@@ -51,6 +52,17 @@ describe("bakeDocumentCss", () => {
   it("passes HTML without the marker through unchanged", () => {
     const plain = "<html><head><style>body{}</style></head></html>";
     expect(bakeDocumentCss(plain)).toBe(plain);
+  });
+
+  it("refuses a document carrying a style the engine did not write", () => {
+    for (const foreign of [
+      "<style>.own{}</style>",
+      '<link rel="stylesheet" href="x.css">',
+      '<p style="margin-top: 4mm">x</p>',
+    ])
+      expect(() =>
+        bakeDocumentCss(`<html><head><style data-hw-document></style>${foreign}</head></html>`),
+      ).toThrow(/styles outside the document engine/);
   });
 });
 

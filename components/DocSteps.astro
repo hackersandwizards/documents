@@ -21,27 +21,27 @@ const { steps } = Astro.props;
 
 <style>
   .timeline {
-    margin: 6pt 0 10pt;
+    margin: var(--block-margin-loose);
     padding: 0;
-    border-bottom: var(--print-rule) solid var(--line);
+    border-bottom: var(--rule) solid var(--line);
     list-style: none;
   }
 
   li {
     display: grid;
     background: none;
-    grid-template-columns: 36mm 1fr;
-    gap: 10pt;
-    padding: 7pt 0;
-    border-top: var(--print-rule) solid var(--line);
+    grid-template-columns: var(--timeline-when) 1fr;
+    gap: var(--space-grid);
+    padding: var(--space-group) 0;
+    border-top: var(--rule) solid var(--line);
     break-inside: avoid;
   }
 
   .when {
     font: var(--role-small);
-    font-family: var(--type-h1-family);
-    font-weight: var(--type-h1-weight);
-    color: var(--purple);
+    font-family: var(--heading-family);
+    font-weight: var(--weight-heading);
+    color: var(--result);
   }
 
   strong {
@@ -49,7 +49,7 @@ const { steps } = Astro.props;
   }
 
   p {
-    margin: 1pt 0 0;
+    margin: var(--space-hair) 0 0;
     font: var(--role-small);
     color: var(--muted);
   }

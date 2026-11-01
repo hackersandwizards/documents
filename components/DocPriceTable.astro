@@ -37,7 +37,7 @@ const span = columns.length - 1;
   <thead>
     <tr>
       {columns.map((c) => (
-        <th class:list={{ num: c.num }} style={c.width ? `width: ${c.width}` : undefined}>
+        <th class:list={{ num: c.num }} style={c.width ? `--col-width: ${c.width}` : undefined}>
           {c.label}
         </th>
       ))}
@@ -76,6 +76,11 @@ const span = columns.length - 1;
 </table>
 
 <style>
+  /* A column's width, from its props. */
+  th {
+    width: var(--col-width);
+  }
+
   /* Tabular figures only in a figure column: Inter's tabular set widens the hyphen in prose. */
   .num {
     font-variant-numeric: tabular-nums;
@@ -85,40 +90,40 @@ const span = columns.length - 1;
 
   .detail {
     display: block;
-    margin-top: 1pt;
+    margin-top: var(--space-hair);
     color: var(--muted);
   }
 
   .strike {
-    color: var(--red);
+    color: var(--negative);
     text-decoration: line-through;
   }
 
   .offer {
-    font-weight: 600;
-    color: var(--green-dark);
+    font-weight: var(--weight-semibold);
+    color: var(--positive);
   }
 
   .foot td {
-    padding-top: 1.6mm;
-    padding-bottom: 1.6mm;
+    padding-top: var(--foot-pad);
+    padding-bottom: var(--foot-pad);
     border-bottom: 0;
     font: var(--role-small);
     color: var(--muted);
   }
 
   .sums td {
-    background: var(--teal-soft);
+    background: var(--accent-soft);
   }
 
   .sums td:first-child {
-    padding-left: 5pt;
+    padding-left: var(--space-cell);
   }
 
   .sums td.num {
     font: var(--role-h4);
-    letter-spacing: var(--type-h4-tracking);
+    letter-spacing: var(--tracking-h4);
     font-variant-numeric: tabular-nums;
-    color: var(--teal);
+    color: var(--accent);
   }
 </style>

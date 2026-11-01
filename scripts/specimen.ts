@@ -133,12 +133,12 @@ const PAGES: {
 
 // The page links the brand's tokens and faces from the package instead of baking them in, so a
 // brand release leaves the committed specimen current. On screen the sheet is A4 wide.
-const base = readFileSync(join(ROOT, "document.css"), "utf8")
-  .replace(/\/\*[\s\S]*?\*\//g, "")
-  .replace(/^@import [^;]+;\n/gm, "");
-const handoutRules = readFileSync(join(ROOT, "handout.css"), "utf8")
-  .replace(/\/\*[\s\S]*?\*\//g, "")
-  .replace(/^@import [^;]+;\n/gm, "");
+const local = (file: string) =>
+  readFileSync(join(ROOT, file), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^@import [^;]+;\n/gm, "");
+const base = local("tokens.css") + local("document.css");
+const handoutRules = local("handout.css");
 const specimenBase = (html: string, extra = "") =>
   html.replace(
     "<style data-hw-document></style>",

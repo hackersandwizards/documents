@@ -1,6 +1,7 @@
 ---
-// A Markdown document (print-pdf, the trainer NDA, the delivery briefing): the header, then the
-// body as DocProse. `css` adds one document type's own rules after the components' styles.
+// A Markdown document (print-pdf, the delivery and trainer briefings, a report): the header, then
+// the body as DocProse. The body brings no style of its own: DocProse drops every style attribute
+// and fails on a style element; a look the base lacks is a variant or a type of the engine.
 import DocHeader from "./DocHeader.astro";
 import DocProse from "./DocProse.astro";
 
@@ -11,11 +12,9 @@ interface Props {
   meta?: string[];
   /** The body: sanitized HTML, its eyebrow, title and lead already in place. */
   html: string;
-  css?: string;
 }
-const { kind, legal, meta, html, css } = Astro.props;
+const { kind, legal, meta, html } = Astro.props;
 ---
 
-{css && <style is:inline set:html={css} />}
 <DocHeader kind={kind} legal={legal} imprint={false} meta={meta} />
 <DocProse html={html} />

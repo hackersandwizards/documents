@@ -22,25 +22,25 @@ const { label, span, figures, note } = Astro.props;
 
 <style>
   td {
-    padding-top: 7pt;
-    padding-bottom: 5pt;
-    border-top: var(--print-rule-strong) solid var(--teal);
+    padding-top: var(--total-pad-top);
+    padding-bottom: var(--space-cell);
+    border-top: var(--rule-strong) solid var(--accent);
     border-bottom: 0;
-    background: var(--teal-soft);
+    background: var(--accent-soft);
     font: var(--role-h4);
-    letter-spacing: var(--type-h4-tracking);
+    letter-spacing: var(--tracking-h4);
     font-variant-numeric: tabular-nums;
   }
 
   td:first-child {
-    padding-left: 5pt;
+    padding-left: var(--space-cell);
   }
 
   .num {
-    font-size: 1.2em;
+    font-size: var(--figure-scale);
     text-align: right;
     white-space: nowrap;
-    color: var(--teal);
+    color: var(--accent);
   }
 
   .total-note {
