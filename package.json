@@ -10,7 +10,8 @@
   "type": "module",
   "packageManager": "bun@1.4.4",
   "engines": {
-    "bun": ">=1.3.0"
+    "bun": ">=1.3.0",
+    "npm": "please-use-bun"
   },
   "exports": {
     "./document.css": "./document.css",
