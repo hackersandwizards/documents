@@ -159,9 +159,12 @@ body {
 }
 
 /* Header, the twin of Nav.astro: a bar in the page tint across the paper, the gradient strip
-   on top, a rule under it, the brand left and the document tag right. */
+   on top, a rule under it, the brand left and the document tag right. Its own stacking context
+   keeps the bar above the body's white where a page sets a background on html, as the specimen
+   does. */
 .doc-header {
   position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: space-between;
