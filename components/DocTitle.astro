@@ -1,5 +1,5 @@
 ---
-// A document's title block: the eyebrow (typography.css .meta-line), the h1, and an optional
+// A document's title block: the eyebrow (the website's label-caps), the h1, and an optional
 // lead (SectionHeader.astro's lead role in muted ink).
 interface Props {
   eyebrow?: string;
@@ -18,7 +18,10 @@ const { eyebrow, title, subtitle } = Astro.props;
     display: block;
     margin-bottom: 4pt;
     font: var(--role-small);
-    font-weight: 500;
+    font-family: var(--type-label-family);
+    font-weight: var(--type-label-weight);
+    letter-spacing: var(--type-label-tracking);
+    text-transform: var(--type-label-case);
     color: var(--teal-dark);
   }
 

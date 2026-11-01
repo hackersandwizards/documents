@@ -278,13 +278,16 @@ h4 {
   letter-spacing: var(--type-h4-tracking);
 }
 
-/* Eyebrow over a title or section: typography.css .meta-line, the small role at weight 500
-   in the section's ink, in sentence case. */
+/* Eyebrow over a title or section: the website's label-caps (mono, caps, 0.06 em) at the
+   document's small step (os decision br-label-style). */
 .eyebrow {
   display: block;
   margin-bottom: 4pt;
   font: var(--role-small);
-  font-weight: 500;
+  font-family: var(--type-label-family);
+  font-weight: var(--type-label-weight);
+  letter-spacing: var(--type-label-tracking);
+  text-transform: var(--type-label-case);
   color: var(--teal-dark);
 }
 

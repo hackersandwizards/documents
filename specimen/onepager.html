@@ -424,18 +424,10 @@ ul {
   margin-bottom: var(--section);
 }
 
-/* ── Hero: a night section, as every page of the site opens ── */
+/* ── Hero: a flat night section, as the website hero; no tint behind its text (os decision
+   br-gradient-behind-content) ── */
 .hero {
-  /* One opaque gradient, teal at the foot to purple at the head. A stop with alpha makes
-       Chrome write the shading with a soft mask, which macOS Preview draws as a hard band
-       across the box. */
-  background: linear-gradient(
-    20deg,
-    color-mix(in srgb, var(--color-teal) 40%, var(--color-night)) 0%,
-    var(--color-night) 45%,
-    var(--color-night) 62%,
-    color-mix(in srgb, var(--color-purple) 25%, var(--color-night)) 100%
-  );
+  background: var(--color-night);
   color: var(--color-night-ink);
   border-radius: var(--radius);
   padding: 20px 24px 22px;
