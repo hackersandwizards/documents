@@ -24,6 +24,8 @@ Bun fetches the `git+https://` form through GitHub's tarball API without any Git
 | Import or command                                         | What                                                                  |
 | --------------------------------------------------------- | --------------------------------------------------------------------- |
 | `@hackersandwizards/documents/document.css`               | the print base                                                        |
+| `@hackersandwizards/documents/onepager.css`               | the onepager's own stylesheet                                         |
+| `@hackersandwizards/documents/handout.css`                | the handout's print stylesheet                                        |
 | `@hackersandwizards/documents/components/<Doc*.astro>`    | a document component                                                  |
 | `@hackersandwizards/documents/render-pdf`                 | `renderPdf`, `bakeDocumentCss`, `composeDocument`, `assertBrandFonts` |
 | `@hackersandwizards/documents/compose`                    | `openComposer`, `composePage`                                         |

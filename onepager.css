@@ -105,7 +105,6 @@ ul {
   letter-spacing: var(--type-stat-tracking);
 }
 
-.section-head,
 .po-track-box h3,
 .mentoring-section h2,
 .block-heading,
@@ -132,9 +131,7 @@ ul {
   font: var(--op-lead);
 }
 
-.section-lead,
 .deliverable-banner p,
-.prereq-box p,
 .proof-box p,
 .scope-box p,
 .goals-lead,
@@ -159,7 +156,6 @@ ul {
 .goals-box li,
 .contrast-col li,
 .scope-box li,
-.scope-item,
 .pricing-card .price-detail,
 .pricing-note,
 .contact-footer,
@@ -175,7 +171,6 @@ ul {
 .pricing-section h3,
 .scope-box h3,
 .cover-box h3,
-.prereq-box h3,
 .goals-box h3,
 .proof-box h3,
 .facts dt,
@@ -354,16 +349,11 @@ ul {
 .facts .key-row dd.price-value {
   color: var(--color-teal);
 }
-.facts .key-row .price-cap,
-.facts .key-row .price-day3 {
+.facts .key-row .price-cap {
   display: block;
   font: var(--op-small);
   font-weight: 600;
   color: var(--color-teal-dark);
-}
-.facts .key-row .price-day3 {
-  font-weight: 400;
-  color: var(--color-ink);
 }
 
 /* With a key card the box is one card: format, group and price with their terms on its teal
@@ -378,10 +368,6 @@ ul {
   background: var(--teal-soft);
   border-bottom: var(--print-rule) solid var(--teal-line);
   padding: 10px var(--card-pad) 4px;
-}
-.facts-key .key-row .price-day3 {
-  white-space: normal;
-  contain: inline-size;
 }
 .facts-key .key-row dd {
   text-wrap: balance;
@@ -439,17 +425,6 @@ ul {
   text-decoration: none;
 }
 
-.section-head {
-  color: var(--color-teal-dark);
-  margin-bottom: 8px;
-  break-after: avoid;
-}
-
-.section-lead {
-  color: var(--color-muted);
-  margin: -4px 0 8px;
-}
-
 .module-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -505,7 +480,6 @@ ul {
 /* ── Callout: document.css .callout, the twin of InShort.astro: a teal rule on the left of
    a teal/5 tint with the brand corner, a caps label, the text in weight 500 ── */
 .deliverable-banner,
-.prereq-box,
 .cover-box,
 .goals-box,
 .proof-box,
@@ -519,7 +493,6 @@ ul {
 }
 
 .deliverable-banner h3,
-.prereq-box h3,
 .cover-box h3,
 .goals-box h3,
 .proof-box h3,
@@ -549,18 +522,11 @@ ul {
 }
 
 .deliverable-banner p,
-.prereq-box p,
 .proof-box p,
 .scope-box p,
 .goals-lead {
   font-weight: 500;
   color: var(--color-ink);
-}
-
-.scope-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 20px;
 }
 
 .goals-columns {
@@ -698,10 +664,6 @@ ul {
   display: block;
   margin-top: 4px;
   font-style: normal;
-}
-
-.section-divider {
-  display: none;
 }
 
 .community-box,
@@ -937,12 +899,10 @@ body.tight .format-box p,
 body.tight .community-box p,
 body.tight .funding-box p,
 body.tight .deliverable-banner p,
-body.tight .prereq-box p,
 body.tight .testimonial p {
   font: var(--op-small);
 }
 body.tight .deliverable-banner p,
-body.tight .prereq-box p,
 body.tight .testimonial p {
   font-weight: 500;
 }

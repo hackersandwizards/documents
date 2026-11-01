@@ -49,7 +49,7 @@ real name the rules cannot see fails there; those names never enter this repo.
   open from disk after `bun install`.
 
 A consumer reaches the engine through `exports` (`./document.css`, `./onepager.css`,
-`./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`) and the `documents-compose` command, run as `bun run documents-compose`. Every other
+`./handout.css`, `./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`) and the `documents-compose` and `documents-privacy` commands, run as `bun run <command>`. Every other
 path is internal. Renaming a command, changing its arguments or moving an exported file breaks
 consumers: the release commit names it and every consumer follows in the same pass. Astro and Vite
 are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the components from

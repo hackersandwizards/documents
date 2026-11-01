@@ -12,7 +12,17 @@ import { join, relative, resolve } from "node:path";
 import * as samples from "./samples";
 
 const ROOT = resolve(import.meta.dir, "..");
-const SCANNED = ["components", "scripts", "test", "specimen", "document.css", "README.md"];
+const SCANNED = [
+  "components",
+  "scripts",
+  "test",
+  "specimen",
+  "document.css",
+  "onepager.css",
+  "handout.css",
+  "README.md",
+  "CLAUDE.md",
+];
 
 const MAIL_DOMAINS = /^(hackersandwizards\.dev|example\.(com|org|net|de))$/i;
 const STREETS = new Set(["Osterstraße 95", "Beispielweg 12", "Example Road 12"]);
@@ -24,16 +34,22 @@ const INVENTED = new Set(
 );
 // The props naming a person or a client.
 const PERSON_KEYS =
-  /^(personName|recipientName|recipientFirstName|attendeeName|attendeeCompany|employee|contact|company|client|clientShort)$/;
+  /^(personName|recipientName|recipientFirstName|attendeeName|attendeeCompany|employee|contact|company|client|clientShort|customerName)$/;
 
 const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boolean }[] = [
-  { what: "a euro figure that is not a placeholder", pattern: /\d[\d.,]*\s?(€|EUR\b)|€\s?\d/g },
+  {
+    what: "a euro figure that is not a placeholder",
+    pattern: /\d[\d.,]*(?:,-)?\s?(€|EUR\b|Euro\b)|(€|EUR)\s?\d/gi,
+  },
   {
     what: "a mail address outside the example domains and ours",
     pattern: /[\w.+-]+@((?:[\w-]+\.)+[a-z]{2,})/gi,
     allowed: (m) => MAIL_DOMAINS.test(m.split("@")[1]),
   },
-  { what: "a phone number", pattern: /(?<!\w)\+\d{2}[\s/-]?\(?0?\d{2,5}\)?[\s/-]?\d{3,}/g },
+  {
+    what: "a phone number",
+    pattern: /(?<!\w)\+\d{2}[\s/-]?\(?0?\d{2,5}\)?[\s/-]?\d{3,}|(?<![\w.,])0\d{2,4}[\s/-]?\d{5,}/g,
+  },
   { what: "an IBAN", pattern: /\b[A-Z]{2}\d{2}(?: ?[A-Z\d]{4}){3,}/g },
   {
     what: "a street address",
