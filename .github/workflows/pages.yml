@@ -34,7 +34,7 @@ jobs:
           cp -R specimen _site/
           cp -RL "$brand/tokens" "$brand/generated" "$brand/expert" "_site/$brand/"
           cp "$brand"/logos/*.svg "$brand/logos/favicon.ico" "_site/$brand/logos/"
-          echo '<!doctype html><meta http-equiv="refresh" content="0; url=specimen/">' > _site/index.html
+          echo '<!doctype html><link rel="icon" href="node_modules/@hackersandwizards/brand/logos/favicon.svg"><meta http-equiv="refresh" content="0; url=specimen/">' > _site/index.html
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site
