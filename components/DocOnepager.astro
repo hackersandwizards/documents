@@ -1,0 +1,21 @@
+---
+// The training-offering onepager: DocHeader with the website's address as its linked tag, then the
+// body. The body is HTML in the blocks onepager.css styles (hero, facts, module-grid, deliverable
+// banner, planning, testimonial, references, closing; the specimen shows each). Every card is a
+// `<div class="card">`, plus `tint` for its tinted surface, which composeOnepager
+// (scripts/onepager.ts) gives DocCard's tag. Compose it with composeOnepager, never composePage:
+// the onepager sits on its own stylesheet, not the whole document base.
+import DocHeader from "./DocHeader.astro";
+
+interface Props {
+  lang: "de" | "en";
+  /** The body: the blocks after the header, as HTML. */
+  html: string;
+}
+const { lang, html } = Astro.props;
+---
+
+<div class="page">
+  <DocHeader kind="hackersandwizards.dev" href="https://hackersandwizards.dev" lang={lang} />
+  <Fragment set:html={html} />
+</div>

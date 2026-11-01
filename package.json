@@ -16,7 +16,9 @@
     "./document.css": "./document.css",
     "./components/*": "./components/*",
     "./compose": "./scripts/compose.ts",
-    "./render-pdf": "./scripts/render-pdf.ts"
+    "./render-pdf": "./scripts/render-pdf.ts",
+    "./onepager": "./scripts/onepager.ts",
+    "./onepager.css": "./onepager.css"
   },
   "bin": {
     "documents-compose": "scripts/compose.ts",
@@ -24,7 +26,9 @@
   },
   "files": [
     "document.css",
+    "onepager.css",
     "components",
+    "scripts/onepager.ts",
     "scripts/compose.ts",
     "scripts/render-pdf.ts",
     "scripts/privacy.ts",

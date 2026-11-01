@@ -33,7 +33,7 @@ const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boole
     pattern: /[\w.+-]+@((?:[\w-]+\.)+[a-z]{2,})/gi,
     allowed: (m) => MAIL_DOMAINS.test(m.split("@")[1]),
   },
-  { what: "a phone number", pattern: /\+\d{2}[\s/-]?\(?0?\d{2,5}\)?[\s/-]?\d{3,}/g },
+  { what: "a phone number", pattern: /(?<!\w)\+\d{2}[\s/-]?\(?0?\d{2,5}\)?[\s/-]?\d{3,}/g },
   { what: "an IBAN", pattern: /\b[A-Z]{2}\d{2}(?: ?[A-Z\d]{4}){3,}/g },
   {
     what: "a street address",

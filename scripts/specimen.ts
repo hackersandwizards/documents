@@ -5,6 +5,7 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composePage, escapeHtml, openComposer } from "./compose";
+import { composeOnepager } from "./onepager";
 import * as s from "./samples";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -58,6 +59,13 @@ const PAGES: { file: string; title: string; component: string; props: object; pa
     title: "Zertifikat",
     component: "DocCertificate",
     props: { ...s.certificate, lang: "de", title: "Zertifikat Agentic Engineering Training" },
+  },
+  {
+    file: "onepager",
+    pages: 2,
+    title: "Onepager",
+    component: "DocOnepager",
+    props: s.onepager,
   },
   {
     file: "dokument",
@@ -151,12 +159,14 @@ export async function buildSpecimen(): Promise<Map<string, string>> {
     try {
       files.set(
         `${page.file}.html`,
-        await composePage(
-          composer,
-          page.component,
-          page.props as Record<string, unknown>,
-          specimenBase,
-        ),
+        page.component === "DocOnepager"
+          ? await composeOnepager(composer, s.onepager, BRAND, true)
+          : await composePage(
+              composer,
+              page.component,
+              page.props as Record<string, unknown>,
+              specimenBase,
+            ),
       );
     } finally {
       await composer.close();

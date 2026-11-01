@@ -287,3 +287,95 @@ export const proseHtml = `<span class="eyebrow">Interne Notiz</span>
 <table><thead><tr><th>Spalte</th><th>Wert</th></tr></thead><tbody><tr><td>A</td><td>1</td></tr></tbody></table>
 <blockquote><p>Ein Zitat.</p></blockquote>
 <pre><code>$ bun run check</code></pre>`;
+
+/** A training-offering onepager: an invented offering, placeholder prices, an invented testimonial,
+ * no client marks. Each block onepager.css styles once. */
+export const onepager = {
+  lang: "de" as const,
+  title: "Beispieltraining: Agenten im Teamalltag",
+  html: `<header class="hero">
+  <p class="claim">Ein Satz, der das Versprechen des Angebots trägt.</p>
+  <h1 class="document-title">Beispieltraining: Agenten im Teamalltag</h1>
+  <p class="intro">Zwei bis drei Sätze, für wen das Angebot ist und was sich nach ihm ändert. Der Text steht hier als Muster und beschreibt kein echtes Angebot.</p>
+</header>
+<div class="card tint facts">
+  <div class="facts-key">
+    <dl class="key-row">
+      <div class="wide"><dt>Für wen</dt><dd>Teams, die mit Coding-Agenten anfangen</dd></div>
+      <div><dt>Format</dt><dd>Zwei Tage, remote oder vor Ort</dd></div>
+      <div><dt>Gruppe</dt><dd>8 bis 12 Teilnehmende</dd></div>
+      <div><dt>Preis</dt><dd class="price-value">X.XXX € pro Person<span class="price-cap">höchstens XX.XXX € pro Team</span></dd></div>
+    </dl>
+    <p class="price-terms"><span class="price-note">Netto zzgl. USt. Jeder Betrag in diesem Muster ist ein Platzhalter.</span></p>
+  </div>
+  <dl class="details">
+    <div><dt>Voraussetzung</dt><dd>Erste Erfahrung mit einem Coding-Agenten</dd></div>
+    <div><dt>Hands-on</dt><dd>Übungen auf einer Beispiel-Codebasis</dd></div>
+    <div><dt>Zuschnitt</dt><dd>Im Vorgespräch auf das Team</dd></div>
+    <div><dt>Sprache</dt><dd>Deutsch oder Englisch</dd></div>
+    <div><dt>Abschluss</dt><dd>Teilnahmezertifikat</dd></div>
+    <div><dt>Einkauf und Recht</dt><dd><a class="url" href="https://example.com/einkauf">Vertrag und NDA</a></dd></div>
+  </dl>
+</div>
+<div class="deliverable-banner">
+  <h3>Was euer Team mitnimmt</h3>
+  <ul>
+    <li>Ein erster Workflow, den das Team selbst trägt</li>
+    <li>Das Handout zum Training</li>
+  </ul>
+</div>
+<div class="mentoring-section">
+  <h2>Mentoring nach dem Training</h2>
+  <p class="mentoring-why">Separat zu XXX € pro Stunde. Ein Absatz, wie die Begleitung nach dem Training läuft.</p>
+</div>
+<div class="module-grid">
+  <div class="card module">
+    <h3>Tag 1</h3>
+    <h4>Grundlagen und erste Übungen</h4>
+    <ul>
+      <li><strong>Einstieg:</strong> was ein Agent im Alltag übernimmt</li>
+      <li><strong>Spezifikation:</strong> die Aufgabe so stellen, dass sie prüfbar ist</li>
+      <li><strong>Tests zuerst:</strong> der Agent arbeitet gegen ein Ziel</li>
+    </ul>
+  </div>
+  <div class="card module">
+    <h3>Tag 2</h3>
+    <h4>Review und eigene Vorhaben</h4>
+    <ul>
+      <li><strong>Review:</strong> Ergebnisse des Agenten prüfen</li>
+      <li><strong>Regeln:</strong> was das Team festhält</li>
+      <li><strong>Eigene Vorhaben:</strong> echte Arbeit aus dem Backlog</li>
+    </ul>
+  </div>
+</div>
+<p class="path-note"><strong>Ein Hinweis zwischen den Blöcken:</strong> ein Satz, der eine Frage vorwegnimmt.</p>
+<div class="planning">
+  <h3>Gut zu wissen</h3>
+  <dl>
+    <div><dt>Tageszeiten</dt><dd>Nach Absprache</dd></div>
+    <div><dt>Vorlauf</dt><dd>Nach Absprache</dd></div>
+    <div><dt>Mehrere Teams</dt><dd>Team für Team in Wellen</dd></div>
+    <div><dt>Absage</dt><dd>Wie im Angebot vereinbart</dd></div>
+  </dl>
+</div>
+<div class="testimonial">
+  <p>„Ein erfundenes Zitat, ein bis zwei Sätze lang, wie es eine Teilnehmerin nach dem Training sagen könnte.“</p>
+  <cite>Mara Beispiel, Engineering Lead, Musterwerk AG</cite>
+</div>
+<div class="references">
+  <p class="references-lead"><strong>Über den Anbieter</strong> Zwei Sätze über den Anbieter stehen hier als Platzhalter.</p>
+</div>
+<div class="closing">
+  <div class="contact-footer">
+    <div>
+      <h2>Dieses Training für euer Team?</h2>
+      <p>Erzählt uns von eurem Team, und wir schicken euch ein Angebot.</p>
+    </div>
+    <div class="cta-links">
+      <a href="mailto:summon@hackersandwizards.dev">summon@hackersandwizards.dev</a><br />
+      <a class="button" href="https://example.com/call">Gespräch buchen</a>
+    </div>
+  </div>
+  <p class="legal">hackers&amp;wizards GmbH · Osterstraße 95 · 20259 Hamburg · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
+</div>`,
+};

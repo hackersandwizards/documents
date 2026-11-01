@@ -15,8 +15,10 @@ interface Props {
   meta?: string[];
   /** The imprint's language. */
   lang?: "de" | "en";
+  /** Sets the tag as a link to this address, such as the website the tag names. */
+  href?: string;
 }
-const { kind, legal = false, imprint = legal, meta = [], lang = "de" } = Astro.props;
+const { kind, legal = false, imprint = legal, meta = [], lang = "de", href } = Astro.props;
 const imprintLines = {
   de: [
     "Geschäftsführer: Benedikt Stemmildt & Stefan Munz",
@@ -52,7 +54,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
       )}
   </div>
   <div class="doc-meta">
-    <span class="doc-tag">{kind}</span>
+    <span class="doc-tag">{href ? <a href={href}>{kind}</a> : kind}</span>
     {meta.map((line) => (
       <>
         <br />
