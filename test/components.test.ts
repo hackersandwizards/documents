@@ -51,6 +51,7 @@ const props: Record<string, Record<string, unknown>> = {
   },
   DocClosing: { text: P, signOff: P, name: P },
   DocConfirmation: { label: P, text: P, line: P },
+  DocHandout: { label: P, subtitle: P, chapters: [{ title: P, html: `<p>${P}</p>` }] },
   DocHeader: { kind: P, legal: true },
   DocLead: {},
   DocLeistungsnachweis: {

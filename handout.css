@@ -1,0 +1,235 @@
+/* The printed training handout (DocHandout): the document base plus the one layout only a handout
+   has, margin notes set into the text, the cover with its contents and the chapter openings. Every
+   text takes a type role from the base. The base's brand tokens.css holds an @theme block: a
+   consumer compiles it, as the trainer hub does with Tailwind's theme layer imported ahead of this
+   file. */
+@import "./document.css";
+/* The base draws the gradient rail from page 2. 4 mm more top margin than the base's 14 mm, so
+   the running header stands apart from the text under it: at 14 mm, reviewers read a page's
+   first heading as its header. */
+@page {
+  margin-top: 18mm;
+}
+
+/* The text runs the full page width: paper has no sidebar, and a gutter kept free for notes
+   stood empty on every page without one. */
+:root {
+  --note-width: 46mm;
+  --note-gap: 6mm;
+  /* The handout is read as a PDF on a laptop or an iPad, never printed: on an 11-inch iPad in
+     portrait an A4 page shows at 1.4 times, so 10pt body text reads as 14px. One point more on
+     the text roles brings it to 15px and a full-width line under 90 characters. */
+  --type-body-size: 11pt;
+  --type-small-size: 10pt;
+  --type-code-size: 10pt;
+  --type-label-size: 9pt;
+}
+
+/* A chapter opens a page, so a participant finds it by flicking. The exporter lets a chapter run
+   on under the one before where a page would otherwise stay more than half empty, and the notes
+   where enough lines fit. Blind A/B, 28.10.2026: five of six reviewers preferred this to chapters
+   that all run on. */
+section {
+  counter-increment: chapter;
+  break-before: page;
+}
+
+section.flow {
+  break-before: auto;
+  margin-top: 12mm;
+}
+
+/* A heading, and a sentence leading into code, stay with the block they introduce, and a table
+   or a code block stays whole where it fits a page: a participant copies from it. */
+section :is(h1, h2, h3) + *,
+section :is(p, li) + pre {
+  break-before: avoid;
+}
+
+section h1,
+section table {
+  break-inside: avoid;
+}
+
+/* Code takes the full width, below any note still running beside the text above it. */
+section pre {
+  clear: right;
+}
+
+/* A code line too long for the block wraps under a hanging indent, so its continuation never
+   reads as a line of its own, and inline code stays on one line, so --body-file never splits
+   after its dashes. */
+pre.astro-code .line {
+  display: inline-block;
+  width: 100%;
+  padding-left: 4ch;
+  text-indent: -4ch;
+}
+
+:not(pre) > code {
+  white-space: nowrap;
+}
+
+/* Chrome tags a heading that a page break moves with a second, empty fragment on the page before,
+   and the PDF bookmark then repeats its title. Containing its paint keeps the heading in one
+   fragment. */
+section :is(h2, h3) {
+  contain: paint;
+}
+
+/* Every chapter opens under an eyebrow carrying its number. */
+section h1::before {
+  content: "Chapter " counter(chapter, decimal-leading-zero);
+  display: block;
+  margin-bottom: 2mm;
+  font: var(--role-label);
+  letter-spacing: var(--type-label-tracking);
+  text-transform: var(--type-label-case);
+  color: var(--teal);
+}
+
+/* A chapter title closes on a short brand gradient bar, not a grey rule: a grey rule read as one
+   more table line, or on the notes page as the first writing line. Blind A/B, 28.10.2026: three
+   of four reviewers preferred the bar. */
+section h1 {
+  margin-bottom: 5mm;
+}
+
+section h1::after {
+  content: "";
+  display: block;
+  width: 24mm;
+  height: var(--print-rule-strong);
+  margin-top: 3mm;
+  background: var(--gradient);
+}
+
+/* A section heading starts below a note still running beside the text above it, so it never
+   shares a line with an earlier section's note. */
+section :is(h2, h3) {
+  clear: right;
+}
+
+/* A chapter is one step down the base's scale: its sections take the h3 role, their parts h4. */
+section h2 {
+  margin: 6mm 0 2mm;
+  font: var(--role-h3);
+  letter-spacing: var(--type-h3-tracking);
+  color: var(--ink);
+}
+
+section h3 {
+  margin: 4mm 0 1.5mm;
+  font: var(--role-h4);
+  letter-spacing: var(--type-h4-tracking);
+  color: var(--ink);
+}
+
+/* A margin note sits at the right edge, level with the paragraph it precedes, and the text wraps
+   beside it, so the width it takes exists only where a note does. A note below an earlier,
+   longer one starts under it rather than on top of it. */
+.margin-note {
+  float: right;
+  clear: right;
+  width: var(--note-width);
+  margin: 0 0 3mm var(--note-gap);
+  padding-left: 3mm;
+  border-left: 3px solid var(--purple);
+  font: var(--role-small);
+  color: var(--muted);
+  break-inside: avoid;
+}
+
+/* Every table takes the full width. A note introducing a table, directly or after the one line
+   leading into it, stands above it instead of beside it, so no table narrows to two thirds. */
+.margin-note:is(:has(+ table), :has(+ p + table)) {
+  float: none;
+  width: auto;
+  margin: 0 0 3mm;
+}
+
+.margin-note strong {
+  color: var(--ink);
+}
+
+/* The key point of a section: the base's note, under the handout's own class name, with the
+   brand corner. Its own block formatting context keeps the tint beside a note, not under it. */
+.keybox {
+  display: flow-root;
+  margin: 3mm 0;
+  padding: 4mm 5mm;
+  border-left: 3px solid var(--teal);
+  border-radius: var(--radius);
+  background: var(--teal-soft);
+  break-inside: avoid;
+}
+
+.keybox > :last-child {
+  margin-bottom: 0;
+}
+
+/* The ruled notes page: DocHandout draws as many lines as the page asks for (data-lines,
+   28 by default, which fit the one page under the chapter title at an 8 mm pitch) as real
+   rules. A tiled background drew them unevenly in Chrome's PDF, with a faint extra rule under
+   the heading. */
+.note-lines > span {
+  display: block;
+  height: 8mm;
+  border-bottom: var(--print-rule) solid var(--line);
+}
+
+/* The cover: the brand header, the title block, the recipient card and the contents. */
+.cover {
+  break-after: page;
+}
+
+.cover .title {
+  margin-top: 24mm;
+}
+
+.cover .prepared {
+  width: 80mm;
+  margin-top: 8mm;
+}
+
+/* The contents, numbered as the chapter eyebrows are. */
+.toc {
+  margin-top: 10mm;
+  counter-reset: entry;
+}
+
+.toc ol {
+  padding: 0;
+  list-style: none;
+}
+
+.toc li {
+  display: flex;
+  gap: 2mm;
+  padding: 1mm 0;
+  counter-increment: entry;
+  break-inside: avoid;
+}
+
+.toc a {
+  display: flex;
+  flex: 1;
+  gap: 2mm;
+  color: inherit;
+  text-decoration: none;
+}
+
+.toc .page {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.toc li::before {
+  content: counter(entry, decimal-leading-zero);
+  flex: none;
+  width: 7mm;
+  padding-top: 0.6mm;
+  font: var(--role-label);
+  letter-spacing: var(--type-label-tracking);
+  color: var(--teal);
+}

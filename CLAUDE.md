@@ -35,6 +35,10 @@ real name the rules cannot see fails there; those names never enter this repo.
   the font check `assertBrandFonts`.
 - `onepager.css` and `scripts/onepager.ts`: the training-offering onepager's own stylesheet and
   `composeOnepager`, which composes `DocOnepager` on it instead of the whole document base.
+- `handout.css` and `components/DocHandout.astro`: the printed training handout, the document base
+  plus its own layout (margin notes, cover with contents, chapter openings) and the script that
+  keeps headings with their blocks. The trainer hub keeps the chapters and the exporter that
+  measures a first render for the contents' page numbers, the chapters that run on and the notes.
 - `scripts/survey-readout.ts`: `composeSurveyReadout`, the attendee-feedback readout, seven
   1280x720 slides on the brand files alone, and its score bands (`bandColor`, `scalePosition`).
   A TypeScript module that writes one HTML string, not an Astro component, so the move from os

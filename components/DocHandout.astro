@@ -1,0 +1,166 @@
+---
+// The printed training handout: a cover with the header, the title, an optional recipient card and
+// the contents, then one section per chapter, each opening on its title. Its layout is handout.css
+// (exported as ./handout.css), which imports the document base. Chrome's own print pipeline
+// paginates it against the `@page` rule and draws the running header and footer in the page
+// margins. The consumer keeps the chapters and the exporter, which measures a first render for
+// `toc`, `notes` and `flow` and passes them on the next.
+import DocHeader from "./DocHeader.astro";
+import DocProse from "./DocProse.astro";
+import DocRecipient from "./DocRecipient.astro";
+import DocTitle from "./DocTitle.astro";
+
+interface Props {
+  /** The handout's name: the cover title and the running heads. */
+  label: string;
+  /** The document kind in the header tag and the running head. */
+  kind?: string;
+  subtitle: string;
+  /** Each chapter's title and its Markdown body as sanitized HTML. */
+  chapters: { title: string; html: string }[];
+  /** The cover's recipient card prints only where one of the two is given, the other as a
+   *  placeholder: a standard handout has no recipient. */
+  company?: string | null;
+  date?: string | null;
+  /** The page each chapter starts on, which the exporter measures on a first render. */
+  toc?: number[];
+  /** The ruled lines that fit on the last chapter's page; the notes then share that page instead
+   *  of taking one of their own. */
+  notes?: string;
+  /** The 1-based chapters, comma-separated, that run on under the one before instead of opening a
+   *  page. */
+  flow?: string;
+}
+const {
+  label,
+  kind = "Training Handout",
+  subtitle,
+  chapters,
+  company,
+  date,
+  toc = [],
+  notes,
+  flow,
+} = Astro.props;
+
+const htmlText = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/** The margin boxes take their text from CSS alone, so the label lands there as a CSS string.
+ *  This style follows the base's, and Chrome lets the later margin-box content win over the
+ *  base's `@page :first`, so the cover's running head is switched off again here: on the cover's
+ *  zero top margin it would print clipped, invisible but in the PDF's text. */
+const cssString = (text: string) => JSON.stringify(text).replace(/</g, "\\3C ");
+const pageCss = `@page { @top-left { content: "hackers&wizards"; } @top-right { content: ${cssString(
+  `${label}, ${kind}`,
+)}; } @bottom-left { content: ${cssString(`hackers&wizards, ${label}`)}; } }
+@page :first { @top-left { content: none; } @top-right { content: none; } }`;
+---
+
+<style is:inline set:html={pageCss}></style>
+<div class="cover">
+  <DocHeader kind={kind} />
+  <div class="title">
+    <DocTitle title={label} subtitle={subtitle} />
+  </div>
+  {(company || date) && (
+    <DocRecipient
+      label="For"
+      company={company ?? "[COMPANY]"}
+      lines={[]}
+      contact={{ label: "Training date", name: date ?? "[DATE]" }}
+    />
+  )}
+  <div class="toc">
+    <span class="label">Contents</span>
+    <ol>
+      {chapters.map((chapter, i) => (
+        <li>
+          <a href={`#chapter-${i + 1}`}>
+            <span>{chapter.title}</span>
+            {toc[i] > 0 && <span class="page">{toc[i]}</span>}
+          </a>
+        </li>
+      ))}
+    </ol>
+  </div>
+</div>
+
+{chapters.map((chapter, i) => (
+  <section id={`chapter-${i + 1}`}>
+    <DocProse html={`<h1>${htmlText(chapter.title)}</h1>\n${chapter.html}`} />
+  </section>
+))}
+
+<script is:inline data-notes={notes} data-flow={flow}>
+  const options = document.currentScript.dataset;
+  // The ruled notes page says how many lines it wants; each is a rule of its own.
+  const shared = options.notes;
+  document.querySelectorAll(".note-lines").forEach((el) => {
+    const lines = Number(shared || el.dataset.lines || 28);
+    el.append(...Array.from({ length: lines }, () => document.createElement("span")));
+    if (shared) el.closest("section").classList.add("flow");
+  });
+  const flow = (options.flow ?? "").split(",");
+  document.querySelectorAll("section").forEach((section, i) => {
+    if (flow.includes(String(i + 1))) section.classList.add("flow");
+  });
+  // A note closing a section floats beside nothing and would sit alone under the block it
+  // follows, so it moves up beside that block. A code block clears notes, so it stays put.
+  document.querySelectorAll(".doc-prose > .margin-note").forEach((note) => {
+    const prev = note.previousElementSibling;
+    const next = note.nextElementSibling;
+    if ((!next || next.matches("h1, h2, h3")) && prev && !prev.matches("h1, h2, h3, pre"))
+      prev.before(note);
+  });
+  // The handout is read on screen, where a link is clicked rather than typed. A link whose
+  // text is its own address shows it without the scheme, breakable after a slash or dot.
+  document.querySelectorAll('section a[href^="http"]').forEach((link) => {
+    const bare = (url) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+    if (bare(link.textContent.trim()) !== bare(link.href)) return;
+    link.innerHTML = bare(link.textContent.trim())
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/([/._?#=]+)/g, "$1<wbr>");
+  });
+  // A sentence leading into a list stays on the page with it.
+  document.querySelectorAll(".doc-prose > p + :is(ul, ol)").forEach((list) => {
+    const group = document.createElement("div");
+    group.className = "keep";
+    list.previousElementSibling.before(group);
+    group.append(list.previousElementSibling, list);
+  });
+  // So does a sentence ending in a colon that introduces a quoted example, and examples
+  // introduced one after another stay on one page, so a pair can be compared.
+  document.querySelectorAll(".doc-prose > p + blockquote").forEach((quote) => {
+    const lead = quote.previousElementSibling;
+    if (!lead.textContent.trim().endsWith(":")) return;
+    const prior = lead.previousElementSibling;
+    const group = prior?.matches(".example") ? prior : document.createElement("div");
+    if (group !== prior) {
+      group.className = "keep example";
+      lead.before(group);
+    }
+    group.append(lead, quote);
+  });
+  // Chrome strands a heading at a page foot when the block after it cannot break, whatever
+  // break-after says. So each heading goes into one unbreakable group with what it
+  // introduces: margin notes, then the next block, and a lead-in sentence's table or code.
+  document.querySelectorAll("section :is(h1, h2, h3)").forEach((heading) => {
+    const group = document.createElement("div");
+    group.className = "keep";
+    heading.before(group);
+    group.append(heading);
+    let next = group.nextElementSibling;
+    while (next?.matches(".margin-note")) next = (group.append(next), group.nextElementSibling);
+    if (!next || next.matches("h1, h2, h3")) return;
+    group.append(next);
+    const after = group.nextElementSibling;
+    if (next.matches("p") && after?.matches("table, pre, .astro-code")) group.append(after);
+  });
+  // A chapter opening also takes its first section's group, so a chapter title never ends a
+  // page with only its lead-in under it.
+  document.querySelectorAll(".doc-prose > .keep:first-child").forEach((opening) => {
+    const first = opening.nextElementSibling;
+    if (first?.matches(".keep")) opening.append(first);
+  });
+</script>

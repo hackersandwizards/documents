@@ -78,6 +78,13 @@ const PAGES: {
     props: s.onepager,
   },
   {
+    file: "handout",
+    pages: 4,
+    title: "Training Handout (English)",
+    component: "DocHandout",
+    props: { ...s.handout, lang: "en" },
+  },
+  {
     file: "vorbereitung",
     title: "Vorbereitung",
     component: "DocPreparation",
@@ -129,7 +136,10 @@ const PAGES: {
 const base = readFileSync(join(ROOT, "document.css"), "utf8")
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .replace(/^@import [^;]+;\n/gm, "");
-const specimenBase = (html: string) =>
+const handoutRules = readFileSync(join(ROOT, "handout.css"), "utf8")
+  .replace(/\/\*[\s\S]*?\*\//g, "")
+  .replace(/^@import [^;]+;\n/gm, "");
+const specimenBase = (html: string, extra = "") =>
   html.replace(
     "<style data-hw-document></style>",
     () =>
@@ -138,7 +148,7 @@ const specimenBase = (html: string) =>
 <link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/print.css" />
 <style data-hw-document>
-${base}
+${base}${extra}
 @media screen {
   html { background: var(--color-bg); }
   body { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; }
@@ -219,7 +229,10 @@ export async function buildSpecimen(): Promise<Map<string, string>> {
                 composer,
                 page.component!,
                 page.props as Record<string, unknown>,
-                specimenBase,
+                // The handout prints on handout.css, the document base plus its own layout.
+                page.component === "DocHandout"
+                  ? (html) => specimenBase(html, handoutRules)
+                  : specimenBase,
               ),
       );
     } finally {

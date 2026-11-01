@@ -491,3 +491,37 @@ export const trainerBriefingHtml = `<span class="eyebrow">Trainer Briefing</span
 <p><strong>Tools:</strong> the team's own coding agent<br /><strong>Level:</strong> first weeks with agents</p>
 <h2>Open Decisions</h2>
 <ul><li>Which repository the exercises use</li></ul>`;
+
+/** A training handout: an invented training, three chapters with each element a handout styles
+ * (margin note, key box, code, table, the ruled notes), the cover with a recipient. */
+export const handout = {
+  label: "Example Training: Agents in Team Practice",
+  subtitle: "What we covered, to look up again when you work with your agent.",
+  company: "Musterwerk AG",
+  date: "November 12, 2026",
+  toc: [2, 3, 4],
+  chapters: [
+    {
+      title: "How an Agent Works",
+      html: `<p>An invented chapter: an agent reads, plans, acts and checks, in a loop, until the task is done or it stops to ask.</p>
+<aside class="margin-note"><strong>Remember:</strong> the loop is only as good as the check that ends it.</aside>
+<p>Each turn the agent sees the files it opened, the commands it ran and what they printed. What it never saw, it cannot know.</p>
+<div class="keybox"><p><strong>Key point:</strong> give the agent a check it can run, and it corrects itself.</p></div>
+<h2>A first run</h2>
+<p>Start the agent in the project folder and ask it to explain the build:</p>
+<pre><code>$ agent "explain how this project builds and tests"</code></pre>`,
+    },
+    {
+      title: "Rules the Team Shares",
+      html: `<p>Rules written once apply to every session. Where they live decides who reads them.</p>
+<table><thead><tr><th>File</th><th>Read by</th></tr></thead><tbody><tr><td>Project rules</td><td>Every session in the repository</td></tr><tr><td>Personal rules</td><td>Your own sessions only</td></tr></tbody></table>
+<h2>Keep them short</h2>
+<p>A rule the agent follows without being told goes. A rule that names a measured number stays.</p>`,
+    },
+    {
+      title: "Notes",
+      html: `<p>Space for your own notes from the training.</p>
+<div class="note-lines" data-lines="12"></div>`,
+    },
+  ],
+};
