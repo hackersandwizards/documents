@@ -2,7 +2,7 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { linkSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { linkSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // Concurrent `bun run check` runs in one checkout corrupt each other: vitest workers spawn `bun`
@@ -21,8 +21,6 @@ const WAIT_MS = Number(process.env.CHECK_LOCK_WAIT_MS ?? 15 * 60 * 1000);
 if (!Number.isFinite(WAIT_MS)) throw new Error("CHECK_LOCK_WAIT_MS must be a number of ms");
 const POLL_MS = 2_000;
 const SPEAK_MS = 30_000;
-// A claim without a pid this old was left half-written by a waiter that died writing it.
-const CLAIM_STALE_MS = 60_000;
 
 interface Holder {
   pid: number;
@@ -90,31 +88,33 @@ function dropIfStale(): void {
   // holder is never reclaimed on age: a slow run under load outlasted any bound and a second check
   // ran beside it. A reused pid reads as live too, which ends in the wait timeout, not an overlap.
   if (holder && running(holder.pid)) return;
-  // Deleting by name after the read deleted a fresh lock another waiter wrote in between. The claim,
+  // Deleting by name after the read deleted a fresh lock another waiter wrote in between. A claim,
   // named for these exact contents, lets one waiter delete them, and while they sit at the lock path
   // no acquire can replace them, so the re-read under the claim stays true until the delete.
-  const claim = `${LOCK}.reclaim-${createHash("sha1").update(raw).digest("hex")}`;
-  if (!create(claim, String(process.pid))) {
-    // A waiter that died inside its claim left it behind, and every later waiter would back off
-    // from it until the wait ran out. A live claimant's claim stays however old: clearing it on age
-    // let a waiter paused after its re-read wake and delete the fresh lock another waiter had
-    // taken meanwhile. A reused pid reads as live, which ends in the wait timeout, not an overlap.
-    // Age only for a claim without a pid, half-written by an older copy of this script.
+  // A waiter that dies holding a claim must not block the rest, yet clearing a dead claim by name
+  // repeated the race one level down: two waiters saw the same dead claim, and the slower deleted
+  // the fresh claim the faster had just written. So no claim is deleted while these contents stand:
+  // claims are numbered, a dead one is passed over to the next number, and a live one ends the try.
+  const base = `${LOCK}.reclaim-${createHash("sha1").update(raw).digest("hex")}`;
+  let slot = 0;
+  while (!create(`${base}.${slot}`, String(process.pid))) {
+    let owner: number;
     try {
-      const owner = Number.parseInt(readFileSync(claim, "utf8"), 10);
-      const dead = Number.isInteger(owner)
-        ? !running(owner)
-        : Date.now() - statSync(claim).mtimeMs > CLAIM_STALE_MS;
-      if (dead) rmSync(claim, { force: true });
+      owner = Number.parseInt(readFileSync(`${base}.${slot}`, "utf8"), 10);
     } catch {
-      /* gone already, or unreadable: the next poll tries again */
+      return; // cleared by the waiter that reclaimed these contents: the next poll reads afresh
     }
-    return;
+    // create() writes the pid before the name appears, so a claim without one is no live waiter's.
+    // A reused pid reads as live, which ends in the wait timeout, not an overlap.
+    if (Number.isInteger(owner) && running(owner)) return;
+    slot++;
   }
   try {
     if (readLock() === raw) rmSync(LOCK, { force: true });
   } finally {
-    rmSync(claim, { force: true });
+    // These contents are gone from the lock path for good (each lock carries its pid and start), so
+    // no re-read under any of these claims can match again, and deleting them reopens nothing.
+    for (let k = slot; k >= 0; k--) rmSync(`${base}.${k}`, { force: true });
   }
 }
 

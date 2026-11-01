@@ -108,11 +108,14 @@ function stagedContent(path: string): Buffer {
   return shown.stdout;
 }
 
-// Prettier prints nothing for a file it has no parser for and echoes an ignored file unchanged. A
-// blank file it has a parser for formats to nothing as well, so a blank one asks which it is.
+// Output equal to the input is formatted, a blank file included. Otherwise prettier prints nothing
+// for a file it has no parser for, which passes, and also formats a whitespace-only file it can
+// parse to nothing, which fails, so a whitespace-only one asks which it is.
 async function prettierPasses(bin: string, path: string, input: Buffer, r: ToolRun) {
-  if (r.code || (r.stdout.length && !r.stdout.equals(input))) return false;
-  if (r.stdout.length || /\S/.test(`${input}`)) return true;
+  if (r.code) return false;
+  if (r.stdout.equals(input)) return true;
+  if (r.stdout.length) return false;
+  if (/\S/.test(`${input}`)) return true;
   const info = await runStagedTool(bin, ["--file-info", path]);
   return !info.code && JSON.parse(`${info.stdout}`).inferredParser === null;
 }

@@ -7,6 +7,8 @@
 // page that lists their repo; "Copy answers" puts them in one block for the chat.
 // Usage: bun hub.ts [--check [<repo> ...]]   --check validates the found lists (or the given repos),
 // exit 1 on a defect. The build prints defects, and while a list is unreadable exits 1 unwritten.
+// A check of given repos scans ~/dev for other lists' labels only where its own leave an area
+// unlabelled, and leaves a label conflict with another list to the build and the full check.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -60,8 +62,8 @@ function scanRepos() {
   }
   return [...byRemote.values()];
 }
-const scanned = scanRepos();
-const paths = checkOnly && args.length > 1 ? args.slice(1).map((p) => resolve(p)) : scanned;
+const named = checkOnly && args.length > 1;
+const paths = named ? args.slice(1).map((p) => resolve(p)) : scanRepos();
 
 type Option = { key: string; label: string; detail?: string };
 type Row = {
@@ -110,16 +112,11 @@ function readDecisionList(file: string) {
 // --check names every conflict, so no label depends on scan order unnoticed.
 const AREAS: Record<string, string> = {};
 const areaFrom: Record<string, string> = {};
+// Own keys only: `in` and plain indexing also find Object.prototype, so `area: "constructor"`
+// passed the check and rendered function source as its heading.
+const own = <T>(o: Record<string, T> | undefined, k: unknown) =>
+  o && Object.hasOwn(o, String(k)) ? o[String(k)] : undefined;
 let unreadable = 0;
-// Area labels are one vocabulary across the page, most defined in one list, so a check of some
-// repos still reads the labels of every scanned list; only a conflict with a checked list counts.
-for (const path of scanned.filter((p) => !paths.includes(p)))
-  try {
-    for (const [area, label] of Object.entries(readDecisionList(join(path, LIST)).areas))
-      if (!(area in AREAS)) [AREAS[area], areaFrom[area]] = [label, path];
-  } catch {
-    /* an unreadable list is that repo's own check's defect */
-  }
 for (const path of paths) {
   let repos, areas;
   try {
@@ -131,13 +128,26 @@ for (const path of paths) {
   }
   for (const [key, rows] of Object.entries(repos)) lists.push({ path, key, rows, areas });
   for (const [area, label] of Object.entries(areas)) {
-    if (!(area in AREAS)) [AREAS[area], areaFrom[area]] = [label, path];
+    if (!Object.hasOwn(AREAS, area)) [AREAS[area], areaFrom[area]] = [label, path];
     else if (AREAS[area] !== label)
       defects.push(
         `area ${area} labelled "${AREAS[area]}" in ${areaFrom[area]} and "${label}" in ${path}`,
       );
   }
 }
+// Area labels are one vocabulary across the page, most defined in one list, so a row of a given
+// repo may take its label from any other list.
+const unlabelled = lists.some(({ rows }) =>
+  rows.some((r) => r.area && own(AREAS, r.area) === undefined),
+);
+if (named && unlabelled)
+  for (const path of scanRepos().filter((p) => !paths.includes(p)))
+    try {
+      for (const [area, label] of Object.entries(readDecisionList(join(path, LIST)).areas))
+        if (!Object.hasOwn(AREAS, area)) AREAS[area] = label;
+    } catch {
+      /* an unreadable list is that repo's own check's defect */
+    }
 
 const REQUIRED = ["id", "title", "area", "priority", "order", "status", "context"];
 for (const { path, key, rows } of lists) {
@@ -147,7 +157,7 @@ for (const { path, key, rows } of lists) {
     for (const k of REQUIRED)
       if (r[k] === undefined || r[k] === "") defects.push(`${at} lacks ${k}`);
     if (seen.has(r.id)) defects.push(`${at} duplicate id`);
-    if (r.area && !(String(r.area) in AREAS))
+    if (r.area && own(AREAS, r.area) === undefined)
       defects.push(`${at} area ${r.area} has no label in any window.DECISION_AREAS`);
     seen.add(r.id);
     if (!["open", "assumed", "decided"].includes(r.status))
@@ -238,7 +248,7 @@ function rowHtml(list: List, r: Row, kind: string) {
   const k = `${list.key}:${r.id}`;
   const opts = r.options ?? [];
   const choice = (o: Option) => {
-    const img = r.images?.[o.key];
+    const img = own(r.images, o.key);
     return `<label class="opt${o.key === r.recommended ? " rec" : ""}">${img ? `<a class="pic" href="${hubEscape(fileHref(list.path, img))}" target="_blank"><img loading="lazy" src="${hubEscape(fileHref(list.path, img))}" alt="${hubEscape(o.label)}"></a>` : ""}<span class="choice"><input type="radio" name="${hubEscape(k)}" value="${hubEscape(o.key)}"> <span>${o.key === r.recommended ? '<span class="tag">Recommended</span> ' : ""}<b>${hubEscape(o.label)}</b>${o.detail ? ` <span class="note">${hubEscape(o.detail)}</span>` : ""}</span></span></label>`;
   };
   return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(rowOwner(r))}" data-kind="${kind}"><summary><span class="p p${hubEscape(r.priority)}">P${hubEscape(r.priority)}</span><span class="t">${hubEscape(r.title)} <small>${hubEscape(list.key)}</small></span><span class="mark"></span></summary>
@@ -250,12 +260,15 @@ function rowHtml(list: List, r: Row, kind: string) {
 <p class="row-foot">${r.recommended ? `<button type="button" class="ghost pick" data-v="${hubEscape(r.recommended)}">Pick recommended</button> ` : ""}<button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 // A GOAL row is keyed by its first 60 characters, so an edit further on keeps its saved answer, and
-// by its whole text where another row of its list starts the same, so the two never share one.
+// by its whole text where another row of its list starts the same, so the two never share one. The
+// page carries both forms (data-cut, data-full), so an answer saved under the other moves over.
 const goalText = (t: Task) => t.point.replace(/\s+/g, " ");
+const goalCut = (t: Task) => `${t.list.key}:GOAL ${goalText(t).slice(0, 60)}`;
+const goalFull = (t: Task) => `${t.list.key}:GOAL ${goalText(t)}`;
 const goalKey = (t: Task) => {
   const start = goalText(t).slice(0, 60);
   const shared = tasks.some((o) => o !== t && o.list === t.list && goalText(o).startsWith(start));
-  return `${t.list.key}:GOAL ${shared ? goalText(t) : start}`;
+  return shared ? goalFull(t) : goalCut(t);
 };
 // The day as decision rows write it ("3 Nov"), with the year only where it is not this one.
 const day = (iso: string) =>
@@ -267,7 +280,7 @@ const day = (iso: string) =>
   });
 function taskHtml(t: Task) {
   const k = goalKey(t);
-  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">due ${day(t.due)}</span>` : ""}<span class="mark"></span></summary>
+  return `<details class="item" data-k="${hubEscape(k)}" data-cut="${hubEscape(goalCut(t))}" data-full="${hubEscape(goalFull(t))}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">due ${day(t.due)}</span>` : ""}<span class="mark"></span></summary>
 <div class="body"><p>${linkPaths(t.list.path, t.point)}</p><p><b>Who:</b> ${hubEscape(t.actor)}</p>${t.evidence ? `<p class="note"><b>Evidence:</b> ${linkPaths(t.list.path, t.evidence)}</p>` : ""}<label class="choice"><input type="checkbox" value="done"> done</label><label class="lbl" for="n-${hubEscape(k)}">Note</label><textarea id="n-${hubEscape(k)}"></textarea><p class="row-foot"><button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 
@@ -283,7 +296,7 @@ tasks.sort((a, b) => a.prio - b.prio || (a.due ?? "9").localeCompare(b.due ?? "9
 const areaLabel = ({ list, r }: { list: List; r: Row }) =>
   r.area === undefined || r.area === ""
     ? "Without area"
-    : (list.areas[String(r.area)] ?? AREAS[String(r.area)] ?? String(r.area));
+    : (own(list.areas, r.area) ?? own(AREAS, r.area) ?? String(r.area));
 const clustersHtml = (rows: { list: List; r: Row }[], kind: string) =>
   [...Map.groupBy(rows, areaLabel)]
     .map(
@@ -457,11 +470,24 @@ ${partHtml("assumptions", "Assumptions", "What agents decided on their own. No n
 <script>
 // Option labels per "repo:id", so the block names each choice.
 const IDS = ${JSON.stringify(ids).replace(/</g, "\\u003c")};
+const optLabel = (k, o) => (IDS[k] && Object.hasOwn(IDS[k], o) ? IDS[k][o] : "");
 const STORE = "stand-k6:";
 const read = (k) => { try { return JSON.parse(localStorage.getItem(STORE + k)) || null; } catch (e) { return null; } };
 const write = (k, v) => { try { v ? localStorage.setItem(STORE + k, JSON.stringify(v)) : localStorage.removeItem(STORE + k); return true; } catch (e) { return false; } };
 const items = [...document.querySelectorAll("details.item")];
 const known = new Set(items.map((d) => d.dataset.k));
+// A GOAL answer saved under the row's other key form (its whole text, or its first 60 characters,
+// since a sibling sharing that start came or went, or by an older page) moves to its key now: the
+// whole text first, then the cut, then, for a row no sibling shares its start with, the one
+// whole-text key starting with its cut.
+for (const d of items) {
+  const { k, cut, full } = d.dataset;
+  if (!full || read(k)) continue;
+  const orphans = Object.keys(localStorage).filter((s) => s.startsWith(STORE)).map((s) => s.slice(STORE.length)).filter((s) => !known.has(s));
+  const longer = k === cut && cut !== full ? orphans.filter((s) => s.startsWith(cut) && s !== cut) : [];
+  const old = [full, cut].find((s) => orphans.includes(s)) || (longer.length === 1 ? longer[0] : "");
+  if (old && write(k, read(old))) localStorage.removeItem(STORE + old);
+}
 // An answer whose row left the page was carried out: drop it once copied. A repo missing from one
 // build says nothing about its rows, so its answers stay until 30 days after their last change.
 const REPOS = new Set(${JSON.stringify(lists.map((l) => l.key)).replace(/</g, "\\u003c")});
@@ -482,7 +508,7 @@ function load(d) {
   mark(d, a);
 }
 function mark(d, a) {
-  const label = a && (a.option ? (IDS[d.dataset.k] || {})[a.option] || a.option : a.done ? "done" : a.note ? "note" : "");
+  const label = a && (a.option ? optLabel(d.dataset.k, a.option) || a.option : a.done ? "done" : a.note ? "note" : "");
   d.querySelector(".mark").textContent = label ? "✓ " + label : "";
   d.querySelector(".saved").textContent = a ? "saved " + hhmm(a.at) : "";
 }
@@ -509,7 +535,7 @@ const answered = () => [...items.map((d) => d.dataset.k), ...kept].filter((k) =>
 function block() {
   const lines = answered().map((k) => {
     const a = read(k);
-    const choice = a.option ? a.option + " (" + ((IDS[k] || {})[a.option] || "") + ")" : a.done ? "done" : "";
+    const choice = a.option ? a.option + " (" + optLabel(k, a.option) + ")" : a.done ? "done" : "";
     return k + ": " + [choice, (a.note || "").replace(/\\s+/g, " "), known.has(k) ? "" : "(row not on this page)"].filter(Boolean).join(", ");
   });
   return lines.length ? "Answers from the page “What needs you”:\\n" + lines.join("\\n") : "";
