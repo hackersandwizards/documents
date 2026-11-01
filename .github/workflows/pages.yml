@@ -25,13 +25,15 @@ jobs:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun run specimen
-      # The pages load fonts and logos from ../node_modules/@hackersandwizards/brand, so the brand
-      # package goes beside specimen/ as in the checkout; the root forwards to the specimen as the
-      # local server does.
+      # The pages load the brand's tokens, fonts, header CSS and SVG logos from node_modules, so
+      # those go beside specimen/ as in the checkout, and nothing else of the brand package, whose
+      # Git install holds LFS pointers. The root forwards to the specimen as the local server does.
       - run: |
-          mkdir -p _site/node_modules/@hackersandwizards
+          brand=node_modules/@hackersandwizards/brand
+          mkdir -p "_site/$brand/logos"
           cp -R specimen _site/
-          cp -RL node_modules/@hackersandwizards/brand _site/node_modules/@hackersandwizards/
+          cp -RL "$brand/tokens" "$brand/generated" "$brand/expert" "_site/$brand/"
+          cp "$brand"/logos/*.svg "$brand/logos/favicon.ico" "_site/$brand/logos/"
           echo '<!doctype html><meta http-equiv="refresh" content="0; url=specimen/">' > _site/index.html
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
