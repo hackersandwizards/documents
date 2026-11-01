@@ -235,7 +235,7 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
 function slideShell(inner: string, kicker: string, page: number): string {
   return `<section class="slide">
     <div class="strip"></div>
-    <div class="sbody"><div class="kicker">${esc(kicker)}</div>${inner}</div>
+    <div class="sbody"><div class="kicker label-caps">${esc(kicker)}</div>${inner}</div>
     <footer class="chrome"><span class="page">${pad2(page)} / ${pad2(SLIDE_COUNT)}</span><!--WORDMARK--></footer>
   </section>`;
 }
@@ -468,7 +468,7 @@ __BRAND__
   .label-caps, .eyebrow, .gtitle { font-family:var(--type-label-family); font-weight:var(--type-label-weight); letter-spacing:var(--type-label-tracking); text-transform:var(--type-label-case); }
   /* The engine's title slide: centred, its subtitle, the short gradient rule below. */
   .center { align-items:center; justify-content:center; text-align:center; padding-bottom:5.5rem; }
-  .eyebrow { font-size:1.125rem; color:var(--color-purple); margin-bottom:1.5rem; }
+  .eyebrow { font-size:1.125rem; color:var(--color-teal); margin-bottom:1.5rem; }
   .subtitle { font-size:1.875rem; font-weight:500; color:var(--color-muted); margin-top:2rem; }
   .dates { font-size:1.375rem; color:var(--color-muted); margin-top:0.75rem; }
   .langnote { font-size:1.125rem; color:var(--color-muted); margin-top:2rem; }
