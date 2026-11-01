@@ -100,8 +100,9 @@ reader's own industry speaks stays English though German has a word for it: `Bot
 `Engpass`, `Backlog` over `Rückstand`.
 
 One exception: German prose in this field writes `AI`, not `KI`, in every compound (`AI-Adoption`,
-`AI-gestützte Entwicklung`). German website copy is the exception to the exception: it writes `KI`
-in titles, H1s and leads, because German search uses that word.
+`AI-gestützte Entwicklung`). German website copy and blog posts, the copy with SEO and GEO weight, are the exception to the
+exception: they may write `KI` for `AI`, because German search uses that word. Knowledge base pages
+keep `AI`.
 
 ## When the rule fights the meaning
 

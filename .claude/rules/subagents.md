@@ -25,6 +25,10 @@
   `parallel-session`.
 - Delegates in one session share its scratchpad. Prefix every scratch file with its run, and fetch
   into a directory named for the run, since a resume guard adopts files another run left.
+- A delegate never runs `rm`: bypass mode still prompts for an `rm` it cannot rule out, and a
+  background delegate's prompt lands on the person. It lists its scratch paths in its report, and
+  you delete them with literal absolute paths. While any delegate runs, never delete scratch by a
+  keep-list glob: a delegate's folder need not match the prefix you gave it.
 - Check that SendMessage is available before fanning out: a fan-out you cannot prod runs serially
   in your own context. Prod a quiet agent with SendMessage for its findings and do other work
   meanwhile. Never spawn a replacement for a silent agent, and never end a turn while a phase is

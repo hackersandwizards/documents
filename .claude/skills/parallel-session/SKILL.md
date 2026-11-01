@@ -41,7 +41,10 @@ rows plus the `open` and `assumed` rows in `items.js`. No third list exists.
    that is unknown or already decided. Check: `git diff` shows the row.
 3. A delegate's brief names the rows it owns by item or `id`, quotes the `items.js` row format, and
    says whether the delegate works in the shared checkout or a worktree. A delegate edits only
-   those rows. Each delegate gets one batch with its write paths and a completion check, and ends
+   those rows, as a patch against `git show HEAD:<items.js>` committed at once through a private
+   index (`GIT_INDEX_FILE=<tmp> git read-tree HEAD`, `git apply --cached`, a commit that runs the
+   hook), never by rewriting the working file: parallel writers empty it, and an uncommitted row
+   edit has no git copy. Each delegate gets one batch with its write paths and a completion check, and ends
    when that batch is committed. Further work goes to a fresh delegate briefed from paths, commits
    and open findings, never to a running one. A delegate messages only a result, a blocker or a
    question.
