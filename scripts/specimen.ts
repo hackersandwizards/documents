@@ -147,6 +147,7 @@ const specimenBase = (html: string, extra = "") =>
 <link rel="icon" href="${BRAND}/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/print.css" />
+<link rel="stylesheet" href="${BRAND}/tokens/marker.css" />
 <style data-hw-document>
 ${base}${extra}
 @media screen {

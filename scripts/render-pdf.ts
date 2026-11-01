@@ -179,9 +179,9 @@ export function documentCss(): string {
   return css;
 }
 
-/** The brand files alone, tokens plus print faces, for a layout that is not a document page, such as the survey deck. */
+/** The brand files alone, tokens, print faces and the list marker, for a layout that is not a document page, such as the survey deck. */
 export function brandCss(): string {
-  return ["tokens.css", "print.css"].map((f) => inlineCss(brandFile(f))).join("\n");
+  return ["tokens.css", "print.css", "marker.css"].map((f) => inlineCss(brandFile(f))).join("\n");
 }
 
 /** A file the brand package exports, such as `tokens.css`, as an absolute path. */

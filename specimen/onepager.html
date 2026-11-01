@@ -47,6 +47,12 @@
   /* The list marker and the section label's swatch: squares, as every mark too small for the
      brand corner at its full value (the website's patterns.css). */
   --print-bullet: 6pt;
+  /* Every list in a document takes the brand's marker (marker.css) at the print size. */
+  --hw-markers: on;
+  --hw-marker-size: var(--print-bullet);
+  --hw-marker-gap: 6pt;
+  --hw-marker-indent: 12.5pt;
+  --hw-marker-color: var(--teal);
   --print-swatch: 8pt;
   --print-row: 56pt;
   --print-logo: 28pt;
@@ -77,27 +83,101 @@
   --role-code: var(--type-code-weight) var(--type-code-size) / var(--type-code-line-height)
     var(--type-code-family);
 }
+/* The h&w list marker: a small square, as every mark too small for the brand corner, its middle on
+   the middle of the first line's x-height, where Inter centres its own bullet glyph. Drawn, not a
+   glyph, so every face and every renderer sets it alike. One rule for every surface; the brand's
+   `brand-markers` command measures it on a consumer's pages.
+
+   Two forms:
+   - A list: `--hw-markers: on` on any element marks every `ul > li` inside it. `.hw-marker-list`
+     sets it on one list. A loose Markdown item opens with a paragraph, which takes the marker.
+   - An element: `.hw-marker`, an empty box in a row aligned on the baseline (`align-items:
+     baseline`), as a card or a slide row draws it beside its text.
+
+   Settings, each on any element the marker inherits from:
+     --hw-marker-size    the square's side, 0.375rem (6px at 16px)
+     --hw-marker-gap     the space from the square to the text, 0.625rem
+     --hw-marker-indent  the item's start padding, size plus gap
+     --hw-marker-color   the square's colour, teal
+     --hw-marker-mid     the height of the square's middle above the baseline: 0.5ex, the x-height
+                         middle; 0.5cap beside capitals
+
+   Why it is built this way: Chrome paints boxes and text on whole CSS pixels (device pixels at a
+   device scale), each rounded on its own, screen and PDF alike. A marker placed a fractional
+   distance from the text lands up to a pixel off, differently from item to item. So the square
+   sits a whole number of pixels from the first line's baseline, which rounds it with the text, and
+   a transform, which Chrome does not round, moves it the rest of the way.
+
+   The list marker floats, so the whitespace a newline after <li> leaves (prettier-plugin-astro
+   writes one) starts the line and drops out; an inline-block kept it as a space and started the
+   first line 3.5 to 4.5px right of the wrapped ones. Its margins add up to no width, so no line
+   beside it is shortened. A float starts at the top of the line box, and --_hw-baseline is where
+   Chrome sets that line's baseline for the brand's Inter (ascent 0.96875em, descent 0.2421875em):
+   ascent and descent each rounded to the pixel, half the leading in Chrome's 1/64px layout units,
+   rounded down, above them. Another face needs its own two metrics.
+
+   Measured with brand-markers on the documents specimen at 4x and in its PDF at 600 dpi, every
+   item within 0.21px of the x-height middle (2026-11-01, documents v0.1.25, where this rule was
+   first written). The whole-pixel lift alone sat up to 0.56px off. */
+
+.hw-marker-list {
+  --hw-markers: on;
+  list-style: none;
+}
+
+@container style(--hw-markers: on) {
+  ul {
+    list-style: none;
+  }
+
+  ul > li {
+    padding-inline-start: var(
+      --hw-marker-indent,
+      calc(var(--hw-marker-size, 0.375rem) + var(--hw-marker-gap, 0.625rem))
+    );
+  }
+
+  ul > li::before,
+  ul > li > p:first-child::before {
+    --_hw-size: var(--hw-marker-size, 0.375rem);
+    --_hw-gap: var(--hw-marker-gap, 0.625rem);
+    --_hw-ascent: round(0.96875em, 1px);
+    --_hw-baseline: calc(
+      round(down, round((1lh - var(--_hw-ascent) - round(0.2421875em, 1px)) / 2, 1px / 64), 1px) +
+        var(--_hw-ascent)
+    );
+    --_hw-top: calc(var(--hw-marker-mid, 0.5ex) + var(--_hw-size) / 2);
+    content: "";
+    float: left;
+    width: var(--_hw-size);
+    height: var(--_hw-size);
+    margin: calc(var(--_hw-baseline) - round(var(--_hw-top), 1px)) var(--_hw-gap) 0
+      calc(-1 * (var(--_hw-size) + var(--_hw-gap)));
+    transform: translateY(calc(round(var(--_hw-top), 1px) - var(--_hw-top)));
+    background: var(--hw-marker-color, var(--color-teal));
+  }
+
+  ul > li:has(> p:first-child)::before {
+    content: none;
+  }
+}
+
+/* In a baseline-aligned row the box's bottom sits on the first line's baseline; it is lifted by
+   whole pixels and moved the rest of the way by a transform. */
+.hw-marker {
+  --_hw-size: var(--hw-marker-size, 0.375rem);
+  --_hw-lift: calc(var(--hw-marker-mid, 0.5ex) - var(--_hw-size) / 2);
+  flex-shrink: 0;
+  position: relative;
+  top: calc(-1 * round(var(--_hw-lift), 1px));
+  width: var(--_hw-size);
+  height: var(--_hw-size);
+  transform: translateY(calc(round(var(--_hw-lift), 1px) - var(--_hw-lift)));
+  background: var(--hw-marker-color, var(--color-teal));
+}
+
 ul li {
   padding: 1pt 0 1pt 12.5pt;
-}
-ul li::before,
-ul li > p:first-child::before {
-  --marker-ascent: round(0.96875em, 1px);
-  --marker-baseline: calc(
-    round(down, round((1lh - var(--marker-ascent) - round(0.2421875em, 1px)) / 2, 1px / 64), 1px) +
-      var(--marker-ascent)
-  );
-  --marker-top: calc(0.5ex + var(--print-bullet) / 2);
-  content: "";
-  float: left;
-  width: var(--print-bullet);
-  height: var(--print-bullet);
-  margin: calc(var(--marker-baseline) - round(var(--marker-top), 1px)) 6pt 0 -12pt;
-  transform: translateY(calc(round(var(--marker-top), 1px) - var(--marker-top)));
-  background: var(--teal);
-}
-ul li:has(> p:first-child)::before {
-  content: none;
 }
 .brand .brand-name .wordmark {
   width: auto;

@@ -25,8 +25,9 @@ real name the rules cannot see fails there; those names never enter this repo.
 
 ## Layout
 
-- `document.css`: the print base every document sits on. It imports the brand's tokens and print
-  faces from `@hackersandwizards/brand`, never a copy.
+- `document.css`: the print base every document sits on. It imports the brand's tokens, print
+  faces and list marker (`marker.css`, switched on with `--hw-markers: on` at the print size) from
+  `@hackersandwizards/brand`, never a copy.
 - `components/`: one component per document type or building block. A component imports only this
   repo's files and the brand package's exported files (`@hackersandwizards/brand/logos/...`), never
   an app path.
@@ -60,7 +61,7 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
 
 - `bun run check`: format, lint, typecheck, unique function names, tests (every component renders
   standalone, compose, the render and font checks, the certificate fit in Chrome, the base's class
-  list), the freshness of `specimen/` and a component no specimen page shows, the privacy check (`documents-privacy`), the brand colour scan
+  list), the freshness of `specimen/` and a component no specimen page shows, the brand's list-marker check on every specimen page with a list (`brand-markers`, `check:markers`), the privacy check (`documents-privacy`), the brand colour scan
   (`brand-colours.json` holds the exceptions). No hook runs it: `.githooks/pre-commit` runs
   `bun run check:staged`: `gitleaks` over the staged changes, `prettier --check` and `eslint` on
   the staged files. `bun install` points `core.hooksPath` at `.githooks/`.

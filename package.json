@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -44,7 +44,8 @@
   ],
   "scripts": {
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
-    "check": "bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun test && bun scripts/specimen.ts --check && bun scripts/privacy.ts && brand-colours",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun test && bun scripts/specimen.ts --check && bun run check:markers && bun scripts/privacy.ts && brand-colours",
+    "check:markers": "brand-markers specimen/angebot-ohne-preise.html specimen/angebot.html specimen/certificate.html specimen/delivery-briefing.html specimen/dokument.html specimen/honorarsaetze.html specimen/leistungsnachweis-pauschal.html specimen/onepager.html specimen/quote.html specimen/survey-readout.html specimen/trainer-briefing.html specimen/zertifikat.html",
     "lint": "bun --bun eslint --cache --concurrency=auto .",
     "typecheck": "bun --bun tsc --noEmit",
     "format": "bun --bun prettier --write .",
@@ -64,7 +65,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v0.21.6",
+    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v0.24.4",
     "@types/bun": "1.4.4",
     "astro": "7.4.4",
     "eslint": "10.14.0",

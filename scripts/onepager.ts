@@ -30,18 +30,10 @@ function baseCss(brand: string, link: boolean) {
           ),
         ]),
     rule(documentCss, /^:root \{[\s\S]*?^\}/m, ":root block holding the print scale"),
-    // Every h&w document draws the identical list marker: the base's rule, never a copy.
+    // Every h&w document draws the identical list marker: the brand's rule, switched on in the
+    // :root block above, and the base's list indent, never a copy.
+    readFileSync(brandFile("marker.css"), "utf8"),
     rule(documentCss, /^ul li \{[\s\S]*?^\}/m, "`ul li` rule holding the list indent"),
-    rule(
-      documentCss,
-      /^ul li::before,[\s\S]*?^\}/m,
-      "`ul li::before` rule holding the list marker",
-    ),
-    rule(
-      documentCss,
-      /^ul li:has\([\s\S]*?^\}/m,
-      "`ul li:has()` rule moving the marker into a paragraph",
-    ),
     // DocHeader sets its wordmark as HTML, outside its scoped styles: the base's rule sizes it.
     rule(documentCss, /^\.brand \.brand-name \.wordmark \{[\s\S]*?^\}/m, "wordmark rule"),
   ].join("\n");

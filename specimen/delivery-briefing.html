@@ -7,6 +7,7 @@
 <link rel="icon" href="../node_modules/@hackersandwizards/brand/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/generated/tokens.root.css" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/print.css" />
+<link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/marker.css" />
 <style data-hw-document>
 
 
@@ -41,6 +42,12 @@
   --print-chip-pad: 2pt 7pt;
   
   --print-bullet: 6pt;
+  
+  --hw-markers: on;
+  --hw-marker-size: var(--print-bullet);
+  --hw-marker-gap: 6pt;
+  --hw-marker-indent: 12.5pt;
+  --hw-marker-color: var(--teal);
   --print-swatch: 8pt;
   --print-row: 56pt;
   --print-logo: 28pt;
@@ -370,27 +377,6 @@ ul {
 
 ul li {
   padding: 1pt 0 1pt 12.5pt;
-}
-
-ul li::before,
-ul li > p:first-child::before {
-  --marker-ascent: round(0.96875em, 1px);
-  --marker-baseline: calc(
-    round(down, round((1lh - var(--marker-ascent) - round(0.2421875em, 1px)) / 2, 1px / 64), 1px) +
-      var(--marker-ascent)
-  );
-  --marker-top: calc(0.5ex + var(--print-bullet) / 2);
-  content: "";
-  float: left;
-  width: var(--print-bullet);
-  height: var(--print-bullet);
-  margin: calc(var(--marker-baseline) - round(var(--marker-top), 1px)) 6pt 0 -12pt;
-  transform: translateY(calc(round(var(--marker-top), 1px) - var(--marker-top)));
-  background: var(--teal);
-}
-
-ul li:has(> p:first-child)::before {
-  content: none;
 }
 
 ol {

@@ -15,6 +15,7 @@
 
 @import "@hackersandwizards/brand/tokens.css";
 @import "@hackersandwizards/brand/print.css";
+@import "@hackersandwizards/brand/marker.css";
 
 :root {
   --ink: var(--color-ink);
@@ -54,6 +55,12 @@
   /* The list marker and the section label's swatch: squares, as every mark too small for the
      brand corner at its full value (the website's patterns.css). */
   --print-bullet: 6pt;
+  /* Every list in a document takes the brand's marker (marker.css) at the print size. */
+  --hw-markers: on;
+  --hw-marker-size: var(--print-bullet);
+  --hw-marker-gap: 6pt;
+  --hw-marker-indent: 12.5pt;
+  --hw-marker-color: var(--teal);
   --print-swatch: 8pt;
   --print-row: 56pt;
   --print-logo: 28pt;
@@ -406,44 +413,11 @@ ul {
   list-style: none;
 }
 
-/* The marker floats, so the whitespace a newline after <li> leaves starts the line and drops out,
-   where an inline-block kept it as a space and put the first line 3.5px right of the wrapped ones;
-   its margins add up to no width, so no line beside it is shortened. Its middle sits on the middle
-   of the first line's x-height, half an ex above the baseline, where Inter centres its own bullet
-   glyph. Chrome paints boxes and text on whole CSS pixels, each rounded on its own, screen and PDF
-   alike, so the float sits a whole number of pixels from the baseline and rounds with the text,
-   and a transform, which Chrome does not round, moves it the rest of the way; a lift rounded to the
-   pixel alone sat up to 0.56px off. A float starts at the top of the line, and --marker-baseline is
-   where Chrome sets that line's baseline for the brand's Inter (ascent 0.96875em, descent
-   0.2421875em, which give the baselines Chrome set at 12.67, 13.33 and 16px): ascent and descent
-   each rounded to the pixel, half the leading, in Chrome's 1/64px layout units, rounded down
-   above them. Measured at 4x and in the PDF at 600 dpi on the specimen
-   pages, as composed and with a newline opening every item, every item within 0.21px of the
-   x-height middle (2026-11-01). A loose Markdown item opens with a paragraph, which takes the
-   marker instead. */
+/* The marker is the brand's (marker.css), set on :root above: a floated square on the middle of
+   the first line's x-height, whatever whitespace opens the item. Only the item's own rhythm stays
+   here. */
 ul li {
   padding: 1pt 0 1pt 12.5pt;
-}
-
-ul li::before,
-ul li > p:first-child::before {
-  --marker-ascent: round(0.96875em, 1px);
-  --marker-baseline: calc(
-    round(down, round((1lh - var(--marker-ascent) - round(0.2421875em, 1px)) / 2, 1px / 64), 1px) +
-      var(--marker-ascent)
-  );
-  --marker-top: calc(0.5ex + var(--print-bullet) / 2);
-  content: "";
-  float: left;
-  width: var(--print-bullet);
-  height: var(--print-bullet);
-  margin: calc(var(--marker-baseline) - round(var(--marker-top), 1px)) 6pt 0 -12pt;
-  transform: translateY(calc(round(var(--marker-top), 1px) - var(--marker-top)));
-  background: var(--teal);
-}
-
-ul li:has(> p:first-child)::before {
-  content: none;
 }
 
 ol {
