@@ -6,6 +6,10 @@ Run the repository's formatter on it as you write it, since an unformatted file 
 session's gate, and keep raw dumps and review rounds in the scratchpad. Commit it like any other change and give
 the reader its path. A page to view is an `.html` file opened from disk.
 
+Text written to go out in a mail, chat message or post lives only in its draft and the run's final
+message until it is sent, never in a second file in the repository. A record of what was sent is
+not such a file.
+
 Never publish one with the Artifact tool, never create one through the Claude Docs connector, and
 never upload one to claude.ai any other way. A request for an artifact, a doc, a page or a link to
 share gets the local file and its path. Reading a claude.ai link someone shares stays allowed.

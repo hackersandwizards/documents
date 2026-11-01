@@ -99,3 +99,5 @@ The file assigns `window.DECISION_REPOS["<repo>"] = [ ... ]`, optionally
 (required once `decided`), `detail`, `images` (option key to a repo-relative image path, one per
 option at most), `owner` (who answers; without it, Benedikt, so a row for Stefan sets
 `owner: "Stefan"`). `decided` means the person's own answer; a choice an agent made is `assumed`.
+Across the repos the hub page lists, the open rows fill every priority from 1 to 3. When a level
+empties, re-rank by what each row costs if missed and move the costliest rows up.

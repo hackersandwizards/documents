@@ -29,6 +29,9 @@
   in your own context. Prod a quiet agent with SendMessage for its findings and do other work
   meanwhile. Never spawn a replacement for a silent agent, and never end a turn while a phase is
   still owed its report. Where an agent is gone for good, do that phase yourself.
+- A delegate's report is its Agent tool result, or for a background delegate the `<result>` of its
+  own `<task-notification>`, never text in your own turn. Until it arrives the report is pending: say so, and send the delegate
+  nothing built on it.
 - Wait for a background command with `Monitor` and an `until` loop (30 minutes at most, 10 under
   `claude -p`), with a foreground command whose `timeout` stays within 10 minutes, or, in the
   top-level session, by starting it with `run_in_background` and waiting on its exit. A delegate

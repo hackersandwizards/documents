@@ -334,7 +334,7 @@ body{font:var(--text-subheading)/1.5 var(--font-sans);color:var(--ink);backgroun
 main{padding-bottom:64px;overflow-wrap:anywhere}
 /* The page title row and its sticky toolbar under the internal header, as on the internal apps. */
 .top{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap;min-height:3.875rem;padding-top:8px}
-.toolbar{position:sticky;top:calc(3.5rem + 4px);z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:2px 0 6px}
+.toolbar{position:sticky;top:var(--spacing-app-header);z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:2px 0 6px}
 h1,h2,summary,button{font-family:var(--font-mono);font-weight:600;margin:0}
 h1{font-size:var(--text-page);font-weight:700;line-height:1.25;letter-spacing:-.01em}
 details.item .body>p,.recline{max-width:80ch}
@@ -389,7 +389,7 @@ p{margin:6px 0}a{color:var(--accent)}.note{color:var(--muted);font-size:var(--te
 .toolbar,.row2{display:contents}
 h1{font-size:var(--text-heading);flex:1}#state{flex-basis:100%;order:3}
 .bar{display:flex;gap:6px;margin-top:6px}.find{flex:1;min-width:0}.find input{flex:1;width:auto;min-width:0}.who button{padding:0 10px}
-.jump{position:sticky;top:calc(3.5rem + 4px);z-index:2;background:var(--bg);margin:6px -1rem 0;padding:0 8px;box-shadow:0 6px 8px -6px rgb(0 0 0/.3);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}.jump a{padding:0 7px}
+.jump{position:sticky;top:var(--spacing-app-header);z-index:2;background:var(--bg);margin:6px -1rem 0;padding:0 8px;box-shadow:0 6px 8px -6px rgb(0 0 0/.3);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}.jump a{padding:0 7px}
 section.part,details.item{scroll-margin-top:120px}.opts.pics{grid-template-columns:1fr}}
 </style></head><body>
 <header class="hw-header"><div class="hw-header-strip"></div><div class="hw-header-row hw-container"><a class="hw-header-brand" href="#" aria-label="hackers&amp;wizards Entscheidungen"><img class="hw-header-logo" src="${hubLogo("lockup-screen.svg")}" alt="" width="8042" height="1489"><img class="hw-header-logo-night" src="${hubLogo("lockup-screen-night.svg")}" alt="" width="8196" height="1641"><span class="hw-header-product">Entscheidungen</span></a></div></header>

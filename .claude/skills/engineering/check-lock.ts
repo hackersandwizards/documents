@@ -2,7 +2,7 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { linkSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { linkSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // Concurrent `bun run check` runs in one checkout corrupt each other: vitest workers spawn `bun`
@@ -21,6 +21,8 @@ const WAIT_MS = Number(process.env.CHECK_LOCK_WAIT_MS ?? 15 * 60 * 1000);
 if (!Number.isFinite(WAIT_MS)) throw new Error("CHECK_LOCK_WAIT_MS must be a number of ms");
 const POLL_MS = 2_000;
 const SPEAK_MS = 30_000;
+// A live waiter holds its reclaim claim for microseconds, so a claim this old is a dead waiter's.
+const CLAIM_STALE_MS = 60_000;
 
 interface Holder {
   pid: number;
@@ -92,6 +94,15 @@ function dropIfStale(): void {
   try {
     writeFileSync(claim, String(process.pid), { flag: "wx" });
   } catch {
+    // A waiter that died inside its claim left it behind, and every later waiter would back off
+    // from it until the wait ran out. Age, not pid: a reused pid would keep it live for good. A
+    // replacement claim landing between this stat and delete would need two waiters inside that
+    // microsecond window at once, and even then the re-read under the claim guards the lock.
+    try {
+      if (Date.now() - statSync(claim).mtimeMs > CLAIM_STALE_MS) rmSync(claim, { force: true });
+    } catch {
+      /* gone already, or unreadable: the next poll tries again */
+    }
     return;
   }
   try {
