@@ -46,8 +46,8 @@ language. They've seen every consulting deck; surprise them with specifics they 
 Primary headline: "Your whole company unstoppable, in flow with agentic engineering." (the claim,
 its results named in the copy under it). Flow is the emotional result.
 The result under the claim is the speed the teams gain reaching the customers, and it is stated as
-an outcome, lead time from a customer's request until customers use the change and the cost of a
-shipped change, never as output such as pull request counts or tool use.
+an outcome, lead time from idea to first users and the cost of a shipped change, never as output
+such as pull request counts or tool use.
 
 A pitch to a reader who does not yet know what h&w offers (website copy, a post, a deck, a cold
 pitch, a proposal's opening) names the buyer's problem in the words buyers use for it before the
