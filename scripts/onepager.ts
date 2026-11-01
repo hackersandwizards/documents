@@ -37,6 +37,15 @@ function baseCss(brand: string, link: boolean) {
   ].join("\n");
 }
 
+/** The brand's tokens, faces and favicon as links, as every specimen page carries them. */
+const linked = (
+  brand: string,
+) => `<link rel="icon" href="${brand}/logos/favicon.ico" sizes="32x32" />
+<link rel="icon" href="${brand}/logos/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="${brand}/generated/tokens.root.css" />
+<link rel="stylesheet" href="${brand}/tokens/print.css" />
+`;
+
 export interface OnepagerPage {
   lang: "de" | "en";
   title: string;
@@ -48,7 +57,7 @@ export interface OnepagerPage {
   css?: string;
 }
 
-/** The onepager as a standalone HTML page. `link` links the brand's tokens and faces instead of
+/** The onepager as a standalone HTML page. `link` links the brand's tokens, faces and favicon instead of
  * inlining them, as the specimen does, so a brand release leaves the page current. */
 export async function composeOnepager(
   composer: Awaited<ReturnType<typeof openComposer>>,
@@ -90,7 +99,7 @@ export async function composeOnepager(
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${escapeHtml(page.title)}</title>
-${link ? `<link rel="stylesheet" href="${brand}/generated/tokens.root.css" />\n<link rel="stylesheet" href="${brand}/tokens/print.css" />\n` : ""}<style>
+${link ? linked(brand) : ""}<style>
 ${style}
 </style>
 </head>
