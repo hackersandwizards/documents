@@ -33,7 +33,7 @@ const { columns, rows, sums = false, total, foot = [] } = Astro.props;
 const span = columns.length - 1;
 ---
 
-<table class:list={{ sums }}>
+<table class:list={{ sums }} data-hw-exception={total || sums ? "total-band" : undefined}>
   <thead>
     <tr>
       {columns.map((c) => (

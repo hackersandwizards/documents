@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getViteConfig } from "astro/config";
 import { createServer } from "vite";
+import { withElements } from "./elements";
 import { bakeDocumentCss } from "./render-pdf";
 
 const USAGE = `Usage: bun run documents-compose <Component> <props.json> <output.html>
@@ -68,13 +69,13 @@ export async function composePage(
   props: Record<string, unknown>,
   base = bakeDocumentCss,
 ): Promise<string> {
-  const body = await composer.render(name, props);
+  const body = withElements(await composer.render(name, props));
   const lang = typeof props.lang === "string" ? props.lang : "de";
   // Without a title the renderer takes the first heading's, as for every document without one.
   const title =
     typeof props.title === "string" ? `<title>${escapeHtml(props.title)}</title>\n` : "";
   return base(`<!doctype html>
-<html lang="${escapeHtml(lang)}">
+<html lang="${escapeHtml(lang)}" data-hw-scale="print">
 <head>
 <meta charset="utf-8" />
 ${title}<style data-hw-document></style>

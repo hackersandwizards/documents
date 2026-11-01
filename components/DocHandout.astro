@@ -100,7 +100,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
     <ol>
       {chapters.map((chapter, i) => (
         <li>
-          <a href={`#chapter-${i + 1}`}>
+          <a class="toc-link" href={`#chapter-${i + 1}`}>
             <span>{chapter.title}</span>
             {toc[i] > 0 && <span class="page">{toc[i]}</span>}
           </a>

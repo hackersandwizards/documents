@@ -50,7 +50,7 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
 <style>
   .preparation :global(.card) {
     margin-bottom: var(--step-space);
-    padding: var(--note-pad);
+    --hw-card-pad: var(--note-pad);
   }
 
   .preparation :global(.card h3) {
@@ -58,12 +58,12 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
   }
 
   .note {
-    padding: var(--note-pad);
+    --hw-callout-pad: var(--note-pad);
   }
 
   .preparation :global(pre) {
     margin: var(--step-code-margin);
-    padding: var(--step-code-pad);
+    --hw-code-pad: var(--step-code-pad);
   }
 
   .preparation :global(code) {
@@ -93,12 +93,11 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
     margin-top: var(--space-heading);
   }
 
+  /* The line to the client's IT department: the brand's pill in purple. */
   .preparation :global(.it-chip) {
     margin: 0 var(--space-cell) 0 0;
-    padding: var(--chip-pad-slim);
-    background: var(--result);
-    color: var(--on-dark);
-    font-weight: var(--weight-semibold);
+    --hw-pill-pad: var(--chip-pad-slim);
+    --hw-pill-hue: var(--result);
   }
 
   .step {

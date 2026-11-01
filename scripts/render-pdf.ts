@@ -6,6 +6,7 @@ import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { withElements } from "./elements";
 import { foreignStyles } from "./styles";
 
 const execFileAsync = promisify(execFile);
@@ -189,7 +190,7 @@ export function brandCss(): string {
 export const brandFile = (file: string) =>
   createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
 
-function inlineCss(path: string): string {
+export function inlineCss(path: string): string {
   const dir = dirname(path);
   return readFileSync(path, "utf-8")
     .replace(/@import "([^"]+)";/g, (_, file: string) =>
@@ -206,8 +207,8 @@ function inlineCss(path: string): string {
 const DOCUMENT_STYLE = /<style data-hw-document>[\s\S]*?<\/style>/;
 
 /**
- * Fills a document's `<style data-hw-document>` with the current base. HTML without the marker
- * passes unchanged. A document carrying a style the engine did not write fails: it would print a
+ * Fills a document's `<style data-hw-document>` with the current base, maps its elements onto the
+ * brand's (withElements) and puts it on the print scale. HTML without the marker passes unchanged. A document carrying a style the engine did not write fails: it would print a
  * look no engine type owns (foreignStyles, the documents-styles command).
  */
 export function bakeDocumentCss(html: string): string {
@@ -218,7 +219,13 @@ export function bakeDocumentCss(html: string): string {
       `This document carries styles outside the document engine, so the engine will not bake it:\n${foreign.map((f) => `  ${f}`).join("\n")}\nCompose it from an engine type (documents-compose); where no type or variant fits, add it to @hackersandwizards/documents.`,
     );
   const css = documentCss();
-  return html.replace(DOCUMENT_STYLE, () => `<style data-hw-document>\n${css}\n</style>`);
+  const scaled = /<html\b[^>]*\bdata-hw-scale=/.test(html)
+    ? html
+    : html.replace(/<html\b/, '<html data-hw-scale="print"');
+  return withElements(scaled).replace(
+    DOCUMENT_STYLE,
+    () => `<style data-hw-document>\n${css}\n</style>`,
+  );
 }
 
 /**

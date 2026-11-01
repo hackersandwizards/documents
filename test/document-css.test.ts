@@ -15,7 +15,7 @@ const REMAINING = [
   // Not yet a component.
   ...["accent", "callout", "card-grid", "center", "chip", "grid-2", "keep", "meta", "muted"],
   ...["next-step", "note", "offer", "outcome", "page-break", "panel", "prompt", "section-label"],
-  ...["signature-line", "signatures", "small", "soft", "strike", "subtotal", "timeline", "total"],
+  ...["signature-line", "signatures", "small", "strike", "subtotal", "timeline", "total"],
   ...["when", "wide"],
 ];
 

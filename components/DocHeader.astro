@@ -57,7 +57,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     )}
   </div>
   <div class="doc-meta">
-    <span class="doc-tag">{href ? <a href={href}>{kind}</a> : kind}</span>
+    <span class="doc-tag">{href ? <a class="doc-tag-link" href={href}>{kind}</a> : kind}</span>
     {meta.map((line) => (
       <>
         <br />
@@ -129,19 +129,10 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     text-decoration: none;
   }
 
-  /* The website's category pill (TrainingList.astro .tl-chip): in print the 40% teal tint,
-     teal-light, under ink, its words in the label role (mono caps), as every label on a document.
-     A filled CTA shape was dropped: blind reviewers read it as a button. */
+  /* The brand's pill in capitals (hw-pill data-caps, which composePage adds). A filled CTA shape
+     was dropped: blind reviewers read it as a button. */
   .doc-tag {
-    display: inline-block;
     margin-bottom: var(--space-tag);
-    padding: var(--chip-pad);
-    border-radius: var(--pill);
-    background: var(--accent-chip);
-    font: var(--role-label);
-    line-height: var(--leading-chip);
-    letter-spacing: var(--tracking-caps);
-    text-transform: var(--case-label);
-    color: var(--ink);
+    --hw-pill-pad: var(--chip-pad);
   }
 </style>

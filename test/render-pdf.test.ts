@@ -49,6 +49,16 @@ describe("bakeDocumentCss", () => {
     expect(bakeDocumentCss(once)).toBe(once);
   });
 
+  it("gives a document stored before the brand elements their classes and the print scale", () => {
+    const old =
+      '<html lang="de"><head><style data-hw-document></style></head><body><div class="card tint">x</div><table><tr><td>1</td></tr></table></body></html>';
+    const baked = bakeDocumentCss(old);
+    expect(baked).toContain('<html data-hw-scale="print" lang="de">');
+    expect(baked).toContain('<div class="card tint hw-card" data-variant="tint">');
+    expect(baked).toContain('<table class="hw-table">');
+    expect(bakeDocumentCss(baked)).toBe(baked);
+  });
+
   it("passes HTML without the marker through unchanged", () => {
     const plain = "<html><head><style>body{}</style></head></html>";
     expect(bakeDocumentCss(plain)).toBe(plain);

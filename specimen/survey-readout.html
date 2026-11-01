@@ -10,7 +10,9 @@
 
 /* The document tokens: every value an h&w document draws, named once. The brand's own values come
    from @hackersandwizards/brand (tokens.css, print.css), never retyped; this file derives the
-   documents' roles from them and holds the lengths only documents have. Every stylesheet and
+   documents' roles from them and holds the lengths only documents have. The shared elements
+   (label, pill, card, callout, quote, table, link, code) are the brand's (elements.css) at its
+   print scale, which composePage sets on the page's root. Every stylesheet and
    component style of the engine names these tokens and nothing else (test/tokens.test.ts).
 
    Layers, top to bottom: the brand files; the base set every document type composes (colour
@@ -20,6 +22,10 @@
 
    Units: print lengths in pt, page geometry in mm, as print.css sets them; the onepager keeps the
    website's px rhythm and the readout deck the slide engine's rem (1/90 of its width). */
+
+/* The base layer (document.css's reset) under the brand elements' components layer, so a reset
+   never takes their padding. */
+@layer base, components;
 
 
 :root {
@@ -135,8 +141,6 @@
   --rule: 1pt;
   --rule-strong: 2pt;
   --rule-accent: 3pt;
-  --underline: 1pt;
-  --underline-offset: 0.2em;
   --radius: var(--print-radius);
   --pill: var(--radius-pill);
   --corner-brand: var(--radius-brand);
@@ -174,14 +178,14 @@
   --space-cell: 5pt;
   --space-paragraph: 6pt;
   --space-group: 7pt;
-  --space-callout: 8pt;
   --space-grid: 10pt;
   --space-list: 12.5pt;
   --space-lead: 15pt;
   --card-pad-base: 14pt;
   --card-pad: calc(var(--card-pad-base) * var(--density));
-  --chip-pad: 2pt 7pt;
-  --cell-pad: 5pt 7.5pt 5pt 0;
+  /* A pill keeps its outer size from before brand's pill drew a hairline round it (transparent
+     unless outlined): the hairline comes off the padding. */
+  --chip-pad: calc(2pt - var(--rule)) calc(7pt - var(--rule));
   --h1-space-after: var(--space-heading);
   --h2-margin: 20pt 0 6pt;
   --h3-margin: 12.5pt 0 4pt;
@@ -224,9 +228,11 @@
   --note-pad: 3mm 4mm;
   --confirmation-space: 4mm;
   --closing-sign-off-tight: 3mm;
-  --chip-pad-slim: 1pt 7pt;
+  --chip-pad-slim: calc(1pt - var(--rule)) calc(7pt - var(--rule));
   --display-size: var(--type-display-size);
   --label-size: var(--type-label-size);
+  --small-size: var(--type-small-size);
+  --small-leading: var(--type-small-line-height);
   --label-leading: var(--type-label-line-height);
 
   /* ── Proposal ── */

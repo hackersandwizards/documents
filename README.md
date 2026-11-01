@@ -38,11 +38,14 @@ Bun fetches the `git+https://` form through GitHub's tarball API without any Git
 
 Astro and Vite are peer dependencies: the consumer's own copies compile the components.
 
+From v0.3.0 the documents draw the brand's shared elements (`elements.css`), so the consumer's
+`@hackersandwizards/brand` pin is v0.27.3 or newer.
+
 ## Work on the package
 
 ```sh
 bun install      # also points the git hooks at .githooks/
-bun run check    # format, lint, typecheck, unique names, tests, specimen, brand colours
+bun run check    # format, lint, typecheck, unique names, tests, specimen, brand colours, brand elements
 ```
 
 A release is a tag `v<version>` matching `version` in `package.json`; consumers then raise the tag

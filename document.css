@@ -65,10 +65,12 @@
   }
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 html {
@@ -159,21 +161,11 @@ body {
   color: var(--muted);
 }
 
-/* The document tag: TrainingList.astro's .tl-chip, the website's category pill (in print the
-   40% teal tint, teal-light, under ink), its words in the label role (mono caps), as every label
-   on a document. The header's filled CTA was tried first and dropped: two of three blind
-   reviewers named it a button shape that a title does not take. */
+/* The document tag: the brand's pill in capitals (hw-pill data-caps, which composePage adds). The
+   header's filled CTA was tried first and dropped: two of three blind reviewers named it a button
+   shape that a title does not take. */
 .doc-tag {
-  display: inline-block;
   margin-bottom: var(--space-tag);
-  padding: var(--chip-pad);
-  border-radius: var(--pill);
-  background: var(--accent-chip);
-  font: var(--role-label);
-  line-height: var(--leading-chip);
-  letter-spacing: var(--tracking-caps);
-  text-transform: var(--case-label);
-  color: var(--ink);
 }
 
 /* Headings: the website's base, mono 700 in ink at every level. */
@@ -210,28 +202,18 @@ h4 {
   letter-spacing: var(--tracking-h4);
 }
 
-/* Eyebrow over a title or section: the website's label-caps (mono, caps, 0.06 em) at the
-   document's small step (os decision br-label-style). */
+/* Eyebrow over a title or section: the brand's label (hw-label) at the document's small step (os
+   decision br-label-style). */
 .eyebrow {
   display: block;
   margin-bottom: var(--space-heading);
-  font: var(--role-small);
-  font-family: var(--label-family);
-  font-weight: var(--weight-label);
-  letter-spacing: var(--tracking-caps);
-  text-transform: var(--case-label);
-  color: var(--accent-text);
+  --hw-label-size: var(--small-size);
 }
 
-/* Label over a field or a group: typography.css .label-caps, in ink as the footer's group
-   headings set it. */
+/* Label over a field or a group: the brand's label in ink (hw-label data-tone="ink"). */
 .label {
   display: block;
   margin-bottom: var(--space-label);
-  font: var(--role-label);
-  letter-spacing: var(--tracking-caps);
-  text-transform: var(--case-label);
-  color: var(--ink);
 }
 
 /* Section label: TrainingList.astro's group title, the h4 role's size in mono 600 capitals,
@@ -258,18 +240,10 @@ h4 {
   background: var(--accent);
 }
 
-/* Tag: TrainingList.astro .tl-chip, a pill in the 40% teal tint, teal-light, under ink, weight 500;
-   the small role stands in for the website's fine step. */
+/* Tag: the brand's pill (hw-pill). */
 .chip {
-  display: inline-block;
   margin: 0 var(--space-chip) var(--space-chip) 0;
-  padding: var(--chip-pad);
-  border-radius: var(--pill);
-  background: var(--accent-chip);
-  font: var(--role-small);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-chip);
-  color: var(--ink);
+  --hw-pill-pad: var(--chip-pad);
 }
 
 /* A card's one-line lead under its title (TrainingList.astro's promise line, set bold). */
@@ -308,14 +282,6 @@ b {
   font-weight: var(--weight-semibold);
 }
 
-/* Prose links: teal-dark. A PDF shows no hover, so the underline stays. */
-a {
-  color: var(--accent-text);
-  text-decoration: underline;
-  text-decoration-thickness: var(--underline);
-  text-underline-offset: var(--underline-offset);
-}
-
 .doc-header a {
   color: inherit;
   text-decoration: none;
@@ -350,14 +316,11 @@ ol li {
   padding: var(--space-hair) 0;
 }
 
-/* Tables: the prose table, hairline rows, no fill; heads in label caps (typography.css names
-   table heads among its uses). Rows stay whole; the table itself may break, or a long one
-   leaves a near-empty page. */
+/* Tables: the brand's ruled table (hw-table). Rows stay whole; the table itself may break, or a
+   long one leaves a near-empty page. */
 table {
   width: 100%;
   margin: var(--table-margin);
-  border-collapse: collapse;
-  font: var(--role-small);
 }
 
 thead {
@@ -366,27 +329,6 @@ thead {
 
 tr {
   break-inside: avoid;
-}
-
-th {
-  padding: var(--cell-pad);
-  border-bottom: var(--rule) solid var(--line);
-  font: var(--role-label);
-  letter-spacing: var(--tracking-caps);
-  text-align: left;
-  text-transform: var(--case-label);
-  color: var(--muted);
-}
-
-td {
-  padding: var(--cell-pad);
-  border-bottom: var(--rule) solid var(--line);
-  vertical-align: top;
-}
-
-th:last-child,
-td:last-child {
-  padding-right: 0;
 }
 
 /* Tabular figures only where figures stand in a column: Inter's tabular set widens the hyphen
@@ -483,15 +425,11 @@ tr.total td.num {
   margin: var(--lead-margin);
 }
 
-/* Card.astro: brand corner, hairline border, white, the card padding. A panel allowed to break
-   (the quote's terms) closes on each page with its own border, corners and padding. */
+/* The brand's card (hw-card). A panel allowed to break (the quote's terms) closes on each page with
+   its own border, corners and padding. */
 .card,
 .panel {
   margin: var(--block-margin);
-  padding: var(--card-pad);
-  border: var(--rule) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
   break-inside: avoid;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
@@ -502,19 +440,10 @@ tr.total td.num {
   margin: 0;
 }
 
-/* Card.astro surface "tint", the emphasised card: also the recipient card. */
-.card.accent,
-.panel.soft,
-.prepared {
-  border-color: var(--accent-line);
-  background: var(--accent-soft);
-}
-
+/* The recipient card: the brand's tinted card (hw-card data-variant="tint"), as .card.accent and
+   .panel.soft are. */
 .prepared {
   align-self: start;
-  padding: var(--card-pad);
-  border: var(--rule) solid var(--accent-line);
-  border-radius: var(--radius);
   font: var(--role-small);
   break-inside: avoid;
 }
@@ -593,40 +522,22 @@ tr.total td.num {
   color: var(--muted);
 }
 
-/* Callout: InShort.astro, an accent teal rule on the left of a teal/5 tint with the brand
-   corner; its label in muted caps, its text in weight 500. */
+/* Callout: the brand's callout (hw-callout), its label the muted label. */
 .note,
 .callout {
   margin: var(--callout-margin);
-  padding: var(--card-pad);
-  border-left: var(--rule-accent) solid var(--accent);
-  /* The brand corner on all four corners with the rule bending into it, as InShort.astro renders
-     it on the website, the brand source. */
-  border-radius: var(--radius);
-  background: var(--accent-soft);
   break-inside: avoid;
-}
-
-.note > :not(.label),
-.callout > :not(.label) {
-  font-weight: var(--weight-medium);
 }
 
 .note > .label,
 .callout > .label {
   margin-bottom: var(--space-heading);
-  color: var(--muted);
 }
 
 /* Purple marks the result and nothing else: what the client ends up with (a proposal's
    Ergebnis, as the proposals before October 2026 set it, and the training a certificate names,
    its own rule). Money is teal (tr.total). Outcome: a callout in purple, the twin of EventRow.astro's next event: a purple edge on a purple tint, its heading
-   purple, 4.9:1 on the tint, above the 4.5:1 AA floor. */
-.callout.outcome {
-  border-left-color: var(--result);
-  background: var(--result-soft);
-}
-
+   purple, 4.9:1 on the tint, above the 4.5:1 AA floor: the callout's purple hue. */
 .outcome > h3 {
   color: var(--result);
 }
@@ -636,12 +547,9 @@ tr.total td.num {
   margin-top: 0;
 }
 
-/* Quote: the prose blockquote, an accent purple rule and muted text. */
+/* Quote: the brand's quote in muted text (hw-quote data-tone="muted"). */
 blockquote {
   margin: var(--callout-margin);
-  padding-left: var(--space-list);
-  border-left: var(--rule-accent) solid var(--result);
-  color: var(--muted);
   break-inside: avoid;
 }
 
@@ -702,20 +610,14 @@ dl {
   font: var(--role-small);
 }
 
-dt {
+dt:not(.label) {
   color: var(--muted);
 }
 
-/* Code blocks: HeroFeed.astro's terminal panel, night-2 with the brand corner, a white/10
-   border, card padding, light mono text; a .prompt span takes the green "$". */
+/* Code blocks: the brand's code block (hw-code); on paper the lines wrap, and a .prompt span takes
+   the green "$". */
 pre {
   margin: var(--callout-margin);
-  padding: var(--card-pad);
-  border: var(--rule) solid var(--night-line);
-  border-radius: var(--radius);
-  background: var(--night-raised);
-  font: var(--role-code);
-  color: var(--night-ink);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   break-inside: avoid;
@@ -736,9 +638,6 @@ code {
   font-family: var(--code-family);
 }
 
-pre code {
-  color: inherit;
-}
 
 @media screen {
   body {

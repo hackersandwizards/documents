@@ -10,7 +10,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { escapeHtml, type openComposer } from "./compose";
-import { brandFile, renderPdf } from "./render-pdf";
+import { ELEMENT_MAP, withElements } from "./elements";
+import { brandFile, inlineCss, renderPdf } from "./render-pdf";
 
 const ROOT = join(import.meta.dir, "..");
 
@@ -34,6 +35,9 @@ function baseCss(brand: string, link: boolean) {
           ),
         ]),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
+    // DocHeader's tag and DocCard are the brand's pill and card; the rest of the page keeps its own
+    // forms (brand-elements.json, exception "onepager").
+    inlineCss(brandFile("elements.css")),
     // Every h&w document draws the identical list marker: the brand's rule, switched on in
     // tokens.css above, and the base's list indent, never a copy.
     readFileSync(brandFile("marker.css"), "utf8"),
@@ -113,17 +117,17 @@ export async function composeOnepager(
     return open.trim();
   };
   const cards = { card: await cardTag(false), tint: await cardTag(true) };
-  const body = (await composer.render("DocOnepager", { lang: page.lang, html: page.html })).replace(
-    /<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g,
-    (tag, cls: string) => {
-      const own = cls.split(" ");
-      if (!own.includes("card")) return tag;
-      const card = own.includes("tint") ? cards.tint : cards.card;
-      const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
-      const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
-      return card.replace(/class="[^"]*"/, `class="${all}"`);
-    },
-  );
+  const rendered = (
+    await composer.render("DocOnepager", { lang: page.lang, html: page.html })
+  ).replace(/<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g, (tag, cls: string) => {
+    const own = cls.split(" ");
+    if (!own.includes("card")) return tag;
+    const card = own.includes("tint") ? cards.tint : cards.card;
+    const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
+    const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
+    return card.replace(/class="[^"]*"/, `class="${all}"`);
+  });
+  const body = withElements(rendered, ONEPAGER_ELEMENTS);
   const style = [
     baseCss(brand, link),
     await composer.styles(),
@@ -131,7 +135,7 @@ export async function composeOnepager(
     fitCss(page.fit),
   ].join("\n");
   return `<!doctype html>
-<html lang="${page.lang}" class="${fitClasses(page.fit)}">
+<html lang="${page.lang}" class="${fitClasses(page.fit)}" data-hw-scale="print">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -146,6 +150,8 @@ ${body.trim()}
 </html>
 `;
 }
+
+const ONEPAGER_ELEMENTS = ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b/.test(selector));
 
 const VOID = /^(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
 

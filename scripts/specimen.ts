@@ -5,11 +5,23 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composePage, escapeHtml, openComposer } from "./compose";
+import { withElements } from "./elements";
 import { composeOnepager } from "./onepager";
 import { composeSurveyReadout } from "./survey-readout";
 import * as s from "./samples";
 
 const ROOT = resolve(import.meta.dir, "..");
+const BRAND_VERSION = (
+  JSON.parse(
+    readFileSync(join(ROOT, "node_modules/@hackersandwizards/brand/package.json"), "utf8"),
+  ) as { version: string }
+).version;
+const CATALOGUE = "http://brand.localhost/catalogue.html#elements";
+const EXCEPTIONS = (
+  JSON.parse(readFileSync(join(ROOT, "brand-elements.json"), "utf8")) as {
+    exceptions: Record<string, string | { reason: string }>;
+  }
+).exceptions;
 const OUT = join(ROOT, "specimen");
 const BRAND = "../node_modules/@hackersandwizards/brand";
 
@@ -22,7 +34,7 @@ const PAGES: {
   props?: object;
   pages?: number;
   frame?: string;
-  build?: () => string;
+  build?: (composer: Awaited<ReturnType<typeof openComposer>>) => string | Promise<string>;
 }[] = [
   { file: "angebot", pages: 3, title: "Angebot", component: "DocProposal", props: s.proposalDe },
   {
@@ -142,7 +154,116 @@ const PAGES: {
       html: s.proseHtml,
     },
   },
+  {
+    file: "elemente",
+    pages: 2,
+    title: "Elemente aus brand und Ausnahmen",
+    build: (composer) => elementsPage(composer),
+  },
 ];
+
+// The elements page: each brand element documents uses, as a tile in the engine's own markup and
+// print scale, marked with its brand version and the catalogue's link; then each exception in full
+// with its reason from brand-elements.json. brand-elements measures exactly these tiles.
+const TILES: [string, string, string][] = [
+  [
+    "label",
+    "Label, Eyebrow",
+    '<span class="eyebrow">Training für ein Team</span><span class="label">Zeitraum</span>',
+  ],
+  [
+    "pill",
+    "Pill, Typ-Tag",
+    '<span class="doc-tag">Angebot</span> <span class="chip">Remote</span>',
+  ],
+  [
+    "card",
+    "Karte, betont",
+    '<div class="card"><h4>Über hackers&amp;wizards</h4></div><div class="card accent"><h4>Erstellt für Musterwerk AG</h4></div>',
+  ],
+  [
+    "callout",
+    "Callout, Ergebnis",
+    '<div class="callout"><span class="label">Kurz gesagt</span><p>Ein Satz.</p></div><div class="callout outcome"><p>Ein Team, das Agenten steuert.</p></div>',
+  ],
+  [
+    "quote",
+    "Zitat",
+    "<blockquote><p>„Der Plan stand, bevor die erste Zeile Code lief.“</p></blockquote>",
+  ],
+  [
+    "table",
+    "Tabelle mit Linien",
+    "<table><thead><tr><th>Leistung</th><th>Basis</th></tr></thead><tbody><tr><td>Training</td><td>2 Tage</td></tr></tbody></table>",
+  ],
+  [
+    "link",
+    "Link im Text",
+    '<p>Dann öffnet ihr <a href="https://example.com/">localhost:3000</a>.</p>',
+  ],
+  ["code", "Codeblock", '<pre><code><span class="prompt">$</span> bun run check</code></pre>'],
+];
+const reason = (name: string) => {
+  const e = EXCEPTIONS[name]!;
+  return typeof e === "string" ? e : e.reason;
+};
+const EXCEPTION_SAMPLES: Record<string, string> = {
+  "section-label": '<span class="section-label">Leistungen</span>',
+  "margin-note":
+    '<p><em>Im Handout: eine Notiz am Rand neben dem Text, mit lila Linie.</em> <a href="handout.html">Handout öffnen</a></p>',
+  "doc-header": "<p><em>Kopf jeder Seite oben auf diesem Blatt.</em></p>",
+  "survey-readout": '<p><a href="survey-readout.html">Survey Readout öffnen</a></p>',
+  onepager: '<p><a href="onepager.html">Onepager öffnen</a></p>',
+};
+async function elementsPage(composer: Awaited<ReturnType<typeof openComposer>>) {
+  const header = await composer.render("DocHeader", { kind: "Elemente", legal: true });
+  const band = await composer.render("DocPriceTable", {
+    columns: [{ label: "Leistung" }, { label: "Betrag", num: true }],
+    rows: [{ item: "Training Agentic Engineering", cells: ["X.XXX,XX €"] }],
+    total: { label: "Summe netto", figure: "XX.XXX,XX €" },
+  });
+  const tiles = TILES.map(
+    ([name, title, sample]) =>
+      `<div class="tile" data-hw-tile="${name}" data-hw-version="${BRAND_VERSION}"><p class="tile-origin"><span class="chip">aus brand v${BRAND_VERSION}</span> <code>.hw-${name}</code> <a class="tile-link" href="${CATALOGUE.replace("#elements", `#hw-${name}`)}">Katalog</a></p>${sample}<p class="small muted">${title}</p></div>`,
+  ).join("\n");
+  const exceptions = Object.keys(EXCEPTIONS)
+    .map(
+      (name) =>
+        `<section class="exception" data-hw-exception="${name}"><h3>${escapeHtml(name)}</h3><p class="muted">${escapeHtml(reason(name))}</p>${name === "total-band" ? band : (EXCEPTION_SAMPLES[name] ?? "")}</section>`,
+    )
+    .join("\n");
+  const body = withElements(`${header}
+<h1>Elemente aus brand</h1>
+<p class="subtitle">Regel, Varianten und Nacht stehen im brand-Katalog. Hier, wie die Elemente auf Papier aussehen, im Druckmaß dieser Engine; brand-elements misst genau diese Kacheln gegen die Regel.</p>
+<div class="tiles">
+${tiles}
+</div>
+<h2>Ausnahmen dieser Engine</h2>
+${exceptions}`);
+  return specimenBase(
+    `<!doctype html>
+<html lang="de" data-hw-scale="print">
+<head>
+<meta charset="utf-8" />
+<title>Elemente aus brand und Ausnahmen</title>
+<style data-hw-document></style>
+<style data-hw-components>
+${await composer.styles()}
+</style>
+</head>
+<body>
+${body}
+</body>
+</html>
+`,
+    ELEMENTS_CSS,
+  );
+}
+const ELEMENTS_CSS = `
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-grid); }
+.tile { padding: var(--space-grid); border: var(--rule) dashed var(--line-soft); break-inside: avoid; }
+.tile-origin { font: var(--role-small); }
+.exception { margin: var(--block-margin-loose); padding-left: var(--space-grid); border-left: var(--rule-accent) solid var(--result); break-inside: avoid; }`;
 
 // The page links the brand's tokens and faces from the package instead of baking them in, so a
 // brand release leaves the committed specimen current. On screen the sheet is A4 wide.
@@ -167,7 +288,8 @@ ${base}${extra}
   html { background: var(--color-bg); }
   body { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; }
 }
-</style>`,
+</style>
+<link rel="stylesheet" href="${BRAND}/elements/elements.css" />`,
   );
 
 /** A component's purpose: the first sentence of its leading comment. */
@@ -298,7 +420,7 @@ export async function buildSpecimen(): Promise<Map<string, string>> {
       files.set(
         `${page.file}.html`,
         page.build
-          ? page.build()
+          ? await page.build(composer)
           : page.component === "DocOnepager"
             ? await composeOnepager(composer, s.onepager, BRAND, true)
             : await composePage(

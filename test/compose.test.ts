@@ -47,7 +47,9 @@ describe("scripts/compose.ts", () => {
     writeFileSync(join(dir, "lang.json"), JSON.stringify({ ...rateCard, lang: 'de"><b>x' }));
     const out = join(dir, "lang.html");
     execFileSync("bun", [SCRIPT, "DocRateCard", join(dir, "lang.json"), out]);
-    expect(readFileSync(out, "utf8")).toContain('<html lang="de&quot;&gt;&lt;b&gt;x">');
+    expect(readFileSync(out, "utf8")).toContain(
+      '<html lang="de&quot;&gt;&lt;b&gt;x" data-hw-scale="print">',
+    );
   });
 
   it("composes the Leistungsnachweis, its total row and its lump-sum confirmation", () => {
@@ -124,7 +126,7 @@ describe("scripts/compose.ts", () => {
     );
     execFileSync("bun", [SCRIPT, "DocMarkdown", join(dir, "md.json"), join(dir, "md.html")]);
     const html = readFileSync(join(dir, "md.html"), "utf8");
-    expect(html).toMatch(/<span class="doc-tag"[^>]*>A &amp; B<\/span>/);
+    expect(html).toMatch(/<span class="doc-tag[^"]*"[^>]*>A &amp; B<\/span>/);
     expect(html).toContain("Sitz und Registergericht Hamburg, HRB 198840");
     // The former css door is gone, a body's style attribute too; pandoc's alignment is a class.
     expect(html).not.toContain(".x { color: red; }");

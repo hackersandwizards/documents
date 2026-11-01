@@ -61,6 +61,7 @@ iframe.wide { zoom: min(1, calc(100cqw / 1282px)); }
 <li><a href="#delivery-briefing">Delivery Briefing</a></li>
 <li><a href="#trainer-briefing">Trainer Briefing (English, with meta)</a></li>
 <li><a href="#dokument">Dokument aus Markdown</a></li>
+<li><a href="#elemente">Elemente aus brand und Ausnahmen</a></li>
 </ul>
 </nav>
 <main>
@@ -87,10 +88,10 @@ iframe.wide { zoom: min(1, calc(100cqw / 1282px)); }
 <tr><td><code>DocTotalRow</code></td><td>The total row of a table: Price.astro&#39;s card amount in the h4 role on the teal band, a 12% tint under a strong teal rule, each figure in teal at 1.2 times.</td><td><a href="#angebot">DocProposal</a>, <a href="#honorarsaetze">DocRateCard</a>, <a href="#leistungsnachweis-monat">DocLeistungsnachweis</a></td></tr>
 <tr><td><code>DocClosing</code></td><td>The closing, kept whole so the sign-off never lands alone on a page: the closing text, the sign-off, then the sender&#39;s name.</td><td><a href="#angebot">DocProposal</a>, <a href="#honorarsaetze">DocRateCard</a></td></tr>
 <tr><td><code>DocLead</code></td><td>The lead: the reader&#39;s situation in prose left, the slot &quot;aside&quot; (a DocRecipient) right.</td><td><a href="#angebot">DocProposal</a>, <a href="#honorarsaetze">DocRateCard</a>, <a href="#geheimhaltungsvereinbarung">DocAgreement</a></td></tr>
-<tr><td><code>DocProse</code></td><td>Prose: the element rules for Markdown bodies (pandoc and Astro&#39;s markdown output) and other free text, the print twins of the website&#39;s typography: headings in mono, ruled tables, the terminal panel for code; lists take the document base&#39;s own rules.</td><td><a href="#geheimhaltungsvereinbarung">DocAgreement</a>, <a href="#handout">DocHandout</a>, <a href="#delivery-briefing">DocMarkdown</a></td></tr>
+<tr><td><code>DocProse</code></td><td>Prose: the element rules for Markdown bodies (pandoc and Astro&#39;s markdown output) and other free text, the print twins of the website&#39;s typography: headings in mono; tables, quotes, code and links are the brand&#39;s elements (composePage maps them); lists take the document base&#39;s own rules.</td><td><a href="#geheimhaltungsvereinbarung">DocAgreement</a>, <a href="#handout">DocHandout</a>, <a href="#delivery-briefing">DocMarkdown</a></td></tr>
 <tr><td><code>DocTitle</code></td><td>A document&#39;s title block: the eyebrow (the website&#39;s label-caps), the h1, and an optional lead (SectionHeader.astro&#39;s lead role in muted ink).</td><td><a href="#angebot">DocProposal</a>, <a href="#honorarsaetze">DocRateCard</a>, <a href="#leistungsnachweis-monat">DocLeistungsnachweis</a>, <a href="#geheimhaltungsvereinbarung">DocAgreement</a>, <a href="#handout">DocHandout</a>, <a href="#vorbereitung">DocPreparation</a></td></tr>
 <tr><td><code>DocSectionHead</code></td><td>A section&#39;s head, kept with what follows: an optional section label (TrainingList.astro&#39;s group title, the h4 role&#39;s size in mono 600 capitals after a teal square), then the h2.</td><td><a href="#angebot">DocProposal</a></td></tr>
-<tr><td><code>DocCard</code></td><td>Card.astro: the brand corner, a hairline border, white, the card padding.</td><td><a href="#angebot">DocProposal</a>, <a href="#honorarsaetze">DocRateCard</a></td></tr>
+<tr><td><code>DocCard</code></td><td>The brand&#39;s card (hw-card, which composePage adds).</td><td><a href="#angebot">DocProposal</a>, <a href="#honorarsaetze">DocRateCard</a></td></tr>
 <tr><td><code>DocSteps</code></td><td>A sequence of dated steps: ruled rows (patterns.css .ruled-rows), the date in the h1 family&#39;s weight in purple, the step&#39;s name and one muted line beside it.</td><td><a href="#angebot">DocProposal</a></td></tr>
 <tr><td><code>DocRecipient</code></td><td>The recipient card, the base&#39;s .prepared on Card.astro&#39;s tint surface: a label in caps, the company bold, then the person and the address, one per line.</td><td><a href="#angebot">DocProposal</a>, <a href="#honorarsaetze">DocRateCard</a>, <a href="#geheimhaltungsvereinbarung">DocAgreement</a>, <a href="#handout">DocHandout</a></td></tr>
 <tr><td><code>DocSignatures</code></td><td>The signature block of a document signed by hand: one column per party, its role in caps and its name, then a line for place and date and a line for the signature, each with room above it for the pen.</td><td><a href="#geheimhaltungsvereinbarung">DocAgreement</a></td></tr>
@@ -134,6 +135,8 @@ iframe.wide { zoom: min(1, calc(100cqw / 1282px)); }
 <iframe src="trainer-briefing.html" title="Trainer Briefing (English, with meta)" style="height: 297mm" loading="lazy"></iframe>
 <h2 id="dokument">Dokument aus Markdown <a href="dokument.html">einzeln öffnen</a></h2>
 <iframe src="dokument.html" title="Dokument aus Markdown" style="height: 297mm" loading="lazy"></iframe>
+<h2 id="elemente">Elemente aus brand und Ausnahmen <a href="elemente.html">einzeln öffnen</a></h2>
+<iframe src="elemente.html" title="Elemente aus brand und Ausnahmen" style="height: 594mm" loading="lazy"></iframe>
 </main>
 </div>
 <script>

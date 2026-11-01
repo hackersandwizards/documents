@@ -1,7 +1,7 @@
 ---
 // Prose: the element rules for Markdown bodies (pandoc and Astro's markdown output) and other free
-// text, the print twins of the website's typography: headings in mono, ruled tables, the terminal
-// panel for code; lists take the document base's own rules. The HTML comes in sanitized; this sets
+// text, the print twins of the website's typography: headings in mono; tables, quotes, code
+// and links are the brand's elements (composePage maps them); lists take the document base's own rules. The HTML comes in sanitized; this sets
 // it on the page.
 // Each rule keeps an element's specificity (:where), so a class in the body, such as .subtitle or
 // .signature-line, still wins as it does over the document base's element rules.
@@ -66,13 +66,6 @@ const html = proseHtml(Astro.props.html);
     font-weight: var(--weight-semibold);
   }
 
-  :global(:where(.doc-prose) a) {
-    color: var(--accent-text);
-    text-decoration: underline;
-    text-decoration-thickness: var(--underline);
-    text-underline-offset: var(--underline-offset);
-  }
-
   :global(:where(.doc-prose) hr) {
     margin: var(--rule-margin);
     border: 0;
@@ -82,8 +75,6 @@ const html = proseHtml(Astro.props.html);
   :global(:where(.doc-prose) table) {
     width: 100%;
     margin: var(--table-margin);
-    border-collapse: collapse;
-    font: var(--role-small);
   }
 
   :global(:where(.doc-prose) thead) {
@@ -94,32 +85,8 @@ const html = proseHtml(Astro.props.html);
     break-inside: avoid;
   }
 
-  :global(:where(.doc-prose) th) {
-    padding: var(--cell-pad);
-    border-bottom: var(--rule) solid var(--line);
-    font: var(--role-label);
-    letter-spacing: var(--tracking-caps);
-    text-align: left;
-    text-transform: var(--case-label);
-    color: var(--muted);
-  }
-
-  :global(:where(.doc-prose) td) {
-    padding: var(--cell-pad);
-    border-bottom: var(--rule) solid var(--line);
-    vertical-align: top;
-  }
-
-  :global(:where(.doc-prose) th:last-child),
-  :global(:where(.doc-prose) td:last-child) {
-    padding-right: 0;
-  }
-
   :global(:where(.doc-prose) blockquote) {
     margin: var(--callout-margin);
-    padding-left: var(--space-list);
-    border-left: var(--rule-accent) solid var(--result);
-    color: var(--muted);
     break-inside: avoid;
   }
 
@@ -137,12 +104,6 @@ const html = proseHtml(Astro.props.html);
 
   :global(:where(.doc-prose) pre) {
     margin: var(--callout-margin);
-    padding: var(--card-pad);
-    border: var(--rule) solid var(--night-line);
-    border-radius: var(--radius);
-    background: var(--night-raised);
-    font: var(--role-code);
-    color: var(--night-ink);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     break-inside: avoid;
@@ -159,10 +120,6 @@ const html = proseHtml(Astro.props.html);
 
   :global(:where(.doc-prose) code) {
     font-family: var(--code-family);
-  }
-
-  :global(:where(.doc-prose) pre code) {
-    color: inherit;
   }
 
   :global(:where(.doc-prose) blockquote > :last-child) {
