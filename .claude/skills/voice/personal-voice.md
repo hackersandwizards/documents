@@ -29,7 +29,7 @@ What leads and the person section hold where that mail cannot be reached.
 - Last sentence before the sign-off, outside the hand-off line above: the point or the ask, which a
   longer mail or a dated ask also states first. A trailing thank-you already said, a wish, or a fact
   the recipient already holds (a date, who is in cc) is cut.
-- Bullets: none, unless listing groups or dates.
+- Bullets only for groups or dates, numbered `1)` where the text refers back to them.
 - The signer's typed mail carries the odd typo and comma splice. A draft never imitates one.
 
 ## Mail Stefan signs

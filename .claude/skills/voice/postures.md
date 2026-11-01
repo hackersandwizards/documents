@@ -233,6 +233,10 @@ das zusammen abstimmen"* over *"lass uns telefonieren"*.
 Where the message is his to send, that offer goes in it. Where the point needs him in the room,
 hand it to him as a call item instead of drafting it for him to strike.
 
+A message that sends a document carries only what this recipient has to react to: the proposal or
+question meant for them, one short block each. Nothing the document states goes in it again. It
+closes on their view (`Was hältst du davon?`), never on a third party's deadline.
+
 A message back into a live conversation carries what is new. Whatever the other side told us, their
 dates, their plans, the people they named, is what the offer stands on, never what the message
 reports back to them. Where their own fact costs them something, say sorry for our part in it and
