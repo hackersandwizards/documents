@@ -84,8 +84,8 @@ async function runStagedTool(bin: string, args: string[], stdin?: Buffer): Promi
       done({ out: `${String(error)}\n`, code: 1, stdout: Buffer.alloc(0) }),
     );
     child.on("close", (code) => {
-      const bytes = Buffer.concat(stdout);
-      done({ out: `${bytes}${out}`, code: code ?? 1, stdout: bytes });
+      const output = Buffer.concat(stdout);
+      done({ out: `${output}${out}`, code: code ?? 1, stdout: output });
     });
   });
   const next = waiting.shift();
