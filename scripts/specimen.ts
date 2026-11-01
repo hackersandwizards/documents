@@ -204,6 +204,10 @@ ${pages.map((p) => `<li><a href="#${p.file}">${escapeHtml(p.title)}</a></li>`).j
 ${pages.map((p) => `<h2 id="${p.file}">${escapeHtml(p.title)} <a href="${p.file}.html">einzeln öffnen</a></h2>\n<iframe src="${p.file}.html" title="${escapeHtml(p.title)}" style="${p.frame ?? `height: ${(p.pages ?? 1) * 297}mm`}" loading="lazy"></iframe>`).join("\n")}
 </main>
 </div>
+<script>
+// On GitHub Pages, links to the other two catalogues leave their local addresses for their public pages.
+if (location.hostname.endsWith(".github.io")) for (const a of document.querySelectorAll("a[href]")) { const name = a.hostname.slice(0, -".localhost".length); if (a.hostname.endsWith(".localhost") && ["brand", "slides", "documents"].includes(name)) a.href = "https://hackersandwizards.github.io/" + name + a.pathname + a.hash; }
+</script>
 </body>
 </html>
 `;
