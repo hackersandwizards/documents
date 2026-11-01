@@ -64,6 +64,9 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
   `bun run check:staged`: `gitleaks` over the staged changes, `prettier --check` and `eslint` on
   the staged files. `bun install` points `core.hooksPath` at `.githooks/`.
 - `bun run specimen`: rebuild `specimen/`.
+- `bun run dev`: serve the checkout on port 4328 for `http://documents.localhost` (Caddy, as for
+  `os.localhost`); the specimen's header links the brand catalogue and the slide specimen at
+  `brand.localhost` and `slides.localhost`.
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
 - One test file: `bun test <file>`.
 

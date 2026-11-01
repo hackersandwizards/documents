@@ -50,6 +50,7 @@
     "format:check": "bun --bun prettier --check .",
     "fix": "bun --bun eslint --cache --concurrency=auto . --fix && bun --bun prettier --write .",
     "specimen": "bun scripts/specimen.ts",
+    "dev": "bun scripts/serve.ts",
     "check:staged": "bun .claude/skills/engineering/check-staged.ts"
   },
   "peerDependencies": {
