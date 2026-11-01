@@ -35,7 +35,9 @@ handling that prevents data loss, security measures, or accessibility basics.
   project's own binary (`bun run vitest run <file>`), never `bunx`, `npx` or `node_modules/.bin`.
   A hook is one line in `.githooks/` calling a script: `check:staged` runs `check-staged.ts` from
   this folder, `lfs:pre-push` runs `git lfs pre-push` where LFS is used. `check-lock.ts` here
-  serialises `bun run check`, and `only-bun.cjs` is the `preinstall` guard.
+  serialises `bun run check`, and `only-bun.cjs` is the `preinstall` guard. npm 7 writes
+  `node_modules` and `package-lock.json` before `preinstall` runs, so `package.json` also sets
+  `"engines": {"npm": "please-use-bun"}` and `.npmrc` sets `engine-strict=true`.
 - Remove or replace a dependency with a known vulnerability before excusing it. An audit
   exception names the advisory ID.
 - A browser that code, a script or an MCP server starts is Chrome for Testing, the build puppeteer or
