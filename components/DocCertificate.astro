@@ -225,23 +225,14 @@ const topicClass = [
     text-align: center;
   }
 
-  .certificate::before,
-  .certificate::after {
+  .certificate::before {
     content: "";
     position: absolute;
+    top: 0;
     left: 0;
     right: 0;
-    background: var(--gradient);
-  }
-
-  .certificate::before {
-    top: 0;
     height: 5mm;
-  }
-
-  .certificate::after {
-    bottom: 0;
-    height: 2mm;
+    background: var(--gradient);
   }
 
   .logo {
