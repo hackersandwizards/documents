@@ -68,6 +68,20 @@ const long = { ...handout.chapters[0]!, html: handout.chapters[0]!.html.repeat(6
 const longHandout = { ...handout, chapters: [long, handout.chapters[1]!], toc: [] };
 
 /** The header lines on the long chapter's second page, the first that carries a running head. */
+/** Every word below the running head with its position, page by page. */
+function textBelowHead(pdf: string): string[] {
+  const bbox = execFileSync("pdftotext", ["-bbox", pdf, "-"], { encoding: "utf8" });
+  return bbox
+    .split("<page ")
+    .slice(1)
+    .map((page) =>
+      [...page.matchAll(/<word xMin="([\d.]+)" yMin="([\d.]+)"[^>]*>([^<]*)/g)]
+        .filter((m) => Number(m[2]) >= 30)
+        .map((m) => `${Number(m[1]).toFixed(1)},${Number(m[2]).toFixed(1)} ${m[3]}`)
+        .join("|"),
+    );
+}
+
 async function headerLines(title: string): Promise<number> {
   return headerLinesPerPage(await render("DocHandout", { ...longHandout, title }))[2]!;
 }
@@ -95,16 +109,19 @@ test.skipIf(!chromeBinary())(
 // A chapter's opening page shows its title and no running head; its later pages show the head, and
 // naming the opening page moves no break, where the change of page name forces one.
 test.skipIf(!chromeBinary())(
-  "a chapter's opening page alone drops the running head, and no page moves",
+  "a chapter's opening page alone drops the running head, and no line moves",
   async () => {
-    const props = longHandout;
-    const heads = headerLinesPerPage(await render("DocHandout", props));
-    // The control: without the opening page's rule every chapter page shows the head.
-    const control = headerLinesPerPage(
-      await render("DocHandout", props, (html) => html.replace("@page opening", "@page unused")),
+    const pdf = await render("DocHandout", longHandout);
+    const heads = headerLinesPerPage(pdf);
+    const lines = textBelowHead(pdf);
+    // The control names no block: every chapter page shows the head, and the text sits where
+    // Chrome's own breaks put it.
+    const plain = await render("DocHandout", longHandout, (html) =>
+      html.replace("const named = sections.map(", "const named = [].map("),
     );
+    const control = headerLinesPerPage(plain);
     expect(control.slice(1)).toEqual(control.slice(1).map(() => 1));
-    expect(heads.length).toBe(control.length);
+    expect(lines).toEqual(textBelowHead(plain));
     expect(heads[1]).toBe(0);
     expect(heads.slice(2, -1)).toEqual(heads.slice(2, -1).map(() => 1));
     expect(heads.at(-1)).toBe(0);

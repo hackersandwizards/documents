@@ -1365,9 +1365,9 @@ section { --chapter-label: "Chapter "; }</style><div class="cover"><header class
   // page's content box, Chrome's own fragmentation: the first block that starts in the second
   // column, or runs into it, opens the rest. A chapter whose whole text fits before a chapter that
   // runs on under it is left alone, since the change of name would force that one onto a page.
-  // Measured at once rather than after `document.fonts.ready`: the CLI prints at the window's load,
-  // which work after it raced.
-  {
+  // Measured once the faces are in: measured at parse time, a chapter's text set in the fallback
+  // face fitted one block more than the print (trainer hub AE-DEV handout, 01.11.2026).
+  document.fonts.ready.then(() => {
     const sections = [...document.querySelectorAll("section")];
     const body = document.body.style.width;
     document.body.style.width = "210mm";
@@ -1384,7 +1384,18 @@ section { --chapter-label: "Chapter "; }</style><div class="cover"><header class
     });
     document.body.style.width = body;
     named.flat().forEach((block) => block.classList.add("opening"));
-  }
+    // The page break after the opening page is forced now, and a forced break keeps the margins
+    // after it, which the natural break truncated: the next block loses them, down the chain of
+    // margins that collapse with its own, or its page starts lower (16.5 pt, measured).
+    for (const opening of named.filter((blocks) => blocks.length)) {
+      for (let el = opening.at(-1).nextElementSibling; el; el = el.firstElementChild) {
+        el.style.marginTop = "0";
+        const style = getComputedStyle(el);
+        if (parseFloat(style.paddingTop) || parseFloat(style.borderTopWidth)) break;
+        if (style.display !== "block" || style.float !== "none") break;
+      }
+    }
+  });
 </script>
 </body>
 </html>
