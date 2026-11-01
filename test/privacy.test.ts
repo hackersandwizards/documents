@@ -26,7 +26,7 @@ test("every text rule hits a planted case", () => {
       "DE89 3704" + " 0044 0532 0130 00",
       "Haupt" + "straße 5",
       "1.800,-" + " €",
-      "1.500" + " Euro",
+      "2.345" + " Euro",
       "EUR" + " 1.800",
       "040" + " 1234567",
     ].join("\n"),
