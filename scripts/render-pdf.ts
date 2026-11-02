@@ -181,18 +181,23 @@ export function documentCss(): string {
   return css;
 }
 
-/** The brand files alone, tokens, print faces and the list marker, for a layout that is not a document page, such as the survey deck. */
+/** The brand files alone, tokens, print faces, the document scale, the list marker and the key figure, for a layout that is not a document page, such as the survey deck. */
 export function brandCss(): string {
-  return ["tokens.css", "print.css", "marker.css"].map((f) => inlineCss(brandFile(f))).join("\n");
+  return ["tokens.css", "print.css", "document.css", "marker.css", "elements/kpi.css"]
+    .map((f) => inlineCss(brandFile(f)))
+    .join("\n");
 }
 
 /** A file the brand package exports, such as `tokens.css`, as an absolute path. */
 export const brandFile = (file: string) =>
   createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
 
+/** A stylesheet with its `@import`s inlined and its comments dropped: a brand file's comment shows
+ * sample markup, such as a figure, that a baked document must not carry. */
 export function inlineCss(path: string): string {
   const dir = dirname(path);
   return readFileSync(path, "utf-8")
+    .replace(/\/\*[\s\S]*?\*\/\s*/g, "")
     .replace(/@import "([^"]+)";/g, (_, file: string) =>
       inlineCss(file.startsWith("@") ? createRequire(path).resolve(file) : join(dir, file)),
     )

@@ -17,6 +17,7 @@ export default defineConfig({
         // tokens.css holds an @theme block a browser skips: tokens.root.css is its :root twin.
         "@hackersandwizards/brand/tokens.root.css",
         "@hackersandwizards/brand/print.css",
+        "@hackersandwizards/brand/document.css",
         "@hackersandwizards/brand/marker.css",
         "@hackersandwizards/brand/elements.css",
       ],

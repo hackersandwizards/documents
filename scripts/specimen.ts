@@ -202,6 +202,11 @@ const TILES: [string, string, string][] = [
     '<p>Dann öffnet ihr <a href="https://example.com/">localhost:3000</a>.</p>',
   ],
   ["code", "Codeblock", '<pre><code><span class="prompt">$</span> bun run check</code></pre>'],
+  [
+    "kpi",
+    "Kennzahl, in der Umfrage-Auswertung im Folienmaß",
+    '<div class="hw-kpi"><span class="hw-kpi-value">87 %</span><span class="small muted">Rücklauf</span></div>',
+  ],
 ];
 const reason = (name: string) => {
   const e = EXCEPTIONS[name]!;
@@ -281,6 +286,7 @@ const specimenBase = (html: string, extra = "") =>
 <link rel="icon" href="${BRAND}/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="${BRAND}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/print.css" />
+<link rel="stylesheet" href="${BRAND}/tokens/document.css" />
 <link rel="stylesheet" href="${BRAND}/tokens/marker.css" />
 <style data-hw-document>
 ${base}${extra}

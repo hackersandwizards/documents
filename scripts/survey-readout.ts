@@ -278,10 +278,10 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
       )}</div>
       <div class="dates">${esc(m.dateRange)}</div>
       <div class="metarow">
-        <div class="metabig"><b>${a.counts.completed}</b><span>${esc(t.responses)}</span></div>
-        <div class="metabig"><b>${m.attendees || "—"}</b><span>${esc(t.attendees)}</span></div>
-        <div class="metabig"><b>${rate != null ? rate + "%" : "—"}</b><span>${esc(t.responseRate)}</span></div>
-        <div class="metabig"><b>${m.teams}</b><span>${esc(m.teams === 1 ? t.team : t.teams)}</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${a.counts.completed}</b><span>${esc(t.responses)}</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${m.attendees || "—"}</b><span>${esc(t.attendees)}</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${rate != null ? rate + "%" : "—"}</b><span>${esc(t.responseRate)}</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${m.teams}</b><span>${esc(m.teams === 1 ? t.team : t.teams)}</span></div>
       </div>
       <div class="rule"></div>
       <div class="langnote">${esc(t.verbatim)}</div>
@@ -403,7 +403,9 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
 <link rel="icon" href="${brand}/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="${brand}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${brand}/tokens/print.css" />
+<link rel="stylesheet" href="${brand}/tokens/document.css" />
 <link rel="stylesheet" href="${brand}/tokens/marker.css" />
+<link rel="stylesheet" href="${brand}/elements/kpi.css" />
 `
     : "";
   return PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))

@@ -18,7 +18,7 @@
     "specimen/trainer-briefing.html",
     "specimen/dokument.html"
   ],
-  "uses": ["label", "pill", "card", "callout", "quote", "table", "link", "code"],
+  "uses": ["label", "pill", "card", "callout", "quote", "table", "link", "code", "kpi"],
   "exceptions": {
     "total-band": {
       "reason": "Die Summenzeile auf dem teal Band, 12 % Tönung unter der starken Linie, jeder Betrag teal und 1,2-fach. Summenbänder bleiben je System (Entscheidung shared-elements, 01.11.2026); die Tabelle darin misst das Gate nicht.",
@@ -27,11 +27,11 @@
     "section-label": "Der Abschnittskopf im h4-Maß, mono 600 in Versalien hinter einem teal Quadrat, die Gruppenüberschrift der Website-Trainingsliste. Kein Label, sondern ein Abschnittsband, und die bleiben je System (Entscheidung shared-elements, 01.11.2026).",
     "margin-note": "Die Randnotiz im Handout: rechts neben dem Absatz umflossen, mit lila Linie. brand hat kein Element für Randnotizen; nur Papier hat einen Rand dafür.",
     "survey-readout": {
-      "reason": "Die Umfrage-Auswertung ist ein Foliensatz in 1280 × 720 auf eigener Bühnenskala (--deck-*), kein A4-Dokument; ihre Zitate, Labels und Kennzahlen folgen den Folien.",
+      "reason": "Die Umfrage-Auswertung ist ein Foliensatz in 1280 × 720 auf der Folienskala aus brands document.css (--deck-*), kein A4-Dokument; ihre Zitate und Labels folgen den Folien, ihre Kennzahlen sind brands hw-kpi im Folienmaß.",
       "files": ["readout.css"]
     },
     "onepager": {
-      "reason": "Der Onepager druckt die Trainingsseite der Website auf eigener Skala (--op-*) mit eigenen Label- und Notizformen. Noch nicht auf die brand-Elemente umgestellt: der nächste Schritt dieser Engine, mit Pixelvergleich und Blind-Review.",
+      "reason": "Der Onepager druckt die Trainingsseite der Website auf der Onepager-Skala aus brands document.css (--op-*), mit eigenen Label- und Notizformen. Noch nicht auf die brand-Elemente umgestellt: der nächste Schritt dieser Engine, mit Pixelvergleich und Blind-Review.",
       "files": ["onepager.css"]
     }
   }

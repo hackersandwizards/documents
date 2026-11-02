@@ -8,21 +8,17 @@
 <link rel="icon" href="../node_modules/@hackersandwizards/brand/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/generated/tokens.root.css" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/print.css" />
+<link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/document.css" />
 <style data-hw-onepager>
-/* The document tokens: every value an h&w document draws, named once. The brand's own values come
-   from @hackersandwizards/brand (tokens.css, print.css), never retyped; this file derives the
-   documents' roles from them and holds the lengths only documents have. The shared elements
-   (label, pill, card, callout, quote, table, link, code) are the brand's (elements.css) at its
-   print scale, which composePage sets on the page's root. Every stylesheet and
-   component style of the engine names these tokens and nothing else (test/tokens.test.ts).
-
-   Layers, top to bottom: the brand files; the base set every document type composes (colour
-   roles, type roles, page, rules, radii, spacing, the base blocks); then the few values one type
-   adds on top (onepager, handout, certificate, readout deck), each named for its type. A type
-   that needs a value the base lacks adds it here, under its own heading, never in its stylesheet.
-
-   Units: print lengths in pt, page geometry in mm, as print.css sets them; the onepager keeps the
-   website's px rhythm and the readout deck the slide engine's rem (1/90 of its width). */
+/* The document tokens: the roles an h&w document draws with, named once. Every value comes from
+   @hackersandwizards/brand, never retyped: the brand's tokens and print faces (tokens.css,
+   print.css) and the document scale (document.css: every length, size and step of the base and of
+   each type, onepager, handout, certificate and readout deck). This file derives the documents'
+   roles from them. The shared elements (label, pill, card, callout, quote, table, link, code, key
+   figure) are the brand's (elements.css) at its print scale, which composePage sets on the page's
+   root. Every stylesheet and component style of the engine names these tokens and nothing else
+   (test/tokens.test.ts). A value the engine lacks is a brand token first, added in brand's
+   document.css. */
 
 /* The base layer (document.css's reset) under the brand elements' components layer, so a reset
    never takes their padding. */
@@ -68,10 +64,8 @@
   --shadow: var(--shadow-card);
 
   /* ── Type ──
-     Every text takes one role through its shorthand, never a size or face of its own. --density
-     scales every role by one factor (1 the brand's print sizes); a type that must fit a page count
-     sets it, as the onepager's tight fallback does. */
-  --density: 1;
+     Every text takes one role through its shorthand, never a size or face of its own, each scaled
+     by the brand's --density. */
   --sans: var(--font-sans);
   --mono: var(--font-mono);
   --code-family: var(--type-code-family);
@@ -79,10 +73,6 @@
   --label-family: var(--type-label-family);
   --lead-family: var(--type-lead-family);
   --stat-family: var(--type-stat-family);
-  --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
-  --weight-bold: 700;
   --weight-heading: var(--type-h1-weight);
   --weight-label: var(--type-label-weight);
   --role-display: var(--type-display-weight) calc(var(--type-display-size) * var(--density)) /
@@ -114,355 +104,50 @@
   --tracking-h4: var(--type-h4-tracking);
   --tracking-caps: var(--type-label-tracking);
   --tracking-stat: var(--type-stat-tracking);
-  --tracking-none: 0;
   --word-spacing-display: var(--type-display-word-spacing);
   --case-label: var(--type-label-case);
-  /* A chip's and a pill's own line, and a line set solid. */
-  --leading-chip: 1.5;
-  --leading-solid: 1;
-  /* The total row's figure, 1.2 times its row. */
-  --figure-scale: 1.2em;
 
   /* ── Page ── A4 from print.css; the side margin sits on body, so the strip reaches the edge. */
   --side: var(--print-side);
-  --page-width: 210mm;
   --page-height: var(--print-page-height);
   --page-margin-bottom: var(--print-margin-bottom);
-  --measure: 150mm;
 
-  /* ── Rules, marks and corners ──
-     The print scale, set for the two ways an A4 PDF is read, printed at arm's length and on a laptop
-     at fit-width, about 70% zoom, where 1pt is about 0.93 CSS px. The floor is a rule that stays a
-     visible line at 70% on a 1x screen and in a 25% thumbnail; the website's px x 0.625 gave a 2pt
-     strip and 0.75pt hairlines, which Benedikt found too slim to see (2026-10-28). */
-  --strip: 6pt;
-  /* From page 2 the header's strip returns as this rail on the paper edge, one gradient across the
-     two top boxes: a blind A/B on the quote preferred it 4 of 4 (2026-10-28). */
-  --rail: 1.5pt;
-  --rule: 1pt;
-  --rule-strong: 2pt;
-  --rule-accent: 3pt;
+  /* ── Marks and corners ── */
   --radius: var(--print-radius);
   --pill: var(--radius-pill);
   --corner-brand: var(--radius-brand);
-  /* The list marker and the section label's swatch: squares, as every mark too small for the brand
-     corner at its full value (the website's patterns.css). */
-  --bullet: 6pt;
-  --swatch: 8pt;
   /* Every list takes the brand's marker (marker.css) at the print size. */
   --hw-markers: on;
   --hw-marker-size: var(--bullet);
   --hw-marker-gap: var(--list-marker-gap);
   --hw-marker-indent: var(--list-indent);
   --hw-marker-color: var(--accent);
-  /* The whole pixel the swatch's lift rounds to, as Chrome paints. */
-  --pixel: 1px;
-  /* The swatch's centre on the caps, above the baseline, for Inter and JetBrains Mono alike. */
-  --caps-middle: 0.365em;
-  --header-row: 56pt;
-  --logo: 28pt;
-  --logo-gap: 7pt;
-  /* The pixel wordmark's box, 1.3 times the h4 role it replaced (the letters 1.17 times), and the
-     gap to text after it, 0.4 of the letters' height (logo system rounds, 2026-10-29). */
-  --wordmark: 14.3pt;
-  --wordmark-gap: 5.1pt;
   --wizard-lift: var(--logo-wizard-lift);
 
-  /* ── Spacing ──
-     Each step is named for what it spaces; a step two blocks share is one token. */
-  --space-hair: 1pt;
-  --space-imprint: 1.5pt;
-  --space-label: 2pt;
-  --space-chip: 2.5pt;
-  --space-tag: 3pt;
-  --space-heading: 4pt;
-  --space-cell: 5pt;
-  --space-paragraph: 6pt;
-  --space-group: 7pt;
-  --space-grid: 10pt;
-  --space-list: 12.5pt;
-  --space-lead: 15pt;
-  --card-pad-base: 14pt;
+  /* ── Spacing ── */
   --card-pad: calc(var(--card-pad-base) * var(--density));
   /* A pill keeps its outer size from before brand's pill drew a hairline round it (transparent
      unless outlined): the hairline comes off the padding. */
   --chip-pad: calc(2pt - var(--rule)) calc(7pt - var(--rule));
   --h1-space-after: var(--space-heading);
-  --h2-margin: 20pt 0 6pt;
-  --h3-margin: 12.5pt 0 4pt;
-  --h4-margin: 10pt 0 3pt;
-  --rule-margin: 12.5pt 0;
-  --card-rule-margin: 6.25pt 0;
-  --table-margin: 4pt 0 10pt;
-  --block-margin: 6pt 0;
-  --block-margin-loose: 6pt 0 10pt;
-  --callout-margin: 8pt 0;
-  --band-margin: 10pt 0;
-  --list-indent: 12.5pt;
-  --list-marker-gap: 6pt;
-  --ol-indent: 12pt;
-  --swatch-gap: 7.5pt;
-  --section-label-margin: 15pt 0 6pt;
-  --subtitle-space-after: 10pt;
-  --lead-margin: 18pt 0 12pt;
-  --card-grid-gap: 12.5pt 15pt;
-  --dl-gap: 2pt 10pt;
-  --total-pad-top: 7pt;
   /* How far a table holding a band reaches past the text edge on each side. */
   --band-bleed: var(--space-cell);
-  --timeline-when: 36mm;
-  --header-gap: 8mm;
-  --header-pad: 8pt;
-  --header-meta-width: 70mm;
-  --section-space: 7mm;
-  --closing-space: 6mm;
-  --closing-space-tight: 4mm;
-  --closing-line: 1mm;
-  --signature-gap: 12mm;
-  --signature-space: 16mm;
-  /* The room above a signature line, for a hand signature (the trainer NDA's 14mm). */
-  --signature-room: 14mm;
-  --card-title-space: 1mm;
-  --card-meta-space: 2mm;
-  --dense-title-space: 1.5mm;
-  --foot-pad: 1.6mm;
-  --note-pad: 3mm 4mm;
-  --confirmation-space: 4mm;
-  --closing-sign-off-tight: 3mm;
   --chip-pad-slim: calc(1pt - var(--rule)) calc(7pt - var(--rule));
   --display-size: var(--type-display-size);
   --label-size: var(--type-label-size);
   --small-size: var(--type-small-size);
   --small-leading: var(--type-small-line-height);
   --label-leading: var(--type-label-line-height);
-
-  /* ── Proposal ── */
-  --community-column-gap: 6mm;
-  --terms-column-gap: 8mm;
-  --term-space: 3mm;
-  --acceptance-margin: 4mm 0 6pt;
-  --acceptance-term: 28mm;
-  --acceptance-facts-margin: 2mm 0 3mm;
-
-  /* ── Preparation ── */
-  --step-space: 2mm;
-  --step-code-margin: 1.5mm 0;
-  --step-code-margin-grid: 1mm 0;
-  --step-code-pad: 2mm 4mm;
-  --step-code-size: 8.8pt;
-  --step-number-width: 1.5em;
-
-  /* ── Leistungsnachweis ── A month of 23 single-line rows still fits one page with the
-     confirmation (measured 2026-10-29), so the rows are set tight. */
-  --meta-gap: 3mm 6mm;
-  --meta-space-after: 5mm;
-  --note-space-after: 3mm;
-  --hours-row-pad: 0.2mm;
-  --hours-date: 16mm;
-  --hours-day: 11mm;
-  --hours-time: 27mm;
-  --hours-figure: 18mm;
-  --hours-section-pad: 2mm;
-
-  /* ── Certificate ── One rhythm with the verifier's certificate page: tight inside a group of
-     lines, related between the groups of the statement, section between sections. The name is the
-     one size outside the print roles: display's 26pt read too small for a name. */
-  --cert-tight: 3pt;
-  --cert-related: 12pt;
-  --cert-section: 24pt;
-  --cert-section-fit: 16pt;
-  --cert-pad: 16mm 25mm 14mm;
-  --cert-logo: 16mm;
-  --cert-logo-fit: 12mm;
-  --cert-name-scale: 1.75;
-  --cert-name-scale-fit: 1.5;
-  --cert-name-scale-small: 1.25;
-  --cert-name-leading: 1.15;
-  --cert-topics: 130mm;
-  --cert-topics-compact: 145mm;
-  --cert-topics-wide: 160mm;
-  --cert-topic-pad: 0.3mm;
-  --cert-column-gap: 10mm;
-  --cert-signature-gap: 16mm;
-  --cert-signature: 72mm;
-  --cert-signature-image: 22mm;
-  --cert-signature-image-fit: 16mm;
-  --cert-signature-image-width: 70mm;
-  --cert-signature-line: 66mm;
-  --cert-qr: 26mm;
-  --cert-button-pad: 2.8mm 7mm;
 }
 
-/* ── Onepager ── The website's px rhythm: --op-N is N px, the steps the site's spacing uses. */
+/* ── Readout deck ── The survey readout's slides on the brand's deck scale (--deck-*). */
 :root {
-  --op-side: 14mm;
-  /* Two rhythms, as on the site: between sections and inside one. */
-  --op-section: 18px;
-  --op-section-tight: 7px;
-  --op-stack: 8px;
-  --op-1: 1px;
-  --op-2: 2px;
-  --op-3: 3px;
-  --op-4: 4px;
-  --op-5: 5px;
-  --op-6: 6px;
-  --op-7: 7px;
-  --op-8: 8px;
-  --op-9: 9px;
-  --op-10: 10px;
-  --op-14: 14px;
-  --op-16: 16px;
-  --op-18: 18px;
-  --op-20: 20px;
-  --op-22: 22px;
-  --op-28: 28px;
-  --op-hero-pad: 20px 24px 22px;
-  --op-hero-pad-tight: 13px 18px 14px;
-  --op-button-pad: 3pt 10pt;
-  --op-button-leading: 1.6;
-  --op-cta-leading: 2;
-  --op-chip-gap: 0.3em;
-  --op-proof-min: 70px;
-  /* The facts box's and a callout's block padding, as a share of the card padding. */
-  --op-facts-pad: 0.6;
-  --op-box-pad: 0.8;
-  /* The tight fallback: every role at 0.85, the card padding at half. */
-  --op-tight-density: 0.85;
-  --op-tight-card-pad: 0.5;
-  /* The fit pass's gap levels: page 2's blocks (air) and page 1's after the hero (lift), each a
-     step above --op-section, into which a smaller margin would collapse. */
-  --op-air-0: 22px;
-  --op-air-1: 28px;
-  --op-air-2: 36px;
-  --op-air-3: 46px;
-  --op-air-4: 58px;
-  --op-lift-0: 22px;
-  --op-lift-1: 26px;
-  --op-lift-2: 34px;
-  --op-lift-3: 44px;
-  --op-lift-4: 56px;
-  /* The page on screen: A4 wide, on the tint. */
-  --op-screen-width: 794px;
-  --op-screen-margin: 20px auto;
-  --op-screen-pad: 42px 53px;
-}
-
-/* ── Handout ── Read as a PDF on a laptop or an iPad, never printed: on an 11-inch iPad in portrait
-   an A4 page shows at 1.4 times, so 10pt body text reads as 14px. One point more on the text roles
-   brings it to 15px and a full-width line under 90 characters. */
-:root {
-  --handout-body-size: 11pt;
-  --handout-small-size: 10pt;
-  --handout-code-size: 10pt;
-  --handout-label-size: 9pt;
-  /* The handout page's top margin, as its page box below sets it. */
-  --handout-margin-top: 18mm;
-  --handout-flow-space: 12mm;
-  --handout-code-hang: 4ch;
-  --handout-eyebrow-space: 2mm;
-  --handout-title-space: 5mm;
-  --handout-title-bar: 24mm;
-  --handout-title-bar-space: 3mm;
-  --handout-h2-margin: 6mm 0 2mm;
-  --handout-h3-margin: 4mm 0 1.5mm;
-  /* The text runs the full page width: a note takes its width only where one is. */
-  --handout-note-width: 46mm;
-  --handout-note-gap: 6mm;
-  --handout-note-space: 3mm;
-  --handout-note-pad: 3mm;
-  --handout-note-rule: 3px;
-  --handout-keybox-margin: 3mm 0;
-  --handout-keybox-pad: 4mm 5mm;
-  /* The ruled notes page: 28 lines fit the one page under the chapter title at this pitch. */
-  --handout-note-line: 8mm;
-  --handout-cover-space: 24mm;
-  --handout-cover-card: 80mm;
-  --handout-cover-card-space: 8mm;
-  --handout-toc-space: 10mm;
-  --handout-toc-gap: 2mm;
-  --handout-toc-pad: 1mm 0;
-  --handout-toc-number: 7mm;
-}
-
-/* ── Readout deck ── The survey readout's slides, in the slide engine's look (slides
-   styles/slides.css): its stage is 1440x810 with a rem of 1/90 of the width, so the deck's 1280px
-   page takes a rem of 14.2222px and every engine length is a rem. --deck-N is N/16 rem, the slide
-   engine's N px at its 1440 stage. */
-:root {
-  --deck-rem: 14.2222px;
-  --deck-width: 1280px;
-  --deck-height: 720px;
-  --deck-2: 0.125rem;
-  --deck-4: 0.25rem;
-  --deck-6: 0.375rem;
-  --deck-8: 0.5rem;
-  --deck-12: 0.75rem;
-  --deck-16: 1rem;
-  --deck-20: 1.25rem;
-  --deck-24: 1.5rem;
-  --deck-28: 1.75rem;
-  --deck-32: 2rem;
-  --deck-40: 2.5rem;
-  --deck-44: 2.75rem;
-  --deck-48: 3rem;
-  --deck-56: 3.5rem;
-  --deck-68: 4.25rem;
-  --deck-72: 4.5rem;
-  --deck-88: 5.5rem;
-  --deck-112: 7rem;
-  --deck-160: 10rem;
-  --deck-384: 24rem;
-  --deck-448: 28rem;
-  --deck-480: 30rem;
-  --deck-hairline: 0.09375rem;
-  --deck-corner: 1.875rem 0.46875rem;
-  --deck-marker: 0.5625rem;
-  /* The corner row, as the slide engine sets it (slides v0.17.0, styles/slides.css :root,
-     --slide-footer-side, --slide-footer-inset, --slide-corner-wordmark): the content's 4.5rem
-     graphics-safe side margin, 1.5rem above the bottom edge, the wordmark's box 1.956rem. The slides
-     package publishes these only inside its Tailwind stylesheet, whose peers (React, Next,
-     Tailwind) a document cannot install, so they are copied here with their origin and version.
-     The lockup keeps the wordmark's letter size: the wordmark is 952 of the lockup's 1489 units. */
-  --deck-corner-side: 4.5rem;
-  --deck-corner-inset: 1.5rem;
-  --deck-corner-wordmark: 1.956rem;
+  /* The lockup keeps the wordmark's letter size: the wordmark is 952 of the lockup's 1489 units. */
   --deck-corner-lockup: calc(var(--deck-corner-wordmark) * 1489 / 952);
-  --deck-text-caption: 1.125rem;
-  --deck-text-note: 1.25rem;
-  --deck-text-item: 1.375rem;
-  --deck-text-body: 1.5rem;
-  --deck-text-counter: 1.625rem;
-  --deck-text-kicker: 1.6875rem;
-  --deck-text-lead: 1.875rem;
-  --deck-text-stat: 3rem;
-  --deck-text-h2: 3.375rem;
-  --deck-text-h1: 6rem;
-  --deck-text-bignum: 140px;
-  --deck-h1-tracking: -0.03em;
-  --deck-leading-kicker: 1.25;
-  --deck-leading-h1: 1.02;
-  --deck-leading-h2: 1.1;
-  --deck-leading-bignum: 0.9;
-  --deck-leading-label: 1.3;
-  --deck-leading-quote: 1.4;
-  --deck-leading-item: 1.35;
-  --deck-leading-key: 2rem;
   /* Bar colours, the slide engine's rule (slides v0.20.0): teal is the data hue, a bar that is
      context takes the ink at the ladder's 40 % on the page, a step between takes teal at 70 %. */
   --deck-bar-step: color-mix(in srgb, var(--color-teal) 70%, var(--color-bg));
   --deck-bar-context: color-mix(in srgb, var(--color-ink) 40%, var(--color-bg));
-  /* The charts' own pixel geometry. */
-  --deck-px-2: 2px;
-  --deck-px-3: 3px;
-  --deck-px-8: 8px;
-  --deck-px-12: 12px;
-  --deck-px-14: 14px;
-  --deck-px-16: 16px;
-  --deck-px-18: 18px;
-  --deck-px-24: 24px;
-  --deck-px-48: 48px;
-  --deck-px-180: 180px;
-  --deck-px-300: 300px;
 }
 
 /* ── Page boxes ── An @page rule cannot read a custom property, so each type's page box is set
@@ -494,25 +179,6 @@
   margin: 0;
 }
 
-/* Every shared element of the brand, plain CSS, one file each, with the four scales. A surface
-   imports this file or the elements it uses (@hackersandwizards/brand/elements/<name>.css, plus
-   scales.css), after tokens.css (and print.css on paper). Each element is an hw-* class, its
-   variants data-* attributes, night the nearest data-theme being "dark" (a data-theme="light" inside a dark one turns its subtree back to day). The rules sit in
-   @layer components, so a surface's utilities win; brand-elements measures that they still match.
-   The list marker is tokens/marker.css (export ./marker.css). */
-/* The four scales of the elements: one rule, sized for how each medium is seen. A medium sets only
-   measures here (sizes, padding, corners, line widths, and the line colour paper needs), never a
-   colour or a shape of its own. Put data-hw-scale on the page's root or on any container; an
-   element without one takes the screen values, the website's.
-
-   screen  the website and the verifier, CSS px at desk distance
-   dense   the apps (os, trainer hub) and the talks site: the expert set's UI sizes, and the
-           compact type steps and heights its components read
-   print   documents, A4 in pt. The type sizes are print.css's paper roles, which the page loads
-           (print.css owns them); this preset sets the geometry
-   stage   slides on the 1440 stage, whose rem is 1/90 of the slide's width: the website's px times
-           1.5 in rem, the hairline and corner the slide engine measured for a room */
-
 [data-hw-scale="screen"] {
   --hw-label-size: var(--text-label);
   --hw-pill-size: var(--text-small);
@@ -536,6 +202,18 @@
   --hw-strip: 3px;
   --hw-code-pad: 1rem;
   --hw-code-corner: var(--radius-sm);
+  --hw-frame-width: 1px;
+  --hw-button-height: 2.75rem;
+  --hw-button-pad: 0.5rem min(1.5rem, 24px);
+  --hw-arrow-link-pad: 0.75rem;
+  --hw-field-height: 3rem;
+  --hw-field-pad: 1rem;
+  --hw-segment-pad: 0.25rem 0.5rem;
+  --hw-row-pad: 0.5rem 0.75rem;
+  --hw-row-stripe: 4px;
+  --hw-row-gap: 0.75rem;
+  --hw-kpi-size: var(--type-stat-size);
+  --hw-kpi-tracking: var(--type-stat-tracking);
 }
 
 [data-hw-scale="dense"] {
@@ -561,10 +239,9 @@
   --hw-strip: 3px;
   --hw-code-pad: 0.75rem;
   --hw-code-corner: var(--radius-sm);
-  /* The compact tier (decision density-tiers, 2026-11-02): the expert set's UI text at macOS's
-     13 px, its micro step at 11 px. meta repeats ui here, since a var() resolves where it is
-     declared. The heights an app's components read, at their measured values: a list row's
-     padding and a filter control's height. */
+  --hw-frame-width: 1px;
+  --hw-kpi-size: var(--text-page, 1.5rem);
+  --hw-kpi-tracking: -0.01em;
   --text-ui: 0.8125rem;
   --text-ui--line-height: 1.45;
   --text-meta: var(--text-ui);
@@ -575,8 +252,15 @@
   --hw-control-height: 2.5rem;
 }
 
-/* Paper is read printed and at about 70 % zoom on a laptop, where 1 pt is about 0.93 CSS px: lines
-   take 1 pt in border-strong, the card's rule 3 pt, the strip 6 pt (documents, 2026-10-28). */
+[data-hw-scale="dense"][data-hw-type="regular"] {
+  --text-ui: 0.875rem;
+  --text-ui--line-height: 1.5;
+  --text-meta: var(--text-ui);
+  --text-meta--line-height: var(--text-ui--line-height);
+  --text-micro: 0.75rem;
+  --text-micro--line-height: calc(16 / 12);
+}
+
 [data-hw-scale="print"] {
   --hw-label-size: var(--type-label-size);
   --hw-pill-size: var(--type-small-size);
@@ -594,8 +278,8 @@
   --hw-cell-pad: 5pt 7.5pt 5pt 0;
   --hw-underline: 1pt;
   --hw-strip: 6pt;
+  --hw-frame-width: 1pt;
   --hw-code-pad: 14pt;
-  /* The small corner at paper size, in the ratio of print.css's brand corner (16px 4px). */
   --hw-code-corner: 4px;
 }
 
@@ -622,17 +306,10 @@
   --hw-strip: 0.75rem;
   --hw-code-pad: 1.5rem;
   --hw-code-corner: 0.46875rem;
+  --hw-frame-width: 0.125rem;
+  --hw-kpi-size: 3rem;
+  --hw-kpi-tracking: 0;
 }
-
-/* The label: an eyebrow, kicker, fact name or table head. The label role (mono, capitals, its
-   tracking) in teal-dark, teal-night on night. data-tone="muted" sets it in the muted grey (a
-   callout's label), data-tone="ink" in the text colour (a field's or group's name).
-
-   Settings (scales.css sets them per medium):
-     --hw-label-size    the label role's size
-     --hw-label-family  the label role's family; the apps set Inter (audience, design guide)
-     --hw-muted         the muted grey, where a surface's --color-muted means something else
-                        (expert.css: a fill) */
 
 @layer components {
   .hw-label {
@@ -663,33 +340,11 @@
   }
 }
 
-/* The pill: a label holding a value, a fact, a role or a tag. The pill corner; the hue at 15 % on
-   white, its text the hue mixed 40 % into ink, weight 500 (the website's training list chip): a
-   value from a scale, the hue its place on the scale. On night the hue's night tone at 20 % on
-   night under night ink.
-
-   Variants, each one meaning:
-     data-tone="neutral"    a value without a scale (a fact, a free tag, an amount): ink at 7 %,
-                            its text ink at 70 %
-     data-variant="outline" no value set, or a plain tag: a hairline on no fill, in ink
-     data-variant="add"     adds a value: the hairline dashed, on no fill, muted
-     data-caps              the words in the label role (mono capitals), as a document's type tag
-     data-editable          a value changed here (a menu opens on it): takes --hw-pill-edit-corner
-   Trailing parts, as children after the words: hw-pill-chevron (an empty span: opens a menu that
-   changes the value) and hw-pill-remove (a button: removes the value). A leading icon is an svg
-   child. With any of them the pill lays its children out in a row, 0.25em apart.
-
-   Settings:
-     --hw-pill-hue         the hue (a brand hue token; teal unless the surface groups by hue)
-     --hw-pill-hue-night   that hue's night tone
-     --hw-pill-size        the small role's size
-     --hw-pill-pad         block and inline padding
-     --hw-pill-edit-corner the corner of an editable pill: the pill corner, or the apps' small
-                           corner where the shape marks what can be changed
-     --hw-hairline         the outline's width
-     --hw-label-size       the size of a capitals pill
-     --hw-label-family     the family of a capitals pill (label.css)
-     --hw-muted            the muted grey (label.css) */
+@media (max-width: 47.999rem) {
+  :root {
+    --text-label: var(--text-small);
+  }
+}
 
 @layer components {
   .hw-pill {
@@ -789,17 +444,6 @@
   }
 }
 
-/* The card: the brand corner, a hairline, white, the card padding. data-variant="tint" is the
-   emphasised card: teal at 7 % with a 40 % teal line. On night the card is glass, white at 7 % with
-   a 15 % white line; the tinted one takes teal-night. Layout, shadow and hover stay the surface's.
-
-   Settings:
-     --hw-card-pad     the padding
-     --hw-card-corner  the corner, the brand corner at the medium's size
-     --hw-hairline     the line's width
-     --hw-line         the line's colour: border, or border-strong on paper, where a pale 1 pt line
-                       vanishes at 70 % zoom */
-
 @layer components {
   .hw-card {
     box-sizing: border-box;
@@ -823,16 +467,6 @@
     }
   }
 }
-
-/* The callout: a box that sums up or flags, before or beside the body ("In short"). A teal rule on
-   the left, teal at 7 %, the brand corner with the rule bending into it, text in weight 500; its
-   label is an hw-label with data-tone="muted". data-hue="purple" marks a result. On night the
-   night tones of the hue.
-
-   Settings:
-     --hw-callout-pad   the padding
-     --hw-card-corner   the corner
-     --hw-rule-accent   the rule's width */
 
 @layer components {
   .hw-callout {
@@ -858,15 +492,6 @@
   }
 }
 
-/* The quote: the words upright behind a purple rule, in ink. data-tone="muted" sets an excerpt of a
-   source in the muted grey. On night purple-night and night ink. Who said it, and any portrait,
-   stay the surface's.
-
-   Settings:
-     --hw-quote-rule  the rule's width
-     --hw-quote-gap   the space from the rule to the words
-     --hw-muted       the grey of a muted quote (label.css) */
-
 @layer components {
   .hw-quote {
     margin-inline: 0;
@@ -887,19 +512,6 @@
     }
   }
 }
-
-/* The ruled table: hairlines under every row, no fill, no frame; column heads in the label role in
-   the muted grey; cells in the small role, top-aligned, the last column flush right. On night the
-   line is white at 15 %. Scrolling, stacking on a phone and column widths stay the surface's.
-
-   Settings:
-     --hw-table-size  the cells' size, the small role
-     --hw-label-size  the heads' size, the label role
-     --hw-label-family the heads' family (label.css)
-     --hw-muted       the heads' grey (label.css)
-     --hw-cell-pad    a cell's padding
-     --hw-hairline    the rule's width
-     --hw-line        the rule's colour */
 
 @layer components {
   .hw-table {
@@ -935,13 +547,6 @@
   }
 }
 
-/* The link in running text: teal-dark, underlined 0.2em below the baseline, ink on hover; on night
-   teal-night, white on hover. hw-link on the link, or hw-links on a prose column to mark every link
-   in it. A link that is a row, a button or a person's name is not this element.
-
-   Settings:
-     --hw-underline  the underline's thickness */
-
 @layer components {
   :is(.hw-link, .hw-links a) {
     color: var(--color-teal-dark);
@@ -962,15 +567,6 @@
   }
 }
 
-/* The focus ring, on every screen: solid purple (5.4:1 on white), purple-night on night (6.4:1),
-   outside the element. The ring follows the element's own corners; a link set in text rounds its
-   ring with the small corner. hw-focus-ring on the page's root (or any container) turns it on for
-   everything inside.
-
-   Settings:
-     --hw-focus-width   the ring's width
-     --hw-focus-offset  the gap between element and ring */
-
 @layer components {
   :is(.hw-focus-ring :focus-visible, .hw-focus-ring:focus-visible) {
     outline: var(--hw-focus-width, 3px) solid var(--color-purple);
@@ -985,16 +581,6 @@
     }
   }
 }
-
-/* The round icon control: a button that holds only an icon (play, pause, previous, next, theme), on
-   every surface a circle. Ink at 7 %, 15 % on hover, the icon in ink; on night white at 15 % and
-   25 % with a white icon. data-on="picture" is the control over a picture: solid teal, white icon.
-   The icon is its svg child, sized here; the target keeps its size when text is enlarged, since the
-   settings are px on screen.
-
-   Settings:
-     --hw-control-size  the circle's diameter
-     --hw-control-icon  the icon's side */
 
 @layer components {
   .hw-icon-button {
@@ -1038,30 +624,12 @@
   }
 }
 
-/* The gradient strip: the brand gradient from teal to purple, left to right, along the top edge of a
-   page, a header or a document, mixed in oklab as the website draws it (Tailwind's gradient). The
-   same on night.
-
-   Settings:
-     --hw-strip  the strip's height */
-
 @layer components {
   .hw-strip {
     height: var(--hw-strip, 3px);
     background: linear-gradient(to right in oklab, var(--color-teal), var(--color-purple));
   }
 }
-
-/* The code block: the code palette's ground (night, night-2 on a night page) and text, the small
-   corner, the code role, no ligatures (JetBrains Mono would join -> and == into glyphs a reader
-   cannot type), scrolling sideways on screen. Syntax colours come from the code palette: Shiki
-   with code-theme.json and the transformer codeClasses (code.ts) sets the hw-code-<role> classes
-   below, which survive a surface that drops inline styles; a hand-set span takes a class too.
-
-   Settings:
-     --hw-code-size    the code role's size
-     --hw-code-pad     the padding
-     --hw-code-corner  the corner, the small corner at the medium's size */
 
 @layer components {
   .hw-code {
@@ -1076,6 +644,10 @@
     font-variant-ligatures: none;
     color: var(--code-fg);
     background: var(--code-bg);
+  }
+  .hw-code[data-variant="panel"] {
+    border: var(--hw-hairline, 1px) solid color-mix(in srgb, white 7%, transparent);
+    border-radius: var(--hw-card-corner, var(--radius-brand));
   }
   .hw-code code {
     font: inherit;
@@ -1109,6 +681,567 @@
     .hw-code {
       background: var(--color-night-2);
     }
+  }
+}
+
+@layer components {
+  .hw-button {
+    display: inline-flex;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-height: var(--hw-button-height, 2.75rem);
+    align-items: center;
+    justify-content: center;
+    border: var(--hw-hairline, 1px) solid var(--color-teal);
+    border-radius: var(--radius-brand);
+    padding: var(--hw-button-pad, 0.5rem min(1.5rem, 24px));
+    font-family: var(--type-body-family);
+    font-size: var(--type-body-size);
+    font-weight: 500;
+    line-height: var(--type-body-line-height);
+    text-align: center;
+    text-decoration: none;
+    color: var(--color-white);
+    background: var(--color-teal);
+    cursor: pointer;
+    transition:
+      background-color var(--motion-fast),
+      border-color var(--motion-fast),
+      color var(--motion-fast);
+  }
+  .hw-button:hover {
+    border-color: var(--color-purple);
+    background: var(--color-purple);
+  }
+  .hw-button[data-variant="secondary"] {
+    color: var(--color-teal);
+    background: transparent;
+  }
+  .hw-button[data-variant="secondary"]:hover {
+    border-color: var(--color-purple);
+    color: var(--color-purple);
+    background: transparent;
+  }
+  @media (min-width: 64rem) {
+    .hw-button {
+      min-height: 3rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hw-button {
+      transition: none;
+    }
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-button[data-variant="secondary"] {
+      border-color: color-mix(in srgb, white 40%, transparent);
+      color: var(--color-white);
+    }
+    .hw-button[data-variant="secondary"]:hover {
+      border-color: var(--color-purple);
+      color: var(--color-white);
+      background: color-mix(in srgb, var(--color-purple) 15%, transparent);
+    }
+  }
+}
+
+@layer components {
+  .hw-arrow-link {
+    padding-block: var(--hw-arrow-link-pad, 0.75rem);
+    text-decoration: none;
+    color: var(--color-teal-dark);
+  }
+  .hw-arrow-link:hover {
+    color: var(--color-ink);
+  }
+  .hw-arrow-link[data-tone="muted"] {
+    color: var(--color-muted);
+  }
+  .hw-arrow {
+    white-space: nowrap;
+    font-family: var(--font-sans);
+  }
+  .hw-arrow > span {
+    display: inline-block;
+    transition: translate var(--motion-fast);
+  }
+  .hw-arrow-link:is(:hover, :focus-visible) .hw-arrow > span {
+    translate: 4px 0;
+  }
+  .hw-arrow[data-external] > span {
+    margin-inline-end: 0.25em;
+    line-height: 1;
+    rotate: -45deg;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hw-arrow > span {
+      transition: none;
+    }
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-arrow-link {
+      color: var(--color-teal-night);
+    }
+    .hw-arrow-link:hover {
+      color: var(--color-white);
+    }
+    .hw-arrow-link[data-tone="muted"] {
+      color: var(--color-night-muted);
+    }
+  }
+}
+
+@layer components {
+  .hw-field-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+  .hw-field {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--hw-field-height, 3rem);
+    border: var(--hw-hairline, 1px) solid var(--color-border-strong);
+    border-radius: var(--radius-brand);
+    padding: 0 var(--hw-field-pad, 1rem);
+    font-family: var(--type-body-family);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
+    color: var(--color-ink);
+    background: var(--color-white);
+    transition: border-color var(--motion-fast);
+  }
+  .hw-field::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
+  }
+  .hw-field:hover {
+    border-color: var(--color-ink);
+  }
+  .hw-field[aria-invalid="true"] {
+    border-color: var(--color-amber-dark);
+  }
+  .hw-field-row[data-joined] {
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+    border: var(--hw-hairline, 1px) solid var(--color-border);
+    border-radius: var(--radius-brand);
+    background: var(--color-white);
+  }
+  .hw-field-row[data-joined]:has(:focus-visible) {
+    outline: var(--hw-focus-width, 3px) solid var(--color-purple);
+    outline-offset: var(--hw-focus-offset, 2px);
+  }
+  .hw-field-row[data-joined] > :focus-visible {
+    outline: none;
+  }
+  .hw-field-row[data-joined] > .hw-field {
+    width: 0;
+    min-height: 2.75rem;
+    min-width: 0;
+    flex: 1;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .hw-field-row[data-joined] > button {
+    display: flex;
+    width: min(3rem, 48px);
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    color: var(--color-white);
+    background: var(--color-teal-dark);
+    cursor: pointer;
+  }
+  .hw-field-row[data-joined] > button:is(:hover, :focus-visible) {
+    background: var(--color-teal);
+  }
+  @media (max-width: 40rem) {
+    .hw-field-row:not([data-joined]) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hw-field {
+      transition: none;
+    }
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-field {
+      border-color: var(--color-night-muted);
+      color: var(--color-white);
+      background: var(--color-night-2);
+    }
+    .hw-field::placeholder {
+      color: var(--color-night-muted);
+    }
+    .hw-field-row[data-joined]:has(:focus-visible) {
+      outline-color: var(--color-purple-night);
+    }
+  }
+}
+
+@layer components {
+  .hw-facts {
+    margin: 0;
+  }
+  .hw-facts > div {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+  }
+  .hw-facts dd {
+    margin: 0;
+  }
+  .hw-facts[data-variant="ruled"] > div {
+    border-top: var(--hw-hairline, 1px) solid var(--hw-line, var(--color-border));
+    padding-block: 0.625rem;
+  }
+  .hw-facts[data-variant="ruled"] > div:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-facts[data-variant="ruled"] > div {
+      border-top-color: color-mix(in srgb, white 15%, transparent);
+    }
+  }
+}
+
+@layer components {
+  .hw-segmented {
+    display: inline-flex;
+    box-sizing: border-box;
+    align-items: stretch;
+    border: var(--hw-hairline, 1px) solid
+      var(--hw-segment-line, color-mix(in srgb, var(--color-ink) 70%, var(--color-bg)));
+    border-radius: var(--radius-sm);
+    padding: 0.125rem;
+    font-size: var(--text-ui, var(--type-small-size));
+    background: var(--color-bg);
+  }
+  .hw-segmented > :is(a, button) {
+    display: flex;
+    align-items: center;
+    border: 0;
+    border-radius: var(--radius-sm);
+    padding: var(--hw-segment-pad, 0.25rem 0.5rem);
+    font: inherit;
+    white-space: nowrap;
+    text-decoration: none;
+    color: color-mix(in srgb, var(--color-ink) 70%, transparent);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hw-segmented > :is(a, button):hover {
+    color: var(--color-ink);
+    background: color-mix(in srgb, var(--color-ink) 7%, var(--color-bg));
+  }
+  .hw-segmented
+    > :is([aria-current]:not([aria-current="false"]), [aria-pressed="true"], [data-active="true"]),
+  .hw-segmented
+    > :is(
+      [aria-current]:not([aria-current="false"]),
+      [aria-pressed="true"],
+      [data-active="true"]
+    ):hover {
+    color: var(--color-white);
+    background: var(--color-teal-dark);
+  }
+  .hw-segmented > .hw-label {
+    display: flex;
+    align-items: center;
+    padding: 0 0.25rem 0 0.375rem;
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-segmented {
+      border-color: var(
+        --hw-segment-line,
+        color-mix(in srgb, var(--color-night-ink) 40%, var(--color-night))
+      );
+      background: var(--color-night);
+    }
+    .hw-segmented > :is(a, button) {
+      color: color-mix(in srgb, var(--color-night-ink) 70%, transparent);
+    }
+    .hw-segmented > :is(a, button):hover {
+      color: var(--color-night-ink);
+      background: var(--color-night-2);
+    }
+    .hw-segmented
+      > :is(
+        [aria-current]:not([aria-current="false"]),
+        [aria-pressed="true"],
+        [data-active="true"]
+      ),
+    .hw-segmented
+      > :is(
+        [aria-current]:not([aria-current="false"]),
+        [aria-pressed="true"],
+        [data-active="true"]
+      ):hover {
+      color: var(--color-night);
+      background: var(--color-teal-night);
+    }
+  }
+}
+
+@layer components {
+  .hw-row {
+    display: grid;
+    box-sizing: border-box;
+    grid-template-columns: var(--hw-row-stripe, 4px) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--hw-row-gap, 0.75rem);
+    border-bottom: var(--hw-hairline, 1px) solid var(--color-border);
+    padding: var(--hw-row-pad, 0.5rem 0.75rem);
+    background: var(--color-bg);
+    transition: background-color 0.1s;
+  }
+  .hw-row:hover {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--color-ink) 7%, var(--color-bg)) 70%,
+      transparent
+    );
+  }
+  .hw-row > .hw-row-stripe {
+    align-self: stretch;
+    border-radius: 0;
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-row {
+      border-bottom-color: color-mix(in srgb, white 18%, var(--color-night));
+      background: var(--color-night);
+    }
+    .hw-row:hover {
+      background: color-mix(in srgb, var(--color-night-2) 70%, transparent);
+    }
+  }
+}
+
+@layer components {
+  .hw-breadcrumb {
+    font-size: var(--text-ui, var(--type-small-size));
+    color: color-mix(in srgb, var(--color-ink) 70%, transparent);
+  }
+  .hw-breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hw-breadcrumb li + li::before {
+    content: "/";
+    margin-right: 0.5rem;
+  }
+  .hw-breadcrumb a {
+    text-decoration: none;
+    color: var(--color-teal-dark);
+  }
+  .hw-breadcrumb a:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-breadcrumb {
+      color: color-mix(in srgb, var(--color-night-ink) 70%, transparent);
+    }
+    .hw-breadcrumb a {
+      color: var(--color-teal-night);
+    }
+  }
+}
+
+@layer components {
+  .hw-status {
+    --_tone: color-mix(in srgb, var(--color-amber-dark) 70%, var(--color-ink));
+    box-sizing: border-box;
+    border: var(--hw-hairline, 1px) solid color-mix(in srgb, var(--_tone) 40%, transparent);
+    border-radius: var(--hw-card-corner, var(--radius-brand));
+    padding: var(--hw-card-pad, var(--spacing-card));
+    background: color-mix(in srgb, var(--_tone) 7%, transparent);
+  }
+  .hw-status[data-tone="error"] {
+    --_tone: color-mix(in srgb, var(--color-red) 70%, var(--color-ink));
+  }
+  .hw-status[data-tone="success"] {
+    --_tone: color-mix(in srgb, var(--color-green-dark) 70%, var(--color-ink));
+  }
+  .hw-status[data-tone="info"] {
+    --_tone: var(--color-teal-dark);
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-status {
+      --_tone: var(--color-amber);
+    }
+    .hw-status[data-tone="error"] {
+      --_tone: var(--color-red-night);
+    }
+    .hw-status[data-tone="success"] {
+      --_tone: var(--color-green);
+    }
+    .hw-status[data-tone="info"] {
+      --_tone: var(--color-teal-night);
+    }
+  }
+}
+
+@layer components {
+  .hw-frame {
+    box-sizing: border-box;
+    border: var(--hw-frame-width, 1px) dashed var(--color-border);
+    border-radius: var(--hw-card-corner, var(--radius-brand));
+    background: transparent;
+  }
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-frame {
+      border-color: color-mix(in srgb, white 18%, var(--color-night));
+    }
+  }
+}
+
+@layer components {
+  .hw-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .hw-kpi-value {
+    font-family: var(--type-stat-family);
+    font-size: var(--hw-kpi-size, var(--type-stat-size));
+    font-weight: var(--type-stat-weight);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--type-stat-line-height);
+    letter-spacing: var(--hw-kpi-tracking, var(--type-stat-tracking));
+  }
+}
+
+.hw-prose {
+  overflow-wrap: break-word;
+  --hw-markers: on;
+  --tw-prose-headings: var(--foreground, var(--color-ink));
+  --tw-prose-body: var(--foreground, var(--color-ink));
+  --tw-prose-links: var(--accent, var(--color-teal-dark));
+  --tw-prose-bold: var(--foreground, var(--color-ink));
+  --tw-prose-bullets: color-mix(in srgb, var(--foreground, var(--color-ink)) 70%, transparent);
+  --tw-prose-counters: color-mix(in srgb, var(--foreground, var(--color-ink)) 70%, transparent);
+  --tw-prose-quotes: color-mix(in srgb, var(--foreground, var(--color-ink)) 70%, transparent);
+  --tw-prose-quote-borders: var(--border, var(--color-border));
+  --tw-prose-hr: var(--border, var(--color-border));
+  --tw-prose-code: var(--foreground, var(--color-ink));
+  --tw-prose-pre-code: var(--foreground, var(--color-ink));
+  --tw-prose-pre-bg: color-mix(in srgb, var(--muted, var(--color-bg)) 70%, transparent);
+  --tw-prose-th-borders: var(--border, var(--color-border));
+  --tw-prose-td-borders: var(--border, var(--color-border));
+  --tw-prose-captions: color-mix(in srgb, var(--foreground, var(--color-ink)) 70%, transparent);
+}
+.hw-prose :is(table, pre) {
+  max-width: none;
+}
+.hw-prose :is(.hw-table, .hw-code, .hw-quote) {
+  margin-block: 1rem;
+}
+.hw-prose .hw-quote > * + * {
+  margin-top: 0.75em;
+}
+.hw-prose :not(pre) > code {
+  border-radius: var(--radius-sm);
+  padding: 0.125em 0.375em;
+  font-size: var(--text-ui, 0.875rem);
+  font-weight: 500;
+  background-color: color-mix(
+    in srgb,
+    var(--muted, color-mix(in srgb, var(--color-ink) 7%, var(--color-bg))) 70%,
+    transparent
+  );
+}
+.hw-prose :not(pre) > code::before,
+.hw-prose :not(pre) > code::after {
+  content: none;
+}
+.hw-prose hr {
+  margin-block: 2rem;
+}
+.hw-prose h1 {
+  margin: 1.5rem 0 0.75rem;
+  font-size: var(--text-page, 1.5rem);
+  line-height: 2rem;
+}
+.hw-prose h2 {
+  margin: 1.5rem 0 0.5rem;
+  border-top: var(--hw-hairline, 1px) solid var(--border, var(--color-border));
+  padding-top: 1rem;
+  font-size: var(--text-heading, 1.25rem);
+  line-height: 1.75rem;
+}
+.hw-prose h3 {
+  margin: 1rem 0 0.25rem;
+  font-size: var(--text-subheading, 1rem);
+  font-weight: 600;
+  line-height: 1.5rem;
+}
+.hw-prose :is(h1, h2, h3):first-child {
+  margin-top: 0;
+}
+.hw-prose h2:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.hw-prose li > p {
+  margin-block: 0;
+}
+.hw-prose li + li {
+  margin-top: 0.25rem;
+}
+.hw-prose table {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.hw-prose ul {
+  list-style: none;
+}
+.hw-prose ul > li {
+  position: relative;
+}
+.hw-prose li.task-list-item::before {
+  content: none;
+}
+.hw-prose li.task-list-item input[type="checkbox"] {
+  position: absolute;
+  top: 0.375em;
+  left: var(--hw-prose-check-x, -1em);
+  box-sizing: border-box;
+  width: 1em;
+  height: 1em;
+  margin: 0;
+  border: 1.5px solid var(--input, color-mix(in srgb, var(--color-ink) 70%, var(--color-bg)));
+  border-radius: var(--radius-sm);
+  background: transparent center / 0.75em 0.75em no-repeat;
+  opacity: 1;
+  cursor: default;
+  appearance: none;
+  transition:
+    background-color var(--motion-fast),
+    border-color var(--motion-fast);
+}
+.hw-prose li.task-list-item input[type="checkbox"]:checked {
+  border-color: var(--accent, var(--color-teal-dark));
+  background-color: var(--accent, var(--color-teal-dark));
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5 L7 12 L13 4.5'/%3E%3C/svg%3E");
+}
+@scope ([data-theme="dark"]) to ([data-theme="light"]) {
+  .hw-prose :not(pre) > code {
+    background-color: color-mix(in srgb, var(--muted, var(--color-night-2)) 70%, transparent);
+  }
+  .hw-prose li.task-list-item input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b1118' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5 L7 12 L13 4.5'/%3E%3C/svg%3E");
   }
 }
 

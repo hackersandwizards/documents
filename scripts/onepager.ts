@@ -1,7 +1,7 @@
 // composeOnepager: DocOnepager as a standalone page on its own stylesheet: the document tokens
-// (tokens.css with the brand's tokens.css and print.css), the brand's list marker, document.css's
-// list indent and wordmark
-// rule, the scoped styles of DocHeader and DocCard, then onepager.css. Every
+// (tokens.css with the brand's tokens.css, print.css and document.css), the brand's list marker,
+// document.css's list indent and wordmark rule, the scoped styles of DocHeader and DocCard, then
+// onepager.css. Every
 // `<div class="card ...">` in the body opens with DocCard's tag. `brand` is the brand package's
 // folder as the page reaches it: the page opens from disk beside the installed package.
 // fitOnepager owns the page balance: it renders the page and picks the fit (tight, lift, air).
@@ -33,6 +33,7 @@ function baseCss(brand: string, link: boolean) {
             'url("fonts/',
             `url("${brand}/tokens/fonts/`,
           ),
+          inlineCss(brandFile("document.css")),
         ]),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
     // DocHeader's tag and DocCard are the brand's pill and card; the rest of the page keeps its own
@@ -54,6 +55,7 @@ const linked = (
 <link rel="icon" href="${brand}/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="${brand}/generated/tokens.root.css" />
 <link rel="stylesheet" href="${brand}/tokens/print.css" />
+<link rel="stylesheet" href="${brand}/tokens/document.css" />
 `;
 
 /** The page balance fitOnepager picks: `tight` for copy over two pages, then the widest gap level

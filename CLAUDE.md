@@ -25,13 +25,12 @@ real name the rules cannot see fails there; those names never enter this repo.
 
 ## Layout
 
-- `tokens.css`: the document tokens, three layers in one file: the brand's tokens, print faces and
-  list marker (`marker.css`, switched on with `--hw-markers: on` at the print size) imported from
-  `@hackersandwizards/brand`, never a copy; the roles (colour, type, page, rule,
-  spacing) on them; the tokens of each type (proposal, certificate, handout, onepager, readout deck)
-  and the named page boxes, since `@page` reads no custom property. The one value copied from
-  another package is the readout's wordmark corner, from `@hackersandwizards/slides`, recorded
-  beside it with its version: slides exports it only inside its Tailwind stylesheet.
+- `tokens.css`: the document tokens: the brand's tokens, print faces, document scale
+  (`document.css`: every length, size and step of the base and of each type) and list marker
+  (`marker.css`, switched on with `--hw-markers: on` at the print size) imported from
+  `@hackersandwizards/brand`, never a copy; the roles (colour, type, page, marks, spacing) as
+  aliases of brand tokens; and the named page boxes, since `@page` reads no custom property. A
+  value the engine lacks is added to brand's `document.css` first, then used here.
 - `document.css`: the print base every document sits on, on `tokens.css`: the page, the running
   heads and every element a type or a Markdown body uses. A component reuses a base class and never
   re-declares it. `test/tokens.test.ts` fails on a length or colour written anywhere but

@@ -162,22 +162,18 @@ h2 {
   gap: var(--deck-56);
   margin-top: var(--deck-48);
 }
+/* A key figure is the brand's (hw-kpi, hw-kpi-value), its caption under the figure. */
 .metabig {
-  display: flex;
-  flex-direction: column;
   align-items: center;
+  --hw-kpi-size: var(--deck-text-stat);
 }
 .metabig b {
-  font-family: var(--stat-family);
-  font-weight: var(--weight-bold);
-  font-size: var(--deck-text-stat);
   color: var(--ink);
-  line-height: var(--leading-solid);
 }
 .metabig span {
   font-size: var(--deck-text-caption);
   color: var(--muted);
-  margin-top: var(--deck-8);
+  margin-top: var(--deck-4);
 }
 
 .glance {

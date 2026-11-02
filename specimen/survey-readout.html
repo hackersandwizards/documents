@@ -5,23 +5,20 @@
 <link rel="icon" href="../node_modules/@hackersandwizards/brand/logos/favicon.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/generated/tokens.root.css" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/print.css" />
+<link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/document.css" />
 <link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/tokens/marker.css" />
+<link rel="stylesheet" href="../node_modules/@hackersandwizards/brand/elements/kpi.css" />
 <style data-hw-readout>
 
-/* The document tokens: every value an h&w document draws, named once. The brand's own values come
-   from @hackersandwizards/brand (tokens.css, print.css), never retyped; this file derives the
-   documents' roles from them and holds the lengths only documents have. The shared elements
-   (label, pill, card, callout, quote, table, link, code) are the brand's (elements.css) at its
-   print scale, which composePage sets on the page's root. Every stylesheet and
-   component style of the engine names these tokens and nothing else (test/tokens.test.ts).
-
-   Layers, top to bottom: the brand files; the base set every document type composes (colour
-   roles, type roles, page, rules, radii, spacing, the base blocks); then the few values one type
-   adds on top (onepager, handout, certificate, readout deck), each named for its type. A type
-   that needs a value the base lacks adds it here, under its own heading, never in its stylesheet.
-
-   Units: print lengths in pt, page geometry in mm, as print.css sets them; the onepager keeps the
-   website's px rhythm and the readout deck the slide engine's rem (1/90 of its width). */
+/* The document tokens: the roles an h&w document draws with, named once. Every value comes from
+   @hackersandwizards/brand, never retyped: the brand's tokens and print faces (tokens.css,
+   print.css) and the document scale (document.css: every length, size and step of the base and of
+   each type, onepager, handout, certificate and readout deck). This file derives the documents'
+   roles from them. The shared elements (label, pill, card, callout, quote, table, link, code, key
+   figure) are the brand's (elements.css) at its print scale, which composePage sets on the page's
+   root. Every stylesheet and component style of the engine names these tokens and nothing else
+   (test/tokens.test.ts). A value the engine lacks is a brand token first, added in brand's
+   document.css. */
 
 /* The base layer (document.css's reset) under the brand elements' components layer, so a reset
    never takes their padding. */
@@ -67,10 +64,8 @@
   --shadow: var(--shadow-card);
 
   /* ── Type ──
-     Every text takes one role through its shorthand, never a size or face of its own. --density
-     scales every role by one factor (1 the brand's print sizes); a type that must fit a page count
-     sets it, as the onepager's tight fallback does. */
-  --density: 1;
+     Every text takes one role through its shorthand, never a size or face of its own, each scaled
+     by the brand's --density. */
   --sans: var(--font-sans);
   --mono: var(--font-mono);
   --code-family: var(--type-code-family);
@@ -78,10 +73,6 @@
   --label-family: var(--type-label-family);
   --lead-family: var(--type-lead-family);
   --stat-family: var(--type-stat-family);
-  --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
-  --weight-bold: 700;
   --weight-heading: var(--type-h1-weight);
   --weight-label: var(--type-label-weight);
   --role-display: var(--type-display-weight) calc(var(--type-display-size) * var(--density)) /
@@ -113,355 +104,50 @@
   --tracking-h4: var(--type-h4-tracking);
   --tracking-caps: var(--type-label-tracking);
   --tracking-stat: var(--type-stat-tracking);
-  --tracking-none: 0;
   --word-spacing-display: var(--type-display-word-spacing);
   --case-label: var(--type-label-case);
-  /* A chip's and a pill's own line, and a line set solid. */
-  --leading-chip: 1.5;
-  --leading-solid: 1;
-  /* The total row's figure, 1.2 times its row. */
-  --figure-scale: 1.2em;
 
   /* ── Page ── A4 from print.css; the side margin sits on body, so the strip reaches the edge. */
   --side: var(--print-side);
-  --page-width: 210mm;
   --page-height: var(--print-page-height);
   --page-margin-bottom: var(--print-margin-bottom);
-  --measure: 150mm;
 
-  /* ── Rules, marks and corners ──
-     The print scale, set for the two ways an A4 PDF is read, printed at arm's length and on a laptop
-     at fit-width, about 70% zoom, where 1pt is about 0.93 CSS px. The floor is a rule that stays a
-     visible line at 70% on a 1x screen and in a 25% thumbnail; the website's px x 0.625 gave a 2pt
-     strip and 0.75pt hairlines, which Benedikt found too slim to see (2026-10-28). */
-  --strip: 6pt;
-  /* From page 2 the header's strip returns as this rail on the paper edge, one gradient across the
-     two top boxes: a blind A/B on the quote preferred it 4 of 4 (2026-10-28). */
-  --rail: 1.5pt;
-  --rule: 1pt;
-  --rule-strong: 2pt;
-  --rule-accent: 3pt;
+  /* ── Marks and corners ── */
   --radius: var(--print-radius);
   --pill: var(--radius-pill);
   --corner-brand: var(--radius-brand);
-  /* The list marker and the section label's swatch: squares, as every mark too small for the brand
-     corner at its full value (the website's patterns.css). */
-  --bullet: 6pt;
-  --swatch: 8pt;
   /* Every list takes the brand's marker (marker.css) at the print size. */
   --hw-markers: on;
   --hw-marker-size: var(--bullet);
   --hw-marker-gap: var(--list-marker-gap);
   --hw-marker-indent: var(--list-indent);
   --hw-marker-color: var(--accent);
-  /* The whole pixel the swatch's lift rounds to, as Chrome paints. */
-  --pixel: 1px;
-  /* The swatch's centre on the caps, above the baseline, for Inter and JetBrains Mono alike. */
-  --caps-middle: 0.365em;
-  --header-row: 56pt;
-  --logo: 28pt;
-  --logo-gap: 7pt;
-  /* The pixel wordmark's box, 1.3 times the h4 role it replaced (the letters 1.17 times), and the
-     gap to text after it, 0.4 of the letters' height (logo system rounds, 2026-10-29). */
-  --wordmark: 14.3pt;
-  --wordmark-gap: 5.1pt;
   --wizard-lift: var(--logo-wizard-lift);
 
-  /* ── Spacing ──
-     Each step is named for what it spaces; a step two blocks share is one token. */
-  --space-hair: 1pt;
-  --space-imprint: 1.5pt;
-  --space-label: 2pt;
-  --space-chip: 2.5pt;
-  --space-tag: 3pt;
-  --space-heading: 4pt;
-  --space-cell: 5pt;
-  --space-paragraph: 6pt;
-  --space-group: 7pt;
-  --space-grid: 10pt;
-  --space-list: 12.5pt;
-  --space-lead: 15pt;
-  --card-pad-base: 14pt;
+  /* ── Spacing ── */
   --card-pad: calc(var(--card-pad-base) * var(--density));
   /* A pill keeps its outer size from before brand's pill drew a hairline round it (transparent
      unless outlined): the hairline comes off the padding. */
   --chip-pad: calc(2pt - var(--rule)) calc(7pt - var(--rule));
   --h1-space-after: var(--space-heading);
-  --h2-margin: 20pt 0 6pt;
-  --h3-margin: 12.5pt 0 4pt;
-  --h4-margin: 10pt 0 3pt;
-  --rule-margin: 12.5pt 0;
-  --card-rule-margin: 6.25pt 0;
-  --table-margin: 4pt 0 10pt;
-  --block-margin: 6pt 0;
-  --block-margin-loose: 6pt 0 10pt;
-  --callout-margin: 8pt 0;
-  --band-margin: 10pt 0;
-  --list-indent: 12.5pt;
-  --list-marker-gap: 6pt;
-  --ol-indent: 12pt;
-  --swatch-gap: 7.5pt;
-  --section-label-margin: 15pt 0 6pt;
-  --subtitle-space-after: 10pt;
-  --lead-margin: 18pt 0 12pt;
-  --card-grid-gap: 12.5pt 15pt;
-  --dl-gap: 2pt 10pt;
-  --total-pad-top: 7pt;
   /* How far a table holding a band reaches past the text edge on each side. */
   --band-bleed: var(--space-cell);
-  --timeline-when: 36mm;
-  --header-gap: 8mm;
-  --header-pad: 8pt;
-  --header-meta-width: 70mm;
-  --section-space: 7mm;
-  --closing-space: 6mm;
-  --closing-space-tight: 4mm;
-  --closing-line: 1mm;
-  --signature-gap: 12mm;
-  --signature-space: 16mm;
-  /* The room above a signature line, for a hand signature (the trainer NDA's 14mm). */
-  --signature-room: 14mm;
-  --card-title-space: 1mm;
-  --card-meta-space: 2mm;
-  --dense-title-space: 1.5mm;
-  --foot-pad: 1.6mm;
-  --note-pad: 3mm 4mm;
-  --confirmation-space: 4mm;
-  --closing-sign-off-tight: 3mm;
   --chip-pad-slim: calc(1pt - var(--rule)) calc(7pt - var(--rule));
   --display-size: var(--type-display-size);
   --label-size: var(--type-label-size);
   --small-size: var(--type-small-size);
   --small-leading: var(--type-small-line-height);
   --label-leading: var(--type-label-line-height);
-
-  /* ── Proposal ── */
-  --community-column-gap: 6mm;
-  --terms-column-gap: 8mm;
-  --term-space: 3mm;
-  --acceptance-margin: 4mm 0 6pt;
-  --acceptance-term: 28mm;
-  --acceptance-facts-margin: 2mm 0 3mm;
-
-  /* ── Preparation ── */
-  --step-space: 2mm;
-  --step-code-margin: 1.5mm 0;
-  --step-code-margin-grid: 1mm 0;
-  --step-code-pad: 2mm 4mm;
-  --step-code-size: 8.8pt;
-  --step-number-width: 1.5em;
-
-  /* ── Leistungsnachweis ── A month of 23 single-line rows still fits one page with the
-     confirmation (measured 2026-10-29), so the rows are set tight. */
-  --meta-gap: 3mm 6mm;
-  --meta-space-after: 5mm;
-  --note-space-after: 3mm;
-  --hours-row-pad: 0.2mm;
-  --hours-date: 16mm;
-  --hours-day: 11mm;
-  --hours-time: 27mm;
-  --hours-figure: 18mm;
-  --hours-section-pad: 2mm;
-
-  /* ── Certificate ── One rhythm with the verifier's certificate page: tight inside a group of
-     lines, related between the groups of the statement, section between sections. The name is the
-     one size outside the print roles: display's 26pt read too small for a name. */
-  --cert-tight: 3pt;
-  --cert-related: 12pt;
-  --cert-section: 24pt;
-  --cert-section-fit: 16pt;
-  --cert-pad: 16mm 25mm 14mm;
-  --cert-logo: 16mm;
-  --cert-logo-fit: 12mm;
-  --cert-name-scale: 1.75;
-  --cert-name-scale-fit: 1.5;
-  --cert-name-scale-small: 1.25;
-  --cert-name-leading: 1.15;
-  --cert-topics: 130mm;
-  --cert-topics-compact: 145mm;
-  --cert-topics-wide: 160mm;
-  --cert-topic-pad: 0.3mm;
-  --cert-column-gap: 10mm;
-  --cert-signature-gap: 16mm;
-  --cert-signature: 72mm;
-  --cert-signature-image: 22mm;
-  --cert-signature-image-fit: 16mm;
-  --cert-signature-image-width: 70mm;
-  --cert-signature-line: 66mm;
-  --cert-qr: 26mm;
-  --cert-button-pad: 2.8mm 7mm;
 }
 
-/* ── Onepager ── The website's px rhythm: --op-N is N px, the steps the site's spacing uses. */
+/* ── Readout deck ── The survey readout's slides on the brand's deck scale (--deck-*). */
 :root {
-  --op-side: 14mm;
-  /* Two rhythms, as on the site: between sections and inside one. */
-  --op-section: 18px;
-  --op-section-tight: 7px;
-  --op-stack: 8px;
-  --op-1: 1px;
-  --op-2: 2px;
-  --op-3: 3px;
-  --op-4: 4px;
-  --op-5: 5px;
-  --op-6: 6px;
-  --op-7: 7px;
-  --op-8: 8px;
-  --op-9: 9px;
-  --op-10: 10px;
-  --op-14: 14px;
-  --op-16: 16px;
-  --op-18: 18px;
-  --op-20: 20px;
-  --op-22: 22px;
-  --op-28: 28px;
-  --op-hero-pad: 20px 24px 22px;
-  --op-hero-pad-tight: 13px 18px 14px;
-  --op-button-pad: 3pt 10pt;
-  --op-button-leading: 1.6;
-  --op-cta-leading: 2;
-  --op-chip-gap: 0.3em;
-  --op-proof-min: 70px;
-  /* The facts box's and a callout's block padding, as a share of the card padding. */
-  --op-facts-pad: 0.6;
-  --op-box-pad: 0.8;
-  /* The tight fallback: every role at 0.85, the card padding at half. */
-  --op-tight-density: 0.85;
-  --op-tight-card-pad: 0.5;
-  /* The fit pass's gap levels: page 2's blocks (air) and page 1's after the hero (lift), each a
-     step above --op-section, into which a smaller margin would collapse. */
-  --op-air-0: 22px;
-  --op-air-1: 28px;
-  --op-air-2: 36px;
-  --op-air-3: 46px;
-  --op-air-4: 58px;
-  --op-lift-0: 22px;
-  --op-lift-1: 26px;
-  --op-lift-2: 34px;
-  --op-lift-3: 44px;
-  --op-lift-4: 56px;
-  /* The page on screen: A4 wide, on the tint. */
-  --op-screen-width: 794px;
-  --op-screen-margin: 20px auto;
-  --op-screen-pad: 42px 53px;
-}
-
-/* ── Handout ── Read as a PDF on a laptop or an iPad, never printed: on an 11-inch iPad in portrait
-   an A4 page shows at 1.4 times, so 10pt body text reads as 14px. One point more on the text roles
-   brings it to 15px and a full-width line under 90 characters. */
-:root {
-  --handout-body-size: 11pt;
-  --handout-small-size: 10pt;
-  --handout-code-size: 10pt;
-  --handout-label-size: 9pt;
-  /* The handout page's top margin, as its page box below sets it. */
-  --handout-margin-top: 18mm;
-  --handout-flow-space: 12mm;
-  --handout-code-hang: 4ch;
-  --handout-eyebrow-space: 2mm;
-  --handout-title-space: 5mm;
-  --handout-title-bar: 24mm;
-  --handout-title-bar-space: 3mm;
-  --handout-h2-margin: 6mm 0 2mm;
-  --handout-h3-margin: 4mm 0 1.5mm;
-  /* The text runs the full page width: a note takes its width only where one is. */
-  --handout-note-width: 46mm;
-  --handout-note-gap: 6mm;
-  --handout-note-space: 3mm;
-  --handout-note-pad: 3mm;
-  --handout-note-rule: 3px;
-  --handout-keybox-margin: 3mm 0;
-  --handout-keybox-pad: 4mm 5mm;
-  /* The ruled notes page: 28 lines fit the one page under the chapter title at this pitch. */
-  --handout-note-line: 8mm;
-  --handout-cover-space: 24mm;
-  --handout-cover-card: 80mm;
-  --handout-cover-card-space: 8mm;
-  --handout-toc-space: 10mm;
-  --handout-toc-gap: 2mm;
-  --handout-toc-pad: 1mm 0;
-  --handout-toc-number: 7mm;
-}
-
-/* ── Readout deck ── The survey readout's slides, in the slide engine's look (slides
-   styles/slides.css): its stage is 1440x810 with a rem of 1/90 of the width, so the deck's 1280px
-   page takes a rem of 14.2222px and every engine length is a rem. --deck-N is N/16 rem, the slide
-   engine's N px at its 1440 stage. */
-:root {
-  --deck-rem: 14.2222px;
-  --deck-width: 1280px;
-  --deck-height: 720px;
-  --deck-2: 0.125rem;
-  --deck-4: 0.25rem;
-  --deck-6: 0.375rem;
-  --deck-8: 0.5rem;
-  --deck-12: 0.75rem;
-  --deck-16: 1rem;
-  --deck-20: 1.25rem;
-  --deck-24: 1.5rem;
-  --deck-28: 1.75rem;
-  --deck-32: 2rem;
-  --deck-40: 2.5rem;
-  --deck-44: 2.75rem;
-  --deck-48: 3rem;
-  --deck-56: 3.5rem;
-  --deck-68: 4.25rem;
-  --deck-72: 4.5rem;
-  --deck-88: 5.5rem;
-  --deck-112: 7rem;
-  --deck-160: 10rem;
-  --deck-384: 24rem;
-  --deck-448: 28rem;
-  --deck-480: 30rem;
-  --deck-hairline: 0.09375rem;
-  --deck-corner: 1.875rem 0.46875rem;
-  --deck-marker: 0.5625rem;
-  /* The corner row, as the slide engine sets it (slides v0.17.0, styles/slides.css :root,
-     --slide-footer-side, --slide-footer-inset, --slide-corner-wordmark): the content's 4.5rem
-     graphics-safe side margin, 1.5rem above the bottom edge, the wordmark's box 1.956rem. The slides
-     package publishes these only inside its Tailwind stylesheet, whose peers (React, Next,
-     Tailwind) a document cannot install, so they are copied here with their origin and version.
-     The lockup keeps the wordmark's letter size: the wordmark is 952 of the lockup's 1489 units. */
-  --deck-corner-side: 4.5rem;
-  --deck-corner-inset: 1.5rem;
-  --deck-corner-wordmark: 1.956rem;
+  /* The lockup keeps the wordmark's letter size: the wordmark is 952 of the lockup's 1489 units. */
   --deck-corner-lockup: calc(var(--deck-corner-wordmark) * 1489 / 952);
-  --deck-text-caption: 1.125rem;
-  --deck-text-note: 1.25rem;
-  --deck-text-item: 1.375rem;
-  --deck-text-body: 1.5rem;
-  --deck-text-counter: 1.625rem;
-  --deck-text-kicker: 1.6875rem;
-  --deck-text-lead: 1.875rem;
-  --deck-text-stat: 3rem;
-  --deck-text-h2: 3.375rem;
-  --deck-text-h1: 6rem;
-  --deck-text-bignum: 140px;
-  --deck-h1-tracking: -0.03em;
-  --deck-leading-kicker: 1.25;
-  --deck-leading-h1: 1.02;
-  --deck-leading-h2: 1.1;
-  --deck-leading-bignum: 0.9;
-  --deck-leading-label: 1.3;
-  --deck-leading-quote: 1.4;
-  --deck-leading-item: 1.35;
-  --deck-leading-key: 2rem;
   /* Bar colours, the slide engine's rule (slides v0.20.0): teal is the data hue, a bar that is
      context takes the ink at the ladder's 40 % on the page, a step between takes teal at 70 %. */
   --deck-bar-step: color-mix(in srgb, var(--color-teal) 70%, var(--color-bg));
   --deck-bar-context: color-mix(in srgb, var(--color-ink) 40%, var(--color-bg));
-  /* The charts' own pixel geometry. */
-  --deck-px-2: 2px;
-  --deck-px-3: 3px;
-  --deck-px-8: 8px;
-  --deck-px-12: 12px;
-  --deck-px-14: 14px;
-  --deck-px-16: 16px;
-  --deck-px-18: 18px;
-  --deck-px-24: 24px;
-  --deck-px-48: 48px;
-  --deck-px-180: 180px;
-  --deck-px-300: 300px;
 }
 
 /* ── Page boxes ── An @page rule cannot read a custom property, so each type's page box is set
@@ -657,22 +343,18 @@ h2 {
   gap: var(--deck-56);
   margin-top: var(--deck-48);
 }
+/* A key figure is the brand's (hw-kpi, hw-kpi-value), its caption under the figure. */
 .metabig {
-  display: flex;
-  flex-direction: column;
   align-items: center;
+  --hw-kpi-size: var(--deck-text-stat);
 }
 .metabig b {
-  font-family: var(--stat-family);
-  font-weight: var(--weight-bold);
-  font-size: var(--deck-text-stat);
   color: var(--ink);
-  line-height: var(--leading-solid);
 }
 .metabig span {
   font-size: var(--deck-text-caption);
   color: var(--muted);
-  margin-top: var(--deck-8);
+  margin-top: var(--deck-4);
 }
 
 .glance {
@@ -1006,10 +688,10 @@ h2 {
       <div class="subtitle">Agentic Engineering Training · 2-day training</div>
       <div class="dates">Training date 12 Nov 2026</div>
       <div class="metarow">
-        <div class="metabig"><b>10</b><span>responses</span></div>
-        <div class="metabig"><b>12</b><span>attendees</span></div>
-        <div class="metabig"><b>83%</b><span>response rate</span></div>
-        <div class="metabig"><b>1</b><span>team</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">10</b><span>responses</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">12</b><span>attendees</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">83%</b><span>response rate</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">1</b><span>team</span></div>
       </div>
       <div class="rule"></div>
       <div class="langnote">Questions and answers appear verbatim, as the form asked them.</div>
