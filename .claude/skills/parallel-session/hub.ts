@@ -406,7 +406,6 @@ function hubBrandCss() {
   ].join("\n");
 }
 
-// The internal header's lockup cuts, inlined as data URIs like the fonts.
 const hubLogo = (f: string) =>
   `data:image/svg+xml;base64,${readFileSync(Bun.resolveSync(`@hackersandwizards/brand/logos/${f}`, import.meta.dir)).toString("base64")}`;
 
@@ -430,7 +429,6 @@ ${hubBrandCss()}
 :focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
 body{font:var(--text-subheading)/1.5 var(--font-sans);color:var(--ink);background:var(--bg);margin:0}
 main{padding-bottom:64px;overflow-wrap:anywhere}
-/* The page title row and its sticky toolbar under the internal header, as on the internal apps. */
 .top{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap;min-height:3.875rem;padding-top:8px}
 .toolbar{position:sticky;top:var(--spacing-app-header);z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:2px 0 6px}
 h1,h2,summary,button{font-family:var(--font-mono);font-weight:600;margin:0}
