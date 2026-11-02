@@ -81,7 +81,12 @@ type Row = {
   images?: Record<string, string>;
   [k: string]: unknown;
 };
-type List = { path: string; key: string; rows: Row[]; areas: Record<string, string> };
+type List = {
+  path: string;
+  key: string;
+  rows: Row[];
+  areas: Record<string, string>;
+};
 const lists: List[] = [];
 const defects: string[] = [];
 // items.js is read as data, never run: ~/dev holds third-party clones. Allowed are the
@@ -236,10 +241,40 @@ const tasks: Task[] = lists.flatMap((list) => {
 
 const fileHref = (path: string, file: string) => "file://" + encodeURI(resolve(path, file));
 // Paths under docs/tracking/ in a row's text become links where the file exists.
+// So do ~/Downloads/stand-entscheidungen/ paths, the topic pages beside this one.
 const linkPaths = (path: string, text: unknown) =>
-  hubEscape(text).replace(/(docs\/tracking\/[\w./äöü-]*\w)/g, (p) =>
-    existsSync(join(path, p)) ? `<a href="${hubEscape(fileHref(path, p))}">${p}</a>` : p,
-  );
+  hubEscape(text)
+    .replace(/(docs\/tracking\/[\w./äöü-]*\w)/g, (p) =>
+      existsSync(join(path, p)) ? `<a href="${hubEscape(fileHref(path, p))}">${p}</a>` : p,
+    )
+    .replace(/~\/Downloads\/stand-entscheidungen\/[\w./-]*\w/g, (p) => {
+      const abs = join(homedir(), p.slice(2));
+      const page = existsSync(join(abs, "index.html")) ? join(abs, "index.html") : abs;
+      return existsSync(page) ? `<a href="${hubEscape(fileHref("/", page))}">${p}</a>` : p;
+    });
+// Each topic folder's review.json names its row (or a prefix ending in *): that row links the page.
+const TOPICS = (() => {
+  const dir = dirname(PAGE);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).flatMap((d) => {
+    const f = join(dir, d, "review.json");
+    if (!existsSync(f)) return [];
+    try {
+      const j = JSON.parse(readFileSync(f, "utf8"));
+      const row = j.row ?? j.id;
+      return typeof row === "string" ? [{ row, page: join(dir, d, "index.html"), name: d }] : [];
+    } catch {
+      return [];
+    }
+  });
+})();
+const topicLink = (id: string) =>
+  TOPICS.filter((t) => (t.row.endsWith("*") ? id.startsWith(t.row.slice(0, -1)) : id === t.row))
+    .map(
+      (t) =>
+        `<p class="note"><b>Review page:</b> <a href="${hubEscape(fileHref("/", t.page))}" target="_blank">${hubEscape(t.name)}</a></p>`,
+    )
+    .join("");
 const rowOwner = (r: Row) => r.owner ?? PEOPLE[0];
 
 // One <details> per point. Rows with options get radios (nothing preselected) and their images;
@@ -251,8 +286,8 @@ function rowHtml(list: List, r: Row, kind: string) {
     const img = own(r.images, o.key);
     return `<label class="opt${o.key === r.recommended ? " rec" : ""}">${img ? `<a class="pic" href="${hubEscape(fileHref(list.path, img))}" target="_blank"><img loading="lazy" src="${hubEscape(fileHref(list.path, img))}" alt="${hubEscape(o.label)}"></a>` : ""}<span class="choice"><input type="radio" name="${hubEscape(k)}" value="${hubEscape(o.key)}"> <span>${o.key === r.recommended ? '<span class="tag">Recommended</span> ' : ""}<b>${hubEscape(o.label)}</b>${o.detail ? ` <span class="note">${hubEscape(o.detail)}</span>` : ""}</span></span></label>`;
   };
-  return `<details class="item" data-k="${hubEscape(k)}" data-who="${hubEscape(rowOwner(r))}" data-kind="${kind}"><summary><span class="p p${hubEscape(r.priority)}">P${hubEscape(r.priority)}</span><span class="t">${hubEscape(r.title)} <small>${hubEscape(list.key)}</small></span><span class="mark"></span></summary>
-<div class="body">${r.assumption ? `<p class="recline"><b>Assumed:</b> ${linkPaths(list.path, r.assumption)}</p>` : ""}<p>${linkPaths(list.path, r.context)}</p>${r.detail ? `<p class="note">${linkPaths(list.path, r.detail)}</p>` : ""}${
+  return `<details class="item hw-disclosure" data-k="${hubEscape(k)}" data-who="${hubEscape(rowOwner(r))}" data-kind="${kind}"><summary><span class="p p${hubEscape(r.priority)}">P${hubEscape(r.priority)}</span><span class="t"><span class="hw-disclosure-chevron" aria-hidden="true"></span>${hubEscape(r.title)} <small>${hubEscape(list.key)}</small></span><span class="mark"></span></summary>
+<div class="body">${topicLink(r.id)}${r.assumption ? `<p class="recline"><b>Assumed:</b> ${linkPaths(list.path, r.assumption)}</p>` : ""}<p>${linkPaths(list.path, r.context)}</p>${r.detail ? `<p class="note">${linkPaths(list.path, r.detail)}</p>` : ""}${
     opts.length
       ? `<div class="opts${Object.keys(r.images ?? {}).length ? " pics" : ""}">${opts.map(choice).join("")}</div>`
       : ""
@@ -260,15 +295,19 @@ function rowHtml(list: List, r: Row, kind: string) {
 <p class="row-foot">${r.recommended ? `<button type="button" class="ghost pick" data-v="${hubEscape(r.recommended)}">Pick recommended</button> ` : ""}<button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 // A GOAL row is keyed by its first 60 characters, so an edit further on keeps its saved answer, and
-// by its whole text where another row of its list starts the same, so the two never share one. The
-// page carries both forms (data-cut, data-full), so an answer saved under the other moves over.
+// by its whole text where another row of its list starts the same, so the two never share one; a
+// row repeating an earlier row's whole text adds " #2", " #3". The page carries both forms
+// (data-cut, data-full), so an answer saved under the other moves over.
 const goalText = (t: Task) => t.point.replace(/\s+/g, " ");
 const goalCut = (t: Task) => `${t.list.key}:GOAL ${goalText(t).slice(0, 60)}`;
 const goalFull = (t: Task) => `${t.list.key}:GOAL ${goalText(t)}`;
 const goalKey = (t: Task) => {
   const start = goalText(t).slice(0, 60);
   const shared = tasks.some((o) => o !== t && o.list === t.list && goalText(o).startsWith(start));
-  return shared ? goalFull(t) : goalCut(t);
+  if (!shared) return goalCut(t);
+  const same = tasks.filter((o) => o.list === t.list && goalText(o) === goalText(t));
+  const n = same.indexOf(t);
+  return n ? `${goalFull(t)} #${n + 1}` : goalFull(t);
 };
 // The day as decision rows write it ("3 Nov"), with the year only where it is not this one.
 const day = (iso: string) =>
@@ -280,7 +319,7 @@ const day = (iso: string) =>
   });
 function taskHtml(t: Task) {
   const k = goalKey(t);
-  return `<details class="item" data-k="${hubEscape(k)}" data-cut="${hubEscape(goalCut(t))}" data-full="${hubEscape(goalFull(t))}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t">${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">due ${day(t.due)}</span>` : ""}<span class="mark"></span></summary>
+  return `<details class="item hw-disclosure" data-k="${hubEscape(k)}" data-cut="${hubEscape(goalCut(t))}" data-full="${hubEscape(goalFull(t))}" data-who="${hubEscape(t.who)}" data-kind="task"><summary><span class="p p${Math.min(t.prio, 3)}">${t.prio < 4 ? `P${t.prio}` : "–"}</span><span class="t"><span class="hw-disclosure-chevron" aria-hidden="true"></span>${hubEscape(t.point.replace(/\s+/g, " ").slice(0, 160))}${t.point.length > 160 ? " …" : ""} <small>${hubEscape(t.list.key)}</small></span>${t.due ? `<span class="due">due ${day(t.due)}</span>` : ""}<span class="mark"></span></summary>
 <div class="body"><p>${linkPaths(t.list.path, t.point)}</p><p><b>Who:</b> ${hubEscape(t.actor)}</p>${t.evidence ? `<p class="note"><b>Evidence:</b> ${linkPaths(t.list.path, t.evidence)}</p>` : ""}<label class="choice"><input type="checkbox" value="done"> done</label><label class="lbl" for="n-${hubEscape(k)}">Note</label><textarea id="n-${hubEscape(k)}"></textarea><p class="row-foot"><button type="button" class="ghost clear">Reset</button> <span class="saved" aria-live="polite"></span></p></div></details>`;
 }
 
@@ -306,7 +345,7 @@ const clustersHtml = (rows: { list: List; r: Row }[], kind: string) =>
     .join("");
 const groupHtml = (title: string, inner: string, open: boolean) =>
   inner
-    ? `<details class="group"${open ? " open" : ""}><summary>${title}</summary>${inner}</details>`
+    ? `<details class="group hw-disclosure"${open ? " open" : ""}><summary>${title}</summary>${inner}</details>`
     : "";
 const partHtml = (id: string, title: string, note: string, inner: string) =>
   `<section class="part" id="${id}"><h2>${title} <span class="count" data-for="${id}"></span></h2><p class="note">${note}</p>${inner}<p class="note empty" hidden>Nothing open.</p></section>`;
@@ -421,8 +460,17 @@ details.item{background:var(--surface);border:1px solid var(--line);border-radiu
 details.item>summary{display:flex;gap:10px;align-items:flex-start;list-style:none;font:500 var(--text-subheading)/1.4 var(--font-sans);padding:11px 12px;cursor:pointer}
 details.item>summary::-webkit-details-marker{display:none}
 details.item>summary .t{flex:1}
-details.item>summary .t::before{content:"";display:inline-block;border-left:7px solid var(--accent);border-top:5px solid transparent;border-bottom:5px solid transparent;margin-right:10px;vertical-align:1px;transition:transform .15s}
-details.item[open]>summary .t::before{transform:rotate(90deg)}
+/* The disclosure: a copy of @hackersandwizards/brand expert/disclosure.css, v0.26.0. This file runs from every repo it
+   syncs into, against that repo's brand pin, some older than the file, so the rules are inlined, not read from the package. */
+@layer components{.hw-disclosure>summary{display:flex;align-items:center;gap:.5rem;cursor:pointer;list-style:none;user-select:none}
+.hw-disclosure>summary::-webkit-details-marker{display:none}
+.hw-disclosure>summary:focus-visible{outline:2px solid var(--focus,var(--color-purple));outline-offset:2px;border-radius:var(--radius-sm)}
+.hw-disclosure>summary::before,.hw-disclosure-chevron{content:"";display:inline-block;flex-shrink:0;width:1em;height:1em;background-color:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E") center/contain no-repeat;transition:transform 150ms cubic-bezier(.4,0,.2,1)}
+.hw-disclosure>summary:has(.hw-disclosure-chevron)::before{content:none}
+.hw-disclosure[open]>summary::before,.hw-disclosure[open]>summary .hw-disclosure-chevron{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.hw-disclosure>summary::before,.hw-disclosure-chevron{transition:none}}}
+/* This page's placement: a decision's chevron runs inline in its title, after the priority pill. */
+details.item>summary .hw-disclosure-chevron{vertical-align:-.125em;margin-right:.5rem}
 .p{font:600 var(--text-micro) var(--font-mono);padding:2px 7px;border-radius:var(--radius-pill);margin-top:2px}
 .p1{color:var(--error);background:color-mix(in srgb,var(--error) 15%,transparent)}.p2{color:var(--warning);background:color-mix(in srgb,var(--warning) 15%,transparent)}.p3{color:var(--muted);background:var(--tint)}
 .mark{font-size:var(--text-micro);color:var(--accent);white-space:nowrap;margin-top:3px}
@@ -459,7 +507,7 @@ section.part,details.item{scroll-margin-top:120px}.opts.pics{grid-template-colum
 <div class="find"><input type="search" id="q" placeholder="Filter" aria-label="Filter items"><span id="hits" aria-live="polite"></span></div></div>
 <nav class="jump" aria-label="Sections"><a href="#decide">Decide <span class="count" data-for="decide"></span></a><a href="#review">Review <span class="count" data-for="review"></span></a><a href="#todo">To do <span class="count" data-for="todo"></span></a><a href="#assumptions">Assumptions <span class="count" data-for="assumptions"></span></a></nav>
 </div></div>
-<details class="sources"><summary>${lists.length} decision lists under ~/dev, built ${hubEscape(stamp)}</summary><ul>${sources}</ul>
+<details class="sources hw-disclosure"><summary>${lists.length} decision lists under ~/dev, built ${hubEscape(stamp)}</summary><ul>${sources}</ul>
 <p class="note">Pick an option, write a note or tick a box: everything stays in this browser. “Copy answers” puts it all on the clipboard as one block; paste it into the chat with Ada. Ada writes each line into its repo, commits, rebuilds the page and confirms every id. An answer disappears here once its row is gone from the rebuilt page. A repo missing from the list is not under ~/dev or has no decision list.</p>
 <label class="lbl" for="block">The block to copy</label><textarea id="block" readonly></textarea></details>
 ${partHtml("decide", "Decide", "A question with options. Nothing is preselected.", byPriorityHtml(decide, "decide"))}
@@ -479,13 +527,16 @@ const known = new Set(items.map((d) => d.dataset.k));
 // A GOAL answer saved under the row's other key form (its whole text, or its first 60 characters,
 // since a sibling sharing that start came or went, or by an older page) moves to its key now: the
 // whole text first, then the cut, then, for a row no sibling shares its start with, the one
-// whole-text key starting with its cut.
+// whole-text key starting with its cut. A cut two rows share names neither, so its answer stays
+// under it and is copied as it is.
+const cuts = items.map((d) => d.dataset.cut).filter(Boolean);
 for (const d of items) {
   const { k, cut, full } = d.dataset;
   if (!full || read(k)) continue;
   const orphans = Object.keys(localStorage).filter((s) => s.startsWith(STORE)).map((s) => s.slice(STORE.length)).filter((s) => !known.has(s));
   const longer = k === cut && cut !== full ? orphans.filter((s) => s.startsWith(cut) && s !== cut) : [];
-  const old = [full, cut].find((s) => orphans.includes(s)) || (longer.length === 1 ? longer[0] : "");
+  const own = cuts.filter((c) => c === cut).length === 1 ? [full, cut] : [full];
+  const old = own.find((s) => orphans.includes(s)) || (longer.length === 1 ? longer[0] : "");
   if (old && write(k, read(old))) localStorage.removeItem(STORE + old);
 }
 // An answer whose row left the page was carried out: drop it once copied. A repo missing from one

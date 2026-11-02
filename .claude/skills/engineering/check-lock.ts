@@ -3,6 +3,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { linkSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { constants } from "node:os";
 import { resolve } from "node:path";
 
 // Concurrent `bun run check` runs in one checkout corrupt each other: vitest workers spawn `bun`
@@ -149,12 +150,19 @@ if (command.length === 0) {
   process.exit(2);
 }
 
+// A signal's default action killed a waiter inside dropIfStale and left its claim for good once
+// the stale lock was gone. A handler defers the signal to the event loop, after the claim's
+// finally has removed it. Only for the wait: the run itself keeps the default actions.
+const SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
+const stop = (signal: NodeJS.Signals): never => process.exit(128 + constants.signals[signal]);
+for (const signal of SIGNALS) process.on(signal, stop);
 let held = false;
 try {
   held = await waitForLock();
 } catch (error) {
   console.warn(`[check-lock] lock unusable (${String(error)}); running the checks unserialised`);
 }
+for (const signal of SIGNALS) process.off(signal, stop);
 
 function release(): void {
   if (!held) return;
