@@ -137,8 +137,10 @@ const BANDS: [number, string][] = [
   [-Infinity, RED],
 ];
 
+/** The band of the mean as printed, to one decimal, so a 2.66 shown as 2.7 is coloured as 2.7 and
+ * the bar never contradicts the legend's "from 2.69". */
 export function bandColor(value: number, scale: { start: number; end: number }): string {
-  const at = scalePosition(value, scale);
+  const at = scalePosition(Number(value.toFixed(1)), scale);
   return BANDS.find(([from]) => at >= from)![1];
 }
 
