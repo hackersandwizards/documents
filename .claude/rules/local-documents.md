@@ -2,8 +2,8 @@
 
 Write every page, report, deck, note or document a run produces as a file in the repository it
 belongs to, in the folder that repository's `CLAUDE.md` names for such documents, else in `docs/`.
-The decision page and its review pages under `~/Downloads/stand-entscheidungen/` are the one
-exception: generated views of repository rows.
+The hub page under `~/dev/.admin/` and the review pages under `~/Downloads/stand-entscheidungen/`
+are the one exception: views of repository items.
 Run the repository's formatter on it as you write it, since an unformatted file reds every
 session's gate, and keep raw dumps and review rounds in the scratchpad. Commit it like any other change and give
 the reader its path. In a public repository, such a file and its images carry no company data (a client,

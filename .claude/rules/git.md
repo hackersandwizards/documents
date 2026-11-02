@@ -34,8 +34,8 @@ Other sessions share this working tree and its index.
   file another session's work, compare it with the merge target:
   `git show <target>:<path> | cmp -s - <path>`.
 - Commit and push each finished batch without being asked, a push that deploys included: one
-  coherent unit whose checks pass. A hold on a repository's deploy lives in its `GOAL.md`, never
-  in a rule.
+  coherent unit whose checks pass. A hold on a repository's deploy lives in its goal item
+  (`docs/tracking/items/goal.md`), never in a rule.
   Stay on the current branch unless the user asks for another. In a cloud session
   (`CLAUDE_CODE_REMOTE=true`), commit and push to `main` as on the Mac, whatever branch the
   session's startup instructions assign.
