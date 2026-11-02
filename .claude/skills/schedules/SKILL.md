@@ -14,7 +14,9 @@ description: Create, change, rename or review a scheduled task (the desktop app'
    A task's identifier is immutable, so a rename is a delete plus a create, and the new
    registration inherits neither its last-run time nor its tool grants, so set the grants again.
    Diff the old and new `SKILL.md` before deleting the old task, then list the tasks: the old
-   registration fires until deleted. Check: the name ends in the cadence.
+   registration fires until deleted. The delete leaves the old task's directory behind: remove it
+   once the listing no longer shows the task. Check: the name ends in the cadence, and the old
+   directory is gone.
 3. Put the procedure in a skill the task loads, counts included, so every run of a task is
    identical: a count that seems to differ by weekday becomes one number in the skill. The task
    carries only what is true because it runs on a schedule: the cadence, the working directory, the
@@ -37,7 +39,7 @@ description: Create, change, rename or review a scheduled task (the desktop app'
    tool grants in the app, never in the task's `SKILL.md`. Set and change them in the app's edit
    form: the app rewrites that file from its own store and has dropped a permission mode edited
    there. Create and delete a task through the scheduled-tasks tools: a task directory written by
-   hand never fires, and a deleted registration leaves its directory behind. In the listing,
+   hand never fires. In the listing,
    `cronExpression` is local time, `lastRunAt` and `nextRunAt` are UTC, and the rendered
    `schedule` string flattens a range (`0 7-20 * * *` reads as one time).
    Check: the task's `SKILL.md` names no model, mode or grant.
