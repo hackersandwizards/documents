@@ -76,6 +76,22 @@ mutate live systems or require new approval.
 A new or changed line rests on a person's message or an observed failure, named in the commit
 message. A line with neither is not written.
 
+For a change the person orders, draft the one-sentence target text, read the whole file for the
+line it folds into, and show the wordings before committing; a delegate brief carries that text or
+a length cap and asks for the removal-first diff. A rule the person states for every session goes
+into a hub rule or skill, never memory or one repository's rule. The remedy for an agent behaviour
+is a line in the artifact that owns it, never a hook, a validator or other automated block, and
+rule text never says "guardrail". A fix to a skill driving a person-facing UI is a sentence telling
+the agent to use the site's own control, not script logic or stub tests. A rule for a person's
+writing voice says when a practice helps and when not, from fetched research where it borrows a
+best practice: an absolute is a defect. Before reporting a fix, walk the person's own example
+through it with today's state: no marker, no record, the run that starts tomorrow.
+
+A cleanup of skills and rules has three equal goals: cut what another owner states or what only
+narrates history, collapse special cases, and leave no two passages contradicting each other,
+reported in their own section. A skill checked into a repository stays on: this machine's usage
+counters measure only one person's sessions.
+
 A line obliging an agent to report a value is incomplete until it names the field the consumer
 joins on. Open the consuming artifact and carry its key back into the line.
 

@@ -27,7 +27,12 @@ Other sessions share this working tree and its index.
 - `git checkout -- <path>` and `git restore` install whatever another session staged there. Revert
   with `git show HEAD:<path> > <path>`, after reading `HEAD` for that path, since it moves while
   your run is open. For a Git LFS file, follow it with `git lfs checkout <path>`. In a file
-  another session also edits, revert only your own hunks.
+  another session also edits, revert only your own hunks. Before reverting or countering a push,
+  deploy or edit you did not order, read the other sessions' transcripts
+  (`grep -rl "<sha or subject>" ~/.claude/projects/*/`) for the person's decision.
+- A killed merge leaves upstream files half-written with `HEAD` unmoved. Before calling a modified
+  file another session's work, compare it with the merge target:
+  `git show <target>:<path> | cmp -s - <path>`.
 - Commit and push each finished batch without being asked, a push that deploys included: one
   coherent unit whose checks pass. A hold on a repository's deploy lives in its `GOAL.md`, never
   in a rule.
@@ -43,7 +48,9 @@ Other sessions share this working tree and its index.
   additions, the later change winning where they contradict. A rejected push repeats the update.
   Where the merge fails, read each record you act on from `origin/<default branch>` with `git show`.
   Where the fetch fails, act on nothing outside the repository, such as mail, Qonto or the calendar,
-  and say why.
+  and say why. Unattended, an SSH remote fails: the 1Password agent cannot authenticate with nobody
+  present and an LFS smudge hangs. Run git there with
+  `-c url."https://github.com/".insteadOf="git@github.com:"`.
 - `.git/index.lock` is another session committing. A commit holds it for seconds: wait and
   retry, and if it outlives a couple of minutes, name the owning process and report it.
   Never delete it.

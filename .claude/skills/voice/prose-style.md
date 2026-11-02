@@ -97,7 +97,8 @@ same: "agentic engineering" stays, "implementieren" -> "umsetzen", "utilize" -> 
 
 That test reads on what the reader says, not on what the dictionary offers. An English term the
 reader's own industry speaks stays English though German has a word for it: `Bottleneck` over
-`Engpass`, `Backlog` over `Rückstand`.
+`Engpass`, `Backlog` over `Rückstand`. `Harness`, `Agent`, `Tool Call`, `Tools`, `Guardrails` and
+`Scaffolding` stay English in every German text and translation.
 
 One exception: German prose in this field writes `AI`, not `KI`, in every compound (`AI-Adoption`,
 `AI-gestützte Entwicklung`). German website copy and blog posts, the copy with SEO and GEO weight, are the exception to the

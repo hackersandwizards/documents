@@ -47,7 +47,10 @@ rows plus the `open` and `assumed` rows in `items.js`. No third list exists.
    those rows, as a patch against `git show HEAD:<items.js>` committed at once through a private
    index (`GIT_INDEX_FILE=<tmp> git read-tree HEAD`, `git apply --cached`, a commit that runs the
    hook), never by rewriting the working file: parallel writers empty it, and an uncommitted row
-   edit has no git copy. Each delegate gets one batch with its write paths and a completion check, and ends
+   edit has no git copy. Format the patched copy with the repository's formatter through
+   `--stdin-filepath <repo path>` from the repository root: on a file outside the repository it
+   applies defaults and reds the gate. After merging another session's work, read back the fields
+   you wrote: a commit made from a copy older than yours reverts them without a conflict. Each delegate gets one batch with its write paths and a completion check, and ends
    when that batch is committed. Further work goes to a fresh delegate briefed from paths, commits
    and open findings, never to a running one. A delegate messages only a result, a blocker or a
    question.

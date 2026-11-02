@@ -44,6 +44,8 @@ In this order, one plain sentence each:
 3. Offer scope: *"Was wir aber machen können: Scope reduzieren auf Y."*
 
 When you do concede, bound it: what it covers and from when (*"für die nächsten Beauftragungen"*).
+Tie it to the reason the client gave (volume, bundle), never to room in the earlier price, a joke
+included.
 
 ### Calibrated closing question
 

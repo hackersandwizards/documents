@@ -35,6 +35,18 @@ reinforce positioning in authored content; a drafted mail or Slack message never
 Carve-outs from the banned words: "Assistant" and "Assistants" are allowed for AI development tools
 and human-assistance contexts; "Transformation" stays in the offering name above.
 
+## Standing claims
+
+- Both founders' outward title is Founder & Co-CEO; Founder, CEO or Co-CEO alone is fine and is not
+  corrected. CSO appears only in internal role and org texts.
+- Trainers never receive, clone, copy or store a client's code. Copy pairing a trainer with access
+  to client code is false.
+- Clients keep the slides, exercises and handouts and may use them internally; our generic material
+  stays ours. Copy may promise this.
+- Every training works with every coding-agent harness (Claude Code, Codex, GitHub Copilot, Gemini
+  CLI, Cursor). A case detail still needs its record, and a tool page still needs tool-specific
+  substance.
+
 ## Competitive positioning
 
 h&w sits on the practices and enablement layer of the agentic-engineering stack, not in competition

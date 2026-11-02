@@ -29,6 +29,9 @@ Prefer these over their classic equivalents.
   into a day through `jq` puts everything before local 02:00 on the previous day.
 - `rg` skips dot-directories, so `rg <pattern> .` reports zero hits across every skill, rule, agent and memory under `.claude/`. Pass `--hidden`, name the directory, or use `git grep`. A "no references remain" sweep run without it cannot fail.
 - `rg` with no path argument searches stdin wherever stdin is a pipe or a file, a tool call included, and hangs until the timeout, leaving an empty result file that reads as zero hits. Pass a path (`.`) and `</dev/null`. It also skips binary files, so count PDFs by file name with `git ls-files` or `fd`.
+- Judge a content-search hit by its matching line (`rg -n`), never by its file's name: a topic's
+  page often sits as a link line inside a hub page. Search the user's words and their synonyms
+  before leaving the repository.
 - `delta` for diffs, `tree` for directory tree, `fzf` for fuzzy selection
 - `zoxide` for directory jumping (`z <pattern>`)
 
@@ -38,7 +41,9 @@ Prefer these over their classic equivalents.
 - `scrapling` to scrape web pages to markdown (`scrapling extract get <url> out.md`)
 
 **Git and code-host:**
-- `gh` for GitHub, `glab` for GitLab
+- `gh` for GitHub, `glab` for GitLab. Before calling a repository setting one only the person can
+  change, read the permission the API returns (`gh api repos/<org>/<repo>` → `permissions.admin`):
+  after the person's decision, the change is yours.
 - `lazygit` for git TUI, `git-filter-repo` for history rewrites
 - Global git aliases from `~/.gitconfig` that add workflow behavior:
   - `git all <args...>` -> run `git <args...>` in every repository under the current tree
@@ -58,6 +63,11 @@ Prefer these over their classic equivalents.
   does not install, outside a training repository
 - `bun install -g` for globals at `~/.bun/bin`
 - built-in `Bun.Image` for image processing (Sharp-shaped, JPEG/PNG/WebP/HEIC/AVIF, no npm deps)
+
+**Media:**
+- `transcribe [-l lang] [-o outdir] file...` for speech-to-text, never `whisper-cli` directly, which
+  at its defaults invents repeated sentences. Install or propose no other model. Names come from
+  records, never from the transcript.
 
 **Python:**
 - `uv` for project envs and dependencies

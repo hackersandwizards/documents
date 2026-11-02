@@ -48,6 +48,17 @@ handling that prevents data loss, security measures, or accessibility basics.
   launch raises a keychain dialog. Puppeteer and Playwright pass both flags; a direct launch adds them.
 - A run that needs a running app starts its own on a free port and stops it by PID when done. It
   never stops or restarts a server it did not start.
+- A trial of a forward-looking automation over past items gives each item only the data that
+  existed when the automation would have acted: records from git history as of then, mail before
+  then. Items still ahead run as the real test, and the brief states the cutoff.
+- A build brief for a screen in a proof of concept forking a reference app names the reference
+  screen, forbids hand-built substitutes for library components, and lists the reference app's UI
+  audits as gates from the first wave.
+- Every repository with a UI links its design-system catalogue in the UI, guarded by a coverage
+  test and named in its `CLAUDE.md`.
+- Decks run only on our own slide engine, never Slidev or reveal.js. Two exceptions stay and are
+  never proposed for porting: the one client reveal.js deck in Company OS and a partner's own
+  course repositories.
 - Module-scope function names are unique per repository, except a framework-dictated name or a
   test-local helper.
 - Removing a collection, a skill or an agent also deletes the tests that named it. Port every
