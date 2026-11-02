@@ -110,6 +110,10 @@ a reference and stays.
 
 ## Mirrors and sync
 
+The training repositories under `internal/trainings/` carry no rules, `CLAUDE.md` or skills:
+participants build them in the training. Their harness settings stay, and a sweep across every
+repository leaves them out and says so.
+
 The sync script's own `GLOBAL_RULES` and `GLOBAL_SKILLS` arrays say which files are mirrors, and
 `FORKS` names the repo-and-skill pairs the hub does not own. Check the file you are about to edit
 against all three, per file rather than once per task, and edit the hub copy. The next sync replaces a mirrored directory whole, so a repo-local file
