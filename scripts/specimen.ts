@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // The specimen: one page per document type from the components with the fictitious samples,
-// and an overview, written to specimen/. `--check` builds them afresh and fails on any committed
-// page that differs, and on a component no page shows.
+// and an overview, written to specimen/; it fails on a component no page shows. specimen/ is not
+// committed: `bun run check`, `bun run dev` and the Pages workflow each write it afresh.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composePage, escapeHtml, openComposer } from "./compose";
@@ -462,23 +462,7 @@ if (import.meta.main) {
     process.exit(1);
   }
   const files = await buildSpecimen();
-  if (process.argv.includes("--check")) {
-    const committed = readdirSync(OUT).filter((f) => f.endsWith(".html"));
-    const stale = [
-      ...[...files]
-        .filter(
-          ([f, html]) => !committed.includes(f) || readFileSync(join(OUT, f), "utf8") !== html,
-        )
-        .map(([f]) => f),
-      ...committed.filter((f) => !files.has(f)),
-    ];
-    if (stale.length > 0) {
-      console.error(`specimen/ is stale (${stale.join(", ")}): run bun run specimen.`);
-      process.exit(1);
-    }
-  } else {
-    mkdirSync(OUT, { recursive: true });
-    for (const [f, html] of files) writeFileSync(join(OUT, f), html);
-    console.log(`${files.size} files in specimen/`);
-  }
+  mkdirSync(OUT, { recursive: true });
+  for (const [f, html] of files) writeFileSync(join(OUT, f), html);
+  console.log(`${files.size} files in specimen/`);
 }

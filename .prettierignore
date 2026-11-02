@@ -1,7 +1,6 @@
-# The document base and components moved byte-exact from brand, and the generated specimen: never reformat.
+# The document base and components moved byte-exact from brand: never reformat.
 document.css
 components/
-specimen/
 .claude/
 .agents/
 .githooks/

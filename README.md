@@ -9,7 +9,8 @@ may not be public.
 
 The design system shows every document type and component with invented data: `bun run
 design-system` serves it at `http://127.0.0.1:4330/design-system/`. The specimen, every type as
-`composePage` prints it, opens from `specimen/index.html` after `bun install`.
+`composePage` prints it, opens from `specimen/index.html` after `bun run specimen` (not committed;
+`bun run dev` writes it afresh on request).
 
 ## Use it in another repo
 
