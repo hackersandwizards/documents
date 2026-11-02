@@ -42,7 +42,7 @@ Prefer these over their classic equivalents.
 
 **Git and code-host:**
 - `gh` for GitHub, `glab` for GitLab. Before calling a repository setting one only the person can
-  change, read the permission the API returns (`gh api repos/<org>/<repo>` → `permissions.admin`):
+  change, read the permission the API returns (`permissions.admin` in `gh api repos/<org>/<repo>`):
   after the person's decision, the change is yours.
 - `lazygit` for git TUI, `git-filter-repo` for history rewrites
 - Global git aliases from `~/.gitconfig` that add workflow behavior:
