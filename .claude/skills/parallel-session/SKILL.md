@@ -27,9 +27,9 @@ serves the page across all repos at `http://admin.localhost:4329` from each repo
   A task, even one phrased as a question ("Who fixes the privacy policy?"), is `work`.
 - `docs/tracking/YYYY-MM-DD-<topic>.md`: one report per topic, what was measured, with evidence.
   Its images sit in `docs/tracking/YYYY-MM-DD-<topic>/`, JPEG at most 1600 px wide.
-- `docs/tracking/YYYY-MM-DD-<topic>/index.html`: a page the person reviews from an item, holding
-  only what that item needs. The item's `page` field names it and the admin server shows it. The
-  page goes when its last item is deleted.
+- `docs/tracking/items/<id>/`: the item's images, JPEG at most 1600 px wide, named in its `images`
+  field by file name. The admin renders every review from the item in its own styles: an agent
+  writes item data and images, never review HTML. The folder goes with its item.
 
 Work that waits on a decision keeps its `work` item, whose body names the decision's `id` instead
 of repeating the question. The open points for the person's return are the items in
@@ -40,9 +40,11 @@ of repeating the question. The open points for the person's return are the items
 Every item: `kind` and `status` (`open`, `assumed` or `decided`; `work` and `goal` are only ever
 `open`). Every item but a goal: `priority` (1 to 3, 1 costs most if missed) and `owner` (who
 answers, or for work who moves next; a decision for Stefan sets `owner: Stefan`). Optional:
-`order`, `area`, `due` (ISO date), `evidence`, `page` (a repo-relative page path that exists).
-A decision may carry `options` (each `key`, `label`, optional `detail`), `recommended` (an option
-key) and `images` (option key to a repo-relative image path). `assumed` states `assumption` or
+`order`, `area`, `due` (ISO date), `evidence`. A decision or review may carry `options` (each
+`key`, `label`, optional `detail`, and `score` and `noise` from a blind review), `recommended` (an
+option key; a list where `multiple: true` lets the person pick several) and `images` (option key to
+an image or a list of them, each a file name or `{src, caption}`, or a list for the item as a
+whole). A table, such as scores per criterion, goes in the body as Markdown. `assumed` states `assumption` or
 `recommended`. `decided` means the person's own answer and states `decision` and `by`, with
 `quote` for the person's words; a choice an agent made is `assumed`. Any other field fails
 `admin-check`.
