@@ -1,6 +1,7 @@
-import { execFile, execFileSync, spawnSync } from "node:child_process";
+import { type ChildProcess, execFile, execFileSync, spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
@@ -119,10 +120,39 @@ for (const img of document.images) {
 }
 </script>`;
 
+/** The flags every Chrome here starts with. */
+const CHROME_FLAGS = [
+  "--headless",
+  "--disable-gpu",
+  // Chrome otherwise asks the macOS keychain for "Chromium Safe Storage", a dialog per launch.
+  "--use-mock-keychain",
+  "--password-store=basic",
+];
+/** The print settings, as the command line's flags and as the parameters of the kept Chrome's
+ * print call, side by side: change one, change the other. Chrome tags the PDF without a flag; only
+ * the outline needs one. */
+const PRINT_FLAGS = [
+  "--no-pdf-header-footer",
+  "--print-background",
+  "--generate-pdf-document-outline",
+];
+const PRINT_PARAMS = {
+  displayHeaderFooter: false,
+  printBackground: true,
+  generateDocumentOutline: true,
+  generateTaggedPDF: true,
+  preferCSSPageSize: true,
+};
+
+/**
+ * Prints an HTML file to PDF. `warm` prints in a Chrome kept running for the next call, for a
+ * long-running caller such as an app route: a cold Chrome costs about 0.55 s a render, the kept one
+ * about 0.1 s (measured 2026-11-02). It quits after a minute without a render, and with the caller.
+ */
 export async function renderPdf(
   htmlPath: string,
   pdfPath: string,
-  options: { timeoutMs?: number } = {},
+  options: { timeoutMs?: number; warm?: boolean } = {},
 ): Promise<void> {
   const chrome = await chromeBinaryAsync();
   if (!chrome) {
@@ -141,32 +171,164 @@ export async function renderPdf(
   );
   // Chrome can exit 0 without writing, so a PDF left from an earlier render must not pass the check below.
   rmSync(pdfPath, { force: true });
-  // Its own profile, so a render never runs inside, or locks, the user's own Chrome profile.
-  const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
+  const timeoutMs = options.timeoutMs ?? 60_000;
   try {
-    await execFileAsync(
-      chrome,
-      [
-        "--headless",
-        "--disable-gpu",
-        // Chrome otherwise asks the macOS keychain for "Chromium Safe Storage", a dialog per launch.
-        "--use-mock-keychain",
-        "--password-store=basic",
-        `--user-data-dir=${profile}`,
-        "--no-pdf-header-footer",
-        "--print-background",
-        // Chrome tags the PDF without a flag; only the outline needs one.
-        "--generate-pdf-document-outline",
-        `--print-to-pdf=${pdfPath}`,
-        pathToFileURL(printPath).href,
-      ],
-      { timeout: options.timeoutMs ?? 60_000 },
-    );
+    if (options.warm) {
+      const pdf = await keptChrome(chrome).print(pathToFileURL(printPath).href, timeoutMs);
+      writeFileSync(pdfPath, pdf);
+    } else {
+      // Its own profile, so a render never runs inside, or locks, the user's own Chrome profile.
+      const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
+      try {
+        await execFileAsync(
+          chrome,
+          [
+            ...CHROME_FLAGS,
+            `--user-data-dir=${profile}`,
+            ...PRINT_FLAGS,
+            `--print-to-pdf=${pdfPath}`,
+            pathToFileURL(printPath).href,
+          ],
+          { timeout: timeoutMs },
+        );
+      } finally {
+        rmSync(profile, { recursive: true, force: true });
+      }
+    }
   } finally {
     rmSync(printPath, { force: true });
-    rmSync(profile, { recursive: true, force: true });
   }
   if (!existsSync(pdfPath)) throw new Error(`Chrome produced no PDF at ${pdfPath}`);
+}
+
+/**
+ * A child process kept for the next call: started on first use, holding the caller open only while
+ * a call is in flight, stopped after a minute idle and when the caller exits. On globalThis, so a
+ * dev server re-evaluating this module finds the running one instead of starting another.
+ */
+const IDLE_MS = 60_000;
+type Kept<T> = { api: T; busy(delta: number): void };
+function kept<T>(
+  key: string,
+  start: (stop: () => void) => { child: ChildProcess; api: T; cleanup?: () => void },
+): Kept<T> {
+  const store = ((globalThis as Record<symbol, Map<string, Kept<unknown>>>)[
+    Symbol.for("@hackersandwizards/documents/kept")
+  ] ??= new Map());
+  const found = store.get(key) as Kept<T> | undefined;
+  if (found) return found;
+  let inFlight = 0;
+  let idle: ReturnType<typeof setTimeout> | undefined;
+  const stop = () => {
+    if (store.get(key) !== entry) return;
+    store.delete(key);
+    clearTimeout(idle);
+    process.off("exit", stop);
+    child.kill();
+    cleanup?.();
+  };
+  const { child, api, cleanup } = start(stop);
+  const handles = () =>
+    [child, ...child.stdio].filter(Boolean) as { ref?(): void; unref?(): void }[];
+  child.on("exit", stop);
+  process.on("exit", stop);
+  const entry: Kept<T> = {
+    api,
+    busy(delta) {
+      inFlight += delta;
+      clearTimeout(idle);
+      for (const h of handles()) (inFlight > 0 ? h.ref : h.unref)?.call(h);
+      if (inFlight === 0) (idle = setTimeout(stop, IDLE_MS)).unref?.();
+    },
+  };
+  store.set(key, entry);
+  entry.busy(0);
+  return entry;
+}
+
+/** The kept Chrome, driven over its own debugging pipe (fd 3 in, fd 4 out), which no other
+ * process can reach, unlike a debugging port. */
+function keptChrome(chrome: string) {
+  const entry = kept(chrome, (stop) => {
+    const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
+    const child = spawn(
+      chrome,
+      [...CHROME_FLAGS, `--user-data-dir=${profile}`, "--remote-debugging-pipe", "about:blank"],
+      { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
+    );
+    const input = child.stdio[3] as Writable;
+    const output = child.stdio[4] as Readable;
+    let id = 0;
+    let buffer = "";
+    // A CDP result: each call below reads the fields its method returns.
+    type Result = Record<string, string>;
+    const calls = new Map<number, { resolve(r: Result): void; reject(e: Error): void }>();
+    const loads = new Map<string, () => void>();
+    output.setEncoding("utf8");
+    output.on("data", (chunk: string) => {
+      buffer += chunk;
+      for (let end = buffer.indexOf("\0"); end >= 0; end = buffer.indexOf("\0")) {
+        const message = JSON.parse(buffer.slice(0, end));
+        buffer = buffer.slice(end + 1);
+        const call = calls.get(message.id);
+        if (call) {
+          calls.delete(message.id);
+          if (message.error) call.reject(new Error(message.error.message));
+          else call.resolve(message.result);
+        } else if (message.method === "Page.loadEventFired") loads.get(message.sessionId)?.();
+      }
+    });
+    child.on("exit", () => {
+      for (const call of calls.values()) call.reject(new Error("Chrome exited"));
+    });
+    const send = (method: string, params: object = {}, sessionId?: string): Promise<Result> =>
+      new Promise((resolve, reject) => {
+        calls.set(++id, { resolve, reject });
+        input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+      });
+    // As the command line does: print once the page has loaded, the print script's redraws included.
+    const print = async (url: string): Promise<Buffer> => {
+      const { targetId } = await send("Target.createTarget", { url: "about:blank" });
+      try {
+        const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
+        await send("Page.enable", {}, sessionId);
+        const loaded = new Promise<void>((resolve) => loads.set(sessionId, resolve));
+        await send("Page.navigate", { url }, sessionId);
+        await loaded;
+        loads.delete(sessionId);
+        const { data } = await send("Page.printToPDF", PRINT_PARAMS, sessionId);
+        return Buffer.from(data, "base64");
+      } finally {
+        await send("Target.closeTarget", { targetId }).catch(() => {});
+      }
+    };
+    return {
+      child,
+      api: { print, stop },
+      cleanup: () => rmSync(profile, { recursive: true, force: true }),
+    };
+  });
+  return {
+    async print(url: string, timeoutMs: number): Promise<Buffer> {
+      entry.busy(1);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          entry.api.print(url),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+              // A hung Chrome is replaced on the next call.
+              entry.api.stop();
+              reject(new Error(`Chrome did not print ${url} within ${timeoutMs} ms`));
+            }, timeoutMs);
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer);
+        entry.busy(-1);
+      }
+    },
+  };
 }
 
 /**
@@ -236,13 +398,17 @@ export function bakeDocumentCss(html: string): string {
 /**
  * A document component composed by `scripts/compose.ts` into a standalone, baked HTML string.
  * A child process, so no Vite server starts inside the caller, which may be the app's own; `cwd`
- * is the Astro project whose compiler it runs.
+ * is the Astro project whose compiler it runs. `warm` keeps that process for the next call, for
+ * a long-running caller: a fresh one costs about 0.5 s, the kept one a few ms (measured
+ * 2026-11-02). It quits after a minute without a call, and with the caller.
  */
 export async function composeDocument(
   name: string,
   props: Record<string, unknown>,
   cwd = process.cwd(),
+  options: { warm?: boolean } = {},
 ): Promise<string> {
+  if (options.warm) return keptComposer(cwd).compose(name, props);
   const dir = mkdtempSync(join(tmpdir(), "hw-compose-"));
   try {
     const input = join(dir, "props.json");
@@ -260,6 +426,53 @@ export async function composeDocument(
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/** `compose.ts --serve`, kept per project. */
+function keptComposer(cwd: string) {
+  const entry = kept(`compose:${cwd}`, () => {
+    const child = spawn("bun", [join(HERE, "compose.ts"), "--serve"], {
+      cwd,
+      stdio: ["pipe", "ignore", "inherit", "pipe"],
+    });
+    let id = 0;
+    let buffer = "";
+    const calls = new Map<number, { resolve(html: string): void; reject(e: Error): void }>();
+    const output = child.stdio[3] as Readable;
+    output.setEncoding("utf8");
+    output.on("data", (chunk: string) => {
+      buffer += chunk;
+      for (let end = buffer.indexOf("\n"); end >= 0; end = buffer.indexOf("\n")) {
+        const answer = JSON.parse(buffer.slice(0, end));
+        buffer = buffer.slice(end + 1);
+        const call = calls.get(answer.id);
+        calls.delete(answer.id);
+        if (answer.error) call?.reject(new Error(answer.error));
+        else call?.resolve(answer.html);
+      }
+    });
+    child.on("exit", () => {
+      for (const call of calls.values()) call.reject(new Error("The composer exited"));
+    });
+    const compose = (name: string, props: Record<string, unknown>) =>
+      new Promise<string>((resolve, reject) => {
+        calls.set(++id, { resolve, reject });
+        child.stdin!.write(`${JSON.stringify({ id, name, props })}\n`);
+      });
+    return { child, api: compose };
+  });
+  return {
+    async compose(name: string, props: Record<string, unknown>): Promise<string> {
+      entry.busy(1);
+      try {
+        return await entry.api(name, props);
+      } catch (error) {
+        throw new Error(`Composing ${name} failed: ${(error as Error).message}`, { cause: error });
+      } finally {
+        entry.busy(-1);
+      }
+    },
+  };
 }
 
 /**

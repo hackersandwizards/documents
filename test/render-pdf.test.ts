@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -12,6 +12,7 @@ import {
   documentCss,
   renderPdf,
 } from "../scripts/render-pdf";
+import { rateCard } from "../scripts/samples";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -167,7 +168,8 @@ describe("renderPdf with an empty Chrome cache", () => {
   });
 });
 
-describe.skipIf(!chromeBinary())("renderPdf", () => {
+// Every check runs on the command line's Chrome and on the kept one.
+describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (warm) => {
   let pdf: string;
   const pdfinfo = () => execFileSync("pdfinfo", [pdf], { encoding: "utf8" });
   const print = async (name: string, css: string) => {
@@ -175,8 +177,8 @@ describe.skipIf(!chromeBinary())("renderPdf", () => {
       join(dir, `${name}.html`),
       `<!doctype html><html><head><style>${css}</style></head><body><p>Text</p></body></html>`,
     );
-    await renderPdf(join(dir, `${name}.html`), join(dir, `${name}.pdf`));
-    return join(dir, `${name}.pdf`);
+    await renderPdf(join(dir, `${name}.html`), join(dir, `${name}-${warm}.pdf`), { warm });
+    return join(dir, `${name}-${warm}.pdf`);
   };
 
   beforeAll(async () => {
@@ -187,8 +189,8 @@ describe.skipIf(!chromeBinary())("renderPdf", () => {
       join(dir, "doc.html"),
       `<!doctype html><html lang="en"><body><h1>One</h1><img src="data:image/png;base64,${logo}" style="width:108px;height:20px"><h2>Two</h2></body></html>`,
     );
-    pdf = join(dir, "doc.pdf");
-    await renderPdf(join(dir, "doc.html"), pdf);
+    pdf = join(dir, `doc-${warm}.pdf`);
+    await renderPdf(join(dir, "doc.html"), pdf, { warm });
   }, 60_000);
 
   it("tags the PDF, so a screen reader reads its structure", () => {
@@ -253,5 +255,45 @@ describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
       .map((_, i) => i)
       .filter((i) => page(`Label ${i}\n`) !== page(`Answer ${i} `));
     expect(stranded).toEqual([]);
+  }, 60_000);
+});
+
+describe.skipIf(!chromeBinary())("the warm path", () => {
+  const text = (pdf: string) =>
+    execFileSync("pdftotext", ["-layout", pdf, "-"], { encoding: "utf8" });
+  const info = (pdf: string) =>
+    execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).replace(
+      /^(CreationDate|ModDate|File size):.*\n/gm,
+      "",
+    );
+
+  it("composes the bytes a fresh run writes, after another type too, and prints what the command line prints", async () => {
+    const props = { kind: "Trainer Briefing", lang: "en", html: "<h1>Briefing</h1><p>Text</p>" };
+    const once = await composeDocument("DocMarkdown", props);
+    await composeDocument("DocRateCard", rateCard, process.cwd(), { warm: true });
+    const warm = await composeDocument("DocMarkdown", props, process.cwd(), { warm: true });
+    expect(warm).toBe(once);
+    writeFileSync(join(dir, "warm.html"), once);
+    await renderPdf(join(dir, "warm.html"), join(dir, "warm-cli.pdf"));
+    await renderPdf(join(dir, "warm.html"), join(dir, "warm-kept.pdf"), { warm: true });
+    expect(info(join(dir, "warm-kept.pdf"))).toBe(info(join(dir, "warm-cli.pdf")));
+    expect(text(join(dir, "warm-kept.pdf"))).toBe(text(join(dir, "warm-cli.pdf")));
+  }, 60_000);
+
+  it("lets the caller exit once its calls are done, Chrome and the composer with it", async () => {
+    const script = `
+      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      await composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true });
+      await renderPdf(${JSON.stringify(join(dir, "doc.html"))}, ${JSON.stringify(join(dir, "exit.pdf"))}, { warm: true });
+      console.log(process.pid);`;
+    const started = performance.now();
+    const child = Bun.spawn([process.execPath, "-e", script], { stderr: "inherit" });
+    await child.exited;
+    expect(child.exitCode).toBe(0);
+    expect(performance.now() - started).toBeLessThan(20_000);
+    // No process outlives the caller that started it.
+    const pid = (await new Response(child.stdout).text()).trim();
+    const orphans = spawnSync("pgrep", ["-P", pid], { encoding: "utf8" }).stdout.trim();
+    expect(orphans).toBe("");
   }, 60_000);
 });

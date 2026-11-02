@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, writeSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { getViteConfig } from "astro/config";
 import { createServer } from "vite";
@@ -90,7 +91,31 @@ ${body}
 `);
 }
 
-if (import.meta.main) {
+/** `--serve`: composes each request read from stdin, one JSON line `{ id, name, props }`, and
+ * answers on fd 3 with `{ id, html }` or `{ id, error }`, keeping a composer per component, so
+ * each page is the one a fresh run writes (a composer's styles are those of every component it
+ * rendered). composeDocument's `warm` keeps this process. */
+async function serve() {
+  const composers = new Map<string, ReturnType<typeof openComposer>>();
+  // Its stdin closes with the caller, however that ends.
+  const lines = createInterface({ input: process.stdin });
+  lines.on("close", () => process.exit(0));
+  for await (const line of lines) {
+    const { id, name, props } = JSON.parse(line);
+    let answer: object;
+    try {
+      if (!/^Doc\w+$/.test(name)) throw new Error(`Not a document component: ${name}`);
+      if (!composers.has(name)) composers.set(name, openComposer());
+      answer = { id, html: await composePage(await composers.get(name)!, name, props) };
+    } catch (error) {
+      answer = { id, error: (error as Error).stack ?? String(error) };
+    }
+    writeSync(3, `${JSON.stringify(answer)}\n`);
+  }
+}
+
+if (import.meta.main && process.argv[2] === "--serve") await serve();
+else if (import.meta.main) {
   const args = process.argv.slice(2);
   if (args.includes("--help")) {
     console.log(USAGE);

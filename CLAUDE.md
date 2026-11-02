@@ -42,9 +42,11 @@ real name the rules cannot see fails there; those names never enter this repo.
   an app path. `DocElements` maps the brand's elements over what it wraps, so a component a
   consumer renders in its own Astro route (the hub's handout, through `DocHandout`) matches a composed page.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
-  directory; the command composes one component from a props JSON. `scripts/render-pdf.ts`: the
-  Chrome flag set, the document base baked into `<style data-hw-document>`, `composeDocument` and
-  the font check `assertBrandFonts`.
+  directory; the command composes one component from a props JSON, and `--serve` composes on
+  request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the Chrome flag set, the
+  document base baked into `<style data-hw-document>`, `composeDocument` and the font check
+  `assertBrandFonts`. `warm` on `composeDocument` and `renderPdf` keeps the composer and Chrome
+  running between calls, for a long-running caller such as an app route.
 - `onepager.css` and `scripts/onepager.ts`: the training-offering onepager's own stylesheet,
   `composeOnepager`, which composes `DocOnepager` on it instead of the whole document base, and
   `fitOnepager`, which renders it and picks the fit (tight, page-2 start, lift and air levels) that
