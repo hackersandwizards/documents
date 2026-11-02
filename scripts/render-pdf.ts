@@ -88,7 +88,7 @@ function cachedChrome(cache: string): string | undefined {
  * every redraw; work after load raced the print (measured). A document without a `<title>`
  * takes its first heading's.
  */
-const PRINT_SCRIPT = `<script>
+const PRINT_JS = `
 if (!document.title) document.title = document.querySelector("h1")?.textContent?.trim() ?? "";
 for (const img of document.images) {
   const shrink = () => {
@@ -116,7 +116,11 @@ for (const img of document.images) {
   };
   if (img.complete) shrink(); else img.addEventListener("load", shrink, { once: true });
 }
-</script>`;
+`;
+const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
+/** The same for a page served over HTTP, which the render cannot edit: run before the page's own
+ * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
+const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
 /** The flags every Chrome here starts with. */
 const CHROME_FLAGS = [
@@ -144,21 +148,38 @@ const PRINT_PARAMS = {
  */
 const LAYOUT = "Promise.all(globalThis.hwLayout ?? []).then(() => true)";
 
-/**
- * Prints an HTML file to PDF. `warm` prints in a Chrome kept running for the next call, for a
- * long-running caller such as an app route: a cold Chrome costs about 0.55 s a render, the kept one
- * about 0.1 s (measured 2026-11-02). It quits after a minute without a render, and with the caller.
- */
-export async function renderPdf(
-  htmlPath: string,
-  pdfPath: string,
-  options: { timeoutMs?: number; warm?: boolean } = {},
-): Promise<void> {
+type RenderOptions = { timeoutMs?: number; warm?: boolean };
+
+async function requireChrome(): Promise<string> {
   const chrome = await chromeBinaryAsync();
   if (!chrome) {
     throw new Error(
       "Chrome for Testing is required to render PDFs: bunx @puppeteer/browsers@3.2.6 install chrome@stable --path ~/.cache/puppeteer, or set CHROME_BINARY.",
     );
+  }
+  return chrome;
+}
+
+/**
+ * Prints an HTML file, or a page an `http:` or `https:` URL serves, to PDF. `warm` prints in a
+ * Chrome kept running for the next call, for a long-running caller such as an app route: a cold
+ * Chrome costs about 0.55 s a render, the kept one about 0.1 s (measured 2026-11-02). It quits
+ * after a minute without a render, and with the caller.
+ */
+export async function renderPdf(
+  htmlPath: string,
+  pdfPath: string,
+  options: RenderOptions = {},
+): Promise<void> {
+  const chrome = await requireChrome();
+  const timeoutMs = options.timeoutMs ?? 60_000;
+  if (/^https?:\/\//.test(htmlPath)) {
+    rmSync(pdfPath, { force: true });
+    const pdf = options.warm
+      ? await keptChrome(chrome).print(htmlPath, timeoutMs, PRINT_ON_NEW_DOCUMENT)
+      : await coldPrint(chrome, htmlPath, timeoutMs, PRINT_ON_NEW_DOCUMENT);
+    writeFileSync(pdfPath, pdf);
+    return;
   }
   const html = readFileSync(htmlPath, "utf-8");
   const end = html.lastIndexOf("</body>");
@@ -171,7 +192,6 @@ export async function renderPdf(
   );
   // A failed render must not leave a PDF from an earlier one in place.
   rmSync(pdfPath, { force: true });
-  const timeoutMs = options.timeoutMs ?? 60_000;
   const url = pathToFileURL(printPath).href;
   try {
     const pdf = options.warm
@@ -181,6 +201,173 @@ export async function renderPdf(
   } finally {
     rmSync(printPath, { force: true });
   }
+}
+
+/** The measurements a handout pass passes on to the next: DocHandout's `toc`, `flow` and `notes`. */
+export type HandoutPass = { toc?: number[]; flow?: string; notes?: string };
+
+/** What renderHandoutPdf did: `numbered` is false where poppler's `pdftotext` is missing or no
+ *  chapter eyebrow was found, and then `warning` says so and the contents prints without pages. */
+export type HandoutResult = {
+  numbered: boolean;
+  flow: number[];
+  notes?: number;
+  renders: number;
+  warning?: string;
+};
+
+/**
+ * Prints a DocHandout to PDF in as many passes as its layout needs. Chrome has no
+ * `target-counter()`, so the contents cannot number its own pages: each render is read back with
+ * `pdftotext` for the page each chapter eyebrow lands on, and the next passes those pages in `toc`.
+ * The cover holds the contents and has room to spare, so the numbers move no chapter. The same
+ * read-back picks the chapters that run on under the one before (`flow`) and whether the notes
+ * share the last page (`notes`). `source` is a URL serving the handout, which gets the pass as the
+ * query `toc`, `flow` and `notes`, or a function composing the handout's HTML for a pass, which
+ * passes it to DocHandout as props. `chapterLabel` is the eyebrow's word (DocHandout's
+ * `labels.chapter`). Without poppler the first render stands: the contents unnumbered and every
+ * chapter opening a page.
+ */
+export async function renderHandoutPdf(
+  source: string | ((pass: HandoutPass) => Promise<string>),
+  pdfPath: string,
+  options: RenderOptions & { chapterLabel?: string } = {},
+): Promise<HandoutResult> {
+  const dir = typeof source === "string" ? undefined : mkdtempSync(join(tmpdir(), "hw-handout-"));
+  let renders = 0;
+  const render = async (pass: HandoutPass) => {
+    renders++;
+    if (typeof source === "string") {
+      const url = new URL(source);
+      if (pass.toc) url.searchParams.set("toc", pass.toc.join(","));
+      if (pass.flow) url.searchParams.set("flow", pass.flow);
+      if (pass.notes) url.searchParams.set("notes", pass.notes);
+      return renderPdf(url.href, pdfPath, options);
+    }
+    const file = join(dir!, "handout.html");
+    writeFileSync(file, await source(pass));
+    return renderPdf(file, pdfPath, options);
+  };
+  const label = (options.chapterLabel ?? "Chapter").trim();
+  const pagesOf = () => chapterPages(pdfPath, label);
+  try {
+    await render({});
+    let toc = pagesOf();
+    // A chapter that runs on changes where it ends, so the one after it is judged on the next pass.
+    let flow: number[] = [];
+    for (let pass = 0; toc && pass < 6; pass++) {
+      const more = flowing(pdfPath, toc).filter((chapter) => !flow.includes(chapter));
+      const take = more.filter((chapter) => !more.includes(chapter - 1));
+      if (!take.length) break;
+      flow = [...flow, ...take].sort((a, b) => a - b);
+      await render({ flow: flow.join(",") });
+      toc = pagesOf();
+    }
+    const flowed = flow.length ? flow.join(",") : undefined;
+    if (!toc)
+      return {
+        numbered: false,
+        flow,
+        renders,
+        warning:
+          "pdftotext (poppler) missing or no chapter eyebrow found: the contents prints without page numbers and every chapter opens a page",
+      };
+    const pages = toc.at(-1)!;
+    const lines = notesFit(pdfPath, pages);
+    if (lines) {
+      await render({ flow: flowed, toc: [...toc.slice(0, -1), pages - 1], notes: `${lines}` });
+      // A notes block that did not fit would have taken a page of its own again.
+      if (pagesOf()?.at(-1) === pages - 1) return { numbered: true, flow, notes: lines, renders };
+    }
+    await render({ flow: flowed, toc });
+    return { numbered: true, flow, renders };
+  } finally {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** The 1-based page each chapter eyebrow ("CHAPTER 03") starts on, in chapter order, or undefined. */
+function chapterPages(pdf: string, label: string): number[] | undefined {
+  const text = spawnSync("pdftotext", ["-raw", pdf, "-"], { encoding: "utf8" });
+  if (text.error || text.status !== 0) return undefined;
+  const eyebrow = new RegExp(
+    `^\\s*${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} ?(\\d+)\\b`,
+    "gim",
+  );
+  const pages: number[] = [];
+  text.stdout.split("\f").forEach((body, i) => {
+    for (const m of body.matchAll(eyebrow)) pages[Number(m[1]) - 1] = i + 1;
+  });
+  return pages.length && !pages.includes(undefined as never) ? pages : undefined;
+}
+
+/** The lowest text on `page` above the footer and the highest below the running header, in
+ *  points, with the page height. */
+function extent(
+  pdf: string,
+  page: number,
+): { top: number; bottom: number; height: number } | undefined {
+  const box = spawnSync("pdftotext", ["-bbox", "-f", `${page}`, "-l", `${page}`, pdf, "-"], {
+    encoding: "utf8",
+  });
+  if (box.error || box.status !== 0) return undefined;
+  const height = Number(/<page width="[\d.]+" height="([\d.]+)"/.exec(box.stdout)?.[1]);
+  const words = [...box.stdout.matchAll(/yMin="([\d.]+)" xMax="[\d.]+" yMax="([\d.]+)"/g)]
+    .map((m) => [Number(m[1]), Number(m[2])] as const)
+    .filter(([min, max]) => min > 45 && max < height - 16 * (72 / 25.4));
+  if (!words.length) return undefined;
+  return {
+    top: Math.min(...words.map(([min]) => min)),
+    bottom: Math.max(...words.map(([, max]) => max)),
+    height,
+  };
+}
+
+/** The 1-based chapters, the first and last aside, that run on under the chapter before rather
+ *  than open a page. A longer chapter runs on when the one before ends in the top half of its last
+ *  page. A one-page chapter runs on when it fits whole there, with the 12 mm gap, or when the one
+ *  before ends in its top third; otherwise it keeps its page, since running on would split it.
+ *  Blind screen rounds, 28.10.2026: reviewers chose the top-third limit 6 to 0 over none, and
+ *  disliked it at a half because chapters then opened low and ran over. */
+function flowing(pdf: string, toc: number[]): number[] {
+  const mm = 72 / 25.4;
+  const gap = 12 * mm;
+  return toc.flatMap((start, i) => {
+    if (i === 0 || i === toc.length - 1) return [];
+    const before = extent(pdf, start - 1);
+    const own = extent(pdf, start);
+    if (!before || !own) return [];
+    const single = toc[i + 1] === start + 1;
+    if (before.bottom < own.height * (single ? 1 / 3 : 1 / 2)) return [i + 1];
+    const free = own.height - 16 * mm - before.bottom;
+    return single && own.bottom - own.top + gap <= free ? [i + 1] : [];
+  });
+}
+
+/** How many ruled lines fit under the text of the page before `last`, which the notes chapter
+ *  fills alone, when at least half a page of them do (14); otherwise undefined. The notes then move
+ *  up into that space, so the last chapter never ends above an empty page bottom. Points
+ *  throughout: the bottom margin is 16 mm, the section gap and the chapter heading take 42 mm, a
+ *  ruled line 8 mm. */
+function notesFit(pdf: string, last: number): number | undefined {
+  const box = spawnSync(
+    "pdftotext",
+    ["-bbox", "-f", `${last - 1}`, "-l", `${last - 1}`, pdf, "-"],
+    {
+      encoding: "utf8",
+    },
+  );
+  if (box.error || box.status !== 0) return undefined;
+  const height = Number(/<page width="[\d.]+" height="([\d.]+)"/.exec(box.stdout)?.[1]);
+  const mm = 72 / 25.4;
+  const bottom = height - 16 * mm;
+  const used = Math.max(
+    ...[...box.stdout.matchAll(/yMax="([\d.]+)"/g)]
+      .map((m) => Number(m[1]))
+      .filter((y) => y < bottom),
+  );
+  const lines = Math.floor((bottom - used - 42 * mm) / (8 * mm)) - 1;
+  return lines >= 14 ? lines : undefined;
 }
 
 /**
@@ -280,11 +467,13 @@ function pipeChrome(chrome: string) {
       input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
     });
   // Prints once the page has loaded, the print script's redraws included, and its layout is done.
-  const print = async (url: string): Promise<Buffer> => {
+  const print = async (url: string, script?: string): Promise<Buffer> => {
     const { targetId } = await send("Target.createTarget", { url: "about:blank" });
     try {
       const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
       await send("Page.enable", {}, sessionId);
+      if (script)
+        await send("Page.addScriptToEvaluateOnNewDocument", { source: script }, sessionId);
       const loaded = new Promise<void>((resolve) => loads.set(sessionId, resolve));
       await send("Page.navigate", { url }, sessionId);
       await loaded;
@@ -337,10 +526,17 @@ async function printWithin(
 }
 
 /** One print in a Chrome of its own, which quits and takes its profile with it. */
-async function coldPrint(chrome: string, url: string, timeoutMs: number): Promise<Buffer> {
+async function coldPrint(
+  chrome: string,
+  url: string,
+  timeoutMs: number,
+  script?: string,
+): Promise<Buffer> {
   const browser = pipeChrome(chrome);
   try {
-    return await printWithin(browser.print(url), url, timeoutMs, () => browser.child.kill());
+    return await printWithin(browser.print(url, script), url, timeoutMs, () =>
+      browser.child.kill(),
+    );
   } finally {
     browser.child.kill();
     await browser.exited;
@@ -355,11 +551,11 @@ function keptChrome(chrome: string) {
     return { child, api: { print, stop }, cleanup };
   });
   return {
-    async print(url: string, timeoutMs: number): Promise<Buffer> {
+    async print(url: string, timeoutMs: number, script?: string): Promise<Buffer> {
       entry.busy(1);
       try {
         // A hung Chrome is replaced on the next call.
-        return await printWithin(entry.api.print(url), url, timeoutMs, entry.api.stop);
+        return await printWithin(entry.api.print(url, script), url, timeoutMs, entry.api.stop);
       } finally {
         entry.busy(-1);
       }

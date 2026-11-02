@@ -48,7 +48,10 @@ real name the rules cannot see fails there; those names never enter this repo.
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the Chrome flag set, the
   document base baked into `<style data-hw-document>`, `composeDocument` and the font check
   `assertBrandFonts`. `warm` on `composeDocument` and `renderPdf` keeps the composer and Chrome
-  running between calls, for a long-running caller such as an app route.
+  running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
+  page an `http(s)` URL serves. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
+  with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a
+  function composing the HTML; without poppler the first render stands and the result says so.
 - `onepager.css` and `scripts/onepager.ts`: the training-offering onepager's own stylesheet,
   `composeOnepager`, which composes `DocOnepager` on it instead of the whole document base, and
   `fitOnepager`, which renders it and picks the fit (tight, page-2 start, lift and air levels) that

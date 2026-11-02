@@ -3,8 +3,8 @@
 // the contents, then one section per chapter, each opening on its title. Its layout is handout.css
 // (exported as ./handout.css), which imports the document base. Chrome's own print pipeline
 // paginates it against the `@page` rule and draws the running header and footer in the page
-// margins. The consumer keeps the chapters and the exporter, which measures a first render for
-// `toc`, `notes` and `flow` and passes them on the next.
+// margins. The consumer keeps the chapters; `renderHandoutPdf` (scripts/render-pdf.ts) measures
+// each render for `toc`, `notes` and `flow` and passes them on the next.
 import DocElements from "./DocElements.astro";
 import DocHeader from "./DocHeader.astro";
 import DocProse from "./DocProse.astro";
@@ -41,7 +41,7 @@ interface Props {
    *  placeholder: a standard handout has no recipient. */
   company?: string | null;
   date?: string | null;
-  /** The page each chapter starts on, which the exporter measures on a first render. */
+  /** The page each chapter starts on, which renderHandoutPdf measures on a first render. */
   toc?: number[];
   /** The ruled lines that fit on the last chapter's page; the notes then share that page instead
    *  of taking one of their own. */
