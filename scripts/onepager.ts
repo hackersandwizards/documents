@@ -205,18 +205,41 @@ export async function fitOnepager(
   dir: string,
 ): Promise<{ html: string; pages: number; fit: OnepagerFit }> {
   const work = mkdtempSync(join(tmpdir(), "hw-onepager-"));
-  const html = join(dir, `.onepager-fit-${work.split("-").pop()}.html`);
-  const pdf = join(work, "fit.pdf");
+  const tag = work.split("-").pop();
+  // Each fit renders once into its own files, so the levels of one kind render side by side and
+  // the last step reads the chosen fit back instead of rendering it again.
+  const renders = new Map<string, { html: string; pdf: string }>();
+  const files = async (fit: OnepagerFit) => {
+    const key = JSON.stringify(fit);
+    let f = renders.get(key);
+    if (!f) {
+      f = {
+        html: join(dir, `.onepager-fit-${tag}-${renders.size}.html`),
+        pdf: join(work, `fit-${renders.size}.pdf`),
+      };
+      renders.set(key, f);
+      writeFileSync(f.html, await composeOnepager(composer, { ...page, fit }, brand));
+    }
+    return f;
+  };
+  const rendered = new Map<string, Promise<number>>();
   const render = async (fit: OnepagerFit) => {
-    writeFileSync(html, await composeOnepager(composer, { ...page, fit }, brand));
-    // Headless Chrome on macOS sometimes exits non-zero after writing the PDF: one retry.
-    await renderPdf(html, pdf).catch(() => renderPdf(html, pdf));
-    return pdfPages(pdf);
+    const { html, pdf } = await files(fit);
+    const key = JSON.stringify(fit);
+    let pages = rendered.get(key);
+    if (!pages) {
+      // Headless Chrome on macOS sometimes exits non-zero after writing the PDF: one retry.
+      pages = renderPdf(html, pdf)
+        .catch(() => renderPdf(html, pdf))
+        .then(() => pdfPages(pdf));
+      rendered.set(key, pages);
+    }
+    return { pages: await pages, pdf };
   };
   try {
     let fit: OnepagerFit = {};
-    let pages = await render(fit);
-    if (pages > 2) pages = await render((fit = { tight: true }));
+    let { pages, pdf } = await render(fit);
+    if (pages > 2) ({ pages, pdf } = await render((fit = { tight: true })));
     if (pages === 2) {
       const line = flat(
         pdfPageText(pdf, 2)
@@ -229,17 +252,20 @@ export async function fitOnepager(
       // The header is .page's first child, the first block its second.
       fit = { ...fit, page2Start: index + 2 };
       const first = flat(pdfPageText(pdf, 1));
-      for (const kind of ["lift", "air"] as const)
-        for (const level of LEVELS) {
-          const fits = (await render({ ...fit, [kind]: level })) === 2;
-          if (!fits || flat(pdfPageText(pdf, 1)) !== first) break;
+      for (const kind of ["lift", "air"] as const) {
+        const base = fit;
+        for (const level of LEVELS) await files({ ...base, [kind]: level });
+        const tries = await Promise.all(LEVELS.map((level) => render({ ...base, [kind]: level })));
+        for (const [i, level] of LEVELS.entries()) {
+          if (tries[i]!.pages !== 2 || flat(pdfPageText(tries[i]!.pdf, 1)) !== first) break;
           fit = { ...fit, [kind]: level };
         }
-      pages = await render(fit);
+      }
+      ({ pages } = await render(fit));
     }
     return { html: await composeOnepager(composer, { ...page, fit }, brand), pages, fit };
   } finally {
-    rmSync(html, { force: true });
+    for (const { html } of renders.values()) rmSync(html, { force: true });
     rmSync(work, { recursive: true, force: true });
   }
 }
