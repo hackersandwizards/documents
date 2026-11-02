@@ -79,7 +79,7 @@ export function foreignStyles(html: string): string[] {
     if (!ENGINE_STYLES.some((attr) => new RegExp(`\\s${attr}(?=[\\s=>])`).test(tag)))
       found.push(`a style element the engine did not write: ${tag}`);
   for (const [tag] of html.matchAll(/<link\b[^>]*>/gi))
-    // The brand package's own files are the one stylesheet a page may link, as the specimen does.
+    // The brand package's own files are the one stylesheet a page may link, as the catalog's type pages do.
     if (
       /\brel=["']?stylesheet/i.test(tag) &&
       !/href=["'][^"']*\/@hackersandwizards\/brand\//.test(tag)

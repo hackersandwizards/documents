@@ -1,0 +1,117 @@
+---
+// The elements page: each brand element documents uses, as a tile in the engine's own markup and
+// print scale, marked with its brand version and the catalogue's link; then each exception in full
+// with its reason from brand-elements.json. brand-elements measures exactly these tiles.
+import Type from "./_Type.astro";
+import DocHeader from "../../../components/DocHeader.astro";
+import DocPriceTable from "../../../components/DocPriceTable.astro";
+import pkg from "../../../package.json";
+import elements from "../../../brand-elements.json";
+
+// The brand version the tiles name, from the pin: brand-elements fails on any other.
+const version = pkg.devDependencies["@hackersandwizards/brand"].split("#v")[1];
+
+const CATALOGUE = "http://brand.localhost/catalogue.html";
+const TILES: [string, string, string][] = [
+  [
+    "label",
+    "Label, Eyebrow",
+    '<span class="eyebrow">Training für ein Team</span><span class="label">Zeitraum</span>',
+  ],
+  [
+    "pill",
+    "Pill, Typ-Tag",
+    '<span class="doc-tag">Angebot</span> <span class="chip">Remote</span>',
+  ],
+  [
+    "card",
+    "Karte, betont",
+    '<div class="card"><h4>Über hackers&amp;wizards</h4></div><div class="card accent"><h4>Erstellt für Musterwerk AG</h4></div>',
+  ],
+  [
+    "callout",
+    "Callout, Ergebnis",
+    '<div class="callout"><span class="label">Kurz gesagt</span><p>Ein Satz.</p></div><div class="callout outcome"><p>Ein Team, das Agenten steuert.</p></div>',
+  ],
+  [
+    "quote",
+    "Zitat",
+    "<blockquote><p>„Der Plan stand, bevor die erste Zeile Code lief.“</p></blockquote>",
+  ],
+  [
+    "table",
+    "Tabelle mit Linien",
+    "<table><thead><tr><th>Leistung</th><th>Basis</th></tr></thead><tbody><tr><td>Training</td><td>2 Tage</td></tr></tbody></table>",
+  ],
+  [
+    "link",
+    "Link im Text",
+    '<p>Dann öffnet ihr <a href="https://example.com/">localhost:3000</a>.</p>',
+  ],
+  ["code", "Codeblock", '<pre><code><span class="prompt">$</span> bun run check</code></pre>'],
+  [
+    "kpi",
+    "Kennzahl, in der Umfrage-Auswertung im Folienmaß",
+    '<div class="hw-kpi"><span class="hw-kpi-value">87 %</span><span class="small muted">Rücklauf</span></div>',
+  ],
+];
+const SAMPLES: Record<string, string> = {
+  "section-label": '<span class="section-label">Leistungen</span>',
+  "margin-note":
+    '<p><em>Im Handout: eine Notiz am Rand neben dem Text, mit lila Linie.</em> <a href="../handout/">Handout öffnen</a></p>',
+  "doc-header": "<p><em>Kopf jeder Seite oben auf diesem Blatt.</em></p>",
+  "survey-readout": '<p><a href="../survey-readout/">Survey Readout öffnen</a></p>',
+  onepager: '<p><a href="../onepager/">Onepager öffnen</a></p>',
+};
+const exceptions = Object.entries(
+  elements.exceptions as Record<string, string | { reason: string }>,
+).map(([name, e]) => [name, typeof e === "string" ? e : e.reason] as const);
+const CSS = `
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-grid); }
+.tile { padding: var(--space-grid); border: var(--rule) dashed var(--line-soft); break-inside: avoid; }
+.tile-origin { font: var(--role-small); }
+.exception { margin: var(--block-margin-loose); padding-left: var(--space-grid); border-left: var(--rule-accent) solid var(--result); break-inside: avoid; }`;
+---
+
+<Type title="Elemente aus brand und Ausnahmen" css={CSS}>
+  <DocHeader kind="Elemente" legal />
+  <h1>Elemente aus brand</h1>
+  <p class="subtitle">
+    Regel, Varianten und Nacht stehen im brand-Katalog. Hier, wie die Elemente auf Papier aussehen,
+    im Druckmaß dieser Engine; brand-elements misst genau diese Kacheln gegen die Regel.
+  </p>
+  <div class="tiles">
+    {
+      TILES.map(([name, title, sample]) => (
+        <div class="tile" data-hw-tile={name} data-hw-version={version}>
+          <p class="tile-origin">
+            <span class="chip">aus brand v{version}</span> <code>.hw-{name}</code>{" "}
+            <a class="tile-link" href={`${CATALOGUE}#hw-${name}`}>
+              Katalog
+            </a>
+          </p>
+          <Fragment set:html={sample} />
+          <p class="small muted">{title}</p>
+        </div>
+      ))
+    }
+  </div>
+  <h2>Ausnahmen dieser Engine</h2>
+  {
+    exceptions.map(([name, reason]) => (
+      <section class="exception" data-hw-exception={name}>
+        <h3>{name}</h3>
+        <p class="muted">{reason}</p>
+        {name === "total-band" ? (
+          <DocPriceTable
+            columns={[{ label: "Leistung" }, { label: "Betrag", num: true }]}
+            rows={[{ item: "Training Agentic Engineering", cells: ["X.XXX,XX €"] }]}
+            total={{ label: "Summe netto", figure: "XX.XXX,XX €" }}
+          />
+        ) : (
+          <Fragment set:html={SAMPLES[name] ?? ""} />
+        )}
+      </section>
+    ))
+  }
+</Type>

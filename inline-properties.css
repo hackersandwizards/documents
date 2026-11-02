@@ -1,0 +1,9 @@
+/* For stylelint alone (stylelint.config.js): the custom properties a page sets per element in a
+   style attribute, which no stylesheet defines. composeSurveyReadout writes --band, --share and
+   --count on each bar and --mark on each list item. Nothing loads this file. */
+:root {
+  --band: initial;
+  --share: initial;
+  --count: initial;
+  --mark: initial;
+}

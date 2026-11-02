@@ -1,0 +1,48 @@
+---
+// A document type as a page: the component in the default slot on the document base, as
+// composePage prints it, its brand elements mapped (DocElements) and its scoped styles last, where
+// Astro puts them. The page links the brand's tokens and faces beside it (the preset's `copy`)
+// instead of baking them in, and on screen the sheet is A4 wide on the page tint.
+import DocElements from "../../../components/DocElements.astro";
+import tokensCss from "../../../tokens.css?raw";
+import documentCss from "../../../document.css?raw";
+import handoutCss from "../../../handout.css?raw";
+
+interface Props {
+  title?: string;
+  lang?: string;
+  /** The handout prints on handout.css, the document base plus its own layout. */
+  sheet?: "document" | "handout";
+  /** Rules after the base, for a page that is no document of its own, such as the elements page. */
+  css?: string;
+}
+const { title, lang = "de", sheet = "document", css = "" } = Astro.props;
+const BRAND = "../../node_modules/@hackersandwizards/brand";
+const local = (file: string) =>
+  file.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^@import [^;]+;\n/gm, "");
+const base = `
+${local(tokensCss)}${local(documentCss)}${sheet === "handout" ? local(handoutCss) : ""}${css}
+@media screen {
+  html { background: var(--color-bg); }
+  body { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; }
+}
+`;
+---
+
+<html lang={lang} data-hw-scale="print">
+  <head>
+    <meta charset="utf-8" />
+    {title && <title>{title}</title>}
+    <link rel="icon" href={`${BRAND}/logos/favicon.ico`} sizes="32x32" />
+    <link rel="icon" href={`${BRAND}/logos/favicon.svg`} type="image/svg+xml" />
+    <link rel="stylesheet" href={`${BRAND}/generated/tokens.root.css`} />
+    <link rel="stylesheet" href={`${BRAND}/tokens/print.css`} />
+    <link rel="stylesheet" href={`${BRAND}/tokens/document.css`} />
+    <link rel="stylesheet" href={`${BRAND}/tokens/marker.css`} />
+    <style is:inline data-hw-document set:html={base} />
+    <link rel="stylesheet" href={`${BRAND}/elements/elements.css`} />
+  </head>
+  <body>
+    <DocElements><slot /></DocElements>
+  </body>
+</html>

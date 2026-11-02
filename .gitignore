@@ -5,5 +5,4 @@ node_modules/
 **/.claude/settings.local.json
 .eslintcache
 .astro/
-# Written by bun run specimen, run by bun run check and bun run dev.
-specimen/
+dist/

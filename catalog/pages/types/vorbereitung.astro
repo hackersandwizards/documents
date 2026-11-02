@@ -1,0 +1,7 @@
+---
+import Type from "./_Type.astro";
+import DocPreparation from "../../../components/DocPreparation.astro";
+import { preparation as props } from "../../../scripts/samples";
+---
+
+<Type title={props.title} lang={props.lang}><DocPreparation {...props} /></Type>

@@ -9,7 +9,7 @@ export default tseslint.config(
       ".claude/**",
       ".githooks/**",
       "components/**",
-      "specimen/**",
+      "dist/**",
       "**/.astro/**",
     ],
   },

@@ -4,7 +4,7 @@ import { describe, expect, it } from "bun:test";
 
 // The document base (document.css) shrinks toward the brand tokens and the page setup. A document
 // building block is a component, components/Doc<Name>.astro with its own scoped style, shown on a
-// specimen page (scripts/specimen.ts fails on one no page shows). This list is every class the base
+// type page (test/stories.test.ts fails on one no page shows). This list is every class the base
 // still styles, kept exact: a new class fails here and belongs in a component; a deleted class
 // leaves the list in the same commit.
 const REMAINING = [

@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// documents-privacy: fails when the package's data (components, scripts, tests, specimen) carries
+// documents-privacy: fails when the package's data (components, scripts, tests, the catalog and its built type pages) carries
 // what may not be public. This repo's gate runs the rules below, which need no private data:
 // every euro figure a placeholder, every mail address on a reserved example domain or ours, no
 // phone number or IBAN, no street address but our imprint's and the invented ones, and every
@@ -16,8 +16,8 @@ const SCANNED = [
   "components",
   "scripts",
   "test",
-  "specimen",
-  "design-system",
+  "catalog",
+  "dist/types",
   "document.css",
   "onepager.css",
   "handout.css",
@@ -68,7 +68,7 @@ export interface Finding {
 }
 
 function files(root: string, entry: string): string[] {
-  // The design system's dev server caches its dependencies under design-system/: not ours.
+  // The catalog's dev server caches its dependencies under catalog/: not ours.
   if (/(^|\/)(node_modules|\.astro)$/.test(entry)) return [];
   const path = join(root, entry);
   let stat;

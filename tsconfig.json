@@ -1,15 +1,8 @@
 {
+  "extends": "@hackersandwizards/scaffolding/tsconfig/bun.json",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "erasableSyntaxOnly": true,
-    "types": ["bun"]
+    "allowImportingTsExtensions": true
   },
-  "include": ["scripts/**/*.ts", "test/**/*.ts", "design-system/**/*.ts", "*.ts", "*.js"],
-  "exclude": ["**/.astro"]
+  "include": ["scripts/**/*.ts", "test/**/*.ts", "catalog/**/*.ts", "*.ts", "*.js"],
+  "exclude": ["**/.astro", "dist", "**/node_modules"]
 }

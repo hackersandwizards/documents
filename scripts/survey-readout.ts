@@ -251,7 +251,7 @@ function slideShell(inner: string, kicker: string, page: number): string {
 }
 
 /** The readout deck as a standalone HTML page, seven 1280x720 slides with the brand inlined, or,
- * given `brand` (the brand package's folder as the page reaches it), linked, as the specimen does. */
+ * given `brand` (the brand package's folder as the page reaches it), linked, as the catalog does. */
 export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   const { counts, headline, scales, risks, noRisk, asked, liked, improve, readout: r } = d;
   const t: ReadoutText = { ...READOUT_TEXT, ...d.text };

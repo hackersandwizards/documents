@@ -1,0 +1,7 @@
+---
+import Type from "./_Type.astro";
+import DocHandout from "../../../components/DocHandout.astro";
+import { handout } from "../../../scripts/samples";
+---
+
+<Type title={handout.title} lang="en" sheet="handout"><DocHandout {...handout} lang="en" /></Type>

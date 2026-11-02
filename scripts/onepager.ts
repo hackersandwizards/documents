@@ -47,7 +47,7 @@ function baseCss(brand: string, link: boolean) {
   ].join("\n");
 }
 
-/** The brand's tokens, faces and favicon as links, as every specimen page carries them. */
+/** The brand's tokens, faces and favicon as links, as every type page in the catalog carries them. */
 const linked = (
   brand: string,
 ) => `<link rel="icon" href="${brand}/logos/favicon.ico" sizes="32x32" />
@@ -101,7 +101,7 @@ function fitCss(fit: OnepagerFit = {}): string {
 }
 
 /** The onepager as a standalone HTML page. `link` links the brand's tokens, faces and favicon instead of
- * inlining them, as the specimen does, so a brand release leaves the page current. */
+ * inlining them, as the catalog does, so a brand release leaves the page current. */
 export async function composeOnepager(
   composer: Awaited<ReturnType<typeof openComposer>>,
   page: OnepagerPage,

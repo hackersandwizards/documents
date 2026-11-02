@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary } from "../scripts/render-pdf";
 
-// Every marker on the specimen pages, measured on the pixels Chrome paints: a square's middle on
+// Every marker on the type pages (dist/types/, written by `bun run build`), measured on the pixels Chrome paints: a square's middle on
 // the middle of the x-height of the first line beside it (on the caps' middle beside capitals), a
 // step number's baseline on that line's baseline. Markers drifted 1.2 to 3.4 px off for months
 // while every check passed, since only a render shows where they land. The line's first words
@@ -17,8 +17,8 @@ const TOLERANCE = 0.6; // CSS px; the fix measured within 0.6 px at 600 dpi (202
 // the lift rounded to whole pixels before sat up to 0.56 px off.
 const LIST_TOLERANCE = 0.25;
 const SCALE = 4;
-const SPECIMEN = resolve(import.meta.dir, "..", "specimen");
-const pages = readdirSync(SPECIMEN).filter((f) => f.endsWith(".html") && f !== "index.html");
+const TYPES = resolve(import.meta.dir, "..", "dist/types");
+const pages = readdirSync(TYPES);
 
 type Box = { x: number; y: number; width: number; height: number };
 type Probe = { label: string; edge: "middle" | "bottom"; marker: Box; text: Box; indent: number };
@@ -161,13 +161,13 @@ afterAll(() => browser?.close());
 /** A list square is held to its own tolerance, every other marker to the page-wide one. */
 const tolerance = (label: string) => (/^(li|p)\./.test(label) ? LIST_TOLERANCE : TOLERANCE);
 
-/** Each marker on a specimen page, how far it sits off its line in CSS px and how far its first
+/** Each marker on a type page, how far it sits off its line in CSS px and how far its first
  * line starts right of the wrapped lines, after `css` is added. */
 async function measure(file: string, newline: boolean, css = "") {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width: 1100, height: 1400, deviceScaleFactor: SCALE });
-    await page.goto(`file://${join(SPECIMEN, file)}`, { waitUntil: "load" });
+    await page.goto(`file://${join(TYPES, file, "index.html")}`, { waitUntil: "load" });
     if (css) await page.addStyleTag({ content: css });
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     const read = async (clip: Box, edge: Probe["edge"]) =>
@@ -193,7 +193,7 @@ async function measure(file: string, newline: boolean, css = "") {
 
 // The survey readout writes its own markup, every item on one line, so it runs as composed only.
 const cases = pages.flatMap((file) =>
-  file === "survey-readout.html"
+  file === "survey-readout"
     ? [[file, false]]
     : [
         [file, false],
@@ -215,8 +215,8 @@ test.each(cases)(
 
 // The control: a marker moved a pixel down on one page and up on the other must fail.
 test.each([
-  ["onepager.html", 1],
-  ["dokument.html", -1],
+  ["onepager", 1],
+  ["dokument", -1],
 ])(
   "%s with every square marker moved by %d px fails",
   async (file, px) => {
@@ -236,12 +236,12 @@ const OLD_MARKER = `ul li::before, ul li > p:first-child::before { display: inli
   vertical-align: round(calc(0.273em - var(--print-bullet) / 2), 1px) }`;
 
 test("onepager.html with the old inline-block marker fails centring and first-line alignment", async () => {
-  const composed = (await measure("onepager.html", false, OLD_MARKER)).filter((m) =>
+  const composed = (await measure("onepager", false, OLD_MARKER)).filter((m) =>
     m.label.startsWith("li."),
   );
   expect(composed.length).toBeGreaterThan(0);
   for (const m of composed) expect(Math.abs(m.offset)).toBeGreaterThan(LIST_TOLERANCE);
-  const newline = (await measure("onepager.html", true, OLD_MARKER)).filter((m) =>
+  const newline = (await measure("onepager", true, OLD_MARKER)).filter((m) =>
     m.label.startsWith("li."),
   );
   expect(newline.length).toBeGreaterThan(0);

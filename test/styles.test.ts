@@ -8,8 +8,9 @@ import { foreignStyles } from "../scripts/styles";
 // documents-styles, the consumer's gate: every page the engine writes passes, a hand-built one
 // fails, and the command's exit code says which.
 const ROOT = resolve(import.meta.dir, "..");
-const SPECIMEN = join(ROOT, "specimen");
-const pages = readdirSync(SPECIMEN).filter((f) => f.endsWith(".html") && f !== "index.html");
+// The type pages `bun run build` writes, each a document as the engine prints it.
+const TYPES = join(ROOT, "dist/types");
+const pages = readdirSync(TYPES).map((t) => join(TYPES, t, "index.html"));
 const dir = mkdtempSync(join(tmpdir(), "documents-styles-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -19,8 +20,8 @@ const handBuilt = `<!doctype html><html><head><style data-hw-document></style>
 
 describe("foreignStyles", () => {
   for (const page of pages)
-    it(`passes the engine's ${page}`, () => {
-      expect(foreignStyles(readFileSync(join(SPECIMEN, page), "utf8"))).toEqual([]);
+    it(`passes the engine's ${page.slice(TYPES.length + 1)}`, () => {
+      expect(foreignStyles(readFileSync(page, "utf8"))).toEqual([]);
     });
 
   it("control: a hand-built document fails on its style element and its style attribute", () => {
@@ -37,8 +38,8 @@ describe("documents-styles", () => {
   const run = (...args: string[]) =>
     spawnSync("bun", [join(ROOT, "scripts/styles.ts"), ...args], { encoding: "utf8" });
 
-  it("exits 0 on the specimen's documents", () => {
-    const result = run(...pages.map((p) => join(SPECIMEN, p)));
+  it("exits 0 on the type pages", () => {
+    const result = run(...pages);
     expect(result.stderr).toBe("");
     expect(result.status).toBe(0);
   });

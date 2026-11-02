@@ -7,10 +7,10 @@ Company OS and the trainer hub install it and keep what fills their documents.
 Maintainer: Benedikt Stemmildt. The repo is public, its history included, so nothing goes in that
 may not be public.
 
-The design system shows every document type and component with invented data: `bun run
-design-system` serves it at `http://127.0.0.1:4330/design-system/`. The specimen, every type as
-`composePage` prints it, opens from `specimen/index.html` after `bun run specimen` (not committed;
-`bun run dev` writes it afresh on request).
+The catalog shows every document type and component with invented data: `bun run dev` serves it at
+`http://127.0.0.1:4330/documents/catalog/`, each type as a whole page at `/documents/types/<type>/`,
+and `bun run build` writes it to `dist/` (not committed), published at
+https://hackersandwizards.github.io/documents/catalog/.
 
 ## Use it in another repo
 
@@ -47,7 +47,7 @@ From v0.3.0 the documents draw the brand's shared elements (`elements.css`), so 
 
 ```sh
 bun install      # also points the git hooks at .githooks/
-bun run check    # format, lint, typecheck, unique names, tests, specimen, brand colours, brand elements
+bun run check    # scaffolding's gate, the catalog build, then tests, markers, privacy, brand colours and elements
 ```
 
 A release is a tag `v<version>` matching `version` in `package.json`; consumers then raise the tag

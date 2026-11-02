@@ -1,4 +1,4 @@
-// The specimen's sample data, fictitious throughout: no real client, person, rate or price. Every
+// The type pages' and stories' sample data, fictitious throughout: no real client, person, rate or price. Every
 // figure in euros is a placeholder.
 export const rateCard = {
   personName: "Mara Beispiel",

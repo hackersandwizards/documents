@@ -160,7 +160,7 @@ describe("scripts/compose.ts", () => {
 });
 
 // The English quote sample spreads the German one: every block of German prose it shows needs its
-// own English value, or the specimen prints German line items under an English header.
+// own English value, or the type page prints German line items under an English header.
 it("the English quote sample overrides every German prose block", () => {
   for (const key of ["price", "scopeHeadline", "services", "outcome", "terms", "greeting"] as const)
     expect(proposalEn[key]).not.toEqual(proposalDe[key]);

@@ -1,0 +1,7 @@
+---
+import Type from "./_Type.astro";
+import DocAgreement from "../../../components/DocAgreement.astro";
+import { agreementNda as props } from "../../../scripts/samples";
+---
+
+<Type title={props.title} lang={props.lang}><DocAgreement {...props} /></Type>

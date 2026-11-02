@@ -1,0 +1,74 @@
+---
+// The catalog's home: the shell's rail, title and a tile per document type and component drawing
+// its first state, grouped Typen, then Komponenten. The default slot holds the foundations: the
+// three layers, the elements documents take from brand or keep, and a link to each type page
+// (pages/types/), which the gate's checks read and brand-elements measures on the elements page.
+import Home from "@hackersandwizards/scaffolding/catalog/Home.astro";
+import elements from "../brand-elements.json";
+import { TYPES } from "./types";
+
+const TYPES_URL = `${import.meta.env.BASE_URL}/types/`;
+const exceptions = Object.entries(
+  elements.exceptions as Record<string, string | { reason: string }>,
+).map(([name, e]) => [name, typeof e === "string" ? e : e.reason]);
+---
+
+<Home>
+  <div class="foundations">
+    <p>
+      Drei Ebenen. <strong>Tokens</strong>: <code>tokens.css</code> gibt jedem Wert eine Rolle aus
+      <code>@hackersandwizards/brand</code>. <strong>Basis</strong>: <code>document.css</code> setzt
+      Seite, Laufkopf und die Elemente, die jeder Typ und jeder Markdown-Text nutzt.
+      <strong>Komponenten</strong> setzen sich nur aus Tokens und Basis zusammen,
+      <strong>Typen</strong> nur aus Komponenten. Jede Story steht im Druckmaß (<code
+        >data-hw-scale="print"</code
+      >) auf einem A4-Blatt.
+    </p>
+    <p>
+      Jeder Typ als ganze Seite, so wie die Engine ihn druckt:
+      {
+        TYPES.map((t, i) => (
+          <>
+            {i > 0 && " · "}
+            <a class="hw-link" href={`${TYPES_URL}${t.file}/`}>
+              {t.title}
+            </a>
+          </>
+        ))
+      }
+    </p>
+    <p>
+      Aus brand: {elements.uses.map((name) => <code>hw-{name}</code>)}. Als eigene behalten, jede mit
+      ihrem Grund:
+    </p>
+    <ul>
+      {
+        exceptions.map(([name, reason]) => (
+          <li>
+            <code>{name}</code>: {reason}
+          </li>
+        ))
+      }
+    </ul>
+    <p>
+      <a class="hw-link" href={`${TYPES_URL}elemente/`}>Die Elementseite</a> zeigt jedes als Kachel;
+      dort misst <code>brand-elements</code> sie in <code>bun run check</code>.
+    </p>
+  </div>
+</Home>
+
+<style>
+  .foundations {
+    margin-top: 1.5rem;
+    max-width: 60rem;
+    font-size: var(--text-ui);
+    line-height: 1.6;
+  }
+  .foundations p,
+  .foundations ul {
+    margin: 0 0 0.75rem;
+  }
+  .foundations code + code {
+    margin-left: 0.5rem;
+  }
+</style>
