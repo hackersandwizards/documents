@@ -7,3 +7,4 @@ specimen/
 .githooks/
 node_modules/
 bun.lock
+.astro/

@@ -1,0 +1,16 @@
+---
+// A component that takes its content in slots, which Astrobook's args cannot fill: `of` is the
+// component, `html` its default slot and `aside` its aside slot, every other prop its own.
+interface Props {
+  of: (props: Record<string, unknown>) => unknown;
+  html: string;
+  aside?: string;
+  [prop: string]: unknown;
+}
+const { of: Component, html, aside, ...props } = Astro.props;
+---
+
+<Component {...props}>
+  <Fragment set:html={html} />
+  {aside && <Fragment slot="aside" set:html={aside} />}
+</Component>

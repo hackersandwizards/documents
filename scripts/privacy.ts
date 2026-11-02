@@ -17,6 +17,7 @@ const SCANNED = [
   "scripts",
   "test",
   "specimen",
+  "design-system",
   "document.css",
   "onepager.css",
   "handout.css",
@@ -67,6 +68,8 @@ export interface Finding {
 }
 
 function files(root: string, entry: string): string[] {
+  // The design system's dev server caches its dependencies under design-system/: not ours.
+  if (/(^|\/)(node_modules|\.astro)$/.test(entry)) return [];
   const path = join(root, entry);
   let stat;
   try {

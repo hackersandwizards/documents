@@ -1,0 +1,73 @@
+---
+// The design system's home in brand's catalogue shape (AstrobookHome, decision catalogue-shape):
+// the header, the rail with the groups, a tile per document type and component drawing its first
+// state, grouped as the specimen groups them (Typen, Komponenten). The default slot holds the
+// foundations: the three layers and the elements documents take from brand or keep, which
+// brand-elements measures on the specimen's elements page, the gate's fixture.
+import modules from "virtual:astrobook/story-modules.mjs";
+import config from "virtual:astrobook/global-config.mjs";
+import AstrobookHome from "@hackersandwizards/brand/expert/components/AstrobookHome.astro";
+import elements from "../brand-elements.json";
+
+const SPECIMEN = "http://documents.localhost/specimen/";
+const exceptions = Object.entries(
+  elements.exceptions as Record<string, string | { reason: string }>,
+).map(([name, e]) => [name, typeof e === "string" ? e : e.reason]);
+---
+
+<AstrobookHome
+  modules={modules}
+  config={config}
+  product="Dokumente"
+  title="Design system"
+  lead="Jeder Dokumenttyp der Engine @hackersandwizards/documents und die Komponenten, aus denen die Typen bestehen, auf A4 im Druckmaß. Alle Daten sind erfunden, jeder Betrag ist ein Platzhalter."
+  source="documents design-system/stories"
+  previewSize={[794, 1123]}
+  groupOrder={["Typen", "Komponenten"]}
+>
+  <div class="ds-foundations">
+    <p>
+      Drei Ebenen. <strong>Tokens</strong>: <code>tokens.css</code> gibt jedem Wert eine Rolle aus
+      <code>@hackersandwizards/brand</code>. <strong>Basis</strong>: <code>document.css</code> setzt
+      Seite, Laufkopf und die Elemente, die jeder Typ und jeder Markdown-Text nutzt.
+      <strong>Komponenten</strong> setzen sich nur aus Tokens und Basis zusammen,
+      <strong>Typen</strong> nur aus Komponenten. Jede Story steht im Druckmaß (<code
+        >data-hw-scale="print"</code
+      >) auf einem A4-Blatt.
+    </p>
+    <p>
+      Aus brand: {elements.uses.map((name) => <code>hw-{name}</code>)}. Als eigene behalten, jede mit
+      ihrem Grund:
+    </p>
+    <ul>
+      {
+        exceptions.map(([name, reason]) => (
+          <li>
+            <code>{name}</code>: {reason}
+          </li>
+        ))
+      }
+    </ul>
+    <p>
+      <a href={`${SPECIMEN}elemente.html`}>Die Elementseite des Specimens</a> zeigt jedes als Kachel;
+      dort misst <code>brand-elements</code> sie in <code>bun run check</code>. Das
+      <a href={SPECIMEN}>Specimen</a> zeigt jeden Typ so, wie <code>composePage</code> ihn druckt.
+    </p>
+  </div>
+</AstrobookHome>
+
+<style>
+  .ds-foundations {
+    margin-top: 1.5rem;
+    max-width: 60rem;
+    font-size: var(--text-ui);
+    line-height: 1.6;
+  }
+  .ds-foundations p,
+  .ds-foundations ul {
+    margin: 0 0 0.75rem;
+  }
+  .ds-foundations code + code {
+    margin-left: 0.5rem;
+  }
+</style>

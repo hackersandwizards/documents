@@ -1,0 +1,20 @@
+---
+// The survey readout is a TypeScript module writing one standalone page of 1280x720 slides
+// (composeSurveyReadout), not an Astro component: the story frames that page, brand files inlined.
+import { composeSurveyReadout, type SurveyReadout } from "../scripts/survey-readout";
+
+const html = composeSurveyReadout(Astro.props as SurveyReadout);
+---
+
+<iframe srcdoc={html} title="Survey Readout"></iframe>
+
+<style>
+  iframe {
+    display: block;
+    width: 1280px;
+    height: 5208px;
+    border: 0;
+    /* A window narrower than the slides, the home's tile, shows them whole. */
+    zoom: min(1, calc(100vw / 1280px));
+  }
+</style>

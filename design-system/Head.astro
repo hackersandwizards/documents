@@ -1,0 +1,18 @@
+---
+// Astrobook's <head> on every page of the design system: the brand favicons, and the catalogue's
+// chrome at the apps' dense scale with brand's focus ring. A story's sheet sets the print scale.
+import faviconIco from "@hackersandwizards/brand/logos/favicon.ico?url&no-inline";
+import faviconSvg from "@hackersandwizards/brand/logos/favicon.svg?url&no-inline";
+---
+
+<link rel="icon" href={faviconIco} sizes="32x32" />
+<link rel="icon" href={faviconSvg} type="image/svg+xml" />
+{/* tokens.css's layer order, ahead of the bundle, whose elements.css would open with components
+    and put document.css's reset after it. */}
+<style is:inline>
+  @layer base, components;
+</style>
+<script is:inline>
+  document.documentElement.dataset.hwScale = "dense";
+  document.documentElement.classList.add("hw-focus-ring");
+</script>

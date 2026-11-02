@@ -7,8 +7,9 @@ Company OS and the trainer hub install it and keep what fills their documents.
 Maintainer: Benedikt Stemmildt. The repo is public, its history included, so nothing goes in that
 may not be public.
 
-The specimen shows every document type with invented data: open `specimen/index.html` after
-`bun install`.
+The design system shows every document type and component with invented data: `bun run
+design-system` serves it at `http://127.0.0.1:4330/design-system/`. The specimen, every type as
+`composePage` prints it, opens from `specimen/index.html` after `bun install`.
 
 ## Use it in another repo
 

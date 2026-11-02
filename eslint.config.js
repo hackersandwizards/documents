@@ -3,7 +3,16 @@ import prettier from "eslint-config-prettier/flat";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["node_modules/**", ".claude/**", ".githooks/**", "components/**", "specimen/**"] },
+  {
+    ignores: [
+      "node_modules/**",
+      ".claude/**",
+      ".githooks/**",
+      "components/**",
+      "specimen/**",
+      "**/.astro/**",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { rules: { "no-empty": ["error", { allowEmptyCatch: true }] } },

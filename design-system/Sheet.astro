@@ -1,0 +1,92 @@
+---
+// A story's sheet. A document styles html and body (document.css's page, the onepager's own
+// stylesheet), so the dashboard shows the story's own preview page (/design-system/stories/...) in
+// an A4 frame, and the preview page renders the component on its sheet at the print scale, its
+// brand elements mapped as composePage maps them. The sheet's stylesheet is inlined from the
+// files with their @imports dropped, as the specimen does: the brand files come from Astrobook's
+// `css`, and an import of the stylesheet would load it on the dashboard too.
+import { ELEMENT_MAP, withElements } from "../scripts/elements";
+import tokensCss from "../tokens.css?raw";
+import documentCss from "../document.css?raw";
+import handoutCss from "../handout.css?raw";
+import onepagerCss from "../onepager.css?raw";
+
+interface Props {
+  /** A4 pages the frame shows. */
+  pages?: number;
+  /** The document's stylesheet: the base, the handout's or the onepager's. */
+  sheet?: "document" | "handout" | "onepager";
+}
+const { pages = 1, sheet = "document" } = Astro.props;
+const path = Astro.url.pathname;
+const preview = path.includes("/design-system/stories/");
+const src = path.replace("/design-system/dashboard/", "/design-system/stories/");
+
+// Astrobook's layout styles body by class, so the document's body rules, its stylesheets' and its
+// components' page styles alike, move to the sheet's div.
+const bodyToSheet = (css: string) => css.replace(/^(\s*)body(?=\s*\{)/gm, "$1.sheet");
+const sheetCss = (css: string) =>
+  bodyToSheet(css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^@import [^;]+;\n/gm, ""));
+const css = [
+  sheetCss(tokensCss),
+  ...(sheet === "onepager" ? [sheetCss(onepagerCss)] : [sheetCss(documentCss)]),
+  ...(sheet === "handout" ? [sheetCss(handoutCss)] : []),
+  // On screen the sheet is A4 wide on the page tint, as on the specimen.
+  `@media screen {
+    html, html[data-astrobook-root] body { background: var(--color-bg); }
+    .sheet { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; }
+  }`,
+].join("\n");
+// The onepager maps only its card and tag (composeOnepager); its other forms are its own.
+const map =
+  sheet === "onepager"
+    ? ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b/.test(selector))
+    : ELEMENT_MAP;
+const html = preview
+  ? withElements(await Astro.slots.render("default"), map).replace(
+      /(<style[^>]*>)([\s\S]*?)(<\/style>)/g,
+      (_, open: string, css: string, close: string) => open + bodyToSheet(css) + close,
+    )
+  : "";
+---
+
+{
+  preview ? (
+    <>
+      <style is:inline set:html={css} />
+      <script is:inline define:vars={{ onepager: sheet === "onepager" }}>
+        document.documentElement.dataset.hwScale = "print";
+        document.documentElement.classList.toggle("onepager", onepager);
+      </script>
+      <div class="sheet">
+        <Fragment set:html={html} />
+      </div>
+    </>
+  ) : (
+    <div class="story-embed">
+      <iframe src={src} title="Story" style={`height: ${pages * 297}mm`} loading="lazy" />
+      <a href={src} target="_blank" rel="noreferrer">
+        Einzeln öffnen
+      </a>
+    </div>
+  )
+}
+
+<style>
+  .story-embed {
+    padding: 1rem;
+  }
+  .story-embed iframe {
+    display: block;
+    width: 210mm;
+    max-width: 100%;
+    border: 1px solid var(--color-border);
+    background: white;
+  }
+  .story-embed a {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: var(--text-ui);
+    color: inherit;
+  }
+</style>

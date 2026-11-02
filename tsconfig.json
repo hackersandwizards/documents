@@ -10,5 +10,6 @@
     "erasableSyntaxOnly": true,
     "types": ["bun"]
   },
-  "include": ["scripts/**/*.ts", "test/**/*.ts", "*.ts", "*.js"]
+  "include": ["scripts/**/*.ts", "test/**/*.ts", "design-system/**/*.ts", "*.ts", "*.js"],
+  "exclude": ["**/.astro"]
 }
