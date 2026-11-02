@@ -30,7 +30,7 @@ const exceptions = Object.entries(
         TYPES.map((t, i) => (
           <>
             {i > 0 && " · "}
-            <a class="hw-link" href={`${TYPES_URL}${t.file}/`}>
+            <a class="hw-link" href={`${TYPES_URL}${t.file}/index.html`}>
               {t.title}
             </a>
           </>
@@ -51,7 +51,7 @@ const exceptions = Object.entries(
       }
     </ul>
     <p>
-      <a class="hw-link" href={`${TYPES_URL}elemente/`}>Die Elementseite</a> zeigt jedes als Kachel;
+      <a class="hw-link" href={`${TYPES_URL}elemente/index.html`}>Die Elementseite</a> zeigt jedes als Kachel;
       dort misst <code>brand-elements</code> sie in <code>bun run check</code>.
     </p>
   </div>

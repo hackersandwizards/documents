@@ -77,7 +77,7 @@ real name the rules cannot see fails there; those names never enter this repo.
   preset `catalog` in `catalog/astro.config.ts`, decision repo-uniformity-plan). Astrobook over
   `catalog/stories` at `/catalog/`, the tiles grouped `Typen`, then `Komponenten`; each story
   renders its component on an A4 sheet at the print scale (`Sheet.astro`). Every document type is
-  an Astro page at `/types/<type>/` (`catalog/pages/types/`, listed in `catalog/types.ts`): the
+  an Astro page at `/types/<type>/index.html` (`catalog/pages/types/`, listed in `catalog/types.ts`): the
   component on `_Type.astro`, the document base as `composePage` prints it, and the elements page
   (each brand element used, as a tile marked with its brand version, and each exception with its
   reason). The onepager and the survey readout are routes calling `composeOnepager` and
@@ -109,7 +109,7 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
   `bun run check:staged` (scaffolding's `check-staged`). `bun install` points `core.hooksPath` at
   `.githooks/`.
 - `bun run dev` (or `bun run catalog`): serve the catalog at
-  `http://127.0.0.1:4330/documents/catalog/`, the type pages at `/documents/types/<type>/`.
+  `http://127.0.0.1:4330/documents/catalog/`, the type pages at `/documents/types/<type>/index.html`.
 - `bun run build`: write the catalog to `dist/`.
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
 - One test file: `bun test <file>`.

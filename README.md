@@ -8,7 +8,7 @@ Maintainer: Benedikt Stemmildt. The repo is public, its history included, so not
 may not be public.
 
 The catalog shows every document type and component with invented data: `bun run dev` serves it at
-`http://127.0.0.1:4330/documents/catalog/`, each type as a whole page at `/documents/types/<type>/`,
+`http://127.0.0.1:4330/documents/catalog/`, each type as a whole page at `/documents/types/<type>/index.html`,
 and `bun run build` writes it to `dist/` (not committed), published at
 https://hackersandwizards.github.io/documents/catalog/.
 
