@@ -50,7 +50,7 @@
   ],
   "scripts": {
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
-    "check": "bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun scripts/specimen.ts && bun test && bun run check:markers && bun scripts/privacy.ts && brand-colours && brand-elements && admin-check",
+    "check": "bun install --frozen-lockfile && bun run format:check && bun run lint && bun run typecheck && bun .claude/skills/engineering/check-unique-names.ts && bun scripts/specimen.ts && bun test && bun run check:markers && bun scripts/privacy.ts && brand-colours && brand-elements && admin-check",
     "check:markers": "brand-markers specimen/angebot-ohne-preise.html specimen/angebot.html specimen/certificate.html specimen/delivery-briefing.html specimen/dokument.html specimen/geheimhaltungsvereinbarung.html specimen/honorarsaetze.html specimen/leistungsnachweis-pauschal.html specimen/onepager.html specimen/quote.html specimen/survey-readout.html specimen/trainer-briefing.html specimen/zertifikat.html",
     "lint": "bun --bun eslint --cache --concurrency=auto .",
     "typecheck": "bun --bun tsc --noEmit",
