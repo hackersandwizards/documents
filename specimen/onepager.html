@@ -497,7 +497,7 @@
 /* Every shared element of the brand, plain CSS, one file each, with the four scales. A surface
    imports this file or the elements it uses (@hackersandwizards/brand/elements/<name>.css, plus
    scales.css), after tokens.css (and print.css on paper). Each element is an hw-* class, its
-   variants data-* attributes, night any [data-theme="dark"] ancestor. The rules sit in
+   variants data-* attributes, night the nearest data-theme being "dark" (a data-theme="light" inside a dark one turns its subtree back to day). The rules sit in
    @layer components, so a surface's utilities win; brand-elements measures that they still match.
    The list marker is tokens/marker.css (export ./marker.css). */
 /* The four scales of the elements: one rule, sized for how each medium is seen. A medium sets only
@@ -506,7 +506,8 @@
    element without one takes the screen values, the website's.
 
    screen  the website and the verifier, CSS px at desk distance
-   dense   the apps (os, trainer hub) and the talks site: the expert set's UI sizes
+   dense   the apps (os, trainer hub) and the talks site: the expert set's UI sizes, and the
+           compact type steps and heights its components read
    print   documents, A4 in pt. The type sizes are print.css's paper roles, which the page loads
            (print.css owns them); this preset sets the geometry
    stage   slides on the 1440 stage, whose rem is 1/90 of the slide's width: the website's px times
@@ -560,6 +561,18 @@
   --hw-strip: 3px;
   --hw-code-pad: 0.75rem;
   --hw-code-corner: var(--radius-sm);
+  /* The compact tier (decision density-tiers, 2026-11-02): the expert set's UI text at macOS's
+     13 px, its micro step at 11 px. meta repeats ui here, since a var() resolves where it is
+     declared. The heights an app's components read, at their measured values: a list row's
+     padding and a filter control's height. */
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.45;
+  --text-meta: var(--text-ui);
+  --text-meta--line-height: var(--text-ui--line-height);
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: calc(15 / 11);
+  --hw-row-pad: 0.5rem 0.75rem;
+  --hw-control-height: 2.5rem;
 }
 
 /* Paper is read printed and at about 70 % zoom on a laptop, where 1 pt is about 0.93 CSS px: lines
@@ -617,7 +630,9 @@
 
    Settings (scales.css sets them per medium):
      --hw-label-size    the label role's size
-     --hw-label-family  the label role's family; the apps set Inter (audience, design guide) */
+     --hw-label-family  the label role's family; the apps set Inter (audience, design guide)
+     --hw-muted         the muted grey, where a surface's --color-muted means something else
+                        (expert.css: a fill) */
 
 @layer components {
   .hw-label {
@@ -630,19 +645,21 @@
     color: var(--color-teal-dark);
   }
   .hw-label[data-tone="muted"] {
-    color: var(--color-muted);
+    color: var(--hw-muted, var(--color-muted));
   }
   .hw-label[data-tone="ink"] {
     color: var(--color-ink);
   }
-  :where([data-theme="dark"]) .hw-label {
-    color: var(--color-teal-night);
-  }
-  :where([data-theme="dark"]) .hw-label[data-tone="muted"] {
-    color: var(--color-night-muted);
-  }
-  :where([data-theme="dark"]) .hw-label[data-tone="ink"] {
-    color: var(--color-night-ink);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-label {
+      color: var(--color-teal-night);
+    }
+    .hw-label[data-tone="muted"] {
+      color: var(--color-night-muted);
+    }
+    .hw-label[data-tone="ink"] {
+      color: var(--color-night-ink);
+    }
   }
 }
 
@@ -670,7 +687,9 @@
      --hw-pill-edit-corner the corner of an editable pill: the pill corner, or the apps' small
                            corner where the shape marks what can be changed
      --hw-hairline         the outline's width
-     --hw-label-size       the size of a capitals pill */
+     --hw-label-size       the size of a capitals pill
+     --hw-label-family     the family of a capitals pill (label.css)
+     --hw-muted            the muted grey (label.css) */
 
 @layer components {
   .hw-pill {
@@ -699,7 +718,7 @@
     height: 1em;
   }
   .hw-pill[data-caps] {
-    font-family: var(--type-label-family);
+    font-family: var(--hw-label-family, var(--type-label-family));
     font-size: var(--hw-label-size, var(--type-label-size));
     font-weight: var(--type-label-weight);
     letter-spacing: var(--type-label-tracking);
@@ -717,7 +736,7 @@
   .hw-pill[data-variant="add"] {
     border-style: dashed;
     border-color: var(--color-border-strong);
-    color: var(--color-muted);
+    color: var(--hw-muted, var(--color-muted));
   }
   .hw-pill[data-editable] {
     border-radius: var(--hw-pill-edit-corner, var(--radius-pill));
@@ -729,6 +748,7 @@
     height: 1em;
     border: 0;
     padding: 0;
+    font: inherit;
     background-color: currentColor;
     opacity: 0.7;
     -webkit-mask: var(--_hw-pill-icon) center / contain no-repeat;
@@ -744,26 +764,28 @@
   .hw-pill-remove:hover {
     opacity: 1;
   }
-  :where([data-theme="dark"]) .hw-pill {
-    color: var(--color-night-ink);
-    background: color-mix(
-      in srgb,
-      var(--hw-pill-hue-night, var(--color-teal-night)) 20%,
-      var(--color-night)
-    );
-  }
-  :where([data-theme="dark"]) .hw-pill[data-tone="neutral"] {
-    color: color-mix(in srgb, var(--color-night-ink) 75%, transparent);
-    background: color-mix(in srgb, white 10%, transparent);
-  }
-  :where([data-theme="dark"]) .hw-pill:is([data-variant="outline"], [data-variant="add"]) {
-    border-color: color-mix(in srgb, white 25%, transparent);
-    color: var(--color-night-ink);
-    background: transparent;
-  }
-  :where([data-theme="dark"]) .hw-pill[data-variant="add"] {
-    border-color: color-mix(in srgb, white 40%, transparent);
-    color: var(--color-night-muted);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-pill {
+      color: var(--color-night-ink);
+      background: color-mix(
+        in srgb,
+        var(--hw-pill-hue-night, var(--color-teal-night)) 20%,
+        var(--color-night)
+      );
+    }
+    .hw-pill[data-tone="neutral"] {
+      color: color-mix(in srgb, var(--color-night-ink) 75%, transparent);
+      background: color-mix(in srgb, white 10%, transparent);
+    }
+    .hw-pill:is([data-variant="outline"], [data-variant="add"]) {
+      border-color: color-mix(in srgb, white 25%, transparent);
+      color: var(--color-night-ink);
+      background: transparent;
+    }
+    .hw-pill[data-variant="add"] {
+      border-color: color-mix(in srgb, white 40%, transparent);
+      color: var(--color-night-muted);
+    }
   }
 }
 
@@ -790,13 +812,15 @@
     border-color: color-mix(in srgb, var(--color-teal) 40%, white);
     background: color-mix(in srgb, var(--color-teal) 7%, white);
   }
-  :where([data-theme="dark"]) .hw-card {
-    border-color: color-mix(in srgb, white 15%, transparent);
-    background: color-mix(in srgb, white 7%, transparent);
-  }
-  :where([data-theme="dark"]) .hw-card[data-variant="tint"] {
-    border-color: color-mix(in srgb, var(--color-teal-night) 40%, transparent);
-    background: color-mix(in srgb, var(--color-teal-night) 7%, transparent);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-card {
+      border-color: color-mix(in srgb, white 15%, transparent);
+      background: color-mix(in srgb, white 7%, transparent);
+    }
+    .hw-card[data-variant="tint"] {
+      border-color: color-mix(in srgb, var(--color-teal-night) 40%, transparent);
+      background: color-mix(in srgb, var(--color-teal-night) 7%, transparent);
+    }
   }
 }
 
@@ -823,12 +847,14 @@
   .hw-callout[data-hue="purple"] {
     --_hue: var(--color-purple);
   }
-  :where([data-theme="dark"]) .hw-callout {
-    --_hue: var(--color-teal-night);
-    background: color-mix(in srgb, var(--_hue) 7%, transparent);
-  }
-  :where([data-theme="dark"]) .hw-callout[data-hue="purple"] {
-    --_hue: var(--color-purple-night);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-callout {
+      --_hue: var(--color-teal-night);
+      background: color-mix(in srgb, var(--_hue) 7%, transparent);
+    }
+    .hw-callout[data-hue="purple"] {
+      --_hue: var(--color-purple-night);
+    }
   }
 }
 
@@ -838,7 +864,8 @@
 
    Settings:
      --hw-quote-rule  the rule's width
-     --hw-quote-gap   the space from the rule to the words */
+     --hw-quote-gap   the space from the rule to the words
+     --hw-muted       the grey of a muted quote (label.css) */
 
 @layer components {
   .hw-quote {
@@ -848,14 +875,16 @@
     color: var(--color-ink);
   }
   .hw-quote[data-tone="muted"] {
-    color: var(--color-muted);
+    color: var(--hw-muted, var(--color-muted));
   }
-  :where([data-theme="dark"]) .hw-quote {
-    border-left-color: var(--color-purple-night);
-    color: var(--color-night-ink);
-  }
-  :where([data-theme="dark"]) .hw-quote[data-tone="muted"] {
-    color: var(--color-night-muted);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-quote {
+      border-left-color: var(--color-purple-night);
+      color: var(--color-night-ink);
+    }
+    .hw-quote[data-tone="muted"] {
+      color: var(--color-night-muted);
+    }
   }
 }
 
@@ -866,6 +895,8 @@
    Settings:
      --hw-table-size  the cells' size, the small role
      --hw-label-size  the heads' size, the label role
+     --hw-label-family the heads' family (label.css)
+     --hw-muted       the heads' grey (label.css)
      --hw-cell-pad    a cell's padding
      --hw-hairline    the rule's width
      --hw-line        the rule's colour */
@@ -886,19 +917,21 @@
     padding-right: 0;
   }
   .hw-table th {
-    font-family: var(--type-label-family);
+    font-family: var(--hw-label-family, var(--type-label-family));
     font-size: var(--hw-label-size, var(--type-label-size));
     font-weight: var(--type-label-weight);
     line-height: var(--type-label-line-height);
     letter-spacing: var(--type-label-tracking);
     text-transform: var(--type-label-case);
-    color: var(--color-muted);
+    color: var(--hw-muted, var(--color-muted));
   }
-  :where([data-theme="dark"]) .hw-table :is(th, td) {
-    border-bottom-color: color-mix(in srgb, white 15%, transparent);
-  }
-  :where([data-theme="dark"]) .hw-table th {
-    color: var(--color-night-muted);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-table :is(th, td) {
+      border-bottom-color: color-mix(in srgb, white 15%, transparent);
+    }
+    .hw-table th {
+      color: var(--color-night-muted);
+    }
   }
 }
 
@@ -919,11 +952,13 @@
   :is(.hw-link, .hw-links a):hover {
     color: var(--color-ink);
   }
-  :where([data-theme="dark"]) :is(.hw-link, .hw-links a) {
-    color: var(--color-teal-night);
-  }
-  :where([data-theme="dark"]) :is(.hw-link, .hw-links a):hover {
-    color: var(--color-white);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    :is(.hw-link, .hw-links a) {
+      color: var(--color-teal-night);
+    }
+    :is(.hw-link, .hw-links a):hover {
+      color: var(--color-white);
+    }
   }
 }
 
@@ -944,9 +979,10 @@
   .hw-focus-ring :is(p, li, dt, dd, td, th, blockquote, figcaption) > a:focus-visible {
     border-radius: var(--radius-sm);
   }
-  :where([data-theme="dark"]) :is(.hw-focus-ring :focus-visible, .hw-focus-ring:focus-visible),
-  :is(.hw-focus-ring[data-theme="dark"] :focus-visible) {
-    outline-color: var(--color-purple-night);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    :is(.hw-focus-ring :focus-visible, .hw-focus-ring:focus-visible) {
+      outline-color: var(--color-purple-night);
+    }
   }
 }
 
@@ -991,17 +1027,20 @@
   .hw-icon-button[data-on="picture"]:hover {
     background: var(--color-teal-dark);
   }
-  :where([data-theme="dark"]) .hw-icon-button:not([data-on="picture"]) {
-    color: var(--color-white);
-    background: color-mix(in srgb, white 15%, transparent);
-  }
-  :where([data-theme="dark"]) .hw-icon-button:not([data-on="picture"]):hover {
-    background: color-mix(in srgb, white 25%, transparent);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-icon-button:not([data-on="picture"]) {
+      color: var(--color-white);
+      background: color-mix(in srgb, white 15%, transparent);
+    }
+    .hw-icon-button:not([data-on="picture"]):hover {
+      background: color-mix(in srgb, white 25%, transparent);
+    }
   }
 }
 
 /* The gradient strip: the brand gradient from teal to purple, left to right, along the top edge of a
-   page, a header or a document. The same on night.
+   page, a header or a document, mixed in oklab as the website draws it (Tailwind's gradient). The
+   same on night.
 
    Settings:
      --hw-strip  the strip's height */
@@ -1009,7 +1048,7 @@
 @layer components {
   .hw-strip {
     height: var(--hw-strip, 3px);
-    background: linear-gradient(to right, var(--color-teal), var(--color-purple));
+    background: linear-gradient(to right in oklab, var(--color-teal), var(--color-purple));
   }
 }
 
@@ -1066,8 +1105,10 @@
   .hw-code-underline {
     text-decoration: underline;
   }
-  :where([data-theme="dark"]) .hw-code {
-    background: var(--color-night-2);
+  @scope ([data-theme="dark"]) to ([data-theme="light"]) {
+    .hw-code {
+      background: var(--color-night-2);
+    }
   }
 }
 
