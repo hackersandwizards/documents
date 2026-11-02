@@ -12,8 +12,7 @@ import { join } from "node:path";
 import { escapeHtml, type openComposer } from "./compose";
 import { ELEMENT_MAP, withElements } from "./elements";
 import { brandFile, inlineCss, renderPdf } from "./render-pdf";
-
-const ROOT = join(import.meta.dir, "..");
+import { ROOT } from "./root";
 
 function rule(css: string, pattern: RegExp, what: string) {
   const found = css.match(pattern)?.[0];

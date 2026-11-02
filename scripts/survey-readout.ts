@@ -5,10 +5,10 @@
 // included, which the caller's readout reuses so a weak spot's marker matches its bar. A slide
 // deck, not an A4 document: it sits on the document tokens and readout.css, never on document.css.
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { fill } from "./fill";
 import { brandCss, brandFile } from "./render-pdf";
+import { ROOT } from "./root";
 
 /** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
 export interface ReadoutScale {
@@ -444,11 +444,9 @@ function distScale(t: ReadoutText, s: ReadoutScale): string {
 }
 
 /** The deck's stylesheet: the document tokens (the brand files apart, which brandCss inlines) and
- * readout.css. From the module's URL, as Vite's module runner (the design system) has no
- * import.meta.dir. */
-const HERE = dirname(fileURLToPath(import.meta.url));
+ * readout.css. */
 const STYLE = ["tokens.css", "readout.css"]
-  .map((f) => readFileSync(join(HERE, "..", f), "utf8").replace(/^@import [^;]+;\n/gm, ""))
+  .map((f) => readFileSync(join(ROOT, f), "utf8").replace(/^@import [^;]+;\n/gm, ""))
   .join("\n");
 
 const PAGE = `<!doctype html>

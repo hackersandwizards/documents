@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
 import { readFileSync, writeFileSync, writeSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
-import { fileURLToPath } from "node:url";
 import { getViteConfig } from "astro/config";
 import { createServer } from "vite";
 import { withElements } from "./elements";
 import { bakeDocumentCss } from "./render-pdf";
+import { ROOT } from "./root";
 
 const USAGE = `Usage: bun run documents-compose <Component> <props.json> <output.html>
 
@@ -43,7 +43,7 @@ export async function openComposer(root = process.cwd()) {
   const container = await experimental_AstroContainer.create();
   return {
     async render(name: string, props: object, slots: Record<string, string> = {}) {
-      const path = join(dirname(fileURLToPath(import.meta.url)), `../components/${name}.astro`);
+      const path = join(ROOT, `components/${name}.astro`);
       const component = (await server.ssrLoadModule(path)).default;
       const html: string = await container.renderToString(component, { props, slots });
       return html.replace(/^<!DOCTYPE html>/i, "");

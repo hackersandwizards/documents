@@ -5,15 +5,13 @@ import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { withElements } from "./elements";
+import { ROOT } from "./root";
 import { foreignStyles } from "./styles";
 
 const execFileAsync = promisify(execFile);
-// A path, not `new URL(..., import.meta.url)`: under a DOM test environment such as happy-dom the
-// global URL is the DOM's, which fileURLToPath rejects.
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** The one owner of the headless-Chrome flag set, browser discovery and the document base, for every h&w document PDF. */
 
@@ -337,7 +335,7 @@ function keptChrome(chrome: string) {
  * that names it, so the HTML it lands in renders anywhere.
  */
 export function documentCss(): string {
-  const css = inlineCss(join(HERE, "../document.css"));
+  const css = inlineCss(join(ROOT, "document.css"));
   // The HTML parser ends a style element at this text even inside a CSS comment.
   if (/<\/style/i.test(css)) throw new Error("document.css must not contain </style");
   return css;
@@ -415,7 +413,7 @@ export async function composeDocument(
     const output = join(dir, "document.html");
     writeFileSync(input, JSON.stringify(props));
     try {
-      await execFileAsync("bun", [join(HERE, "compose.ts"), name, input, output], { cwd });
+      await execFileAsync("bun", [join(ROOT, "scripts/compose.ts"), name, input, output], { cwd });
     } catch (error) {
       const stderr = (error as { stderr?: string }).stderr;
       throw new Error(`Composing ${name} failed: ${stderr || (error as Error).message}`, {
@@ -431,7 +429,7 @@ export async function composeDocument(
 /** `compose.ts --serve`, kept per project. */
 function keptComposer(cwd: string) {
   const entry = kept(`compose:${cwd}`, () => {
-    const child = spawn("bun", [join(HERE, "compose.ts"), "--serve"], {
+    const child = spawn("bun", [join(ROOT, "scripts/compose.ts"), "--serve"], {
       cwd,
       stdio: ["pipe", "ignore", "inherit", "pipe"],
     });
