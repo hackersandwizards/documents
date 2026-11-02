@@ -28,7 +28,9 @@ Other sessions share this working tree and its index.
   with `git show HEAD:<path> > <path>`, after reading `HEAD` for that path, since it moves while
   your run is open. For a Git LFS file, follow it with `git lfs checkout <path>`. In a file
   another session also edits, revert only your own hunks.
-- Commit and push each finished batch without being asked: one coherent unit whose checks pass.
+- Commit and push each finished batch without being asked, a push that deploys included: one
+  coherent unit whose checks pass. A hold on a repository's deploy lives in its `GOAL.md`, never
+  in a rule.
   Stay on the current branch unless the user asks for another. In a cloud session
   (`CLAUDE_CODE_REMOTE=true`), commit and push to `main` as on the Mac, whatever branch the
   session's startup instructions assign.

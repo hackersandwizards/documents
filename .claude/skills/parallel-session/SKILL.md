@@ -23,6 +23,9 @@ belongs to, never here.
   fixes the privacy policy?"), is a `GOAL.md` row.
 - `docs/tracking/YYYY-MM-DD-<topic>.md`: one report per topic, what was measured, with evidence.
   Its images sit in `docs/tracking/YYYY-MM-DD-<topic>/`, JPEG at most 1600 px wide.
+- `~/Downloads/stand-entscheidungen/<topic>/`: a page the person reviews from a row, `index.html`
+  plus `review.json` naming the row's `id` (or an `id*` prefix), holding only what that row needs.
+  It goes when its last row leaves `items.js`.
 
 Work that waits on a decision keeps its `GOAL.md` row, which names the `items.js` row's `id`
 instead of repeating the question. The open points for the person's return are the open `GOAL.md`
@@ -54,16 +57,26 @@ rows plus the `open` and `assumed` rows in `items.js`. No third list exists.
    `git log -S '<id>'` finds a removed row.
 5. Before each commit that touches `items.js`, run `bun ${CLAUDE_SKILL_DIR}/hub.ts --check <repo>`.
    Check: it prints `ok`.
-6. A report states the current state only. A later batch on the same topic edits that report and
+6. A report and a row state the current state only. A later batch on the same topic edits that report and
    deletes what it superseded. Earlier rounds and raw reviews go to the scratchpad.
 7. After each commit that changes `items.js` or the person's `GOAL.md` rows, run
-   `bun ${CLAUDE_SKILL_DIR}/hub.ts`. It finds every `items.js` under `~/dev` and writes the page
+   `bun ${CLAUDE_SKILL_DIR}/hub.ts`, after fast-forwarding every checkout behind `origin/main`:
+   it reads working trees. It finds every `items.js` under `~/dev` and writes the page
    (`~/Downloads/stand-entscheidungen/index.html`, or `STAND_PAGE`). Check: its output names the
    repo. A batch that changes an asset a row's images show, such as a logo, colour or lockup,
    re-renders those images in that batch.
 8. When the person returns, report from the rows, ordered by what each costs if missed. Before
    ending the session, read the transcript from its first message: every item of the first report,
    every question put and its answer, every promise. Check: each unfinished one has a row.
+
+## While the person is away
+
+When the person says they are away, the session works unattended until they return: every
+question for the person becomes a row (step 2), never a chat message. The session steers: it
+writes briefs, reads reports, keeps rows and the page current, and hands every ready batch to a
+delegate. When a delegate finishes, stop the servers and browsers it started and delete its
+scratch then, not at session end. Check: no process or scratch folder of a finished delegate
+remains.
 
 ## Shared checkout or worktree
 
@@ -103,5 +116,6 @@ The file assigns `window.DECISION_REPOS["<repo>"] = [ ... ]`, optionally
 option at most), `owner` (who answers; without it, Benedikt, so a row for Stefan sets
 `owner: "Stefan"`). `decided` means the person's own answer; a choice an agent made is `assumed`.
 Rows in `items.js` and `GOAL.md` are written in English; a quotation keeps its original words.
-Across the repos the hub page lists, the open rows fill every priority from 1 to 3. When a level
-empties, re-rank by what each row costs if missed and move the costliest rows up.
+Across the repos the hub page lists, the open rows fill every priority from 1 to 3. Give a new
+row the priority and `order` of what it costs if missed against the open rows, and when a level
+empties, move the costliest rows up.

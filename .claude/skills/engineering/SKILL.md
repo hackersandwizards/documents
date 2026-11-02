@@ -46,6 +46,8 @@ handling that prevents data loss, security measures, or accessibility basics.
   a headless instance of that app, and no window opens. Give it a profile from `mkdtemp` under the OS
   temp folder, removed after the run, and `--use-mock-keychain --password-store=basic`, or each
   launch raises a keychain dialog. Puppeteer and Playwright pass both flags; a direct launch adds them.
+- A run that needs a running app starts its own on a free port and stops it by PID when done. It
+  never stops or restarts a server it did not start.
 - Module-scope function names are unique per repository, except a framework-dictated name or a
   test-local helper.
 - Removing a collection, a skill or an agent also deletes the tests that named it. Port every

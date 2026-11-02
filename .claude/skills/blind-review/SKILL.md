@@ -23,9 +23,7 @@ Examples, not triggers:
 - **Large:** 4 to 6 personas, both models, two runs, noise measured, an independent counter-draft
   scored alongside.
 
-Cadence: a review per batch; a code, security and simplify review (`/code-review high`,
-`/security-review`, `/simplify`, a fresh agent per pass) per milestone and before a repository is
-shared.
+Cadence: a review per batch.
 
 A visible asset changed to conform to a rule gets a review like any new version: the rendered
 result scored against the version it replaces. Check: the report gives both scores and the noise.
@@ -57,15 +55,19 @@ none, because receipt".
    Build every candidate to the system's current rules for that ground and surface (the asset cut,
    the type allowed on it), except the one rule the comparison tests. Check: before scoring, each
    candidate is checked against those rules and the report names any it breaks.
-5. For a shared brand element (logo, colour, lockup, frame), compare the whole system across every
-   surface before the first surface, and name the combinations you skipped. Check: the report
-   lists the surfaces and the skipped combinations.
+5. For a shared brand element (logo, colour, lockup, frame), score one choice across every surface
+   (assets, documents, slides, sites, apps) before the first surface, and once more after the last
+   batch that changed a surface, beside the per-surface scores. Name the combinations you skipped.
+   Check: the report lists the surfaces and the skipped combinations.
 6. A person's preferred variant is a hypothesis the next round tests blind, never a score.
 7. Between rounds, ask every reviewer what keeps each criterion below the maximum, group the reasons
    by element and fix one or two causes. Fix only what a real reader or user would notice.
 8. Noise is the score spread between two runs of the same reviewer. A lead inside the noise is a
-   tie, and a tie goes to the variant with fewer exceptions. Check: the report gives the noise next
-   to the lead, or says it was not measured.
+   tie, and a tie goes to the variant with fewer exceptions. A surface keeps an exception to the
+   shared standard only where its lead stands outside the noise in both runs and with both models
+   (a lead of 0.75 at noise 0.58 on a 10-point scale counted); that exception goes to the person
+   as the recommended option. A second-best variant that needs no exception may beat a best one
+   that does. Check: the report gives the noise next to the lead, or says it was not measured.
 9. Stop on a plateau and report it instead of starting another round. Once a review says ship with
    no must-fix, order no confirming review. For long prose, stop after two consecutive rounds
    without a finding in classes named before round one (contradiction, counts, a statement against

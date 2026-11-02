@@ -2,7 +2,9 @@
 name: polish
 description: >-
   Full-repo quality pass (comment sweep, quality, performance and security review, /simplify, a second
-  review, commit and push), when the user asks to polish, clean up or quality-pass the repo.
+  review, commit and push), when the user asks to polish, clean up or quality-pass the repo, and
+  at the end of a session that changed several repositories, once in each with `claude -p` inside
+  it and `since <the session's first commit there>`.
 ---
 
 # Polish
@@ -15,7 +17,8 @@ The argument `recent` scopes the run to everything committed since the earlier o
 and the start `bun ~/.claude/scripts/schedule/last-run.ts <task id>` prints for the scheduled task
 running it:
 `BASE=$(git log --until="<that start>" -1 --format=%H)`, then `$BASE..HEAD`. Where `BASE` is
-`HEAD`, say in one line that nothing was committed in the window and stop.
+`HEAD`, say in one line that nothing was committed in the window and stop. The argument
+`since <commit>` sets `BASE` to that commit.
 
 The argument also scopes where you hunt for defects, never which proven defects you may correct.
 Once a fact is verified false, fix every live copy of it, the generator that produced them
@@ -38,6 +41,11 @@ Fan out one subagent per directory batch, told to read the Comments section of `
 Tell each batch that zero changes is an acceptable result. Before deleting a comment on a magic number, grep the file for the other numbers doing a similar job: where a sibling uses a different value, the comment is the only statement that the divergence is deliberate, so keep it.
 
 ## 3. Quality, performance, security review
+
+Run `/code-review high` and `/security-review` over the scope first; their findings join this
+phase's. In a repository with a UI, measure performance on a server the run starts itself on a
+free port (Lighthouse per public page type, response and render time per app route) and report
+before and after numbers for each fix.
 
 Fan out one subagent per module or top-level directory to review it for minimalism, design, performance and security, with the path of `references/failure-modes.md` in its prompt to read in full. Reviewers report and do not edit.
 
