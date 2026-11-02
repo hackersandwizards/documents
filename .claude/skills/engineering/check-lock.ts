@@ -130,14 +130,14 @@ async function waitForLock(): Promise<boolean> {
     const waited = Date.now() - started;
     if (waited > WAIT_MS) {
       console.error(
-        `[check-lock] pid ${readHolder()?.pid ?? "unknown"} still holds ${LOCK} after ${Math.round(waited / 1000)}s; not running the checks beside it. Retry once it finishes.`,
+        `[check-lock] pid ${readHolder()?.pid ?? "unknown"} still holds ${LOCK} after ${Math.round(waited / 1000)}s; not running "${command.join(" ")}" beside it. Retry once it finishes.`,
       );
       process.exit(1);
     }
     if (waited - spokeAt >= SPEAK_MS) {
       spokeAt = waited;
       console.warn(
-        `[check-lock] waiting ${Math.round(waited / 1000)}s for pid ${readHolder()?.pid ?? "unknown"} to finish its checks`,
+        `[check-lock] waiting ${Math.round(waited / 1000)}s for pid ${readHolder()?.pid ?? "unknown"} to finish`,
       );
     }
     await sleep(POLL_MS);
@@ -160,7 +160,9 @@ let held = false;
 try {
   held = await waitForLock();
 } catch (error) {
-  console.warn(`[check-lock] lock unusable (${String(error)}); running the checks unserialised`);
+  console.warn(
+    `[check-lock] lock unusable (${String(error)}); running "${command.join(" ")}" unserialised`,
+  );
 }
 for (const signal of SIGNALS) process.off(signal, stop);
 
