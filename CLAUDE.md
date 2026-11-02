@@ -95,7 +95,9 @@ real name the rules cannot see fails there; those names never enter this repo.
 
 A consumer reaches the engine through `exports` (`./tokens.css`, `./document.css`, `./onepager.css`,
 `./handout.css`, `./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`) and the `documents-compose`, `documents-privacy` and `documents-styles` commands, run as `bun run <command>`. Every other
-path is internal. Renaming a command, changing its arguments or moving an exported file breaks
+path is internal. `scaffolding.styles` in `package.json` lists `document.css` and `handout.css`, the
+stylesheets a consumer loads beside the components, which scaffolding's `check-coupling` then lets
+through. Renaming a command, changing its arguments or moving an exported file breaks
 consumers: the release commit names it and every consumer follows in the same pass. Astro and Vite
 are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the components from
 `node_modules`.

@@ -78,7 +78,7 @@ const span = columns.length - 1;
 <style>
   /* A column's width, from its props. */
   th {
-    width: var(--col-width);
+    width: var(--col-width, auto);
   }
 
   /* Tabular figures only in a figure column: Inter's tabular set widens the hyphen in prose. */
