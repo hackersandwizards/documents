@@ -5,6 +5,7 @@
 // paginates it against the `@page` rule and draws the running header and footer in the page
 // margins. The consumer keeps the chapters and the exporter, which measures a first render for
 // `toc`, `notes` and `flow` and passes them on the next.
+import DocElements from "./DocElements.astro";
 import DocHeader from "./DocHeader.astro";
 import DocProse from "./DocProse.astro";
 import DocRecipient from "./DocRecipient.astro";
@@ -82,6 +83,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 ---
 
 <style is:inline data-hw-page set:html={pageCss}></style>
+<DocElements>
 <div class="cover">
   <DocHeader kind={kind} />
   <div class="title">
@@ -115,6 +117,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
     <DocProse html={`<h1>${htmlText(chapter.title)}</h1>\n${chapter.html}`} />
   </section>
 ))}
+</DocElements>
 
 <script is:inline data-notes={notes} data-flow={flow}>
   const options = document.currentScript.dataset;

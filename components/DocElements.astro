@@ -1,0 +1,10 @@
+---
+// The brand's shared elements on what it wraps, as composePage gives a whole page (withElements):
+// a consumer that renders a document component in its own Astro route, as the trainer hub does the
+// handout, gets the same hw-* classes without composing. Mapping twice changes nothing.
+import { withElements } from "../scripts/elements";
+
+const html = withElements(await Astro.slots.render("default"));
+---
+
+<Fragment set:html={html} />

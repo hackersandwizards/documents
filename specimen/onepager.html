@@ -977,6 +977,7 @@
     cursor: pointer;
   }
   .hw-icon-button > svg {
+    flex: none;
     width: var(--hw-control-icon, 20px);
     height: var(--hw-control-icon, 20px);
   }
@@ -1014,8 +1015,9 @@
 
 /* The code block: the code palette's ground (night, night-2 on a night page) and text, the small
    corner, the code role, no ligatures (JetBrains Mono would join -> and == into glyphs a reader
-   cannot type), scrolling sideways on screen. Syntax colours come from the code palette
-   (code-theme.json for Shiki, --code-* for hand-set spans).
+   cannot type), scrolling sideways on screen. Syntax colours come from the code palette: Shiki
+   with code-theme.json and the transformer codeClasses (code.ts) sets the hw-code-<role> classes
+   below, which survive a surface that drops inline styles; a hand-set span takes a class too.
 
    Settings:
      --hw-code-size    the code role's size
@@ -1039,6 +1041,30 @@
   .hw-code code {
     font: inherit;
     color: inherit;
+  }
+  .hw-code-comment {
+    color: var(--code-comment);
+  }
+  .hw-code-keyword {
+    color: var(--code-keyword);
+  }
+  .hw-code-string {
+    color: var(--code-string);
+  }
+  .hw-code-inserted {
+    color: var(--code-inserted);
+  }
+  .hw-code-deleted {
+    color: var(--code-deleted);
+  }
+  .hw-code-italic {
+    font-style: italic;
+  }
+  .hw-code-bold {
+    font-weight: 700;
+  }
+  .hw-code-underline {
+    text-decoration: underline;
   }
   :where([data-theme="dark"]) .hw-code {
     background: var(--color-night-2);

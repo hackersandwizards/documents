@@ -1446,7 +1446,11 @@ section { --chapter-label: "Chapter "; }</style><div class="cover"><header class
 <div class="keybox"><p><strong>Key point:</strong> give the agent a check it can run, and it corrects itself.</p></div>
 <h2>A first run</h2>
 <p>Start the agent in the project folder and ask it to explain the build:</p>
-<pre class="hw-code"><code>$ agent "explain how this project builds and tests"</code></pre></div></section><section id="chapter-2"><div class="doc-prose" data-astro-cid-6qf2dq4g><h1>Rules the Team Shares</h1>
+<pre class="hw-code"><code>$ agent "explain how this project builds and tests"</code></pre>
+<p>A hook runs the check after every edit, highlighted as the hub's Markdown sets it (Shiki with the brand's code palette as classes):</p>
+<pre class="astro-code hw-code" tabindex="0" data-language="ts"><code><span class="line"><span class="hw-code-comment">// The check the agent cannot skip</span></span>
+<span class="line"><span class="hw-code-keyword">const</span><span> check </span><span class="hw-code-keyword">=</span><span> </span><span class="hw-code-string">"bun run check"</span><span>;</span></span>
+<span class="line"><span class="hw-code-keyword">export default</span><span> { hooks: { afterEdit: [check] } };</span></span></code></pre></div></section><section id="chapter-2"><div class="doc-prose" data-astro-cid-6qf2dq4g><h1>Rules the Team Shares</h1>
 <p>Rules written once apply to every session. Where they live decides who reads them.</p>
 <table class="hw-table"><thead><tr><th>File</th><th>Read by</th></tr></thead><tbody><tr><td>Project rules</td><td>Every session in the repository</td></tr><tr><td>Personal rules</td><td>Your own sessions only</td></tr></tbody></table>
 <h2>Keep them short</h2>

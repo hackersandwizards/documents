@@ -2,6 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
+import { handout } from "../scripts/samples";
 
 // Every document component renders standalone, through Astro's compiler, from this repository and
 // the brand package alone: an import of an app's internals fails here. Placeholder props, no figure
@@ -68,6 +69,7 @@ const props: Record<string, Record<string, unknown>> = {
   },
   DocClosing: { text: P, signOff: P, name: P },
   DocConfirmation: { label: P, text: P, line: P },
+  DocElements: {},
   DocHandout: { title: P, subtitle: P, chapters: [{ title: P, html: `<p>${P}</p>` }] },
   DocHeader: { kind: P, legal: true },
   DocLead: {},
@@ -223,6 +225,15 @@ test.each([
   const html = await composer.render(name, { ...base, labels: { [key]: "[LABEL]" } });
   expect(html).toContain("[LABEL]");
   expect(html).not.toContain(text);
+});
+
+// The hub renders the handout in its own Astro route, without composePage: the handout maps the
+// brand's elements itself, and Shiki's code palette classes survive the style rule.
+test("DocHandout carries the brand's elements and the code palette's classes", async () => {
+  const html = await composer.render("DocHandout", handout);
+  for (const cls of ["hw-pill", "hw-table", "hw-code", "hw-code-keyword", "hw-code-string"])
+    expect(html).toContain(cls);
+  expect(html).not.toMatch(/<span[^>]* style=/);
 });
 
 // A running head's text lands in a raw <style>: a caller's `</style>` must stay inside it.

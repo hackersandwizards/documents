@@ -40,7 +40,8 @@ real name the rules cannot see fails there; those names never enter this repo.
   components, and every type starts with `DocHeader`. `DocAgreement` is every document signed by
   hand (contract, NDA, framework agreement, order confirmation) in its contract or letter form. A component imports only this
   repo's files and the brand package's exported files (`@hackersandwizards/brand/logos/...`), never
-  an app path.
+  an app path. `DocElements` maps the brand's elements over what it wraps, so a component a
+  consumer renders in its own Astro route (the hub's handout, through `DocHandout`) matches a composed page.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
   directory; the command composes one component from a props JSON. `scripts/render-pdf.ts`: the
   Chrome flag set, the document base baked into `<style data-hw-document>`, `composeDocument` and

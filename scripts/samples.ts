@@ -573,7 +573,11 @@ export const handout = {
 <div class="keybox"><p><strong>Key point:</strong> give the agent a check it can run, and it corrects itself.</p></div>
 <h2>A first run</h2>
 <p>Start the agent in the project folder and ask it to explain the build:</p>
-<pre><code>$ agent "explain how this project builds and tests"</code></pre>`,
+<pre><code>$ agent "explain how this project builds and tests"</code></pre>
+<p>A hook runs the check after every edit, highlighted as the hub's Markdown sets it (Shiki with the brand's code palette as classes):</p>
+<pre class="astro-code hw-code" tabindex="0" data-language="ts"><code><span class="line"><span class="hw-code-comment">// The check the agent cannot skip</span></span>
+<span class="line"><span class="hw-code-keyword">const</span><span> check </span><span class="hw-code-keyword">=</span><span> </span><span class="hw-code-string">"bun run check"</span><span>;</span></span>
+<span class="line"><span class="hw-code-keyword">export default</span><span> { hooks: { afterEdit: [check] } };</span></span></code></pre>`,
     },
     {
       title: "Rules the Team Shares",
