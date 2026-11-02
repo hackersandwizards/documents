@@ -72,7 +72,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v0.3.0",
+    "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v0.4.0",
     "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v0.30.0",
     "@types/bun": "1.4.4",
     "astro": "7.4.4",
