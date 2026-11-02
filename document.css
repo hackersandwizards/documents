@@ -143,11 +143,6 @@ body {
   line-height: var(--leading-solid);
 }
 
-.brand .brand-name .wordmark {
-  width: auto;
-  height: var(--wordmark);
-}
-
 .company-meta {
   margin-top: var(--space-imprint);
   font: var(--role-small);

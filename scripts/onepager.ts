@@ -1,6 +1,6 @@
 // composeOnepager: DocOnepager as a standalone page on its own stylesheet: the document tokens
 // (tokens.css with the brand's tokens.css, print.css and document.css), the brand's list marker,
-// document.css's list indent and wordmark rule, the scoped styles of DocHeader and DocCard, then
+// document.css's list indent, the scoped styles of DocHeader and DocCard, then
 // onepager.css. Every
 // `<div class="card ...">` in the body opens with DocCard's tag. `brand` is the brand package's
 // folder as the page reaches it: the page opens from disk beside the installed package.
@@ -42,8 +42,6 @@ function baseCss(brand: string, link: boolean) {
     // tokens.css above, and the base's list indent, never a copy.
     readFileSync(brandFile("marker.css"), "utf8"),
     rule(documentCss, /^ul li \{[\s\S]*?^\}/m, "`ul li` rule holding the list indent"),
-    // DocHeader sets its wordmark as HTML, outside its scoped styles: the base's rule sizes it.
-    rule(documentCss, /^\.brand \.brand-name \.wordmark \{[\s\S]*?^\}/m, "wordmark rule"),
   ].join("\n");
 }
 
