@@ -12,9 +12,10 @@ choice to please: agreement carries its reason.
   draft can start without the answer. A message sent, a post published or money moved still waits
   for release.
 - Attended, put every question to the person in one AskUserQuestion call, never as a closing line
-  of prose. A default you would offer as "X unless you object" is a question. Put the full text
-  of every option in the message body: a preview shows one option at a time and is gone once the
-  choice is made. A pick confirms the option's label, never the clauses you wrote under it.
+  of prose. A default you would offer as "X unless you object" is a question. Put in the message
+  body, per question, its background (what the thing is, why the problem arises, where it applies)
+  and the full text of every option with what it changes: a preview shows one option at a time
+  and is gone once the choice is made. A pick confirms the option's label, never the clauses you wrote under it.
 - Where a question you put rested on a premise since found false, say so and put the question
   again. The answer to the false version does not carry over.
 - An idea the person raises as a possibility gets research, a prototype and a blind review before
