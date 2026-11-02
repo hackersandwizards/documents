@@ -33,6 +33,7 @@ async function render(
   component: string,
   props: Record<string, unknown>,
   edit = (html: string) => html,
+  warm = false,
 ) {
   const html = await composePage(composer, component, props, (page) =>
     page.replace(
@@ -41,7 +42,7 @@ async function render(
     ),
   );
   writeFileSync(join(dir, "doc.html"), edit(html));
-  await renderPdf(join(dir, "doc.html"), join(dir, "doc.pdf"));
+  await renderPdf(join(dir, "doc.html"), join(dir, "doc.pdf"), { warm });
   return join(dir, "doc.pdf");
 }
 
@@ -126,6 +127,28 @@ test.skipIf(!chromeBinary())(
     expect(heads.slice(2, -1)).toEqual(heads.slice(2, -1).map(() => 1));
     expect(heads.at(-1)).toBe(0);
     expect(heads.length).toBeGreaterThan(4);
+  },
+  120_000,
+);
+
+// The opening pages are named once the faces are in, which can come after the page's load: a render
+// printing at load printed the opening page with its running head in 11 of 20 runs (measured
+// 02.11.2026). Held back a second past the faces, the naming must still reach the print.
+test.skipIf(!chromeBinary()).each([false, true])(
+  "the print waits for the chapter openings to be named, warm: %p",
+  async (warm) => {
+    const late = (html: string) => {
+      const held = html.replace(
+        "document.fonts.ready.then(() => {",
+        "document.fonts.ready.then(() => new Promise((r) => setTimeout(r, 1000))).then(() => {",
+      );
+      expect(held).not.toBe(html);
+      return held;
+    };
+    const heads = headerLinesPerPage(await render("DocHandout", longHandout, late, warm));
+    expect(heads[1]).toBe(0);
+    expect(heads.at(-1)).toBe(0);
+    expect(heads.slice(2, -1)).toEqual(heads.slice(2, -1).map(() => 1));
   },
   120_000,
 );

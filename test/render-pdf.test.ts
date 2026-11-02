@@ -82,28 +82,29 @@ describe("renderPdf without output", () => {
     delete process.env.CHROME_BINARY;
   });
 
-  it("fails when Chrome exits 0 without writing, even over a PDF from an earlier render", async () => {
+  it("fails when Chrome exits 0 without printing, and leaves no PDF from an earlier render", async () => {
     writeFileSync(join(dir, "stale.html"), "<!doctype html><html><body>x</body></html>");
     writeFileSync(join(dir, "stale.pdf"), "%PDF-1.7 stale");
     process.env.CHROME_BINARY = "/usr/bin/true";
     await expect(renderPdf(join(dir, "stale.html"), join(dir, "stale.pdf"))).rejects.toThrow(
-      "Chrome produced no PDF",
+      "Chrome exited",
     );
+    expect(existsSync(join(dir, "stale.pdf"))).toBe(false);
   });
 });
 
-describe("renderPdf profile", () => {
+describe.skipIf(!chromeBinary())("renderPdf profile", () => {
   afterEach(() => {
     delete process.env.CHROME_BINARY;
   });
 
   it("runs Chrome in its own temporary profile and removes it, so it never touches the user's Chrome", async () => {
-    // A stand-in Chrome that records its arguments, whether the profile exists, and writes the PDF.
+    // Chrome behind a script that records its arguments and whether the profile exists.
     const fake = join(dir, "fake-chrome.sh");
     const log = join(dir, "fake-chrome.log");
     writeFileSync(
       fake,
-      `#!/bin/sh\nfor a in "$@"; do case "$a" in --user-data-dir=*) d="\${a#*=}"; [ -d "$d" ] && echo "exists $d" >> "${log}";; --print-to-pdf=*) echo "%PDF-1.7" > "\${a#*=}";; esac; echo "$a" >> "${log}"; done\n`,
+      `#!/bin/sh\nfor a in "$@"; do case "$a" in --user-data-dir=*) d="\${a#*=}"; [ -d "$d" ] && echo "exists $d" >> "${log}";; esac; echo "$a" >> "${log}"; done\nexec ${JSON.stringify(chromeBinary())} "$@"\n`,
       { mode: 0o755 },
     );
     writeFileSync(join(dir, "profile.html"), "<!doctype html><html><body>x</body></html>");
@@ -117,20 +118,18 @@ describe("renderPdf profile", () => {
   });
 });
 
-describe("renderPdf with an empty Chrome cache", () => {
+describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
   it("installs Chrome without blocking the process and retries an install that failed", async () => {
     // A child process, since this file's module already holds the real Chrome. Its `bunx` stands
-    // in for @puppeteer/browsers: it fails while the flag file exists, then prints a fake Chrome.
+    // in for @puppeteer/browsers: it fails while the flag file exists, then prints a Chrome.
     const bin = join(dir, "install-bin");
     mkdirSync(bin);
     const flag = join(dir, "install-fails");
     const chrome = join(dir, "install-chrome.sh");
     writeFileSync(flag, "");
-    writeFileSync(
-      chrome,
-      `#!/bin/sh\nfor a in "$@"; do case "$a" in --print-to-pdf=*) echo "%PDF-1.7" > "\${a#*=}";; esac; done\n`,
-      { mode: 0o755 },
-    );
+    writeFileSync(chrome, `#!/bin/sh\nexec ${JSON.stringify(chromeBinary())} "$@"\n`, {
+      mode: 0o755,
+    });
     writeFileSync(
       join(bin, "bunx"),
       `#!/bin/sh\necho "$1" > "${flag}.pkg"\nsleep 0.5\n[ -e "${flag}" ] && exit 1\necho "${chrome}"\n`,
@@ -168,7 +167,7 @@ describe("renderPdf with an empty Chrome cache", () => {
   });
 });
 
-// Every check runs on the command line's Chrome and on the kept one.
+// Every check runs on a Chrome of its own and on the kept one.
 describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (warm) => {
   let pdf: string;
   const pdfinfo = () => execFileSync("pdfinfo", [pdf], { encoding: "utf8" });
@@ -191,6 +190,40 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     );
     pdf = join(dir, `doc-${warm}.pdf`);
     await renderPdf(join(dir, "doc.html"), pdf, { warm });
+  }, 60_000);
+
+  it("prints only once the page's layout on globalThis.hwLayout has finished", async () => {
+    // The layout ends a second after load, well past the load that Chrome's --print-to-pdf waited for.
+    const late = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 1000))));</script>`;
+    writeFileSync(
+      join(dir, "late.html"),
+      `<!doctype html><html><body>Pending${late}</body></html>`,
+    );
+    await renderPdf(join(dir, "late.html"), join(dir, `late-${warm}.pdf`), { warm });
+    const text = execFileSync("pdftotext", [join(dir, `late-${warm}.pdf`), "-"], {
+      encoding: "utf8",
+    });
+    expect(text.trim()).toBe("Laid out");
+  }, 60_000);
+
+  it("fails, and writes no PDF, when the layout never finishes or fails", async () => {
+    const pending = `<script>(globalThis.hwLayout ??= []).push(new Promise(() => {}));</script>`;
+    writeFileSync(
+      join(dir, "pending.html"),
+      `<!doctype html><html><body>x${pending}</body></html>`,
+    );
+    const out = join(dir, `pending-${warm}.pdf`);
+    await expect(
+      renderPdf(join(dir, "pending.html"), out, { warm, timeoutMs: 3000 }),
+    ).rejects.toThrow(/within 3000 ms.*hwLayout/);
+    expect(existsSync(out)).toBe(false);
+    const failing = `<script>(globalThis.hwLayout ??= []).push(Promise.reject(new Error("no fit")));</script>`;
+    writeFileSync(
+      join(dir, "failing.html"),
+      `<!doctype html><html><body>x${failing}</body></html>`,
+    );
+    await expect(renderPdf(join(dir, "failing.html"), out, { warm })).rejects.toThrow(/no fit/);
+    expect(existsSync(out)).toBe(false);
   }, 60_000);
 
   it("tags the PDF, so a screen reader reads its structure", () => {
@@ -267,7 +300,7 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
       "",
     );
 
-  it("composes the bytes a fresh run writes, after another type too, and prints what the command line prints", async () => {
+  it("composes the bytes a fresh run writes, after another type too, and prints what a fresh Chrome prints", async () => {
     const props = { kind: "Trainer Briefing", lang: "en", html: "<h1>Briefing</h1><p>Text</p>" };
     const once = await composeDocument("DocMarkdown", props);
     await composeDocument("DocRateCard", rateCard, process.cwd(), { warm: true });

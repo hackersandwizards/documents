@@ -41,6 +41,8 @@ real name the rules cannot see fails there; those names never enter this repo.
   repo's files and the brand package's exported files (`@hackersandwizards/brand/logos/...`), never
   an app path. `DocElements` maps the brand's elements over what it wraps, so a component a
   consumer renders in its own Astro route (the hub's handout, through `DocHandout`) matches a composed page.
+  A component whose script lays the page out after load puts that work's promise on
+  `globalThis.hwLayout`, which `renderPdf` waits for before it prints.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
   directory; the command composes one component from a props JSON, and `--serve` composes on
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the Chrome flag set, the

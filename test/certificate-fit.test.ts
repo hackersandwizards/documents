@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
-import { chromeBinary, documentCss } from "../scripts/render-pdf";
+import { chromeBinary, documentCss, renderPdf } from "../scripts/render-pdf";
 
 // DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
 // fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
@@ -155,6 +155,12 @@ async function printCertificate(props: Record<string, unknown>) {
   const page = join(dir, "certificate.html");
   const pdf = join(dir, "certificate.pdf");
   writeFileSync(page, html(false));
+  // renderPdf, which waits for the fit (globalThis.hwLayout) before it prints.
+  await renderPdf(page, pdf);
+  const pages = Number(
+    execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/Pages:\s+(\d+)/)![1],
+  );
+  writeFileSync(page, html(true));
   // Its own profile, so it never attaches to a Chrome the user has open.
   const flags = [
     "--headless",
@@ -162,14 +168,7 @@ async function printCertificate(props: Record<string, unknown>) {
     "--use-mock-keychain",
     "--password-store=basic",
     `--user-data-dir=${join(dir, "profile")}`,
-    "--no-pdf-header-footer",
-    "--print-background",
   ];
-  execFileSync(chrome, [...flags, `--print-to-pdf=${pdf}`, `file://${page}`], { stdio: "ignore" });
-  const pages = Number(
-    execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/Pages:\s+(\d+)/)![1],
-  );
-  writeFileSync(page, html(true));
   const dom = execFileSync(
     chrome,
     [...flags, "--virtual-time-budget=10000", "--dump-dom", `file://${page}`],

@@ -84,8 +84,8 @@ function cachedChrome(cache: string): string | undefined {
  * Runs in the printed copy. Chrome embeds every raster image at its source resolution: the 512px
  * header logo shown 22.5pt wide was 56 KB of a 129 KB quote (measured 2026-10-28). Each image is
  * redrawn at twice its displayed size, as the smaller of PNG and, where opaque, JPEG. The new src
- * is set from the image's own load event, which holds the window's load, so the CLI prints only
- * after every redraw; work after load raced the print (measured). A document without a `<title>`
+ * is set from the image's own load event, which holds the window's load, so the print waits for
+ * every redraw; work after load raced the print (measured). A document without a `<title>`
  * takes its first heading's.
  */
 const PRINT_SCRIPT = `<script>
@@ -126,14 +126,7 @@ const CHROME_FLAGS = [
   "--use-mock-keychain",
   "--password-store=basic",
 ];
-/** The print settings, as the command line's flags and as the parameters of the kept Chrome's
- * print call, side by side: change one, change the other. Chrome tags the PDF without a flag; only
- * the outline needs one. */
-const PRINT_FLAGS = [
-  "--no-pdf-header-footer",
-  "--print-background",
-  "--generate-pdf-document-outline",
-];
+/** The print settings. Chrome tags the PDF without being asked; the outline needs the flag. */
 const PRINT_PARAMS = {
   displayHeaderFooter: false,
   printBackground: true,
@@ -141,6 +134,15 @@ const PRINT_PARAMS = {
   generateTaggedPDF: true,
   preferCSSPageSize: true,
 };
+
+/**
+ * A page whose layout runs after load, such as a measurement once the faces are in, puts the
+ * promise of that work on `globalThis.hwLayout`, an array the first such script creates. The print
+ * waits for every one, and a layout still pending at the timeout fails the render instead of
+ * printing it half done. Chrome's `--print-to-pdf` printed at load, before the handout's
+ * `document.fonts.ready` work in 2 of 8 runs (measured 02.11.2026), so no render uses it.
+ */
+const LAYOUT = "Promise.all(globalThis.hwLayout ?? []).then(() => true)";
 
 /**
  * Prints an HTML file to PDF. `warm` prints in a Chrome kept running for the next call, for a
@@ -167,36 +169,18 @@ export async function renderPdf(
     printPath,
     end < 0 ? html + PRINT_SCRIPT : html.slice(0, end) + PRINT_SCRIPT + html.slice(end),
   );
-  // Chrome can exit 0 without writing, so a PDF left from an earlier render must not pass the check below.
+  // A failed render must not leave a PDF from an earlier one in place.
   rmSync(pdfPath, { force: true });
   const timeoutMs = options.timeoutMs ?? 60_000;
+  const url = pathToFileURL(printPath).href;
   try {
-    if (options.warm) {
-      const pdf = await keptChrome(chrome).print(pathToFileURL(printPath).href, timeoutMs);
-      writeFileSync(pdfPath, pdf);
-    } else {
-      // Its own profile, so a render never runs inside, or locks, the user's own Chrome profile.
-      const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
-      try {
-        await execFileAsync(
-          chrome,
-          [
-            ...CHROME_FLAGS,
-            `--user-data-dir=${profile}`,
-            ...PRINT_FLAGS,
-            `--print-to-pdf=${pdfPath}`,
-            pathToFileURL(printPath).href,
-          ],
-          { timeout: timeoutMs },
-        );
-      } finally {
-        rmSync(profile, { recursive: true, force: true });
-      }
-    }
+    const pdf = options.warm
+      ? await keptChrome(chrome).print(url, timeoutMs)
+      : await coldPrint(chrome, url, timeoutMs);
+    writeFileSync(pdfPath, pdf);
   } finally {
     rmSync(printPath, { force: true });
   }
-  if (!existsSync(pdfPath)) throw new Error(`Chrome produced no PDF at ${pdfPath}`);
 }
 
 /**
@@ -244,85 +228,139 @@ function kept<T>(
   return entry;
 }
 
-/** The kept Chrome, driven over its own debugging pipe (fd 3 in, fd 4 out), which no other
- * process can reach, unlike a debugging port. */
+/** A Chrome driven over its own debugging pipe (fd 3 in, fd 4 out), which no other process can
+ * reach, unlike a debugging port, in its own temporary profile, so a render never runs inside, or
+ * locks, the user's own Chrome profile. */
+function pipeChrome(chrome: string) {
+  const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
+  const child = spawn(
+    chrome,
+    [...CHROME_FLAGS, `--user-data-dir=${profile}`, "--remote-debugging-pipe", "about:blank"],
+    { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
+  );
+  const input = child.stdio[3] as Writable;
+  const output = child.stdio[4] as Readable;
+  let id = 0;
+  let buffer = "";
+  let gone = false;
+  // A CDP result: each call below reads the fields its method returns.
+  type Result = Record<string, string>;
+  const calls = new Map<number, { resolve(r: Result): void; reject(e: Error): void }>();
+  const loads = new Map<string, () => void>();
+  output.setEncoding("utf8");
+  output.on("data", (chunk: string) => {
+    buffer += chunk;
+    for (let end = buffer.indexOf("\0"); end >= 0; end = buffer.indexOf("\0")) {
+      const message = JSON.parse(buffer.slice(0, end));
+      buffer = buffer.slice(end + 1);
+      const call = calls.get(message.id);
+      if (call) {
+        calls.delete(message.id);
+        if (message.error) call.reject(new Error(message.error.message));
+        else call.resolve(message.result);
+      } else if (message.method === "Page.loadEventFired") loads.get(message.sessionId)?.();
+    }
+  });
+  const exited = new Promise<void>((resolve) => {
+    const fail = () => {
+      gone = true;
+      for (const call of calls.values()) call.reject(new Error("Chrome exited"));
+      calls.clear();
+      resolve();
+    };
+    child.on("exit", fail);
+    child.on("error", fail);
+  });
+  // A write to a Chrome that has gone fails with EPIPE; its exit above rejects the call.
+  input.on("error", () => {});
+  const send = (method: string, params: object = {}, sessionId?: string): Promise<Result> =>
+    new Promise((resolve, reject) => {
+      if (gone) return reject(new Error("Chrome exited"));
+      calls.set(++id, { resolve, reject });
+      input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+    });
+  // Prints once the page has loaded, the print script's redraws included, and its layout is done.
+  const print = async (url: string): Promise<Buffer> => {
+    const { targetId } = await send("Target.createTarget", { url: "about:blank" });
+    try {
+      const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
+      await send("Page.enable", {}, sessionId);
+      const loaded = new Promise<void>((resolve) => loads.set(sessionId, resolve));
+      await send("Page.navigate", { url }, sessionId);
+      await loaded;
+      loads.delete(sessionId);
+      const { exceptionDetails } = (await send(
+        "Runtime.evaluate",
+        { expression: LAYOUT, awaitPromise: true },
+        sessionId,
+      )) as unknown as {
+        exceptionDetails?: { text: string; exception?: { description?: string } };
+      };
+      if (exceptionDetails)
+        throw new Error(
+          `The layout of ${url} failed: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`,
+        );
+      const { data } = await send("Page.printToPDF", PRINT_PARAMS, sessionId);
+      return Buffer.from(data, "base64");
+    } finally {
+      await send("Target.closeTarget", { targetId }).catch(() => {});
+    }
+  };
+  return { child, exited, print, cleanup: () => rmSync(profile, { recursive: true, force: true }) };
+}
+
+/** A print that has not finished within `timeoutMs` fails, and `stop` ends its Chrome. */
+async function printWithin(
+  print: Promise<Buffer>,
+  url: string,
+  timeoutMs: number,
+  stop: () => void,
+): Promise<Buffer> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      print,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          stop();
+          reject(
+            new Error(
+              `Chrome did not print ${url} within ${timeoutMs} ms: Chrome hung, or a layout on globalThis.hwLayout never finished`,
+            ),
+          );
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** One print in a Chrome of its own, which quits and takes its profile with it. */
+async function coldPrint(chrome: string, url: string, timeoutMs: number): Promise<Buffer> {
+  const browser = pipeChrome(chrome);
+  try {
+    return await printWithin(browser.print(url), url, timeoutMs, () => browser.child.kill());
+  } finally {
+    browser.child.kill();
+    await browser.exited;
+    browser.cleanup();
+  }
+}
+
+/** The kept Chrome. */
 function keptChrome(chrome: string) {
   const entry = kept(chrome, (stop) => {
-    const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
-    const child = spawn(
-      chrome,
-      [...CHROME_FLAGS, `--user-data-dir=${profile}`, "--remote-debugging-pipe", "about:blank"],
-      { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
-    );
-    const input = child.stdio[3] as Writable;
-    const output = child.stdio[4] as Readable;
-    let id = 0;
-    let buffer = "";
-    // A CDP result: each call below reads the fields its method returns.
-    type Result = Record<string, string>;
-    const calls = new Map<number, { resolve(r: Result): void; reject(e: Error): void }>();
-    const loads = new Map<string, () => void>();
-    output.setEncoding("utf8");
-    output.on("data", (chunk: string) => {
-      buffer += chunk;
-      for (let end = buffer.indexOf("\0"); end >= 0; end = buffer.indexOf("\0")) {
-        const message = JSON.parse(buffer.slice(0, end));
-        buffer = buffer.slice(end + 1);
-        const call = calls.get(message.id);
-        if (call) {
-          calls.delete(message.id);
-          if (message.error) call.reject(new Error(message.error.message));
-          else call.resolve(message.result);
-        } else if (message.method === "Page.loadEventFired") loads.get(message.sessionId)?.();
-      }
-    });
-    child.on("exit", () => {
-      for (const call of calls.values()) call.reject(new Error("Chrome exited"));
-    });
-    const send = (method: string, params: object = {}, sessionId?: string): Promise<Result> =>
-      new Promise((resolve, reject) => {
-        calls.set(++id, { resolve, reject });
-        input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
-      });
-    // As the command line does: print once the page has loaded, the print script's redraws included.
-    const print = async (url: string): Promise<Buffer> => {
-      const { targetId } = await send("Target.createTarget", { url: "about:blank" });
-      try {
-        const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
-        await send("Page.enable", {}, sessionId);
-        const loaded = new Promise<void>((resolve) => loads.set(sessionId, resolve));
-        await send("Page.navigate", { url }, sessionId);
-        await loaded;
-        loads.delete(sessionId);
-        const { data } = await send("Page.printToPDF", PRINT_PARAMS, sessionId);
-        return Buffer.from(data, "base64");
-      } finally {
-        await send("Target.closeTarget", { targetId }).catch(() => {});
-      }
-    };
-    return {
-      child,
-      api: { print, stop },
-      cleanup: () => rmSync(profile, { recursive: true, force: true }),
-    };
+    const { child, print, cleanup } = pipeChrome(chrome);
+    return { child, api: { print, stop }, cleanup };
   });
   return {
     async print(url: string, timeoutMs: number): Promise<Buffer> {
       entry.busy(1);
-      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
-        return await Promise.race([
-          entry.api.print(url),
-          new Promise<never>((_, reject) => {
-            timer = setTimeout(() => {
-              // A hung Chrome is replaced on the next call.
-              entry.api.stop();
-              reject(new Error(`Chrome did not print ${url} within ${timeoutMs} ms`));
-            }, timeoutMs);
-          }),
-        ]);
+        // A hung Chrome is replaced on the next call.
+        return await printWithin(entry.api.print(url), url, timeoutMs, entry.api.stop);
       } finally {
-        clearTimeout(timer);
         entry.busy(-1);
       }
     },
