@@ -104,12 +104,13 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
 
 - `bun run check`: `scaffolding check`, the gate from `@hackersandwizards/scaffolding`: format,
   lint, stylelint (`stylelint.config.js`), typecheck, structure, coupling, unique function names,
-  the confidential-terms check and the catalog build side by side, then this repository's steps
+  the confidential-terms check, the catalog build and `admin-check` side by side, then this
+  repository's steps
   from `scaffolding.check` in `package.json`: the tests (every component renders standalone,
   compose, the render and font checks, the certificate fit in Chrome, the base's class list, the
   type pages), the brand's list-marker check on every type page with a list (`check:markers`), the
   privacy check (`check:privacy`), the brand colour scan (`brand-colours.json` holds the
-  exceptions), `brand-elements` and `admin-check`. The tests read `dist/`, so they run after the
+  exceptions) and `brand-elements`. The tests read `dist/`, so they run after the
   build, not among the shared steps. No hook runs the gate: `.githooks/pre-commit` runs
   `bun run check:staged` (scaffolding's `check-staged`). `bun install` points `core.hooksPath` at
   `.githooks/`.
