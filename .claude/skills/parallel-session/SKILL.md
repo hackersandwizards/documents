@@ -7,7 +7,8 @@ description: Track parallel work and the person's decisions in repo files (one i
 
 Goal, work and decision data live in the repo the work belongs to, never here. The tooling is the
 admin engine, `@hackersandwizards/admin`, which each repo pins as a dev dependency: `admin-check`
-checks the item files, `admin-hub` builds the page across all repos.
+checks the item files, and `admin-serve`, started by hand with `bun run start` in the admin checkout,
+serves the page across all repos at `http://admin.localhost:4329` from each repo's last commit.
 
 ## One home per fact
 
@@ -79,7 +80,7 @@ items up.
    whoever owns it. Check: the goal item quotes the person.
 2. Every message from the person that adds, decides or changes work gets its item in the same
    turn. A pasted block from the page ("Copy answers") holds one `repo:id: choice, note` line per
-   answer: write each into its repo (step 4), commit, rebuild the page, and confirm every id with
+   answer: write each into its repo (step 4), commit, and confirm every id with
    its commit; report an id that is unknown or already decided. Check: `git diff` shows the item.
 3. A delegate's brief names the items it owns by `id`, quotes the item format, and says whether
    the delegate works in the shared checkout or a worktree. A delegate writes only its own item
@@ -97,11 +98,11 @@ items up.
    Check: it prints `ok`.
 6. A report and an item state the current state only. A later batch on the same topic edits that
    report and deletes what it superseded. Earlier rounds and raw reviews go to the scratchpad.
-7. After each commit that changes items, run `bunx admin-hub` in any repo that pins the engine.
-   It reads every repo under `~/dev` with `docs/tracking/items/` at its last commit and writes
-   `~/dev/.admin/index.html`, which `~/Downloads/stand-entscheidungen/index.html` forwards to.
-   Check: its output names the repo. A batch that changes an asset an item's images show, such
-   as a logo, colour or lockup, re-renders those images in that batch.
+7. The page reads every repo under `~/dev` with `docs/tracking/items/` or an
+   `@hackersandwizards` dependency at its last commit, so the commit is all an item change needs.
+   Check: where `curl -s http://admin.localhost:4329/` answers, the page lists the item. A batch
+   that changes an asset an item's images show, such as a logo, colour or lockup, re-renders those
+   images in that batch.
 8. When the person returns, report from the items, ordered by what each costs if missed. Before
    ending the session, read the transcript from its first message: every item of the first
    report, every question put and its answer, every promise. Check: each unfinished one has an
@@ -111,7 +112,7 @@ items up.
 
 When the person says they are away, the session works unattended until they return: every
 question for the person becomes an item (step 2), never a chat message. The session steers: it
-writes briefs, reads reports, keeps items and the page current, and hands every ready batch to a
+writes briefs, reads reports, keeps items current, and hands every ready batch to a
 delegate. When a delegate finishes, stop the servers and browsers it started and delete its
 scratch then, not at session end. Check: no process or scratch folder of a finished delegate
 remains.
