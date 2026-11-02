@@ -27,9 +27,9 @@ serves the page across all repos at `http://admin.localhost:4329` from each repo
   A task, even one phrased as a question ("Who fixes the privacy policy?"), is `work`.
 - `docs/tracking/YYYY-MM-DD-<topic>.md`: one report per topic, what was measured, with evidence.
   Its images sit in `docs/tracking/YYYY-MM-DD-<topic>/`, JPEG at most 1600 px wide.
-- `~/Downloads/stand-entscheidungen/<topic>/index.html`: a page the person reviews from an item,
-  holding only what that item needs. The item's body names the page's path. The folder goes when
-  its last item is deleted.
+- `docs/tracking/YYYY-MM-DD-<topic>/index.html`: a page the person reviews from an item, holding
+  only what that item needs. The item's `page` field names it and the admin server shows it. The
+  page goes when its last item is deleted.
 
 Work that waits on a decision keeps its `work` item, whose body names the decision's `id` instead
 of repeating the question. The open points for the person's return are the items in
