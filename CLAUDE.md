@@ -32,9 +32,11 @@ real name the rules cannot see fails there; those names never enter this repo.
   aliases of brand tokens; and the named page boxes, since `@page` reads no custom property. A
   value the engine lacks is added to brand's `document.css` first, then used here.
 - `document.css`: the print base every document sits on, on `tokens.css`: the page, the running
-  heads and every element a type or a Markdown body uses. A component reuses a base class and never
-  re-declares it. `test/tokens.test.ts` fails on a length or colour written anywhere but
-  `tokens.css`, and on an inline style setting anything but a custom property.
+  heads and every element a type or a Markdown body uses. A component owns its block's scoped
+  style; the base keeps a class a component took over until no stored document uses it, and
+  `test/document-css.test.ts` lists every class it still styles. `test/tokens.test.ts` fails on a
+  length or colour written anywhere but `tokens.css`, and on an inline style setting anything but a
+  custom property.
 - `components/`: one component per document type or building block; a type composes only
   components, and every type starts with `DocHeader`. `DocAgreement` is every document signed by
   hand (contract, NDA, framework agreement, order confirmation) in its contract or letter form. A component imports only this
@@ -107,15 +109,14 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
 - `bun run check`: `scaffolding check`, the gate from `@hackersandwizards/scaffolding`: format,
   lint, stylelint (`stylelint.config.js`), typecheck, structure, coupling, unique function names,
   the confidential-terms check, the catalog build and `admin-check` side by side, then this
-  repository's steps
-  from `scaffolding.check` in `package.json`: the tests (every component renders standalone,
-  compose, the render and font checks, the certificate fit in Chrome, the base's class list, the
-  type pages), the brand's list-marker check on every type page with a list (`check:markers`), the
-  privacy check (`check:privacy`), the brand colour scan (`brand-colours.json` holds the
-  exceptions) beside `brand-copies`, and `brand-elements`. The tests read `dist/`, so they run after the
-  build, not among the shared steps. No hook runs the gate: `.githooks/pre-commit` runs
-  `bun run check:staged` (scaffolding's `check-staged`). `bun install` points `core.hooksPath` at
-  `.githooks/`.
+  repository's steps from `scaffolding.check` in `package.json`: the tests (every component renders
+  standalone, compose, the render and font checks, the certificate fit in Chrome, the base's class
+  list, the type pages), the brand's list-marker check on every type page with a marked list
+  (`check:markers`; the handout's numbered contents carry no marker), the privacy check
+  (`check:privacy`), the brand colour scan (`brand-colours.json` holds the exceptions) beside
+  `brand-copies`, and `brand-elements`. The tests read `dist/`, so they run after the build, not
+  among the shared steps. No hook runs the gate: `.githooks/pre-commit` runs `bun run check:staged`
+  (scaffolding's `check-staged`). `bun install` points `core.hooksPath` at `.githooks/`.
 - `bun run dev` (or `bun run catalog`): serve the catalog at
   `http://127.0.0.1:4330/documents/catalog/`, the type pages at `/documents/types/<type>/index.html`.
 - `bun run build`: write the catalog to `dist/`.

@@ -38,7 +38,7 @@ test("every component appears on a type page, and every type page is listed", ()
     ))
       shown(c, covered);
   // The onepager page composes DocOnepager through composeOnepager, which renders DocCard.
-  for (const t of TYPES) if (t.component) shown(t.component, covered);
+  shown("DocOnepager", covered);
   expect(components.filter((c) => !covered.has(c))).toEqual([]);
   const listed = new Set(
     pages

@@ -113,7 +113,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 </div>
 
 {chapters.map((chapter, i) => (
-  <section id={`chapter-${i + 1}`}>
+  <section class="chapter" id={`chapter-${i + 1}`}>
     <DocProse html={`<h1>${htmlText(chapter.title)}</h1>\n${chapter.html}`} />
   </section>
 ))}
@@ -125,10 +125,10 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
   document.querySelectorAll(".note-lines").forEach((el) => {
     const lines = Number(shared || el.dataset.lines || 28);
     el.append(...Array.from({ length: lines }, () => document.createElement("span")));
-    if (shared) el.closest("section").classList.add("flow");
+    if (shared) el.closest("section.chapter").classList.add("flow");
   });
   const flow = (options.flow ?? "").split(",");
-  document.querySelectorAll("section").forEach((section, i) => {
+  document.querySelectorAll("section.chapter").forEach((section, i) => {
     if (flow.includes(String(i + 1))) section.classList.add("flow");
   });
   // A note closing a section floats beside nothing and would sit alone under the block it
@@ -202,7 +202,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
   // face fitted one block more than the print (trainer hub AE-DEV handout, 01.11.2026). The
   // promise goes on `hwLayout`, which renderPdf waits for before it prints.
   (globalThis.hwLayout ??= []).push(document.fonts.ready.then(() => {
-    const sections = [...document.querySelectorAll("section")];
+    const sections = [...document.querySelectorAll("section.chapter")];
     const body = document.body.style.width;
     document.body.style.width = "210mm";
     const named = sections.map((section, i) => {

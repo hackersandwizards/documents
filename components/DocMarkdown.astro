@@ -9,12 +9,14 @@ interface Props {
   /** The document kind in the header tag, e.g. "Delivery Briefing". */
   kind: string;
   legal?: boolean;
+  /** The imprint's language. */
+  lang?: "de" | "en";
   meta?: string[];
   /** The body: sanitized HTML, its eyebrow, title and lead already in place. */
   html: string;
 }
-const { kind, legal, meta, html } = Astro.props;
+const { kind, legal, lang, meta, html } = Astro.props;
 ---
 
-<DocHeader kind={kind} legal={legal} meta={meta} />
+<DocHeader kind={kind} legal={legal} lang={lang} meta={meta} />
 <DocProse html={html} />

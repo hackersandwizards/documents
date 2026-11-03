@@ -28,17 +28,14 @@
   --accent-line: var(--color-teal);
   --accent-chip: var(--color-teal-light);
   --result: var(--color-purple);
-  --result-soft: color-mix(in srgb, var(--color-purple) 7%, white);
   --positive: var(--color-green-dark);
   --negative: var(--color-red);
   --night: var(--color-night);
-  --night-raised: var(--color-night-2);
   --night-ink: var(--color-night-ink);
   --night-muted: var(--color-night-muted);
   --night-accent: var(--color-teal-night);
   /* Text on a filled colour: night, teal, purple. */
   --on-dark: var(--color-white);
-  --night-line: color-mix(in srgb, var(--color-white) 18%, var(--color-night));
   --prompt: var(--color-green);
   --gradient: linear-gradient(90deg, var(--color-teal), var(--color-purple));
   --shadow: var(--shadow-card);

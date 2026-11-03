@@ -195,6 +195,11 @@ test.each([
     { ...props.DocMarkdown, legal: true },
     "Sitz und Registergericht Hamburg, HRB 198840",
   ],
+  [
+    "DocMarkdown",
+    { ...props.DocMarkdown, legal: true, lang: "en" },
+    "Registered office and court Hamburg, HRB 198840",
+  ],
 ])(
   "%s carries the imprint of § 35a GmbHG",
   async (name, componentProps, register) => {

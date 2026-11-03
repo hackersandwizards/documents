@@ -86,7 +86,6 @@ const hours = p.durationHours ? fill(t.duration, p) : "";
 const details = fill(t.details, { date: p.date, place, hours });
 const topicClass = [
   "topics",
-  `topics-count-${p.topics.length}`,
   p.topics.length > 8 && "topics-compact",
   p.topics.length > 12 && "topics-columns",
 ];
