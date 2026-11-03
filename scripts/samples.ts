@@ -643,7 +643,7 @@ export const agreementNda = {
     {
       label: "Auftraggeber",
       party: "hackers&wizards GmbH",
-      name: "Benedikt Stemmildt / Stefan Munz",
+      name: "Mara Beispiel",
     },
     { label: "Auftragnehmer", party: "Erika Mustermann", name: "Erika Mustermann" },
   ],

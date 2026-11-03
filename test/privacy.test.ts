@@ -33,9 +33,27 @@ test("every text rule hits a planted case", () => {
       "12 k" + "€",
       "040 123" + " 456 78",
       "040 / " + "1234567",
+      "+49 (0)40" + " 1234567",
+      "040 / 123" + " 456 78",
+      "(040)" + " 1234567",
+      "Lange Straße" + " 12",
+      "Muster" + "stieg 7",
+      "Grauer Wall" + " 10",
+      "Ühlen" + "weg 3",
+      "4.200&nbsp;" + "€",
+      "4.200 &" + "euro;",
+      "1,2 Mio." + " €",
+      "4,200" + " euros",
+      "Euro" + " 4.200",
+      "de89 3704" + " 0044 0532 0130 00",
+      "Mail an jane" + "@acme-corp.de: sie antwortet",
     ].join("\n"),
   );
-  expect(scanText(planted).map((f) => f.line)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+  const lines = Array.from({ length: 27 }, (_, i) => i + 1);
+  expect(scanText(planted).map((f) => f.line)).toEqual(lines);
+  // An SSH remote is no mailbox.
+  writeFileSync(join(planted, "scripts", "leak.ts"), 'insteadOf="git' + '@github.com:"');
+  expect(scanText(planted)).toEqual([]);
 });
 
 test("a deny term hits as a whole word only", () => {
@@ -54,5 +72,23 @@ test("a person in the samples outside the invented names fails", () => {
   ]);
   expect(scanSamples({ rateCard: { client: { shortName: "Echtfirma" } } })).toEqual([
     "rateCard.client.shortName: Echtfirma",
+  ]);
+  expect(
+    scanSamples({
+      agreement: {
+        signatures: [{ party: "Echtfirma GmbH", name: "Anna Echt" }],
+        counterparty: "Echtfirma",
+        salutation: "Hallo Anna,",
+        letter: { recipient: { lines: ["Anna Echt", "Beispielweg 12"] } },
+      },
+      certificate: { title: "Certificate Agentic Engineering Training: Anna Echt" },
+    }),
+  ).toEqual([
+    "agreement.signatures[0].party: Echtfirma",
+    "agreement.signatures[0].name: Anna Echt",
+    "agreement.counterparty: Echtfirma",
+    "agreement.salutation: Anna",
+    "agreement.letter.recipient.lines[0]: Anna Echt",
+    "certificate.title: Anna Echt",
   ]);
 });

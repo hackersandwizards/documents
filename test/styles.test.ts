@@ -3,7 +3,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "bun:test";
-import { foreignStyles } from "../scripts/styles";
+import { foreignStyles, rawInlineStyles } from "../scripts/styles";
 
 const ROOT = resolve(import.meta.dir, "..");
 // The type pages `bun run build` writes, each a document as the engine prints it.
@@ -29,6 +29,33 @@ describe("foreignStyles", () => {
     ]);
     expect(foreignStyles('<link rel="stylesheet" href="own.css">')).toHaveLength(1);
     expect(foreignStyles('<b style="--share: 40%"></b>')).toEqual([]);
+  });
+
+  it("control: a style attribute or link fails however it is quoted, spaced or cased", () => {
+    for (const html of [
+      "<p style='color:red'></p>",
+      "<p style=color:red></p>",
+      '<p style = "color:red"></p>',
+      '<p title=">" style="color:red"></p>',
+      '<p style="--share: 1" STYLE="color:red"></p>',
+      '<link rel=" stylesheet" href="own.css">',
+      '<link rel = "Stylesheet" href="own.css">',
+      '<link rel="stylesheet" href="https://any.host/@hackersandwizards/brand/x.css">',
+      '<link rel="stylesheet" href="//any.host/@hackersandwizards/brand/x.css">',
+      '<link rel="stylesheet" href="../@hackersandwizards/brand/../../own.css">',
+    ])
+      expect(foreignStyles(html)).toHaveLength(1);
+    expect(
+      foreignStyles(
+        '<link rel="stylesheet" href="../../node_modules/@hackersandwizards/brand/tokens/print.css">',
+      ),
+    ).toEqual([]);
+    for (const source of [
+      "<i style='width: 4%'></i>",
+      "<i style=width:4%></i>",
+      '<i style = "width: 4%"></i>',
+    ])
+      expect(rawInlineStyles(source)).toHaveLength(1);
   });
 });
 

@@ -55,41 +55,63 @@ export function rawValues(css: string): string[] {
 
 /** The inline style declarations in markup or source that set anything but a custom property. */
 export function rawInlineStyles(text: string): string[] {
-  const markup = text.replace(/<style[^>]*>[\s\S]*?<\/style>/g, "");
-  // An Astro expression, style={...}, holds its declarations in its string literals.
-  const styles = [...markup.matchAll(/\sstyle=(?:"([^"]*)"|\{((?:[^{}]|\{[^{}]*\})*)\})/g)].flatMap(
-    ([, attr, expr]) =>
-      attr !== undefined
-        ? [attr]
-        : [...expr.matchAll(/`([^`]*)`|"([^"]*)"/g)].map((m) => m[1] ?? m[2]),
+  const markup = text.replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/g, "");
+  // An Astro expression, style={...}, holds its declarations in its string literals. Spaces
+  // around "=" only before a quoted value: `const style = getComputedStyle(el)` is script.
+  const styles = [
+    ...markup.matchAll(
+      /\sstyle(?:\s*=\s*(?:"([^"]*)"|'([^']*)')|=(?:\{((?:[^{}]|\{[^{}]*\})*)\}|([^\s"'=<>`{}]+)))/gi,
+    ),
+  ].flatMap(([, double, single, expr, bare]) =>
+    expr === undefined
+      ? [double ?? single ?? bare]
+      : [...expr.matchAll(/`([^`]*)`|"([^"]*)"/g)].map((m) => m[1] ?? m[2]),
   );
   return styles
     .map((style) => style.trim())
     .filter((style) => style && !style.split(";").every((d) => !d.trim() || /^\s*--/.test(d)));
 }
 
+// The brand package's own files, linked relatively, are the one stylesheet a page may link, as the
+// catalog's type pages do: no scheme or host, no climbing out of the package.
+const BRAND_HREF =
+  /^(?![a-z][\w+.-]*:|[\\/]{2})(?:[^?#]*\/)?@hackersandwizards\/brand\/(?![^?#]*\.\.)/i;
+
 /** What in a rendered document the engine did not write, one line per finding. */
 export function foreignStyles(html: string): string[] {
   const found: string[] = [];
-  for (const [tag] of html.matchAll(/<style\b[^>]*>/gi))
-    if (!ENGINE_STYLES.some((attr) => new RegExp(`\\s${attr}(?=[\\s=>])`).test(tag)))
-      found.push(`a style element the engine did not write: ${tag}`);
-  for (const [tag] of html.matchAll(/<link\b[^>]*>/gi))
-    // The brand package's own files are the one stylesheet a page may link, as the catalog's type pages do.
-    if (
-      /\brel=["']?stylesheet/i.test(tag) &&
-      !/href=["'][^"']*\/@hackersandwizards\/brand\//.test(tag)
-    )
-      found.push(`a linked stylesheet: ${tag}`);
-  // Text cannot hold "<", so every match is inside a tag.
-  for (const [, style] of html.matchAll(/<[a-z][^>]*?\sstyle=(?:"([^"]*)"|'([^']*)')/gi)) {
-    const set = (style ?? "")
-      .split(";")
-      .map((d) => d.split(":")[0].trim())
-      .filter(Boolean);
-    const foreign = set.filter((p) => !DATA_PROPERTIES.includes(p));
-    if (foreign.length) found.push(`a style attribute setting ${foreign.join(", ")}: "${style}"`);
-  }
+  const openTag = (el: HTMLRewriterTypes.Element) =>
+    `<${el.tagName}${[...el.attributes].map(([k, v]) => (v ? ` ${k}="${v}"` : ` ${k}`)).join("")}>`;
+  // HTMLRewriter parses as the browser does: any quoting, spacing or case, a ">" inside a value.
+  new HTMLRewriter()
+    .on("style", {
+      element(el) {
+        if (!ENGINE_STYLES.some((attr) => el.hasAttribute(attr)))
+          found.push(`a style element the engine did not write: ${openTag(el)}`);
+      },
+    })
+    .on("link", {
+      element(el) {
+        const rel = (el.getAttribute("rel") ?? "").toLowerCase().split(/\s+/);
+        if (rel.includes("stylesheet") && !BRAND_HREF.test(el.getAttribute("href") ?? ""))
+          found.push(`a linked stylesheet: ${openTag(el)}`);
+      },
+    })
+    .on("*", {
+      element(el) {
+        for (const [name, style] of el.attributes) {
+          if (name !== "style") continue;
+          const set = style
+            .split(";")
+            .map((d) => d.split(":")[0].trim())
+            .filter(Boolean);
+          const foreign = set.filter((p) => !DATA_PROPERTIES.includes(p));
+          if (foreign.length)
+            found.push(`a style attribute setting ${foreign.join(", ")}: "${style}"`);
+        }
+      },
+    })
+    .transform(html);
   return found;
 }
 

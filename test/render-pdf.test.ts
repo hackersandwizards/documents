@@ -1,6 +1,14 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -91,6 +99,41 @@ describe("renderPdf without output", () => {
     );
     expect(existsSync(join(dir, "stale.pdf"))).toBe(false);
   });
+});
+
+describe("a Chrome or composer that cannot start", () => {
+  it("rejects, removes the profile, and lets the next call start afresh", async () => {
+    // A child process: a spawn error without a listener ends the process. Its own TMPDIR shows
+    // whether a profile is left behind.
+    const tmp = mkdtempSync(join(dir, "nostart-"));
+    writeFileSync(join(dir, "nostart.html"), "<!doctype html><html><body>x</body></html>");
+    const script = `
+      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      const outcome = (p) => p.then(() => "ok", (e) => e.message);
+      process.env.CHROME_BINARY = "/nonexistent/chrome";
+      const render = (warm) => outcome(renderPdf(${JSON.stringify(join(dir, "nostart.html"))}, ${JSON.stringify(join(dir, "nostart.pdf"))}, { warm }));
+      const chrome = [await render(false), await render(true), await render(true)];
+      const path = process.env.PATH;
+      process.env.PATH = "/nonexistent";
+      const compose = () => outcome(composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true }));
+      const composer = [await compose()];
+      process.env.PATH = path;
+      composer.push(await compose());
+      console.log(JSON.stringify({ chrome, composer }));`;
+    const child = Bun.spawn([process.execPath, "-e", script], {
+      env: { ...process.env, TMPDIR: tmp },
+      stderr: "inherit",
+    });
+    const out = await new Response(child.stdout).text();
+    await child.exited;
+    expect(child.exitCode).toBe(0);
+    const { chrome, composer } = JSON.parse(out);
+    // The second warm call fails on its own spawn, not on the dead Chrome the first one kept.
+    for (const message of chrome) expect(message).toContain("ENOENT");
+    expect(composer[0]).toStartWith("Composing DocMarkdown failed");
+    expect(composer[1]).toBe("ok");
+    expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
+  }, 60_000);
 });
 
 describe.skipIf(!chromeBinary())("renderPdf profile", () => {
@@ -226,6 +269,29 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(existsSync(out)).toBe(false);
   }, 60_000);
 
+  it("fails, and writes no PDF, when the URL cannot be reached or answers an error", async () => {
+    const out = join(dir, `url-${warm}.pdf`);
+    const closed = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response() });
+    const port = closed.port;
+    await closed.stop(true);
+    await expect(renderPdf(`http://127.0.0.1:${port}/x`, out, { warm })).rejects.toThrow(
+      /ERR_CONNECTION_REFUSED/,
+    );
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => new Response("<p>Internal error</p>", { status: 500 }),
+    });
+    try {
+      await expect(renderPdf(`http://127.0.0.1:${server.port}/x`, out, { warm })).rejects.toThrow(
+        /500/,
+      );
+    } finally {
+      await server.stop(true);
+    }
+    expect(existsSync(out)).toBe(false);
+  }, 60_000);
+
   it("tags the PDF, so a screen reader reads its structure", () => {
     expect(pdfinfo()).toMatch(/^Tagged:\s+yes$/m);
   });
@@ -314,16 +380,22 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
   }, 60_000);
 
   it("lets the caller exit once its calls are done, Chrome and the composer with it", async () => {
+    // Its own TMPDIR shows whether the kept Chrome's profile outlives it.
+    const tmp = mkdtempSync(join(dir, "exit-"));
     const script = `
       import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
       await composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true });
       await renderPdf(${JSON.stringify(join(dir, "doc.html"))}, ${JSON.stringify(join(dir, "exit.pdf"))}, { warm: true });
       console.log(process.pid);`;
     const started = performance.now();
-    const child = Bun.spawn([process.execPath, "-e", script], { stderr: "inherit" });
+    const child = Bun.spawn([process.execPath, "-e", script], {
+      env: { ...process.env, TMPDIR: tmp },
+      stderr: "inherit",
+    });
     await child.exited;
     expect(child.exitCode).toBe(0);
     expect(performance.now() - started).toBeLessThan(20_000);
+    expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
     // No process outlives the caller that started it.
     const pid = (await new Response(child.stdout).text()).trim();
     const orphans = spawnSync("pgrep", ["-P", pid], { encoding: "utf8" }).stdout.trim();

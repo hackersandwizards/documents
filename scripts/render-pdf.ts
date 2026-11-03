@@ -283,17 +283,19 @@ export async function renderHandoutPdf(
   }
 }
 
-/** The 1-based page each chapter eyebrow ("CHAPTER 03") starts on, in chapter order, or undefined. */
+/** The 1-based page each chapter eyebrow ("CHAPTER 03") starts on, in chapter order, or undefined.
+ *  The eyebrow is a line of its own with a two-digit number, so a text line opening "Chapter 2 …"
+ *  is none; the first such line counts. The cover's contents prints titles, never the eyebrow. */
 function chapterPages(pdf: string, label: string): number[] | undefined {
   const text = spawnSync("pdftotext", ["-raw", pdf, "-"], { encoding: "utf8" });
   if (text.error || text.status !== 0) return undefined;
   const eyebrow = new RegExp(
-    `^\\s*${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} ?(\\d+)\\b`,
+    `^\\s*${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} ?(\\d{2,})\\s*$`,
     "gim",
   );
   const pages: number[] = [];
   text.stdout.split("\f").forEach((body, i) => {
-    for (const m of body.matchAll(eyebrow)) pages[Number(m[1]) - 1] = i + 1;
+    for (const m of body.matchAll(eyebrow)) pages[Number(m[1]) - 1] ??= i + 1;
   });
   return pages.length && !pages.includes(undefined as never) ? pages : undefined;
 }
@@ -358,11 +360,12 @@ function notesFit(pdf: string, last: number): number | undefined {
   const height = Number(/<page width="[\d.]+" height="([\d.]+)"/.exec(box.stdout)?.[1]);
   const mm = 72 / 25.4;
   const bottom = height - 16 * mm;
-  const used = Math.max(
-    ...[...box.stdout.matchAll(/yMax="([\d.]+)"/g)]
-      .map((m) => Number(m[1]))
-      .filter((y) => y < bottom),
-  );
+  const ys = [...box.stdout.matchAll(/yMax="([\d.]+)"/g)]
+    .map((m) => Number(m[1]))
+    .filter((y) => y < bottom);
+  // A page without text gives no measure, and Math.max of nothing would fit endless lines.
+  if (!ys.length) return undefined;
+  const used = Math.max(...ys);
   const lines = Math.floor((bottom - used - 42 * mm) / (8 * mm)) - 1;
   return lines >= 14 ? lines : undefined;
 }
@@ -373,6 +376,7 @@ function notesFit(pdf: string, last: number): number | undefined {
  * dev server re-evaluating this module finds the running one instead of starting another.
  */
 const IDLE_MS = 60_000;
+const STOP_MS = 2_000;
 type Kept<T> = { api: T; busy(delta: number): void };
 function kept<T>(
   key: string,
@@ -385,22 +389,48 @@ function kept<T>(
   if (found) return found;
   let inFlight = 0;
   let idle: ReturnType<typeof setTimeout> | undefined;
+  // Chrome writes its profile while it shuts down, so the cleanup waits for the exit: removed at
+  // once, a profile was left behind in 1 of 10 runs (measured 2026-11-03). The caller's `exit`
+  // cannot wait, so `beforeExit` stops the child first and holds the caller until it is gone;
+  // `exit` remains for a caller ending by process.exit.
   const stop = () => {
     if (store.get(key) !== entry) return;
     store.delete(key);
     clearTimeout(idle);
-    process.off("exit", stop);
+    process.off("beforeExit", stop);
+    process.off("exit", atExit);
     child.kill();
-    cleanup?.();
+    if (child.pid === undefined || child.exitCode !== null || child.signalCode !== null)
+      cleanup?.();
+    else {
+      // A child stuck on SIGTERM is killed outright; a caller exiting meanwhile still cleans up.
+      const force = setTimeout(() => child.kill("SIGKILL"), STOP_MS);
+      const onExit = () => cleanup?.();
+      process.once("exit", onExit);
+      child.ref();
+      child.once("exit", () => {
+        clearTimeout(force);
+        process.off("exit", onExit);
+        cleanup?.();
+      });
+    }
   };
   const { child, api, cleanup } = start(stop);
   const handles = () =>
     [child, ...child.stdio].filter(Boolean) as { ref?(): void; unref?(): void }[];
   child.on("exit", stop);
-  process.on("exit", stop);
+  // A child that never started emits only `error`.
+  child.on("error", stop);
+  const atExit = () => {
+    stop();
+    cleanup?.();
+  };
+  process.on("beforeExit", stop);
+  process.on("exit", atExit);
   const entry: Kept<T> = {
     api,
     busy(delta) {
+      if (store.get(key) !== entry) return;
       inFlight += delta;
       clearTimeout(idle);
       for (const h of handles()) (inFlight > 0 ? h.ref : h.unref)?.call(h);
@@ -422,8 +452,9 @@ function pipeChrome(chrome: string) {
     [...CHROME_FLAGS, `--user-data-dir=${profile}`, "--remote-debugging-pipe", "about:blank"],
     { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
   );
-  const input = child.stdio[3] as Writable;
-  const output = child.stdio[4] as Readable;
+  // Both pipes are missing when Chrome did not start; its `error` below then rejects every call.
+  const input = child.stdio[3] as Writable | undefined;
+  const output = child.stdio[4] as Readable | undefined;
   let id = 0;
   let buffer = "";
   let gone = false;
@@ -431,8 +462,8 @@ function pipeChrome(chrome: string) {
   type Result = Record<string, string>;
   const calls = new Map<number, { resolve(r: Result): void; reject(e: Error): void }>();
   const loads = new Map<string, () => void>();
-  output.setEncoding("utf8");
-  output.on("data", (chunk: string) => {
+  output?.setEncoding("utf8");
+  output?.on("data", (chunk: string) => {
     buffer += chunk;
     for (let end = buffer.indexOf("\0"); end >= 0; end = buffer.indexOf("\0")) {
       const message = JSON.parse(buffer.slice(0, end));
@@ -446,22 +477,22 @@ function pipeChrome(chrome: string) {
     }
   });
   const exited = new Promise<void>((resolve) => {
-    const fail = () => {
+    const fail = (error?: Error) => {
       gone = true;
-      for (const call of calls.values()) call.reject(new Error("Chrome exited"));
+      for (const call of calls.values()) call.reject(error ?? new Error("Chrome exited"));
       calls.clear();
       resolve();
     };
-    child.on("exit", fail);
+    child.on("exit", () => fail());
     child.on("error", fail);
   });
   // A write to a Chrome that has gone fails with EPIPE; its exit above rejects the call.
-  input.on("error", () => {});
+  input?.on("error", () => {});
   const send = (method: string, params: object = {}, sessionId?: string): Promise<Result> =>
     new Promise((resolve, reject) => {
       if (gone) return reject(new Error("Chrome exited"));
       calls.set(++id, { resolve, reject });
-      input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
+      input?.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
     });
   const print = async (url: string, script?: string): Promise<Buffer> => {
     const { targetId } = await send("Target.createTarget", { url: "about:blank" });
@@ -471,9 +502,23 @@ function pipeChrome(chrome: string) {
       if (script)
         await send("Page.addScriptToEvaluateOnNewDocument", { source: script }, sessionId);
       const loaded = new Promise<void>((resolve) => loads.set(sessionId, resolve));
-      await send("Page.navigate", { url }, sessionId);
+      const { errorText } = await send("Page.navigate", { url }, sessionId);
+      if (errorText) {
+        loads.delete(sessionId);
+        throw new Error(`Chrome could not load ${url}: ${errorText}`);
+      }
       await loaded;
       loads.delete(sessionId);
+      // Chrome prints an error page the server sent as if it were the document.
+      const { result } = (await send(
+        "Runtime.evaluate",
+        {
+          expression: `performance.getEntriesByType("navigation")[0]?.responseStatus ?? 0`,
+          returnByValue: true,
+        },
+        sessionId,
+      )) as unknown as { result: { value: number } };
+      if (result.value >= 400) throw new Error(`${url} answered HTTP ${result.value}`);
       const { exceptionDetails } = (await send(
         "Runtime.evaluate",
         { expression: LAYOUT, awaitPromise: true },
@@ -662,9 +707,10 @@ function keptComposer(cwd: string) {
     let id = 0;
     let buffer = "";
     const calls = new Map<number, { resolve(html: string): void; reject(e: Error): void }>();
-    const output = child.stdio[3] as Readable;
-    output.setEncoding("utf8");
-    output.on("data", (chunk: string) => {
+    // Missing when bun did not start; its `error` below then rejects every call.
+    const output = child.stdio[3] as Readable | undefined;
+    output?.setEncoding("utf8");
+    output?.on("data", (chunk: string) => {
       buffer += chunk;
       for (let end = buffer.indexOf("\n"); end >= 0; end = buffer.indexOf("\n")) {
         const answer = JSON.parse(buffer.slice(0, end));
@@ -675,13 +721,18 @@ function keptComposer(cwd: string) {
         else call?.resolve(answer.html);
       }
     });
-    child.on("exit", () => {
-      for (const call of calls.values()) call.reject(new Error("The composer exited"));
-    });
+    const fail = (error?: Error) => {
+      for (const call of calls.values()) call.reject(error ?? new Error("The composer exited"));
+      calls.clear();
+    };
+    child.on("exit", () => fail());
+    child.on("error", fail);
+    // A write to a composer that has gone fails with EPIPE; its exit above rejects the call.
+    child.stdin?.on("error", () => {});
     const compose = (name: string, props: Record<string, unknown>) =>
       new Promise<string>((resolve, reject) => {
         calls.set(++id, { resolve, reject });
-        child.stdin!.write(`${JSON.stringify({ id, name, props })}\n`);
+        child.stdin?.write(`${JSON.stringify({ id, name, props })}\n`);
       });
     return { child, api: compose };
   });

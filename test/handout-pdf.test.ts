@@ -21,7 +21,8 @@ afterAll(async () => {
 });
 
 // A chapter over several pages, two short ones and the notes: the contents needs the pages the
-// chapters land on, which only a first render tells.
+// chapters land on, which only a first render tells. A later chapter's text names an earlier one at
+// a line start, which is no eyebrow.
 const [first, second, notes] = handout.chapters;
 const props = {
   ...handout,
@@ -29,7 +30,7 @@ const props = {
   chapters: [
     { ...first!, html: first!.html.repeat(4) },
     second!,
-    { ...second!, title: "Rules, Again" },
+    { ...second!, title: "Rules, Again", html: `<p>Chapter 1 set up the loop.</p>${second!.html}` },
     notes!,
   ],
 };
@@ -46,7 +47,7 @@ function read(pdf: string) {
   const pages = execFileSync("pdftotext", ["-raw", pdf, "-"], { encoding: "utf8" }).split("\f");
   const starts: number[] = [];
   pages.forEach((body, i) => {
-    for (const m of body.matchAll(/^\s*CHAPTER ?(\d+)\b/gim)) starts[Number(m[1]) - 1] = i + 1;
+    for (const m of body.matchAll(/^CHAPTER (\d{2,})$/gm)) starts[Number(m[1]) - 1] ??= i + 1;
   });
   const listed = props.chapters.map((c) =>
     Number(new RegExp(`${c.title}\\s+(\\d+)`).exec(pages[0]!)?.[1]),

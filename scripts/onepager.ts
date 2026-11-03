@@ -149,7 +149,7 @@ const ONEPAGER_ELEMENTS = ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b
 const VOID = /^(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
 
 /** The top-level elements of an HTML fragment, each as its text. */
-export function topLevelBlocks(html: string): string[] {
+function topLevelBlocks(html: string): string[] {
   const blocks: string[] = [];
   let depth = 0;
   let start = 0;
@@ -168,9 +168,11 @@ const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"'
 const flat = (text: string) =>
   text
     .replace(/<[^>]*>/g, " ")
-    .replace(/&(#\d+|\w+);/g, (e, n: string) =>
-      n.startsWith("#") ? String.fromCharCode(Number(n.slice(1))) : (ENTITIES[n] ?? e),
-    )
+    .replace(/&#(x[\da-f]+|\d+);/gi, (e, n: string) => {
+      const code = Number(`0${n}`);
+      return code <= 0x10ffff ? String.fromCodePoint(code) : e;
+    })
+    .replace(/&(\w+);/g, (e, n: string) => ENTITIES[n] ?? e)
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
@@ -220,7 +222,8 @@ export async function fitOnepager(
     let pages = rendered.get(key);
     if (!pages) {
       // In the kept Chrome: a fit renders up to a dozen times, and a fresh Chrome per render
-      // cost about 0.4 s each. Headless Chrome on macOS sometimes exits non-zero: one retry.
+      // cost about 0.4 s each. One retry, kept from the fresh-Chrome renders, which sometimes
+      // exited non-zero on macOS; whether a kept-Chrome render still fails that way is not measured.
       pages = renderPdf(html, pdf, { warm: true })
         .catch(() => renderPdf(html, pdf, { warm: true }))
         .then(() => pdfPages(pdf));
