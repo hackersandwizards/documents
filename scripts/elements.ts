@@ -1,11 +1,3 @@
-/**
- * The brand's shared elements (@hackersandwizards/brand elements.css) on a composed document: each
- * element the engine and a caller's HTML name by the engine's own class (card, callout, chip, label,
- * a table, a quote, a code block, a link in text) takes the brand's hw-* class and variant, so the
- * brand draws it and the base keeps only its layout. A body written before the brand had these
- * elements renders the same way, since the mapping runs on every composed page and on every
- * document bakeDocumentCss bakes, which also puts the page on the brand's print scale.
- */
 type Edit = [selector: string, cls?: string, attrs?: Record<string, string>];
 
 // In order: a later entry's attribute wins where two match one element.

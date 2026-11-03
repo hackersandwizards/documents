@@ -24,7 +24,6 @@ describe("scripts/compose.ts", () => {
     const out = join(dir, "rate-card.html");
     execFileSync("bun", [SCRIPT, "DocRateCard", join(dir, "props.json"), out]);
     const html = readFileSync(out, "utf8");
-    // The base is baked, not left as the empty marker.
     expect(html).toMatch(/<style data-hw-document>\n\S/);
     // The container renders markup only: without the collected styles, the header has no rule.
     expect(html).toMatch(/\.doc-header\[data-astro-cid-\w+\]/);

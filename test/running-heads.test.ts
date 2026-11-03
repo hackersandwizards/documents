@@ -46,7 +46,7 @@ async function render(
   return join(dir, "doc.pdf");
 }
 
-/** The distinct baselines of the text in a page's top margin, one list per page. */
+/** The number of distinct baselines of the text in a page's top margin, one count per page. */
 function headerLinesPerPage(pdf: string): number[] {
   const bbox = execFileSync("pdftotext", ["-bbox", pdf, "-"], { encoding: "utf8" });
   return bbox
@@ -68,7 +68,6 @@ function headerLinesPerPage(pdf: string): number[] {
 const long = { ...handout.chapters[0]!, html: handout.chapters[0]!.html.repeat(6) };
 const longHandout = { ...handout, chapters: [long, handout.chapters[1]!], toc: [] };
 
-/** The header lines on the long chapter's second page, the first that carries a running head. */
 /** Every word below the running head with its position, page by page. */
 function textBelowHead(pdf: string): string[] {
   const bbox = execFileSync("pdftotext", ["-bbox", pdf, "-"], { encoding: "utf8" });
@@ -83,6 +82,7 @@ function textBelowHead(pdf: string): string[] {
     );
 }
 
+/** The header lines on the long chapter's second page, the first that carries a running head. */
 async function headerLines(title: string): Promise<number> {
   return headerLinesPerPage(await render("DocHandout", { ...longHandout, title }))[2]!;
 }

@@ -1,7 +1,8 @@
 ---
 // The proposal (Angebot), German or English: the lead, the price on page 1, about us, scope, the
 // optional sequence, the outcome, terms, closing and acceptance, in that fixed order. The canonical
-// props with the standard terms are .claude/skills/quote/proposal-de.json and proposal-en.json.
+// props with the standard terms are Company OS's .claude/skills/quote/proposal-de.json and
+// proposal-en.json.
 // A proposal without a rate in any row is the price-free variant: the table keeps item and basis.
 // Every term is a prop: the VAT label, the community's access, the order by reply, and in
 // `labels` every word the proposal prints itself.
@@ -343,7 +344,6 @@ const running = `@page {
     grid-column: 1 / -1;
   }
 
-  /* The community: Card.astro's tint surface across the row, its benefits in three columns. */
   .included {
     grid-column: 1 / -1;
     padding: var(--card-pad);
@@ -379,7 +379,6 @@ const running = `@page {
     color: var(--muted);
   }
 
-  /* Terms: Card.astro's tint in two columns, breaking between terms, never inside one. */
   .terms {
     margin: var(--block-margin);
     padding: var(--card-pad);
@@ -407,7 +406,6 @@ const running = `@page {
     margin: 0 0 var(--dense-title-space);
   }
 
-  /* Acceptance: what is ordered in three facts, then the reply that confirms it. */
   .acceptance {
     margin: var(--acceptance-margin);
     padding: var(--card-pad);

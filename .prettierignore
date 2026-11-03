@@ -1,6 +1,3 @@
-# The document base and components moved byte-exact from brand: never reformat.
-document.css
-components/
 .claude/
 .agents/
 .githooks/

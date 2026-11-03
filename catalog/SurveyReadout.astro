@@ -1,6 +1,4 @@
 ---
-// The survey readout is a TypeScript module writing one standalone page of 1280x720 slides
-// (composeSurveyReadout), not an Astro component: the story frames that page, brand files inlined.
 import { composeSurveyReadout, type SurveyReadout } from "../scripts/survey-readout";
 
 const html = composeSurveyReadout(Astro.props as SurveyReadout);

@@ -5,8 +5,6 @@ import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "bun:test";
 import { foreignStyles } from "../scripts/styles";
 
-// documents-styles, the consumer's gate: every page the engine writes passes, a hand-built one
-// fails, and the command's exit code says which.
 const ROOT = resolve(import.meta.dir, "..");
 // The type pages `bun run build` writes, each a document as the engine prints it.
 const TYPES = join(ROOT, "dist/types");

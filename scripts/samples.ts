@@ -1,5 +1,3 @@
-// The type pages' and stories' sample data, fictitious throughout: no real client, person, rate or price. Every
-// figure in euros is a placeholder.
 export const rateCard = {
   personName: "Mara Beispiel",
   date: "02.11.2026",

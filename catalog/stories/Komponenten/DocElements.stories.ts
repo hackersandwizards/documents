@@ -4,7 +4,6 @@ import { onSheet } from "../../sheet";
 
 export default { component: Slotted };
 
-// The engine's own classes in a consumer's markup, which DocElements gives the brand's elements.
 export const Elemente = onSheet({
   of: DocElements,
   html: `<span class="eyebrow">Training für ein Team</span>

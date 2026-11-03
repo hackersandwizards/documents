@@ -3,11 +3,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "bun:test";
 import { rawInlineStyles, rawValues } from "../scripts/styles";
 
-// Every value a document draws is a named token in tokens.css: colour roles, type roles, spacing,
-// rules, radii, page geometry. The stylesheets and the components' styles name tokens only, so
-// a value changes in one place and no type carries a value of its own. Data a component draws
-// from its props (a column's width, a bar's share) reaches its CSS as a custom property set
-// inline, never as a declaration.
 const ROOT = join(import.meta.dir, "..");
 const STYLESHEETS = ["document.css", "onepager.css", "handout.css", "readout.css"];
 const COMPONENTS = readdirSync(join(ROOT, "components")).filter((f) => f.endsWith(".astro"));

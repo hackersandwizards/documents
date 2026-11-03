@@ -1,29 +1,15 @@
-/* The h&w document base: the page and the elements every document type composes, on the
-   document tokens (tokens.css), which take the brand's values from @hackersandwizards/brand. Every
-   text takes one type role through its --role-* shorthand, never a size or font of its own, and
-   every length and colour is a token: a rule here names tokens only (test/tokens.test.ts).
-
-   Each block is the print twin of a website component (website/src/components/), named beside
-   each rule: the same structure, colours and type roles, at the print scale tokens.css sets.
-
-   Never link this file from a document. A document carries an empty style element
-   with the data-hw-document attribute; bakeDocumentCss (scripts/render-pdf.ts) fills it on
-   every render with this file, its imports inlined and its faces as data URIs, so the stored
-   HTML renders standalone. */
+/* Never link this file from a document: bakeDocumentCss fills the document's empty
+   data-hw-document style element with it on every render, so the stored HTML renders standalone. */
 
 @import "./tokens.css";
 
-/* Running header and footer, the twin of Footer.astro's muted small text. A document names
-   their content in its own style element: @top-left the brand, @top-right the document's title
-   on one line, @bottom-left the recipient; the page number is here. Nothing repeats between them:
-   a blind panel on the handout and the proposal (Claude, Codex; participant and procurement)
-   ranked that first, 44 of 50 against 28 for brand and title repeated (2026-11-01). The title
-   gets 70 % of the width, the brand name needs no more than 30 (test/running-heads.test.ts holds
-   the longest title to one line). Page 1 carries the full header
-   instead. A margin box draws a face only if the page content loads it, so these use the small
-   role, whose face every body text loads. From page 2 the header's gradient strip returns as a
-   1.5pt rail on the paper edge, one gradient across the two top boxes: a blind A/B on the quote
-   (Opus, Codex; brand and buyer) preferred it 4 of 4, brand recognition +2 to +10 (2026-10-28). */
+/* A document sets the boxes' content in its own style element, the page number aside. Nothing
+   repeats between them: a blind panel on the handout and the proposal (Claude, Codex; participant
+   and procurement) ranked that first, 44 of 50 against 28 for brand and title repeated
+   (2026-11-01). A margin box draws a face only if the page content loads it, so these use the
+   small role, whose face every body text loads. From page 2 the header's gradient strip returns
+   as a rail across the two top boxes: a blind A/B on the quote (Opus, Codex; brand and buyer)
+   preferred it 4 of 4, brand recognition +2 to +10 (2026-10-28). */
 @page {
   @top-left {
     width: 30%;
@@ -88,10 +74,8 @@ body {
   widows: 3;
 }
 
-/* Header, the twin of Nav.astro: a bar in the page tint across the paper, the gradient strip
-   on top, a rule under it, the brand left and the document tag right. Its own stacking context
-   keeps the bar above the body's white where a page sets a background on html, as the specimen
-   does. */
+/* Its own stacking context keeps the bar above the body's white where a page sets a background
+   on html. */
 .doc-header {
   position: relative;
   isolation: isolate;
@@ -116,10 +100,7 @@ body {
     var(--tint) padding-box;
 }
 
-/* The wizard beside the pixel wordmark (logos/wordmark.svg), no line under it. The wordmark's box
-   is centred on its letters, so the wizard centres on the text; the wizard then rises by
-   --logo-wizard-lift to sit optically centred. The icon sits beside the wordmark, never centred on
-   address lines stacked under it. */
+/* The wizard aligns with the wordmark, never centred on address lines stacked under it. */
 .brand {
   display: flex;
   align-items: flex-start;
@@ -156,14 +137,12 @@ body {
   color: var(--muted);
 }
 
-/* The document tag: the brand's pill in capitals (hw-pill data-caps, which composePage adds). The
-   header's filled CTA was tried first and dropped: two of three blind reviewers named it a button
-   shape that a title does not take. */
+/* The header's filled CTA was tried first and dropped: two of three blind reviewers named it a
+   button shape that a title does not take. */
 .doc-tag {
   margin-bottom: var(--space-tag);
 }
 
-/* Headings: the website's base, mono 700 in ink at every level. */
 h1,
 h2,
 h3,
@@ -197,23 +176,19 @@ h4 {
   letter-spacing: var(--tracking-h4);
 }
 
-/* Eyebrow over a title or section: the brand's label (hw-label) at the document's small step (os
-   decision br-label-style). */
 .eyebrow {
   display: block;
   margin-bottom: var(--space-heading);
   --hw-label-size: var(--small-size);
 }
 
-/* Label over a field or a group: the brand's label in ink (hw-label data-tone="ink"). */
 .label {
   display: block;
   margin-bottom: var(--space-label);
 }
 
-/* Section label: TrainingList.astro's group title, the h4 role's size in mono 600 capitals,
-   0.04em apart, in ink, after a teal square on the middle of the caps, 0.365em above the
-   baseline for both Inter and JetBrains Mono, lifted by whole pixels as the brand's list marker is. */
+/* The square sits on the middle of the caps, lifted by whole pixels as the brand's list marker
+   is. */
 .section-label {
   display: block;
   margin: var(--section-label-margin);
@@ -235,13 +210,11 @@ h4 {
   background: var(--accent);
 }
 
-/* Tag: the brand's pill (hw-pill). */
 .chip {
   margin: 0 var(--space-chip) var(--space-chip) 0;
   --hw-pill-pad: var(--chip-pad);
 }
 
-/* A card's one-line lead under its title (TrainingList.astro's promise line, set bold). */
 .card .meta {
   margin-bottom: var(--space-paragraph);
   font-weight: var(--weight-semibold);
@@ -252,7 +225,6 @@ h4 {
   margin: var(--card-rule-margin);
 }
 
-/* SectionHeader.astro's lead: the lead role in muted ink. */
 .subtitle {
   max-width: var(--measure);
   margin-bottom: var(--subtitle-space-after);
@@ -288,16 +260,12 @@ hr {
   border-top: var(--rule) solid var(--line);
 }
 
-/* Lists: the website's list marker (patterns.css), one teal square for every list, in a card,
-   a callout or the page, drawn rather than a glyph, which would be a font dependency. */
+/* The marker is drawn (marker.css), not a glyph, which would be a font dependency. */
 ul {
   margin: 0 0 var(--space-paragraph);
   list-style: none;
 }
 
-/* The marker is the brand's (marker.css), switched on in tokens.css: a floated square on the
-   middle of the first line's x-height, whatever whitespace opens the item. Only the item's own
-   rhythm stays here. */
 ul li {
   padding: var(--space-hair) 0 var(--space-hair) var(--list-indent);
 }
@@ -311,8 +279,7 @@ ol li {
   padding: var(--space-hair) 0;
 }
 
-/* Tables: the brand's ruled table (hw-table). Rows stay whole; the table itself may break, or a
-   long one leaves a near-empty page. */
+/* Rows stay whole; the table itself may break, or a long one leaves a near-empty page. */
 table {
   width: 100%;
   margin: var(--table-margin);
@@ -350,11 +317,9 @@ tr.subtotal td {
   font-weight: var(--weight-semibold);
 }
 
-/* The total: Price.astro's card amount, mono bold, here in the h4 role so a row holds it, on the
-   teal band, a 12% tint under a strong teal rule, with the figure in teal at 1.2 times. Teal marks
-   money, as Price.astro does. Blind round 4 (os/docs/agent-work/2026-10-29-document-accents.md, 12
-   reviews each): quote 89.4, hours document 90.2, against 74.0 and 77.5 for the purple figure.
-   Teal on the tint 4.69:1, the rule on white 5.54:1. */
+/* Teal marks money. Blind round 4 (os/docs/agent-work/2026-10-29-document-accents.md, 12 reviews
+   each): quote 89.4, hours document 90.2, against 74.0 and 77.5 for the purple figure. Teal on the
+   tint 4.69:1, the rule on white 5.54:1. */
 tr.total td {
   padding-top: var(--total-pad-top);
   padding-bottom: var(--space-cell);
@@ -411,7 +376,6 @@ tr.total td.num {
   grid-column: 1 / -1;
 }
 
-/* The lead: the reader's situation in prose left, the recipient card right. */
 .lead-grid {
   display: grid;
   grid-template-columns: 1.45fr 0.8fr;
@@ -420,8 +384,8 @@ tr.total td.num {
   margin: var(--lead-margin);
 }
 
-/* The brand's card (hw-card). A panel allowed to break (the quote's terms) closes on each page with
-   its own border, corners and padding. */
+/* A panel allowed to break (the quote's terms) closes on each page with its own border, corners
+   and padding. */
 .card,
 .panel {
   margin: var(--block-margin);
@@ -435,8 +399,6 @@ tr.total td.num {
   margin: 0;
 }
 
-/* The recipient card: the brand's tinted card (hw-card data-variant="tint"), as .card.accent and
-   .panel.soft are. */
 .prepared {
   align-self: start;
   font: var(--role-small);
@@ -458,7 +420,6 @@ tr.total td.num {
   margin-top: 0;
 }
 
-/* Card grid: OfferSteps.astro's row of steps, each under a strong teal rule. */
 .card-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -481,8 +442,6 @@ tr.total td.num {
   margin: 0 0 var(--space-tag);
 }
 
-/* Timeline: ruled rows (patterns.css .ruled-rows), the step in .step-number's mono bold
-   purple, the title and one muted line beside it. */
 .timeline {
   margin: var(--block-margin-loose);
   padding: 0;
@@ -517,7 +476,6 @@ tr.total td.num {
   color: var(--muted);
 }
 
-/* Callout: the brand's callout (hw-callout), its label the muted label. */
 .note,
 .callout {
   margin: var(--callout-margin);
@@ -529,10 +487,7 @@ tr.total td.num {
   margin-bottom: var(--space-heading);
 }
 
-/* Purple marks the result and nothing else: what the client ends up with (a proposal's
-   Ergebnis, as the proposals before October 2026 set it, and the training a certificate names,
-   its own rule). Money is teal (tr.total). Outcome: a callout in purple, the twin of EventRow.astro's next event: a purple edge on a purple tint, its heading
-   purple, 4.9:1 on the tint, above the 4.5:1 AA floor: the callout's purple hue. */
+/* The outcome heading's purple is 4.9:1 on the tint, above the 4.5:1 AA floor. */
 .outcome > h3 {
   color: var(--result);
 }
@@ -542,13 +497,11 @@ tr.total td.num {
   margin-top: 0;
 }
 
-/* Quote: the brand's quote in muted text (hw-quote data-tone="muted"). */
 blockquote {
   margin: var(--callout-margin);
   break-inside: avoid;
 }
 
-/* The closing band: NextStepCard.astro, night with white text. */
 .next-step {
   margin: var(--band-margin);
   padding: var(--card-pad);
@@ -567,7 +520,6 @@ blockquote {
   break-inside: avoid;
 }
 
-/* The page break a Markdown body asks for, the one break a body sets itself. */
 .page-break {
   break-before: page;
 }
@@ -596,7 +548,6 @@ blockquote > :last-child {
   border-top: var(--rule) solid var(--ink);
 }
 
-/* pandoc output; definition lists as DecisionSummary.astro: muted term, ink value. */
 dl {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -609,8 +560,6 @@ dt:not(.label) {
   color: var(--muted);
 }
 
-/* Code blocks: the brand's code block (hw-code); on paper the lines wrap, and a .prompt span takes
-   the green "$". */
 pre {
   margin: var(--callout-margin);
   white-space: pre-wrap;
@@ -622,8 +571,8 @@ pre .prompt {
   color: var(--prompt);
 }
 
-/* Inline code keeps its sentence's size, as the code role says. No ligatures: JetBrains Mono
-   would join -> and == into glyphs a reader cannot type (hub handout review, 2026-10-28). */
+/* No ligatures: JetBrains Mono would join -> and == into glyphs a reader cannot type (hub handout
+   review, 2026-10-28). */
 pre,
 code {
   font-variant-ligatures: none;
@@ -632,7 +581,6 @@ code {
 code {
   font-family: var(--code-family);
 }
-
 
 @media screen {
   body {

@@ -1,10 +1,3 @@
-// composeOnepager: DocOnepager as a standalone page on its own stylesheet: the document tokens
-// (tokens.css with the brand's tokens.css, print.css and document.css), the brand's list marker,
-// document.css's list indent, the scoped styles of DocHeader and DocCard, then
-// onepager.css. Every
-// `<div class="card ...">` in the body opens with DocCard's tag. `brand` is the brand package's
-// folder as the page reaches it: the page opens from disk beside the installed package.
-// fitOnepager owns the page balance: it renders the page and picks the fit (tight, lift, air).
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -98,8 +91,9 @@ function fitCss(fit: OnepagerFit = {}): string {
 .page > :nth-child(n + ${start + 1}):not(${KEPT}) { margin-top: var(--air-gap, 0); }`;
 }
 
-/** The onepager as a standalone HTML page. `link` links the brand's tokens, faces and favicon instead of
- * inlining them, as the catalog does, so a brand release leaves the page current. */
+/** The onepager as a standalone HTML page. `brand` is the brand package's folder as the page
+ * reaches it; `link` links the brand's tokens, faces and favicon instead of inlining them, as the
+ * catalog does, so a brand release leaves the page current. */
 export async function composeOnepager(
   composer: Awaited<ReturnType<typeof openComposer>>,
   page: OnepagerPage,

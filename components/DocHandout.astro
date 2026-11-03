@@ -121,7 +121,6 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 
 <script is:inline data-notes={notes} data-flow={flow}>
   const options = document.currentScript.dataset;
-  // The ruled notes page says how many lines it wants; each is a rule of its own.
   const shared = options.notes;
   document.querySelectorAll(".note-lines").forEach((el) => {
     const lines = Number(shared || el.dataset.lines || 28);

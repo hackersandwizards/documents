@@ -76,7 +76,6 @@ const p = Astro.props;
 if (!p.parties === !p.letter) throw new Error("DocAgreement: give either parties or letter");
 const t = { ...(p.lang === "de" ? DE : EN), ...p.labels };
 const kind = p.kind ?? t.kind;
-// The running header and footer, as the proposal sets them; off on page 1, under the header.
 const running = `@page {
   @top-left { content: ${cssString(t.runningBrand)}; }
   @top-right { content: ${cssString(p.title)}; }

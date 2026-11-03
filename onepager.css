@@ -1,30 +1,8 @@
-/* The onepager stylesheet, the training-offering onepager's own layout (DocOnepager).
-   composeOnepager (scripts/onepager.ts) inlines it after the document tokens (tokens.css, which
-   bring the brand's), document.css's list marker and wordmark rule, and the scoped styles of the
-   components the onepager composes (DocHeader, DocCard), so the onepager takes those pieces of the
-   base, never all of it. Every value is a token: the base's roles, and the onepager's own px rhythm
-   (--op-*) under its heading in tokens.css.
-
-   Each text takes one base role. --density scales every role and the card padding by one factor,
-   so the roles keep their ratios while an offering fits its two A4 pages: 1, print.css's own
-   sizes, and the tight density under .tight, the fallback for an offering whose copy is not yet
-   cut to two pages. The fit pass (fitOnepager) sets .tight and the gap levels on the html element,
-   where the role shorthands are declared.
-
-   Colour: teal marks what a reader scans (labels, section heads, the facts box, the points),
-   purple marks the result (the day step, the quote's rule), as the site's
-   gradient runs from teal to purple. Every box takes the brand corner. */
-/* The onepager's own values on the base roles: the website's brand corner, its narrower side
-   margin, which DocHeader's bar bleeds by to the paper edge, and the density the fit pass sets. */
 .onepager {
   --radius: var(--corner-brand);
   --side: var(--op-side);
 }
 
-/* The side margin sits on .page, not on @page: Chrome clips content to the page box, and
-   the header bar has to reach the paper edge. Page 1 has no top margin, so DocHeader's
-   gradient strip sits on the paper's top edge as on every h&w document. */
-/* The onepager prints on its own page box, tokens.css's `onepager` page. */
 .page {
   page: onepager;
 }
@@ -63,7 +41,6 @@ ul {
   list-style: none;
 }
 
-/* ── Type roles: every text in the onepager takes one of these ── */
 .document-title {
   font: var(--role-display);
   letter-spacing: var(--tracking-display);
@@ -154,11 +131,11 @@ ul {
   font: var(--role-label);
   letter-spacing: var(--tracking-caps);
   text-transform: var(--case-label);
-  /* The website's eyebrow: a mono label in teal over the heading it introduces. */
   color: var(--accent-text);
 }
 
-/* No forced break: blocks never split, and the content flows onto the second page. */
+/* The side margin sits on .page, not on @page: Chrome clips content to the page box, and the
+   header bar has to reach the paper edge. */
 .page {
   position: relative;
   padding: 0 var(--side);
@@ -177,15 +154,13 @@ ul {
   }
 }
 
-/* ── Header: DocHeader, on the onepager's tighter rhythm ── */
 .page > .doc-header {
   min-height: 0;
   padding: calc(var(--strip) + var(--space-heading)) 0 var(--space-heading);
   margin-bottom: var(--op-section);
 }
 
-/* ── Hero: a flat night section, as the website hero; no tint behind its text (os decision
-   br-gradient-behind-content) ── */
+/* No tint behind the hero's text (os decision br-gradient-behind-content). */
 .hero {
   background: var(--night);
   color: var(--night-ink);
@@ -195,14 +170,11 @@ ul {
   break-inside: avoid;
 }
 
-/* The claim over the title is the hero's kicker: the label role in teal-night, the sentence as
-   written, in caps (os decision onepager-hero-tagline). */
 .claim {
   color: var(--night-accent);
   margin-bottom: var(--op-6);
 }
 
-/* The claim as a statement between blocks (AI Router): body text in ink, the claim itself bold. */
 .page > .claim {
   font: var(--role-lead);
   letter-spacing: 0;
@@ -225,8 +197,6 @@ ul {
   color: var(--night-ink);
 }
 
-/* ── Cards: DocCard (`card`, `tint` for its tinted surface), flush in its grid and padded on
-   the onepager's density ── */
 .page .card {
   margin: 0;
   padding: var(--card-pad);
@@ -241,7 +211,6 @@ ul {
   margin-bottom: var(--op-3);
 }
 
-/* ── Facts: the site's facts box, every training the same rows in the same order ── */
 .page > .facts {
   padding-block: calc(var(--card-pad) * var(--op-facts-pad));
   margin-bottom: var(--op-section);
@@ -275,7 +244,6 @@ ul {
   color: var(--ink);
 }
 
-/* The price takes the box's last row: the figure on one line, the terms beside it. */
 .facts .price {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -295,9 +263,6 @@ ul {
   color: var(--muted);
 }
 
-/* The decision rows: for whom across the box, then the website's first three facts (format,
-   group, price), in the lead role, with the price terms under them. A file without them keeps
-   the price row above. */
 .facts .key-row {
   grid-template-columns: minmax(0, 1fr) max-content max-content;
   gap: var(--op-6) var(--op-28);
@@ -321,9 +286,6 @@ ul {
   color: var(--accent-text);
 }
 
-/* With a key card the box is one card: format, group and price with their terms on its teal
-   top, every other fact on white under a hairline, inside the same border. The card ends on its
-   own edge, so the purple rule under it is the only separator. */
 .facts:has(.facts-key) {
   background: var(--surface);
   padding: 0;
@@ -352,8 +314,7 @@ ul {
   padding-bottom: var(--op-6);
 }
 
-/* Every other fact under one rule, three to a row in the small role, the labels in muted ink:
-   the decision row stays the only large text in the box. */
+/* The small role keeps the decision row the only large text in the box. */
 .facts dl.details {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--op-7) var(--op-14);
@@ -426,11 +387,6 @@ ul {
   break-inside: avoid;
 }
 
-/* Points: every list takes document.css's own `ul li` marker, which composeOnepager inlines, so every
-   h&w document draws the identical square. The client row is marks. */
-
-/* ── Callout: document.css .callout, the twin of InShort.astro: a teal rule on the left of
-   a teal/5 tint with the brand corner, a caps label, the text in weight 500 ── */
 .deliverable-banner,
 .cover-box,
 .goals-box,
@@ -452,8 +408,8 @@ ul {
   margin-bottom: var(--op-4);
 }
 
-/* What participants take home: a list under a teal rule, no box, its label teal as every label. A ruled
-   block's text starts on its rule's left edge, as every box's border does: no indent. */
+/* A ruled block's text starts on its rule's left edge, as every box's border does: no
+   indent. */
 .deliverable-banner {
   border-left: 0;
   border-radius: 0;
@@ -518,7 +474,6 @@ ul {
 .block-heading {
   margin-bottom: var(--op-5);
 }
-/* A heading or lead between blocks stays with the block it introduces. */
 .block-heading,
 .block-lead {
   break-after: avoid;
@@ -543,7 +498,6 @@ ul {
   color: var(--accent-text);
 }
 
-/* ── KPIs: named metrics as chips, no figures implied, between thin section rules ── */
 .kpi-section {
   display: flex;
   align-items: center;
@@ -566,7 +520,6 @@ ul {
   gap: var(--space-chip);
 }
 
-/* Chip: document.css .chip, teal-light with ink, weight 500, a pill. */
 .kpi-item {
   display: inline-flex;
   gap: var(--op-chip-gap);
@@ -596,7 +549,6 @@ ul {
   color: var(--accent);
 }
 
-/* Quote: document.css blockquote, the prose blockquote's purple rule. */
 .testimonial {
   border-left: var(--rule-accent) solid var(--result);
   padding: var(--op-2) 0 var(--op-2) var(--space-list);
@@ -626,7 +578,6 @@ ul {
 .funding-box p {
   color: var(--ink);
 }
-/* Standing alone between blocks, a ruled row or a contrast pair keeps the section rhythm. */
 .page > .community-box,
 .page > .funding-box,
 .page > .contrast-grid {
@@ -669,8 +620,7 @@ ul {
   break-inside: avoid;
 }
 
-/* The website's client strip: its marks in its colours and weights (the consumer sets each
-   height, as an inline style), wrapping onto a second row. */
+/* The consumer sets each client mark's height, as an inline style. */
 .references {
   border-top: var(--rule) solid var(--line);
   padding-top: var(--op-7);
@@ -707,7 +657,6 @@ ul {
   content: none;
 }
 
-/* ── Price cards, where a variant keeps them beside the facts ── */
 .pricing-section {
   margin-bottom: var(--op-section);
   break-inside: avoid;
@@ -730,7 +679,6 @@ ul {
   color: var(--muted);
 }
 
-/* ── Closing: document.css .next-step, the twin of NextStepCard.astro, night with white ── */
 .closing {
   break-inside: avoid;
 }
@@ -763,8 +711,6 @@ ul {
   line-height: var(--op-cta-leading);
 }
 
-/* The button: document.css .doc-tag, the twin of Cta.astro primary: brand corner, teal
-   fill, white text in weight 500. */
 .contact-footer a.button {
   display: inline-block;
   background: var(--accent);
@@ -818,8 +764,8 @@ ul {
   --lift-gap: var(--op-lift-4);
 }
 
-/* The fit pass sets .tight where the file runs over two pages: every
-   role drops to the tight density, body text takes the small role, and the rhythm closes up. */
+/* The fit pass sets .tight where the file runs over two pages, on the html element, where the role
+   shorthands are declared, so the tight --density reaches every role. */
 .tight {
   --density: var(--op-tight-density);
   --op-section: var(--op-section-tight);

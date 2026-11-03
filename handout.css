@@ -1,8 +1,5 @@
-/* The printed training handout (DocHandout): the document base plus the one layout only a handout
-   has, margin notes set into the text, the cover with its contents and the chapter openings. Every
-   text takes a type role from the base, every value is a token (tokens.css, its Handout heading). The base's brand tokens.css holds an @theme block: a
-   consumer compiles it, as the trainer hub does with Tailwind's theme layer imported ahead of this
-   file. */
+/* The base's brand tokens.css holds an @theme block: a consumer compiles it, as the trainer hub
+   does with Tailwind's theme layer imported ahead of this file. */
 @import "./document.css";
 /* The handout prints on tokens.css's `handout` page box: 4 mm more top margin than the base's
    14 mm, so the running header stands apart from the text under it: at 14 mm, reviewers read a
@@ -28,7 +25,6 @@ body {
 /* The text runs the full page width: paper has no sidebar, and a gutter kept free for notes
    stood empty on every page without one. */
 :root {
-  /* The reading size, a point above print on the text roles (tokens.css). */
   --type-body-size: var(--handout-body-size);
   --type-small-size: var(--handout-small-size);
   --type-code-size: var(--handout-code-size);
@@ -87,7 +83,6 @@ section :is(h2, h3) {
   contain: paint;
 }
 
-/* Every chapter opens under an eyebrow carrying its number. */
 section h1::before {
   content: var(--chapter-label, "Chapter ") counter(chapter, decimal-leading-zero);
   display: block;
@@ -162,8 +157,7 @@ section h3 {
   color: var(--ink);
 }
 
-/* The key point of a section: the base's note, under the handout's own class name, with the
-   brand corner. Its own block formatting context keeps the tint beside a note, not under it. */
+/* Its own block formatting context keeps the tint beside a note, not under it. */
 .keybox {
   display: flow-root;
   margin: var(--handout-keybox-margin);
@@ -188,7 +182,6 @@ section h3 {
   border-bottom: var(--rule) solid var(--line);
 }
 
-/* The cover: the brand header, the title block, the recipient card and the contents. */
 .cover {
   break-after: page;
 }
@@ -202,7 +195,6 @@ section h3 {
   margin-top: var(--handout-cover-card-space);
 }
 
-/* The contents, numbered as the chapter eyebrows are. */
 .toc {
   margin-top: var(--handout-toc-space);
   counter-reset: entry;

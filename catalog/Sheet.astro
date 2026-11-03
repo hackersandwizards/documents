@@ -1,10 +1,6 @@
 ---
-// A story's sheet. A document styles html and body (document.css's page, the onepager's own
-// stylesheet), so the dashboard shows the story's own preview page (/catalog/stories/...) in
-// an A4 frame, and the preview page renders the component on its sheet at the print scale, its
-// brand elements mapped as composePage maps them. The sheet's stylesheet is inlined from the
-// files with their @imports dropped, as the type pages do: the brand files come from Astrobook's
-// `css`, and an import of the stylesheet would load it on the dashboard too.
+// A document styles html and body, so the dashboard frames the story's own preview page, and the
+// stylesheets are inlined, since an import would load them on the dashboard too.
 import { ELEMENT_MAP, withElements } from "../scripts/elements";
 import tokensCss from "../tokens.css?raw";
 import documentCss from "../document.css?raw";
@@ -31,7 +27,6 @@ const css = [
   sheetCss(tokensCss),
   ...(sheet === "onepager" ? [sheetCss(onepagerCss)] : [sheetCss(documentCss)]),
   ...(sheet === "handout" ? [sheetCss(handoutCss)] : []),
-  // On screen the sheet is A4 wide on the page tint, as on the type pages.
   `@media screen {
     html, html[data-astrobook-root] body { background: var(--color-bg); }
     .sheet { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; }

@@ -3,9 +3,6 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { TYPES } from "../catalog/types";
 
-// Every component has a story in the catalog (catalog/stories/<group>/<Name>.stories.ts), so the
-// home shows each as a tile, and appears on a type page (catalog/pages/types/), so the gate's
-// checks measure it.
 const ROOT = resolve(import.meta.dir, "..");
 const components = readdirSync(join(ROOT, "components"))
   .filter((f) => f.endsWith(".astro"))

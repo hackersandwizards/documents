@@ -1,5 +1,3 @@
-// A story on its sheet (Sheet.astro): the component's props as Astrobook's args, the sheet as its
-// decorator.
 import Sheet from "./Sheet.astro";
 
 interface Options {

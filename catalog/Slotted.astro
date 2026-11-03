@@ -1,6 +1,5 @@
 ---
-// A component that takes its content in slots, which Astrobook's args cannot fill: `of` is the
-// component, `html` its default slot and `aside` its aside slot, every other prop its own.
+// Astrobook's args cannot fill a slot, so a slotted component's story passes its slots as props.
 interface Props {
   of: (props: Record<string, unknown>) => unknown;
   html: string;

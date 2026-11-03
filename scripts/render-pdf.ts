@@ -13,8 +13,6 @@ import { foreignStyles } from "./styles";
 
 const execFileAsync = promisify(execFile);
 
-/** The one owner of the headless-Chrome flag set, browser discovery and the document base, for every h&w document PDF. */
-
 // Only a found Chrome is kept: a failed install is tried again by the next call.
 let resolvedChrome: string | undefined;
 let installingChrome: Promise<string | undefined> | undefined;
@@ -122,7 +120,6 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
-/** The flags every Chrome here starts with. */
 const CHROME_FLAGS = [
   "--headless",
   "--disable-gpu",
@@ -466,7 +463,6 @@ function pipeChrome(chrome: string) {
       calls.set(++id, { resolve, reject });
       input.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
     });
-  // Prints once the page has loaded, the print script's redraws included, and its layout is done.
   const print = async (url: string, script?: string): Promise<Buffer> => {
     const { targetId } = await send("Target.createTarget", { url: "about:blank" });
     try {
@@ -498,7 +494,6 @@ function pipeChrome(chrome: string) {
   return { child, exited, print, cleanup: () => rmSync(profile, { recursive: true, force: true }) };
 }
 
-/** A print that has not finished within `timeoutMs` fails, and `stop` ends its Chrome. */
 async function printWithin(
   print: Promise<Buffer>,
   url: string,
@@ -525,7 +520,6 @@ async function printWithin(
   }
 }
 
-/** One print in a Chrome of its own, which quits and takes its profile with it. */
 async function coldPrint(
   chrome: string,
   url: string,
@@ -544,7 +538,6 @@ async function coldPrint(
   }
 }
 
-/** The kept Chrome. */
 function keptChrome(chrome: string) {
   const entry = kept(chrome, (stop) => {
     const { child, print, cleanup } = pipeChrome(chrome);
@@ -660,7 +653,6 @@ export async function composeDocument(
   }
 }
 
-/** `compose.ts --serve`, kept per project. */
 function keptComposer(cwd: string) {
   const entry = kept(`compose:${cwd}`, () => {
     const child = spawn("bun", [join(ROOT, "scripts/compose.ts"), "--serve"], {

@@ -1,8 +1,4 @@
 #!/usr/bin/env bun
-// The style boundary of the engine. Inside it, every value a document draws is a token of
-// tokens.css (`rawValues`, held by test/tokens.test.ts over the engine's own stylesheets). At a
-// consumer, a rendered document carries only the engine's styles (`foreignStyles`, the
-// `documents-styles` command a consumer runs in its gate).
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 

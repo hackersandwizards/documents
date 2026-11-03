@@ -1,9 +1,5 @@
-// composeSurveyReadout: the attendee-feedback readout, an internal deck of seven 1280x720 slides
-// in the slide engine's look (title, at a glance, scores by dimension, risks, liked, improve,
-// readout), as one standalone HTML page with the brand's tokens and faces inlined. The caller
-// analyses its survey and passes the figures; this module owns how they are drawn, the score bands
-// included, which the caller's readout reuses so a weak spot's marker matches its bar. A slide
-// deck, not an A4 document: it sits on the document tokens and readout.css, never on document.css.
+// The caller analyses its survey and passes the figures; the score bands are exported so the
+// caller's own readout colours a weak spot's marker as its bar.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fill } from "./fill";

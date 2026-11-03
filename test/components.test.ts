@@ -4,9 +4,6 @@ import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
 import { handout } from "../scripts/samples";
 
-// Every document component renders standalone, through Astro's compiler, from this repository and
-// the brand package alone: an import of an app's internals fails here. Placeholder props, no figure
-// or term of ours.
 const ROOT = resolve(import.meta.dir, "..");
 const components = readdirSync(join(ROOT, "components"))
   .filter((f) => f.endsWith(".astro"))

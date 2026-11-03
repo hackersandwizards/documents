@@ -1,9 +1,5 @@
-/* The survey readout deck (composeSurveyReadout, scripts/survey-readout.ts): seven 1280x720 slides
-   in the slide engine's look, on the document tokens. The deck is no A4 document, so it takes the
-   tokens and the brand files, never document.css, and every length is a deck token (tokens.css,
-   its Readout deck heading), copied from the slide engine in rem, never as a pixel value; the charts
-   keep their own pixel geometry as deck tokens too. Colour, families, weights and label tracking
-   are the base's roles. */
+/* The deck is no A4 document: it takes the tokens and the brand files, never document.css, and
+   every length is a deck token. */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -35,7 +31,6 @@ body {
 .slide:last-child {
   page-break-after: auto;
 }
-/* The website's teal-to-purple strip, the one mark every slide shares. */
 .strip {
   position: absolute;
   inset: 0 0 auto;
@@ -57,8 +52,6 @@ body {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-/* The slide engine's corner: the lockup on the title slide, its letters at the wordmark's size (the
-   wordmark is 952 of the lockup's 1489 units), and the wordmark alone on every other slide. */
 .chrome .wordmark {
   width: auto;
   height: var(--deck-corner-wordmark);
@@ -113,7 +106,6 @@ h2 {
   letter-spacing: var(--tracking-caps);
   text-transform: var(--case-label);
 }
-/* The engine's title slide: centred, its subtitle, the short gradient rule below. */
 .center {
   align-items: center;
   justify-content: center;
@@ -162,7 +154,6 @@ h2 {
   gap: var(--deck-56);
   margin-top: var(--deck-48);
 }
-/* A key figure is the brand's (hw-kpi, hw-kpi-value), its caption under the figure. */
 .metabig {
   align-items: center;
   --hw-kpi-size: var(--deck-text-stat);
@@ -385,7 +376,6 @@ h2 {
   border-radius: var(--pill);
   overflow: hidden;
 }
-/* As every highlighted bar: the top risk in teal, the rest in the context grey. */
 .rfill {
   width: var(--share);
   height: 100%;
@@ -426,7 +416,6 @@ h2 {
 .quotes .caption {
   column-span: all;
 }
-/* Cards as the website draws them: white, a hairline, the brand corner. */
 .quote,
 .rcol {
   background: var(--surface);
@@ -466,8 +455,6 @@ h2 {
   padding-bottom: var(--deck-8);
   border-bottom: var(--deck-hairline) solid var(--line-soft);
 }
-/* The list marker: the brand's small square on the middle of the first line's x-height
-   (marker.css), at the readout's size. */
 .readout ul {
   --hw-markers: on;
   --hw-marker-size: var(--deck-marker);

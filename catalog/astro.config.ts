@@ -1,10 +1,5 @@
-// The catalog (repo-uniformity-plan, hub-max): one Astro app in scaffolding's catalog shell. Every
-// component's stories sit in catalog/stories at /catalog/, and every document type is an Astro page
-// at /types/<type>/index.html (pages/types/), the gate's fixtures. `bun run build` writes dist/, which
-// the Pages workflow publishes at https://hackersandwizards.github.io/documents/, hence the base.
-// Astro and Astrobook run here only for the catalog: neither is in the package's `files` or
-// `exports`, so a consumer gets neither. Under Bun, since DocElements maps the brand's elements
-// with Bun's HTMLRewriter.
+// The base is where the Pages workflow publishes dist/ (https://hackersandwizards.github.io/documents/),
+// and Astro runs under Bun, since DocElements maps the brand's elements with Bun's HTMLRewriter.
 import { readFileSync, writeFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import { catalog } from "@hackersandwizards/scaffolding/catalog";
