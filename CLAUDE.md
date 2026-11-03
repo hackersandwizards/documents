@@ -5,7 +5,7 @@ base `document.css`, the document components `components/Doc*.astro`, composing 
 its props to standalone HTML (`scripts/compose.ts`, the `documents-compose` command) and rendering
 HTML to PDF with headless Chrome (`scripts/render-pdf.ts`). Company OS and the trainer hub run it
 and keep what fills a document: the props, the Markdown reading, the callers. The reasoning is in
-os `docs/tracking/2026-10-31-brand-kit-slides-docs.md`.
+os `docs/agent-work/2026-10-31-brand-kit-slides-docs.md`.
 
 This repo is public on GitHub (`github.com/hackersandwizards/documents`), its history included.
 Consumers install it as a Git dependency pinned to a tag,

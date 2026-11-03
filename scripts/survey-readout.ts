@@ -120,7 +120,7 @@ export const scalePosition = (value: number, s: { start: number; end: number }):
  */
 export const STRENGTH_AT = 0.75;
 
-// The bar colours of every h&w bar (slides v0.20.0, os docs/tracking/2026-11-01-bar-colours.md):
+// The bar colours of every h&w bar (slides v0.20.0, os docs/agent-work/2026-11-01-bar-colours.md):
 // teal for strong, teal at the ladder's 70 % for good, the context grey for middling, the design
 // guide's Error Red for weak. A mean's figure takes its band's colour where the band is a full
 // colour and ink on a tint, which reaches no 4.5:1 as text.
@@ -376,7 +376,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
       ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${esc(colors[k] ?? "")}"` : ""}>${esc(i)}</li>`).join("")}</ul>`
       : '<div class="caption">—</div>';
   // The markers' key: blind runs read the band colours and the hollow flag only with it (marker
-  // score 4.75 without, 8.38 with, eight runs, os docs/tracking/2026-11-01-survey-readout-engine.md).
+  // score 4.75 without, 8.38 with, eight runs, os docs/agent-work/2026-11-01-survey-readout-engine.md).
   const bands = BANDS.map(
     ([, col], i) =>
       `<span class="lkey"><i style="--band:${col}"></i>${esc(t.bands[i] ?? "")}</span>`,
