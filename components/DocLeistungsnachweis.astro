@@ -121,9 +121,9 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
   ) : null}
 </dl>
 {p.lumpSumQuote && (
-  <p class="note">{fill(t.lumpSum, p)}</p>
+  <p class="hours-note">{fill(t.lumpSum, p)}</p>
 )}
-{billed && <p class="note">{p.rounding}</p>}
+{billed && <p class="hours-note">{p.rounding}</p>}
 <table data-hw-exception="total-band">
   <thead>
     <tr>
@@ -215,7 +215,8 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
     font-weight: var(--weight-semibold);
   }
 
-  .note {
+  /* A muted line, not the base's .note: that class takes the brand's callout box. */
+  .hours-note {
     margin: 0 0 var(--note-space-after);
     font-size: calc(var(--small-size) * var(--density));
     line-height: var(--small-leading);

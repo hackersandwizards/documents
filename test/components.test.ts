@@ -2,6 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
+import { withElements } from "../scripts/elements";
 import { handout } from "../scripts/samples";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -236,6 +237,20 @@ test("DocHandout carries the brand's elements and the code palette's classes", a
   for (const cls of ["hw-pill", "hw-table", "hw-code", "hw-code-keyword", "hw-code-string"])
     expect(html).toContain(cls);
   expect(html).not.toMatch(/<span[^>]* style=/);
+});
+
+// The lump-sum and rounding notes print as muted lines, never in the brand's callout box.
+test("DocLeistungsnachweis notes take no callout", async () => {
+  const html = await composer.render("DocLeistungsnachweis", {
+    ...props.DocLeistungsnachweis,
+    lumpSumQuote: P,
+    rounding: "[ROUNDING]",
+    rows: [{ ...row, billed: P }],
+    totalBilled: P,
+  });
+  const out = withElements(html);
+  expect(out).toContain("[ROUNDING]");
+  expect(out).not.toContain("hw-callout");
 });
 
 // A running head's text lands in a raw <style>: a caller's `</style>` must stay inside it.
