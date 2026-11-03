@@ -62,10 +62,6 @@
     "check:colours": "brand-colours",
     "check:elements": "brand-elements",
     "check:staged": "check-staged",
-    "lint": "bun --bun eslint --cache --concurrency=auto .",
-    "typecheck": "bun --bun tsc --noEmit",
-    "format": "bun --bun prettier --write .",
-    "format:check": "bun --bun prettier --check .",
     "fix": "bun --bun eslint --cache --concurrency=auto . --fix && bun --bun prettier --write ."
   },
   "peerDependencies": {
