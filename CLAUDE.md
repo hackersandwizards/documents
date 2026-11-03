@@ -112,7 +112,7 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
   compose, the render and font checks, the certificate fit in Chrome, the base's class list, the
   type pages), the brand's list-marker check on every type page with a list (`check:markers`), the
   privacy check (`check:privacy`), the brand colour scan (`brand-colours.json` holds the
-  exceptions) and `brand-elements`. The tests read `dist/`, so they run after the
+  exceptions) beside `brand-copies`, and `brand-elements`. The tests read `dist/`, so they run after the
   build, not among the shared steps. No hook runs the gate: `.githooks/pre-commit` runs
   `bun run check:staged` (scaffolding's `check-staged`). `bun install` points `core.hooksPath` at
   `.githooks/`.
