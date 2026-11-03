@@ -4,4 +4,6 @@ import DocCertificate from "../../../components/DocCertificate.astro";
 import { certificateDe as props } from "../../../scripts/samples";
 ---
 
-<Type title={props.title} lang={props.lang}><DocCertificate {...props} /></Type>
+<Type title={props.title} lang={props.lang}>
+  <DocCertificate {...props} />
+</Type>

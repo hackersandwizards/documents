@@ -120,9 +120,7 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
     </div>
   ) : null}
 </dl>
-{p.lumpSumQuote && (
-  <p class="hours-note">{fill(t.lumpSum, p)}</p>
-)}
+{p.lumpSumQuote && <p class="hours-note">{fill(t.lumpSum, p)}</p>}
 {billed && <p class="hours-note">{p.rounding}</p>}
 <table data-hw-exception="total-band">
   <thead>

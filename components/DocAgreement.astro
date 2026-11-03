@@ -89,71 +89,59 @@ const running = `@page {
   kind={kind}
   legal
   lang={p.lang}
-  meta={[p.number && fill(t.number, p), fill(t.date, p)].filter(
-    (line): line is string => !!line,
-  )}
+  meta={[p.number && fill(t.number, p), fill(t.date, p)].filter((line): line is string => !!line)}
 />
 <DocTitle eyebrow={p.eyebrow} title={p.heading} subtitle={p.subtitle} />
-{
-  p.parties && (
-    <div class="section">
-      <span class="label">{t.between}</span>
-      <div class="grid-2">
-        {p.parties.map((party) => (
-          <DocRecipient label={party.label} company={party.company} lines={party.lines} />
-        ))}
-      </div>
-    </div>
-  )
-}
-{
-  p.letter && (
-    <DocLead>
-      {p.letter.greeting.map((text) => (
-        <p>{text}</p>
-      ))}
-      <DocRecipient
-        slot="aside"
-        label={p.letter.recipient.label}
-        company={p.letter.recipient.company}
-        lines={p.letter.recipient.lines}
-      />
-    </DocLead>
-  )
-}
-{
-  p.facts && (
-    <div class="section">
-      <h2>{t.facts}</h2>
-      <dl>
-        {p.facts.map((fact) => (
-          <>
-            <dt>{fact.term}</dt>
-            <dd>{fact.value}</dd>
-          </>
-        ))}
-      </dl>
-    </div>
-  )
-}
-{
-  p.preamble && (
-    <div class="section">
-      <h2>{t.preamble}</h2>
-      {p.preamble.map((text) => (
-        <p>{text}</p>
+{p.parties && (
+  <div class="section">
+    <span class="label">{t.between}</span>
+    <div class="grid-2">
+      {p.parties.map((party) => (
+        <DocRecipient label={party.label} company={party.company} lines={party.lines} />
       ))}
     </div>
-  )
-}
-{
-  p.clauses?.map((clause, i) => (
-    <div>
-      <h2>{fill(t.clause, { n: String(i + 1), title: clause.title })}</h2>
-      <DocProse html={clause.html} />
-    </div>
-  ))
-}
+  </div>
+)}
+{p.letter && (
+  <DocLead>
+    {p.letter.greeting.map((text) => (
+      <p>{text}</p>
+    ))}
+    <DocRecipient
+      slot="aside"
+      label={p.letter.recipient.label}
+      company={p.letter.recipient.company}
+      lines={p.letter.recipient.lines}
+    />
+  </DocLead>
+)}
+{p.facts && (
+  <div class="section">
+    <h2>{t.facts}</h2>
+    <dl>
+      {p.facts.map((fact) => (
+        <>
+          <dt>{fact.term}</dt>
+          <dd>{fact.value}</dd>
+        </>
+      ))}
+    </dl>
+  </div>
+)}
+{p.preamble && (
+  <div class="section">
+    <h2>{t.preamble}</h2>
+    {p.preamble.map((text) => (
+      <p>{text}</p>
+    ))}
+  </div>
+)}
+{p.clauses?.map((clause, i) => (
+  <div>
+    <h2>{fill(t.clause, { n: String(i + 1), title: clause.title })}</h2>
+    <DocProse html={clause.html} />
+  </div>
+))}
 <DocSignatures signatures={p.signatures} placeDate={t.placeDate} signature={t.signature} />
 
 <style>

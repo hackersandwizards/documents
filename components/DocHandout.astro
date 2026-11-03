@@ -84,39 +84,39 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 
 <style is:inline data-hw-page set:html={pageCss}></style>
 <DocElements>
-<div class="cover">
-  <DocHeader kind={kind} />
-  <div class="title">
-    <DocTitle title={client ? `${title}, ${client}` : title} subtitle={subtitle} />
+  <div class="cover">
+    <DocHeader kind={kind} />
+    <div class="title">
+      <DocTitle title={client ? `${title}, ${client}` : title} subtitle={subtitle} />
+    </div>
+    {(company || date) && (
+      <DocRecipient
+        label={t.recipient}
+        company={company ?? t.noCompany}
+        lines={[]}
+        contact={{ label: t.date, name: date ?? t.noDate }}
+      />
+    )}
+    <div class="toc">
+      <span class="label">{t.contents}</span>
+      <ol>
+        {chapters.map((chapter, i) => (
+          <li>
+            <a class="toc-link" href={`#chapter-${i + 1}`}>
+              <span>{chapter.title}</span>
+              {toc[i] > 0 && <span class="page">{toc[i]}</span>}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
   </div>
-  {(company || date) && (
-    <DocRecipient
-      label={t.recipient}
-      company={company ?? t.noCompany}
-      lines={[]}
-      contact={{ label: t.date, name: date ?? t.noDate }}
-    />
-  )}
-  <div class="toc">
-    <span class="label">{t.contents}</span>
-    <ol>
-      {chapters.map((chapter, i) => (
-        <li>
-          <a class="toc-link" href={`#chapter-${i + 1}`}>
-            <span>{chapter.title}</span>
-            {toc[i] > 0 && <span class="page">{toc[i]}</span>}
-          </a>
-        </li>
-      ))}
-    </ol>
-  </div>
-</div>
 
-{chapters.map((chapter, i) => (
-  <section class="chapter" id={`chapter-${i + 1}`}>
-    <DocProse html={`<h1>${htmlText(chapter.title)}</h1>\n${chapter.html}`} />
-  </section>
-))}
+  {chapters.map((chapter, i) => (
+    <section class="chapter" id={`chapter-${i + 1}`}>
+      <DocProse html={`<h1>${htmlText(chapter.title)}</h1>\n${chapter.html}`} />
+    </section>
+  ))}
 </DocElements>
 
 <script is:inline data-notes={notes} data-flow={flow}>
@@ -201,33 +201,35 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
   // Measured once the faces are in: measured at parse time, a chapter's text set in the fallback
   // face fitted one block more than the print (trainer hub AE-DEV handout, 01.11.2026). The
   // promise goes on `hwLayout`, which renderPdf waits for before it prints.
-  (globalThis.hwLayout ??= []).push(document.fonts.ready.then(() => {
-    const sections = [...document.querySelectorAll("section.chapter")];
-    const body = document.body.style.width;
-    document.body.style.width = "210mm";
-    const named = sections.map((section, i) => {
-      if (section.classList.contains("flow")) return [];
-      const blocks = [...section.querySelector(".doc-prose").children];
-      const width = section.getBoundingClientRect().width;
-      section.style.cssText = `column-width:${width}px;column-gap:0;column-fill:auto;height:var(--page-content-height)`;
-      const edge = section.getBoundingClientRect().left + width + 0.5;
-      const rest = blocks.findIndex((block) => block.getBoundingClientRect().right > edge);
-      section.style.cssText = "";
-      if (rest < 0 && sections[i + 1]?.classList.contains("flow")) return [];
-      return rest < 0 ? blocks : blocks.slice(0, rest);
-    });
-    document.body.style.width = body;
-    named.flat().forEach((block) => block.classList.add("opening"));
-    // The page break after the opening page is forced now, and a forced break keeps the margins
-    // after it, which the natural break truncated: the next block loses them, down the chain of
-    // margins that collapse with its own, or its page starts lower (16.5 pt, measured).
-    for (const opening of named.filter((blocks) => blocks.length)) {
-      for (let el = opening.at(-1).nextElementSibling; el; el = el.firstElementChild) {
-        el.style.marginTop = "0";
-        const style = getComputedStyle(el);
-        if (parseFloat(style.paddingTop) || parseFloat(style.borderTopWidth)) break;
-        if (style.display !== "block" || style.float !== "none") break;
+  (globalThis.hwLayout ??= []).push(
+    document.fonts.ready.then(() => {
+      const sections = [...document.querySelectorAll("section.chapter")];
+      const body = document.body.style.width;
+      document.body.style.width = "210mm";
+      const named = sections.map((section, i) => {
+        if (section.classList.contains("flow")) return [];
+        const blocks = [...section.querySelector(".doc-prose").children];
+        const width = section.getBoundingClientRect().width;
+        section.style.cssText = `column-width:${width}px;column-gap:0;column-fill:auto;height:var(--page-content-height)`;
+        const edge = section.getBoundingClientRect().left + width + 0.5;
+        const rest = blocks.findIndex((block) => block.getBoundingClientRect().right > edge);
+        section.style.cssText = "";
+        if (rest < 0 && sections[i + 1]?.classList.contains("flow")) return [];
+        return rest < 0 ? blocks : blocks.slice(0, rest);
+      });
+      document.body.style.width = body;
+      named.flat().forEach((block) => block.classList.add("opening"));
+      // The page break after the opening page is forced now, and a forced break keeps the margins
+      // after it, which the natural break truncated: the next block loses them, down the chain of
+      // margins that collapse with its own, or its page starts lower (16.5 pt, measured).
+      for (const opening of named.filter((blocks) => blocks.length)) {
+        for (let el = opening.at(-1).nextElementSibling; el; el = el.firstElementChild) {
+          el.style.marginTop = "0";
+          const style = getComputedStyle(el);
+          if (parseFloat(style.paddingTop) || parseFloat(style.borderTopWidth)) break;
+          if (style.display !== "block" || style.float !== "none") break;
+        }
       }
-    }
-  }));
+    }),
+  );
 </script>

@@ -4,4 +4,6 @@ import DocLeistungsnachweis from "../../../components/DocLeistungsnachweis.astro
 import { leistungsnachweisMonth as props } from "../../../scripts/samples";
 ---
 
-<Type title={props.title} lang={props.lang}><DocLeistungsnachweis {...props} /></Type>
+<Type title={props.title} lang={props.lang}>
+  <DocLeistungsnachweis {...props} />
+</Type>

@@ -26,24 +26,20 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
 <DocHeader kind={kind} meta={meta} lang={lang} />
 <div class="preparation">
   <DocTitle eyebrow={eyebrow} title={heading} />
-  {
-    note && (
-      <div class="note">
-        <span class="label">{note.label}</span>
-        <Fragment set:html={note.html} />
-      </div>
-    )
-  }
-  {
-    steps.map((step, i) => (
-      <div class="card keep">
-        <h3>
-          <span class="step">{i + 1}</span> {step.title}
-        </h3>
-        <Fragment set:html={step.html} />
-      </div>
-    ))
-  }
+  {note && (
+    <div class="note">
+      <span class="label">{note.label}</span>
+      <Fragment set:html={note.html} />
+    </div>
+  )}
+  {steps.map((step, i) => (
+    <div class="card keep">
+      <h3>
+        <span class="step">{i + 1}</span> {step.title}
+      </h3>
+      <Fragment set:html={step.html} />
+    </div>
+  ))}
   {closing && <div class="closing" set:html={closing} />}
 </div>
 

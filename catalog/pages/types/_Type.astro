@@ -39,6 +39,8 @@ ${local(tokensCss)}${local(documentCss)}${sheet === "handout" ? local(handoutCss
     <link rel="stylesheet" href={`${BRAND}/elements/elements.css`} />
   </head>
   <body>
-    <DocElements><slot /></DocElements>
+    <DocElements>
+      <slot />
+    </DocElements>
   </body>
 </html>

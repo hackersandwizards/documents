@@ -11,48 +11,48 @@ const exceptions = Object.entries(
 
 <Home>
   <Fragment slot="nav">
+    {/* prettier-ignore */}
     <a class="hw-header-link" href="https://hackersandwizards.github.io/brand/">Brand</a>
+    {/* prettier-ignore */}
     <a class="hw-header-link" href="https://hackersandwizards.github.io/slides/catalog/">Slides</a>
   </Fragment>
   <div class="foundations">
+    {/* prettier-ignore */}
     <p>
       Drei Ebenen. <strong>Tokens</strong>: <code>tokens.css</code> gibt jedem Wert eine Rolle aus
       <code>@hackersandwizards/brand</code>. <strong>Basis</strong>: <code>document.css</code> setzt
       Seite, Laufkopf und die Elemente, die jeder Typ und jeder Markdown-Text nutzt.
       <strong>Komponenten</strong> setzen sich nur aus Tokens und Basis zusammen,
-      <strong>Typen</strong> nur aus Komponenten. Jede Story steht im Druckmaß (<code
-        >data-hw-scale="print"</code
-      >) auf einem A4-Blatt.
+      <strong>Typen</strong> nur aus Komponenten. Jede Story steht im Druckmaß
+      (<code>data-hw-scale="print"</code>) auf einem A4-Blatt.
     </p>
     <p>
       Jeder Typ als ganze Seite, so wie die Engine ihn druckt:
-      {
-        TYPES.map((t, i) => (
-          <>
-            {i > 0 && " · "}
-            <a class="hw-link" href={`${TYPES_URL}${t.file}/index.html`}>
-              {t.title}
-            </a>
-          </>
-        ))
-      }
+      {TYPES.map((t, i) => (
+        <>
+          {i > 0 && " · "}
+          <a class="hw-link" href={`${TYPES_URL}${t.file}/index.html`}>
+            {t.title}
+          </a>
+        </>
+      ))}
     </p>
+    {/* prettier-ignore */}
     <p>
       Aus brand: {elements.uses.map((name) => <code>hw-{name}</code>)}. Als eigene behalten, jede mit
       ihrem Grund:
     </p>
     <ul>
-      {
-        exceptions.map(([name, reason]) => (
-          <li>
-            <code>{name}</code>: {reason}
-          </li>
-        ))
-      }
+      {exceptions.map(([name, reason]) => (
+        <li>
+          <code>{name}</code>: {reason}
+        </li>
+      ))}
     </ul>
+    {/* prettier-ignore */}
     <p>
-      <a class="hw-link" href={`${TYPES_URL}elemente/index.html`}>Die Elementseite</a> zeigt jedes als Kachel;
-      dort misst <code>brand-elements</code> sie in <code>bun run check</code>.
+      <a class="hw-link" href={`${TYPES_URL}elemente/index.html`}>Die Elementseite</a> zeigt jedes als
+      Kachel; dort misst <code>brand-elements</code> sie in <code>bun run check</code>.
     </p>
   </div>
 </Home>

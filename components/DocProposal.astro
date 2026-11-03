@@ -153,7 +153,8 @@ interface Props {
   labels?: Partial<typeof DE>;
 }
 const p = Astro.props;
-if (p.price.vat && !p.price.vatLabel) throw new Error("DocProposal: price.vat needs price.vatLabel");
+if (p.price.vat && !p.price.vatLabel)
+  throw new Error("DocProposal: price.vat needs price.vatLabel");
 const t = { ...(p.lang === "de" ? DE : EN), ...p.labels };
 const by = p.validUntil ? fill(t.replyBy, p) : "";
 const reply = fill(t.reply, { by });

@@ -4,4 +4,6 @@ import DocAgreement from "../../../components/DocAgreement.astro";
 import { agreementOrder as props } from "../../../scripts/samples";
 ---
 
-<Type title={props.title} lang={props.lang}><DocAgreement {...props} /></Type>
+<Type title={props.title} lang={props.lang}>
+  <DocAgreement {...props} />
+</Type>

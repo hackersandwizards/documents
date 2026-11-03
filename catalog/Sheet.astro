@@ -45,27 +45,25 @@ const html = preview
   : "";
 ---
 
-{
-  preview ? (
-    <>
-      <style is:inline set:html={css} />
-      <script is:inline define:vars={{ onepager: sheet === "onepager" }}>
-        document.documentElement.dataset.hwScale = "print";
-        document.documentElement.classList.toggle("onepager", onepager);
-      </script>
-      <div class="sheet">
-        <Fragment set:html={html} />
-      </div>
-    </>
-  ) : (
-    <div class="story-embed">
-      <iframe src={src} title="Story" style={`height: ${pages * 297}mm`} loading="lazy" />
-      <a href={src} target="_blank" rel="noreferrer">
-        Einzeln öffnen
-      </a>
+{preview ? (
+  <>
+    <style is:inline set:html={css} />
+    <script is:inline define:vars={{ onepager: sheet === "onepager" }}>
+      document.documentElement.dataset.hwScale = "print";
+      document.documentElement.classList.toggle("onepager", onepager);
+    </script>
+    <div class="sheet">
+      <Fragment set:html={html} />
     </div>
-  )
-}
+  </>
+) : (
+  <div class="story-embed">
+    <iframe src={src} title="Story" style={`height: ${pages * 297}mm`} loading="lazy" />
+    <a href={src} target="_blank" rel="noreferrer">
+      Einzeln öffnen
+    </a>
+  </div>
+)}
 
 <style>
   .story-embed {

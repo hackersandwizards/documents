@@ -79,37 +79,33 @@ const CSS = `
     im Druckmaß dieser Engine; brand-elements misst genau diese Kacheln gegen die Regel.
   </p>
   <div class="tiles">
-    {
-      TILES.map(([name, title, sample]) => (
-        <div class="tile" data-hw-tile={name} data-hw-version={version}>
-          <p class="tile-origin">
-            <span class="chip">aus brand v{version}</span> <code>.hw-{name}</code>{" "}
-            <a class="tile-link" href={`${CATALOGUE}#hw-${name}`}>
-              Katalog
-            </a>
-          </p>
-          <Fragment set:html={sample} />
-          <p class="small muted">{title}</p>
-        </div>
-      ))
-    }
+    {TILES.map(([name, title, sample]) => (
+      <div class="tile" data-hw-tile={name} data-hw-version={version}>
+        <p class="tile-origin">
+          <span class="chip">aus brand v{version}</span> <code>.hw-{name}</code>{" "}
+          <a class="tile-link" href={`${CATALOGUE}#hw-${name}`}>
+            Katalog
+          </a>
+        </p>
+        <Fragment set:html={sample} />
+        <p class="small muted">{title}</p>
+      </div>
+    ))}
   </div>
   <h2>Ausnahmen dieser Engine</h2>
-  {
-    exceptions.map(([name, reason]) => (
-      <section class="exception" data-hw-exception={name}>
-        <h3>{name}</h3>
-        <p class="muted">{reason}</p>
-        {name === "total-band" ? (
-          <DocPriceTable
-            columns={[{ label: "Leistung" }, { label: "Betrag", num: true }]}
-            rows={[{ item: "Training Agentic Engineering", cells: ["X.XXX,XX €"] }]}
-            total={{ label: "Summe netto", figure: "XX.XXX,XX €" }}
-          />
-        ) : (
-          <Fragment set:html={SAMPLES[name] ?? ""} />
-        )}
-      </section>
-    ))
-  }
+  {exceptions.map(([name, reason]) => (
+    <section class="exception" data-hw-exception={name}>
+      <h3>{name}</h3>
+      <p class="muted">{reason}</p>
+      {name === "total-band" ? (
+        <DocPriceTable
+          columns={[{ label: "Leistung" }, { label: "Betrag", num: true }]}
+          rows={[{ item: "Training Agentic Engineering", cells: ["X.XXX,XX €"] }]}
+          total={{ label: "Summe netto", figure: "XX.XXX,XX €" }}
+        />
+      ) : (
+        <Fragment set:html={SAMPLES[name] ?? ""} />
+      )}
+    </section>
+  ))}
 </Type>

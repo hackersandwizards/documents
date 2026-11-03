@@ -57,6 +57,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     )}
   </div>
   <div class="doc-meta">
+    {/* prettier-ignore */}
     <span class="doc-tag">{href ? <a class="doc-tag-link" href={href}>{kind}</a> : kind}</span>
     {meta.map((line) => (
       <>
