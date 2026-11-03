@@ -225,9 +225,10 @@ export async function fitOnepager(
     const key = JSON.stringify(fit);
     let pages = rendered.get(key);
     if (!pages) {
-      // Headless Chrome on macOS sometimes exits non-zero after writing the PDF: one retry.
-      pages = renderPdf(html, pdf)
-        .catch(() => renderPdf(html, pdf))
+      // In the kept Chrome: a fit renders up to a dozen times, and a fresh Chrome per render
+      // cost about 0.4 s each. Headless Chrome on macOS sometimes exits non-zero: one retry.
+      pages = renderPdf(html, pdf, { warm: true })
+        .catch(() => renderPdf(html, pdf, { warm: true }))
         .then(() => pdfPages(pdf));
       rendered.set(key, pages);
     }
