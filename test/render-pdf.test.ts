@@ -292,6 +292,17 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(existsSync(out)).toBe(false);
   }, 60_000);
 
+  it("writes the same bytes for the same input, with no render date and the file intact", async () => {
+    // Chrome stamps the time to the second, so the second render lands in a later one.
+    await Bun.sleep(1100);
+    const again = join(dir, `doc-again-${warm}.pdf`);
+    await renderPdf(join(dir, "doc.html"), again, { warm });
+    expect(readFileSync(again).equals(readFileSync(pdf))).toBe(true);
+    const info = spawnSync("pdfinfo", [pdf], { encoding: "utf8" });
+    expect(info.stderr).toBe("");
+    expect(info.stdout).not.toMatch(/^(CreationDate|ModDate):/m);
+  }, 60_000);
+
   it("tags the PDF, so a screen reader reads its structure", () => {
     expect(pdfinfo()).toMatch(/^Tagged:\s+yes$/m);
   });
@@ -358,14 +369,6 @@ describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
 });
 
 describe.skipIf(!chromeBinary())("the warm path", () => {
-  const text = (pdf: string) =>
-    execFileSync("pdftotext", ["-layout", pdf, "-"], { encoding: "utf8" });
-  const info = (pdf: string) =>
-    execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).replace(
-      /^(CreationDate|ModDate|File size):.*\n/gm,
-      "",
-    );
-
   it("composes the bytes a fresh run writes, after another type too, and prints what a fresh Chrome prints", async () => {
     const props = { kind: "Trainer Briefing", lang: "en", html: "<h1>Briefing</h1><p>Text</p>" };
     const once = await composeDocument("DocMarkdown", props);
@@ -375,8 +378,9 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
     writeFileSync(join(dir, "warm.html"), once);
     await renderPdf(join(dir, "warm.html"), join(dir, "warm-cli.pdf"));
     await renderPdf(join(dir, "warm.html"), join(dir, "warm-kept.pdf"), { warm: true });
-    expect(info(join(dir, "warm-kept.pdf"))).toBe(info(join(dir, "warm-cli.pdf")));
-    expect(text(join(dir, "warm-kept.pdf"))).toBe(text(join(dir, "warm-cli.pdf")));
+    expect(
+      readFileSync(join(dir, "warm-kept.pdf")).equals(readFileSync(join(dir, "warm-cli.pdf"))),
+    ).toBe(true);
   }, 60_000);
 
   it("lets the caller exit once its calls are done, Chrome and the composer with it", async () => {

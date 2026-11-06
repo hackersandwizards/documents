@@ -66,6 +66,22 @@ const PRINT_PARAMS = {
 };
 
 /**
+ * Chrome stamps the render time as `/CreationDate` and `/ModDate`, the only bytes two renders of
+ * one input differed in (42 PDF pairs, measured 06.11.2026), so a consumer committing PDFs rewrote
+ * them on every pin raise. Both entries are blanked to spaces of the same length, which keeps the
+ * cross-reference offsets: a document's date is in its text, never in its metadata.
+ */
+const undated = (pdf: Buffer): Buffer =>
+  Buffer.from(
+    pdf
+      .toString("latin1")
+      .replace(/\/(?:CreationDate|ModDate) \(D:\d{14}[^)]{0,8}\)/g, (entry) =>
+        " ".repeat(entry.length),
+      ),
+    "latin1",
+  );
+
+/**
  * A page whose layout runs after load, such as a measurement once the faces are in, puts the
  * promise of that work on `globalThis.hwLayout`, an array the first such script creates. The print
  * waits for every one, and a layout still pending at the timeout fails the render instead of
@@ -449,7 +465,7 @@ function pipeChrome(chrome: string) {
           `The layout of ${url} failed: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`,
         );
       const { data } = await send("Page.printToPDF", PRINT_PARAMS, sessionId);
-      return Buffer.from(data, "base64");
+      return undated(Buffer.from(data, "base64"));
     } finally {
       await send("Target.closeTarget", { targetId }).catch(() => {});
     }
