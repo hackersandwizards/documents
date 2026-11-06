@@ -57,7 +57,6 @@ function probeDeck(html: string, probe: string): string {
       chrome,
       [
         ...chromeArgs(join(dir, "profile")),
-        "--disable-gpu",
         "--window-size=1280,720",
         "--virtual-time-budget=10000",
         "--dump-dom",

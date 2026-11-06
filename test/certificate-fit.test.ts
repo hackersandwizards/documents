@@ -166,7 +166,6 @@ async function printCertificate(props: Record<string, unknown>) {
     chrome,
     [
       ...chromeArgs(join(dir, "profile")),
-      "--disable-gpu",
       "--virtual-time-budget=10000",
       "--dump-dom",
       `file://${page}`,

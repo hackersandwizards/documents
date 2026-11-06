@@ -375,11 +375,9 @@ function kept<T>(
  * locks, the user's own Chrome profile. */
 function pipeChrome(chrome: string) {
   const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
-  const child = spawn(
-    chrome,
-    [...chromeArgs(profile), "--disable-gpu", "--remote-debugging-pipe", "about:blank"],
-    { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
-  );
+  const child = spawn(chrome, [...chromeArgs(profile), "--remote-debugging-pipe", "about:blank"], {
+    stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"],
+  });
   // Both pipes are missing when Chrome did not start; its `error` below then rejects every call.
   const input = child.stdio[3] as Writable | undefined;
   const output = child.stdio[4] as Readable | undefined;
