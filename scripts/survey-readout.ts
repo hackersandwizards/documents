@@ -285,7 +285,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
         <div class="hw-kpi metabig"><b class="hw-kpi-value">${rate != null ? rate + "%" : "—"}</b><span>${esc(t.responseRate)}</span></div>
         <div class="hw-kpi metabig"><b class="hw-kpi-value">${m.teams}</b><span>${esc(m.teams === 1 ? t.team : t.teams)}</span></div>
       </div>
-      <div class="rule"></div>
+      <div class="hw-rule cover-rule" data-variant="bar" aria-hidden="true"></div>
       <div class="langnote">${esc(t.verbatim)}</div>
     </div>
     <footer class="chrome"><!--LOCKUP--></footer>
@@ -409,6 +409,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
 <link rel="stylesheet" href="${brand}/tokens/document.css" />
 <link rel="stylesheet" href="${brand}/tokens/marker.css" />
 <link rel="stylesheet" href="${brand}/elements/kpi.css" />
+<link rel="stylesheet" href="${brand}/elements/rule.css" />
 `
     : "";
   return PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))

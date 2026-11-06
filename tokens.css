@@ -88,7 +88,7 @@
 
   --radius: var(--print-radius);
   --pill: var(--radius-pill);
-  --corner-brand: var(--radius-brand);
+  --corner-sm: var(--hw-corner-sm);
   --hw-markers: on;
   --hw-marker-size: var(--bullet);
   --hw-marker-gap: var(--list-marker-gap);

@@ -143,11 +143,10 @@ h2 {
   color: var(--muted);
   margin-top: var(--deck-24);
 }
-.rule {
-  width: var(--deck-160);
-  height: var(--deck-6);
+.cover-rule {
+  --hw-rule-accent: var(--deck-6);
+  --hw-rule-bar: var(--deck-160);
   margin-top: var(--deck-48);
-  background: var(--gradient);
 }
 .metarow {
   display: flex;
@@ -231,22 +230,22 @@ h2 {
   background: var(--band);
   width: 100%;
 }
-/* A count rides on its bar; with no bar it sits on the axis in muted ink. */
+/* A count rides on its bar; with no bar it sits on the axis, in the same type, so a zero reads as a
+   count and not as a note (blind panel 06.11.: same type 8.8, muted mono 8.4, small muted sans 6.2,
+   noise 0.7). */
 .dn {
   position: absolute;
   inset: auto 0 0;
+  margin-bottom: var(--deck-8);
   text-align: center;
   white-space: nowrap;
-  font-size: var(--deck-text-caption);
-  color: var(--muted);
-}
-.dbar .dn {
-  bottom: 100%;
-  margin-bottom: var(--deck-8);
   font-family: var(--stat-family);
   font-weight: var(--weight-bold);
   font-size: var(--deck-text-body);
   color: var(--ink);
+}
+.dbar .dn {
+  bottom: 100%;
 }
 .dv {
   font-size: var(--deck-text-body);

@@ -615,7 +615,14 @@ export function documentCss(): string {
 
 /** The brand files alone, tokens, print faces, the document scale, the list marker and the key figure, for a layout that is not a document page, such as the survey deck. */
 export function brandCss(): string {
-  return ["tokens.css", "print.css", "document.css", "marker.css", "elements/kpi.css"]
+  return [
+    "tokens.css",
+    "print.css",
+    "document.css",
+    "marker.css",
+    "elements/kpi.css",
+    "elements/rule.css",
+  ]
     .map((f) => inlineCss(brandFile(f)))
     .join("\n");
 }

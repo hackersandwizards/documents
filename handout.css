@@ -93,20 +93,15 @@ section h1::before {
   color: var(--accent);
 }
 
-/* A chapter title closes on a short brand gradient bar, not a grey rule: a grey rule read as one
-   more table line, or on the notes page as the first writing line. Blind A/B, 28.10.2026: three
-   of four reviewers preferred the bar. */
+/* A chapter title closes on the brand's short teal bar (hw-rule, DocHandout), not a grey rule: a
+   grey rule read as one more table line, or on the notes page as the first writing line. Blind
+   A/B, 28.10.2026: three of four reviewers preferred the bar. */
 section h1 {
   margin-bottom: var(--handout-title-space);
 }
 
-section h1::after {
-  content: "";
-  display: block;
-  width: var(--handout-title-bar);
-  height: var(--rule-strong);
+section h1 > .hw-rule {
   margin-top: var(--handout-title-bar-space);
-  background: var(--gradient);
 }
 
 /* A section heading starts below a note still running beside the text above it, so it never

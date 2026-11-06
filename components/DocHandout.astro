@@ -114,7 +114,9 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 
   {chapters.map((chapter, i) => (
     <section class="chapter" id={`chapter-${i + 1}`}>
-      <DocProse html={`<h1>${htmlText(chapter.title)}</h1>\n${chapter.html}`} />
+      <DocProse
+        html={`<h1>${htmlText(chapter.title)}<span class="hw-rule" data-variant="bar" aria-hidden="true"></span></h1>\n${chapter.html}`}
+      />
     </section>
   ))}
 </DocElements>
