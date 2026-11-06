@@ -63,8 +63,7 @@ were measured once.
   of a fresh one (about 0.4 s saved per fit, up to a dozen fits), with one retry, since headless
   Chrome on macOS sometimes exits non-zero.
 
-Every consumer now pins a release past v0.7.3: os v1.7.0, website v1.8.0, trainer-hub v1.8.1
-(read 06.11.2026).
+Every consumer now pins a release past v0.7.3 (read 06.11.2026).
 
 ## Pixel check and device check
 
