@@ -42,14 +42,15 @@ function baseCss(link: boolean) {
   ].join("\n");
 }
 
-/** The brand's tokens, faces and favicon as links, as every type page in the catalog carries them. */
+/** The brand's tokens, faces and favicon as links, as every type page in the catalog carries them;
+ * `href` turns a file brand exports into its link. */
 const linked = (
-  brand: string,
-) => `<link rel="icon" href="${brand}/logos/favicon.ico" sizes="32x32" />
-<link rel="icon" href="${brand}/logos/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="${brand}/generated/tokens.root.css" />
-<link rel="stylesheet" href="${brand}/tokens/print.css" />
-<link rel="stylesheet" href="${brand}/tokens/document.css" />
+  href: (file: string) => string,
+) => `<link rel="icon" href="${href("logos/favicon.ico")}" sizes="32x32" />
+<link rel="icon" href="${href("logos/favicon.svg")}" type="image/svg+xml" />
+<link rel="stylesheet" href="${href("tokens.root.css")}" />
+<link rel="stylesheet" href="${href("print.css")}" />
+<link rel="stylesheet" href="${href("document.css")}" />
 `;
 
 /** The page balance fitOnepager picks: `tight` for copy over two pages, then the widest gap level
@@ -95,15 +96,13 @@ function fitCss(fit: OnepagerFit = {}): string {
 .page > :nth-child(n + ${start + 1}):not(${KEPT}) { margin-top: var(--air-gap, 0); }`;
 }
 
-/** The onepager as a standalone HTML page, the brand files and faces inlined. `link` links the
- * brand's tokens, faces and favicon from `brand`, the brand package's folder as the page reaches
- * it, as the catalog does, so a brand release leaves the page current; without `link`, `brand` is
- * unused. */
+/** The onepager as a standalone HTML page, the brand files and faces inlined. Given `link`, which
+ * turns a file brand exports into the link the page reaches it by, it links the brand's tokens,
+ * faces and favicon instead, as the catalog does, so a brand release leaves the page current. */
 export async function composeOnepager(
   composer: Awaited<ReturnType<typeof openComposer>>,
   page: OnepagerPage,
-  brand: string,
-  link = false,
+  link?: (file: string) => string,
 ): Promise<string> {
   const SLOT = "\u0001";
   const cardTag = async (tint: boolean) => {
@@ -127,7 +126,7 @@ export async function composeOnepager(
   });
   const body = withElements(rendered, ONEPAGER_ELEMENTS);
   const style = [
-    baseCss(link),
+    baseCss(link !== undefined),
     await composer.styles(),
     readFileSync(join(ROOT, "onepager.css"), "utf8"),
     fitCss(page.fit),
@@ -138,7 +137,7 @@ export async function composeOnepager(
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${escapeHtml(page.title)}</title>
-${link ? linked(brand) : ""}<style data-hw-onepager>
+${link ? linked(link) : ""}<style data-hw-onepager>
 ${style}
 </style>
 </head>
@@ -209,7 +208,7 @@ export async function fitOnepager(
         pdf: join(work, `fit-${renders.size}.pdf`),
       };
       renders.set(key, f);
-      writeFileSync(f.html, await composeOnepager(composer, { ...page, fit }, brand));
+      writeFileSync(f.html, await composeOnepager(composer, { ...page, fit }));
     }
     return f;
   };

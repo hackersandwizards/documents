@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import { catalog } from "@hackersandwizards/scaffolding/catalog";
 import { dirname } from "node:path";
-import { brandPath } from "./brand";
+import { brandPath, LINKED_CSS } from "./brand";
 import { TYPES } from "./types";
 
 const BASE = "/documents";
@@ -43,7 +43,7 @@ export default defineConfig({
       groupOrder: ["Typen", "Komponenten"],
       // The brand files the type pages link: the Git install's PNG logos are LFS pointers.
       copy: [
-        ...["tokens.root.css", "print.css", "elements.css"].map((f) => dirname(brandPath(f))),
+        ...new Set(LINKED_CSS.map((f) => dirname(brandPath(f)))),
         `${dirname(brandPath("logos/favicon.svg"))}/*.svg`,
         brandPath("logos/favicon.ico"),
       ],

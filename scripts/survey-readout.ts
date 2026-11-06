@@ -253,8 +253,9 @@ function slideShell(inner: string, kicker: string, page: number): string {
 }
 
 /** The readout deck as a standalone HTML page, seven 1280x720 slides with the brand inlined, or,
- * given `brand` (the brand package's folder as the page reaches it), linked, as the catalog does. */
-export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
+ * given `brand` (which turns a file brand exports into the link the page reaches it by), linked, as
+ * the catalog does. */
+export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) => string): string {
   const { counts, headline, scales, risks, noRisk, asked, liked, improve, readout: r } = d;
   const t: ReadoutText = { ...READOUT_TEXT, ...d.text };
   const a = {
@@ -404,15 +405,15 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   // Replacer functions, since a replacement string reads $& and $$ out of attendee quotes. The
   // logo markers are HTML comments, which esc never lets attendee text carry.
   const links = brand
-    ? `<link rel="icon" href="${brand}/logos/favicon.ico" sizes="32x32" />
-<link rel="icon" href="${brand}/logos/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="${brand}/generated/tokens.root.css" />
-<link rel="stylesheet" href="${brand}/tokens/print.css" />
-<link rel="stylesheet" href="${brand}/tokens/document.css" />
-<link rel="stylesheet" href="${brand}/tokens/marker.css" />
-<link rel="stylesheet" href="${brand}/elements/kpi.css" />
-<link rel="stylesheet" href="${brand}/elements/rule.css" />
-<link rel="stylesheet" href="${brand}/elements/strip.css" />
+    ? `<link rel="icon" href="${brand("logos/favicon.ico")}" sizes="32x32" />
+<link rel="icon" href="${brand("logos/favicon.svg")}" type="image/svg+xml" />
+<link rel="stylesheet" href="${brand("tokens.root.css")}" />
+<link rel="stylesheet" href="${brand("print.css")}" />
+<link rel="stylesheet" href="${brand("document.css")}" />
+<link rel="stylesheet" href="${brand("marker.css")}" />
+<link rel="stylesheet" href="${brand("elements/kpi.css")}" />
+<link rel="stylesheet" href="${brand("elements/rule.css")}" />
+<link rel="stylesheet" href="${brand("elements/strip.css")}" />
 `
     : "";
   return PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
