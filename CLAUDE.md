@@ -24,7 +24,7 @@ the imprint's and the invented ones, and every person or client in the samples' 
 real name the rules cannot see fails there; those names never enter this repo. A comment in a
 shipped file says what the code does and why, never its history: scores, review rounds, dates,
 decision or item ids, pointers to review notes and names go to the commit message or
-`docs/agent-work/` (`test/history.test.ts`).
+`docs/agent-work/` (the gate's `history` step).
 
 ## Layout
 
@@ -117,7 +117,7 @@ it beside its runtime dependencies) are peer dependencies, brand and scaffolding
 
 - `bun run check`: `scaffolding check`, the gate from `@hackersandwizards/scaffolding`: format,
   lint, stylelint (`stylelint.config.js`), typecheck, structure, coupling, unique function names,
-  the confidential-terms check, the catalog build and `admin-check` side by side, then this
+  the confidential-terms and history checks, the catalog build and `admin-check` side by side, then this
   repository's steps from `scaffolding.check` in `package.json`: the tests (every component renders
   standalone, compose, the render and font checks, the certificate fit in Chrome, the base's class
   list, the type pages), the brand's list-marker check on every type page with a marked list
