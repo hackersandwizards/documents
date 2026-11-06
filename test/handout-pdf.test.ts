@@ -34,8 +34,8 @@ const props = {
     notes!,
   ],
 };
-const compose = (pass: HandoutPass) =>
-  composePage(composer, "DocHandout", { ...props, ...pass }, (page) =>
+const compose = (pass: HandoutPass, extra: object = {}) =>
+  composePage(composer, "DocHandout", { ...props, ...extra, ...pass }, (page) =>
     page.replace(
       "<style data-hw-document></style>",
       () => `<style>${documentCss()}\n${rules}</style>`,
@@ -43,11 +43,12 @@ const compose = (pass: HandoutPass) =>
   );
 
 /** The page each chapter's eyebrow prints on, and the page numbers the cover's contents prints. */
-function read(pdf: string) {
+function read(pdf: string, eyebrow = "CHAPTER") {
   const pages = execFileSync("pdftotext", ["-raw", pdf, "-"], { encoding: "utf8" }).split("\f");
   const starts: number[] = [];
   pages.forEach((body, i) => {
-    for (const m of body.matchAll(/^CHAPTER (\d{2,})$/gm)) starts[Number(m[1]) - 1] ??= i + 1;
+    for (const m of body.matchAll(new RegExp(`^${eyebrow} (\\d{2,})$`, "gm")))
+      starts[Number(m[1]) - 1] ??= i + 1;
   });
   const listed = props.chapters.map((c) =>
     Number(new RegExp(`${c.title}\\s+(\\d+)`).exec(pages[0]!)?.[1]),
@@ -65,7 +66,8 @@ test("the contents numbers each chapter with the page it opens on, from composed
   expect(listed).toEqual(starts);
 }, 120_000);
 
-test("a URL gets each pass as its query", async () => {
+// German, so the eyebrow's word the first fetch reads is the page's own, not the English default.
+test("a URL gets each pass as its query, and its page names the eyebrow", async () => {
   const queries: string[] = [];
   const server = Bun.serve({
     port: 0,
@@ -77,11 +79,10 @@ test("a URL gets each pass as its query", async () => {
       const query = url.searchParams;
       queries.push(query.toString());
       const toc = query.get("toc")?.split(",").map(Number);
-      const html = await compose({
-        toc,
-        flow: query.get("flow") ?? undefined,
-        notes: query.get("notes") ?? undefined,
-      });
+      const html = await compose(
+        { toc, flow: query.get("flow") ?? undefined, notes: query.get("notes") ?? undefined },
+        { lang: "de" },
+      );
       return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
     },
   });
@@ -89,10 +90,12 @@ test("a URL gets each pass as its query", async () => {
     const pdf = join(dir, "served.pdf");
     const result = await renderHandoutPdf(`http://127.0.0.1:${server.port}/print`, pdf);
     expect(result.numbered).toBe(true);
-    expect(queries.length).toBe(result.renders);
+    // One more request than renders: the first pass is fetched for the eyebrow's word.
+    expect(queries.length).toBe(result.renders + 1);
     expect(queries[0]).toBe("");
     expect(queries.at(-1)).toContain("toc=");
-    const { starts, listed } = read(pdf);
+    const { starts, listed } = read(pdf, "KAPITEL");
+    expect(starts.length).toBe(props.chapters.length);
     expect(listed).toEqual(starts);
   } finally {
     server.stop(true);

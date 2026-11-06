@@ -12,10 +12,12 @@ import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
 import { cssString } from "../scripts/fill";
 
-// The handout's own words; `labels` replaces any of them.
-const TEXT = {
+// The handout's own words, English and German; `labels` replaces any of them.
+const EN = {
   /** The running header's left box. */
   runningBrand: "hackers&wizards",
+  /** The document kind in the header tag, where `kind` gives none. */
+  kind: "Training Handout",
   recipient: "For",
   date: "Training date",
   /** Stand in for the company or the date where only the other is given. */
@@ -25,14 +27,26 @@ const TEXT = {
   /** The eyebrow before each chapter's number. */
   chapter: "Chapter ",
 };
+const DE: typeof EN = {
+  ...EN,
+  kind: "Trainings-Handout",
+  recipient: "Für",
+  date: "Trainingsdatum",
+  noCompany: "[FIRMA]",
+  noDate: "[DATUM]",
+  contents: "Inhalt",
+  chapter: "Kapitel ",
+};
 
 interface Props {
+  /** The language of the handout's own words; English where none is given. */
+  lang?: "de" | "en";
   /** The product's title: the running header, and the cover title. */
   title: string;
   /** A delivery's client and month ("Musterwerk 2026-11"): the running footer, and the cover title
    *  after the product's. A standard handout has none, so its footer shows the page number alone. */
   client?: string;
-  /** The document kind in the header tag. */
+  /** The document kind in the header tag; the language's own (`kind` in EN, DE) where none is given. */
   kind?: string;
   subtitle: string;
   /** Each chapter's title and its Markdown body as sanitized HTML. */
@@ -49,13 +63,14 @@ interface Props {
   /** The 1-based chapters, comma-separated, that run on under the one before instead of opening a
    *  page. */
   flow?: string;
-  /** Replaces any of the handout's own words (TEXT above). */
-  labels?: Partial<typeof TEXT>;
+  /** Replaces any of the handout's own words (EN, DE above) but `kind`, which is the prop. */
+  labels?: Partial<Omit<typeof EN, "kind">>;
 }
 const {
+  lang,
   title,
   client,
-  kind = "Training Handout",
+  kind,
   subtitle,
   chapters,
   company,
@@ -65,7 +80,7 @@ const {
   flow,
   labels,
 } = Astro.props;
-const t = { ...TEXT, ...labels };
+const t = { ...(lang === "de" ? DE : EN), ...labels };
 
 const htmlText = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -87,7 +102,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 <DocElements>
   <div data-hw-scale="print">
     <div class="cover">
-      <DocHeader kind={kind} />
+      <DocHeader kind={kind ?? t.kind} />
       <div class="title">
         <DocTitle title={client ? `${title}, ${client}` : title} subtitle={subtitle} />
       </div>

@@ -175,17 +175,22 @@ export type HandoutResult = {
  * read-back picks the chapters that run on under the one before (`flow`) and whether the notes
  * share the last page (`notes`). `source` is a URL serving the handout, which gets the pass as the
  * query `toc`, `flow` and `notes`, or a function composing the handout's HTML for a pass, which
- * passes it to DocHandout as props. `chapterLabel` is the eyebrow's word (DocHandout's
- * `labels.chapter`). Without poppler the first render stands: the contents unnumbered and every
- * chapter opening a page.
+ * passes it to DocHandout as props. The eyebrow's word comes from the first pass's page, the
+ * `--chapter-label` DocHandout writes for its language and `labels.chapter`; a URL is fetched once
+ * more for it. Without poppler the first render stands: the contents unnumbered and every chapter
+ * opening a page.
  */
 export async function renderHandoutPdf(
   source: string | ((pass: HandoutPass) => Promise<string>),
   pdfPath: string,
-  options: RenderOptions & { chapterLabel?: string } = {},
+  options: RenderOptions & {
+    /** @deprecated The word is read from the page; a given one replaces that read. */
+    chapterLabel?: string;
+  } = {},
 ): Promise<HandoutResult> {
   const dir = typeof source === "string" ? undefined : mkdtempSync(join(tmpdir(), "hw-handout-"));
   let renders = 0;
+  let label = options.chapterLabel;
   const render = async (pass: HandoutPass) => {
     renders++;
     if (typeof source === "string") {
@@ -193,14 +198,20 @@ export async function renderHandoutPdf(
       if (pass.toc) url.searchParams.set("toc", pass.toc.join(","));
       if (pass.flow) url.searchParams.set("flow", pass.flow);
       if (pass.notes) url.searchParams.set("notes", pass.notes);
+      if (label === undefined) {
+        const page = await fetch(url, { signal: AbortSignal.timeout(options.timeoutMs ?? 60_000) });
+        if (!page.ok) throw new Error(`renderHandoutPdf: ${url.href} answered ${page.status}`);
+        label = chapterLabelOf(await page.text());
+      }
       return renderPdf(url.href, pdfPath, options);
     }
     const file = join(dir!, "handout.html");
-    writeFileSync(file, await source(pass));
+    const html = await source(pass);
+    label ??= chapterLabelOf(html);
+    writeFileSync(file, html);
     return renderPdf(file, pdfPath, options);
   };
-  const label = (options.chapterLabel ?? "Chapter").trim();
-  const pagesOf = () => chapterPages(pdfPath, label);
+  const pagesOf = () => chapterPages(pdfPath, label!.trim());
   try {
     await render({});
     let toc = pagesOf();
@@ -235,6 +246,20 @@ export async function renderHandoutPdf(
   } finally {
     if (dir) rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/** The chapter eyebrow's word in a DocHandout page: the `--chapter-label` of its `data-hw-page`
+ *  style, a CSS string with its escapes read as Chrome reads them, or DocHandout's English one
+ *  where the page has none. */
+function chapterLabelOf(html: string): string {
+  const value =
+    /<style\b[^>]*\bdata-hw-page\b[^>]*>[^<]*?--chapter-label:\s*"((?:[^"\\]|\\.)*)"/.exec(
+      html,
+    )?.[1];
+  if (value === undefined) return "Chapter";
+  return value.replace(/\\(?:([\da-f]{1,6}) ?|(.))/gi, (_, hex?: string, char?: string) =>
+    hex ? String.fromCodePoint(parseInt(hex, 16)) : char!,
+  );
 }
 
 /** The 1-based page each chapter eyebrow ("CHAPTER 03") starts on, in chapter order, or undefined.
