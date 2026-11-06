@@ -37,7 +37,6 @@
   /* Text on a filled colour: night, teal, purple. */
   --on-dark: var(--color-white);
   --prompt: var(--color-green);
-  --gradient: linear-gradient(90deg, var(--color-teal), var(--color-purple));
   --shadow: var(--shadow-card);
 
   /* Every text takes one role through its shorthand, never a size or face of its own. */

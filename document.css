@@ -16,14 +16,14 @@
     padding-left: var(--side);
     font: var(--role-small);
     color: var(--muted);
-    background: var(--gradient) left top / calc(100% / 0.3) var(--rail) no-repeat;
+    background: var(--gradient-strip) left top / calc(100% / 0.3) var(--rail) no-repeat;
   }
   @top-right {
     width: 70%;
     padding-right: var(--side);
     font: var(--role-small);
     color: var(--muted);
-    background: var(--gradient) right top / calc(100% / 0.7) var(--rail) no-repeat;
+    background: var(--gradient-strip) right top / calc(100% / 0.7) var(--rail) no-repeat;
   }
   @bottom-left {
     padding-left: var(--side);
@@ -96,7 +96,7 @@ body {
   border-top: var(--strip) solid transparent;
   border-bottom: var(--rule) solid var(--line);
   background:
-    var(--gradient) top / 100% var(--strip) no-repeat border-box,
+    var(--gradient-strip) top / 100% var(--strip) no-repeat border-box,
     var(--tint) padding-box;
 }
 

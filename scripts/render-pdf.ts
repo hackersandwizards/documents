@@ -1,82 +1,26 @@
-import { type ChildProcess, execFile, execFileSync, spawn, spawnSync } from "node:child_process";
+import { type ChildProcess, execFile, spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import {
+  chromeArgs,
+  chromeBinary,
+  chromeBinaryAsync,
+  INSTALL_HINT,
+} from "@hackersandwizards/scaffolding/chrome";
 import { withElements } from "./elements";
 import { ROOT } from "./root";
 import { foreignStyles } from "./styles";
 
 const execFileAsync = promisify(execFile);
 
-// Only a found Chrome is kept: a failed install is tried again by the next call.
-let resolvedChrome: string | undefined;
-let installingChrome: Promise<string | undefined> | undefined;
-const chromeCache = () => process.env.PUPPETEER_CACHE_DIR ?? join(homedir(), ".cache", "puppeteer");
-const installArgs = (cache: string) => [
-  // Pinned: bunx runs the newest published release of an unpinned package.
-  "@puppeteer/browsers@3.2.6",
-  "install",
-  "chrome@stable",
-  "--path",
-  cache,
-  "--format",
-  "{{path}}",
-];
-
-/**
- * Chrome for Testing, the build puppeteer and playwright install, never the user's own Chrome: a
- * headless instance from `/Applications/Google Chrome.app` made macOS activate it instead of opening
- * the user's window (shown 2026-10-31). The newest build in puppeteer's cache, else installed there,
- * blocking: for a command. renderPdf installs without blocking, since it runs on the SSR request path.
- */
-export function chromeBinary(): string | undefined {
-  if (process.env.CHROME_BINARY) return process.env.CHROME_BINARY;
-  resolvedChrome ??= cachedChrome(chromeCache());
-  if (resolvedChrome) return resolvedChrome;
-  try {
-    const out = execFileSync("bunx", installArgs(chromeCache()), { encoding: "utf-8" }).trim();
-    return (resolvedChrome = out || undefined);
-  } catch {
-    return undefined;
-  }
-}
-
-async function chromeBinaryAsync(): Promise<string | undefined> {
-  if (process.env.CHROME_BINARY) return process.env.CHROME_BINARY;
-  resolvedChrome ??= cachedChrome(chromeCache());
-  if (resolvedChrome) return resolvedChrome;
-  installingChrome ??= execFileAsync("bunx", installArgs(chromeCache()), { encoding: "utf-8" })
-    .then(
-      ({ stdout }) => (resolvedChrome = stdout.trim() || undefined),
-      () => undefined,
-    )
-    .finally(() => (installingChrome = undefined));
-  return installingChrome;
-}
-
-function cachedChrome(cache: string): string | undefined {
-  const builds = join(cache, "chrome");
-  const exe =
-    process.platform === "darwin"
-      ? "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
-      : "chrome";
-  // @puppeteer/browsers 3 keeps a .metadata file beside the build folders.
-  return (existsSync(builds) ? readdirSync(builds, { withFileTypes: true }) : [])
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort((a, b) => b.localeCompare(a, "en", { numeric: true }))
-    .flatMap((build) =>
-      readdirSync(join(builds, build))
-        .filter((dir) => dir.startsWith("chrome-"))
-        .map((dir) => join(builds, build, dir, exe)),
-    )
-    .find((path) => existsSync(path));
-}
+/** The browser every render starts, from the one owner of Chrome discovery. */
+export { chromeBinary };
 
 /**
  * Runs in the printed copy. Chrome embeds every raster image at its source resolution: the 512px
@@ -120,13 +64,6 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
-const CHROME_FLAGS = [
-  "--headless",
-  "--disable-gpu",
-  // Chrome otherwise asks the macOS keychain for "Chromium Safe Storage", a dialog per launch.
-  "--use-mock-keychain",
-  "--password-store=basic",
-];
 /** The print settings. Chrome tags the PDF without being asked; the outline needs the flag. */
 const PRINT_PARAMS = {
   displayHeaderFooter: false,
@@ -147,16 +84,6 @@ const LAYOUT = "Promise.all(globalThis.hwLayout ?? []).then(() => true)";
 
 type RenderOptions = { timeoutMs?: number; warm?: boolean };
 
-async function requireChrome(): Promise<string> {
-  const chrome = await chromeBinaryAsync();
-  if (!chrome) {
-    throw new Error(
-      "Chrome for Testing is required to render PDFs: bunx @puppeteer/browsers@3.2.6 install chrome@stable --path ~/.cache/puppeteer, or set CHROME_BINARY.",
-    );
-  }
-  return chrome;
-}
-
 /**
  * Prints an HTML file, or a page an `http:` or `https:` URL serves, to PDF. `warm` prints in a
  * Chrome kept running for the next call, for a long-running caller such as an app route: a cold
@@ -168,7 +95,8 @@ export async function renderPdf(
   pdfPath: string,
   options: RenderOptions = {},
 ): Promise<void> {
-  const chrome = await requireChrome();
+  const chrome = await chromeBinaryAsync();
+  if (!chrome) throw new Error(INSTALL_HINT);
   const timeoutMs = options.timeoutMs ?? 60_000;
   if (/^https?:\/\//.test(htmlPath)) {
     rmSync(pdfPath, { force: true });
@@ -449,7 +377,7 @@ function pipeChrome(chrome: string) {
   const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
   const child = spawn(
     chrome,
-    [...CHROME_FLAGS, `--user-data-dir=${profile}`, "--remote-debugging-pipe", "about:blank"],
+    [...chromeArgs(profile), "--disable-gpu", "--remote-debugging-pipe", "about:blank"],
     { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] },
   );
   // Both pipes are missing when Chrome did not start; its `error` below then rejects every call.

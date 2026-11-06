@@ -3,8 +3,9 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { openComposer } from "../scripts/compose";
-import { chromeBinary, documentCss, renderPdf } from "../scripts/render-pdf";
+import { documentCss, renderPdf } from "../scripts/render-pdf";
 
 // DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
 // fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
@@ -134,7 +135,7 @@ afterAll(async () => {
 
 /** The case printed to PDF: its page count, and how far its content runs past the content box. */
 async function printCertificate(props: Record<string, unknown>) {
-  if (!chrome) throw new Error("Chrome for Testing is required; set CHROME_BINARY");
+  if (!chrome) throw new Error(INSTALL_HINT);
   const body = await composer.render("DocCertificate", props);
   const css = await composer.styles();
   // Runs after the component's own fit, which waits on the same promise.
@@ -161,17 +162,15 @@ async function printCertificate(props: Record<string, unknown>) {
     execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/Pages:\s+(\d+)/)![1],
   );
   writeFileSync(page, html(true));
-  // Its own profile, so it never attaches to a Chrome the user has open.
-  const flags = [
-    "--headless",
-    "--disable-gpu",
-    "--use-mock-keychain",
-    "--password-store=basic",
-    `--user-data-dir=${join(dir, "profile")}`,
-  ];
   const dom = execFileSync(
     chrome,
-    [...flags, "--virtual-time-budget=10000", "--dump-dom", `file://${page}`],
+    [
+      ...chromeArgs(join(dir, "profile")),
+      "--disable-gpu",
+      "--virtual-time-budget=10000",
+      "--dump-dom",
+      `file://${page}`,
+    ],
     { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
   );
   const overPt = Number(dom.match(/<pre id="fit-probe">([^<]*)<\/pre>/)![1]);

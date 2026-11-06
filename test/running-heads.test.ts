@@ -4,7 +4,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { composePage, openComposer } from "../scripts/compose";
-import { chromeBinary, documentCss, renderPdf } from "../scripts/render-pdf";
+import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
+import { documentCss, renderPdf } from "../scripts/render-pdf";
 import { handout, proposalDe, rateCard } from "../scripts/samples";
 
 // The running header holds the document's title on one line. The longest title on record is the

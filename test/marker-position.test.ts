@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
-import { chromeBinary } from "../scripts/render-pdf";
+import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
 
 // Every marker on the type pages (dist/types/, written by `bun run build`), measured on the pixels Chrome paints: a square's middle on
 // the middle of the x-height of the first line beside it (on the caps' middle beside capitals), a
@@ -153,8 +153,8 @@ async function inkEdge(png: string, scale: number, edge: Probe["edge"]): Promise
 let browser: Browser;
 beforeAll(async () => {
   const executablePath = chromeBinary();
-  if (!executablePath) throw new Error("Chrome for Testing is required; set CHROME_BINARY");
-  browser = await puppeteer.launch({ executablePath, headless: true });
+  if (!executablePath) throw new Error(INSTALL_HINT);
+  browser = await puppeteer.launch({ executablePath, headless: true, args: NO_KEYCHAIN });
 });
 afterAll(() => browser?.close());
 

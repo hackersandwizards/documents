@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { chromeBinary } from "../scripts/render-pdf";
+import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout, READOUT_TEXT } from "../scripts/survey-readout";
 
@@ -42,7 +42,7 @@ test("a bar takes the band of its printed mean", () => {
  * the first load listener) returns the string the test reads. */
 function probeDeck(html: string, probe: string): string {
   const chrome = chromeBinary();
-  if (!chrome) throw new Error("Chrome for Testing is required; set CHROME_BINARY");
+  if (!chrome) throw new Error(INSTALL_HINT);
   const script = `<script>addEventListener("load", () => {
     const pre = document.createElement("pre");
     pre.id = "probe";
@@ -56,11 +56,8 @@ function probeDeck(html: string, probe: string): string {
     const dom = execFileSync(
       chrome,
       [
-        "--headless",
+        ...chromeArgs(join(dir, "profile")),
         "--disable-gpu",
-        "--use-mock-keychain",
-        "--password-store=basic",
-        `--user-data-dir=${join(dir, "profile")}`,
         "--window-size=1280,720",
         "--virtual-time-budget=10000",
         "--dump-dom",

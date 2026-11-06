@@ -47,10 +47,10 @@ real name the rules cannot see fails there; those names never enter this repo.
   `globalThis.hwLayout`, which `renderPdf` waits for before it prints.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
   directory; the command composes one component from a props JSON, and `--serve` composes on
-  request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the Chrome flag set, the
-  document base baked into `<style data-hw-document>`, `composeDocument` and the font check
-  `assertBrandFonts`. `warm` on `composeDocument` and `renderPdf` keeps the composer and Chrome
-  running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
+  request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
+  Chrome and flags of scaffolding's `./chrome`, the document base baked into
+  `<style data-hw-document>`, `composeDocument` and the font check `assertBrandFonts`. `warm` on
+  `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
   page an `http(s)` URL serves. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
   with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a
   function composing the HTML; without poppler the first render stands and the result says so.
@@ -93,15 +93,17 @@ real name the rules cannot see fails there; those names never enter this repo.
   committed: the type pages link the brand files the preset's `copy` puts beside them, so they
   open from disk, and the tests, `brand-markers` and `brand-elements` read them there. The old
   addresses `/design-system/` and `/specimen/` redirect, and the former `/catalog/` pages forward.
-  Astro, Astrobook and scaffolding are dev dependencies for it alone, outside `files` and `exports`, so no consumer gets them.
+  Astro and Astrobook are dev dependencies for it alone, outside `files` and `exports`, so no
+  consumer gets them.
 
 A consumer reaches the engine through `exports` (`./tokens.css`, `./document.css`, `./onepager.css`,
 `./handout.css`, `./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`) and the `documents-compose`, `documents-privacy` and `documents-styles` commands, run as `bun run <command>`. Every other
 path is internal. `scaffolding.styles` in `package.json` lists `document.css` and `handout.css`, the
 stylesheets a consumer loads beside the components, which scaffolding's `check-coupling` then lets
 through. Renaming a command, changing its arguments or moving an exported file breaks
-consumers: the release commit names it and every consumer follows in the same pass. Astro and Vite
-are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the components from
+consumers: the release commit names it and every consumer follows in the same pass. Astro, Vite, brand
+and scaffolding (its `./chrome`, which `render-pdf.ts` imports at run time, so a consumer installs
+it beside its runtime dependencies) are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the components from
 `node_modules`.
 
 ## Commands
