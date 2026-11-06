@@ -104,7 +104,7 @@ through. Renaming a command, changing its arguments or moving an exported file b
 consumers: the release commit names it and every consumer follows in the same pass. Astro, Vite, brand
 and scaffolding (its `./chrome`, which `render-pdf.ts` imports at run time, so a consumer installs
 it beside its runtime dependencies) are peer dependencies, brand and scaffolding optional in
-`peerDependenciesMeta` so Bun never looks them up on the npm registry; `keywords: ["astro-component"]` makes Astro compile the components from
+`peerDependenciesMeta` so Bun never looks them up on the npm registry; `entities`, which `fitOnepager` decodes copy with, is the one runtime dependency; `keywords: ["astro-component"]` makes Astro compile the components from
 `node_modules`.
 
 ## Commands

@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -38,5 +39,8 @@ describe("fitOnepager", () => {
     writeFileSync(file, fit.html);
     await renderPdf(file, pdf);
     expect(() => assertBrandFonts(pdf)).not.toThrow();
+    // The control holds only while page 2 opens on the heading with the entity.
+    const page2 = execFileSync("pdftotext", ["-f", "2", "-l", "2", pdf, "-"], { encoding: "utf8" });
+    expect(page2.trimStart().toLowerCase()).toStartWith("schön zu wissen");
   }, 60_000);
 });

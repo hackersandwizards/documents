@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { decodeHTML } from "entities";
+import { decodeHTMLStrict } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
 import { ELEMENT_MAP, withElements } from "./elements";
 import { brandFile, inlineCss, renderPdf } from "./render-pdf";
@@ -14,19 +14,23 @@ function rule(css: string, pattern: RegExp, what: string) {
   return found;
 }
 
+// The brand's tokens, faces and document scale, read once a process: a fit composes up to 13
+// times, and the faces alone are about 0.3 MB to encode.
+let inlinedBrand: string | undefined;
+const brandBase = () =>
+  (inlinedBrand ??= [
+    readFileSync(brandFile("tokens.css"), "utf8").replace(/@theme\s*\{/, ":root {"),
+    // The faces as data URIs, resolved beside brand's exported print.css, as the document base
+    // carries them: the page reaches no brand path and renders anywhere.
+    inlineCss(brandFile("print.css")),
+    inlineCss(brandFile("document.css")),
+  ].join("\n"));
+
 /** The stylesheet ahead of the components' styles; the brand files inlined unless `link`. */
 function baseCss(link: boolean) {
   const documentCss = readFileSync(join(ROOT, "document.css"), "utf8");
   return [
-    ...(link
-      ? []
-      : [
-          readFileSync(brandFile("tokens.css"), "utf8").replace(/@theme\s*\{/, ":root {"),
-          // The faces as data URIs, resolved beside brand's exported print.css, as the document
-          // base carries them: the page reaches no brand path and renders anywhere.
-          inlineCss(brandFile("print.css")),
-          inlineCss(brandFile("document.css")),
-        ]),
+    ...(link ? [] : [brandBase()]),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
     // DocHeader's tag and DocCard are the brand's pill and card; the rest of the page keeps its own
     // forms (brand-elements.json, exception "onepager").
@@ -165,13 +169,11 @@ function topLevelBlocks(html: string): string[] {
   return blocks;
 }
 
-/** An HTML fragment or a page's extracted text as its words, lower case, on single spaces, so a
- * block's markup compares with the PDF's text: every named and numeric entity decoded. */
-const flatText = (text: string) =>
-  decodeHTML(text.replace(/<[^>]*>/g, " "))
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
+/** A page's extracted text as its words, lower case, on single spaces. */
+const flatText = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
+/** A block's markup as the words its PDF text shows: tags dropped, every entity decoded once,
+ * and only where it ends in `;`, as copy writes it. */
+const flatBlock = (html: string) => flatText(decodeHTMLStrict(html.replace(/<[^>]*>/g, " ")));
 
 const pdfPages = (pdf: string) =>
   Number(execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/^Pages:\s+(\d+)/m)?.[1]);
@@ -237,7 +239,7 @@ export async function fitOnepager(
           .split("\n")
           .find((l) => l.trim().length > 3) ?? "",
       );
-      const index = topLevelBlocks(page.html).findIndex((block) => flatText(block).includes(line));
+      const index = topLevelBlocks(page.html).findIndex((block) => flatBlock(block).includes(line));
       if (!line || index < 0)
         throw new Error(`fitOnepager: no block of "${page.title}" holds page 2's first line`);
       // The header is .page's first child, the first block its second.
@@ -254,7 +256,7 @@ export async function fitOnepager(
       }
       ({ pages } = await render(fit));
     }
-    return { html: await composeOnepager(composer, { ...page, fit }, brand), pages, fit };
+    return { html: readFileSync((await files(fit)).html, "utf8"), pages, fit };
   } finally {
     for (const { html } of renders.values()) rmSync(html, { force: true });
     rmSync(work, { recursive: true, force: true });
