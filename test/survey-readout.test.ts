@@ -11,6 +11,7 @@ test("every slide draws brand's hw-strip, whose rule the inlined brand files car
   const html = composeSurveyReadout(surveyReadout);
   expect(html.match(/class="strip hw-strip"/g)).toHaveLength(SLIDE_COUNT);
   expect(html).toMatch(/\.hw-strip\s*\{/);
+  expect(html).not.toMatch(/\/\*/);
 });
 
 test("a mark colour cannot open an attribute", () => {

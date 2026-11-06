@@ -33,6 +33,8 @@ describe("fitOnepager", () => {
     expect(fit.pages).toBe(2);
     expect(fit.fit.page2Start).toBeGreaterThan(2);
     expect(fit.html).not.toContain("tokens/fonts/");
+    // brand's comments name internal decisions; the page leaves the engine without any.
+    expect(fit.html).not.toMatch(/\/\*/);
     // Rendered from a folder holding no brand file: every face comes from the page itself.
     const file = join(work, "onepager.html");
     const pdf = join(work, "onepager.pdf");

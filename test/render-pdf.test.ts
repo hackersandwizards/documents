@@ -15,6 +15,7 @@ import { join } from "node:path";
 import {
   assertBrandFonts,
   bakeDocumentCss,
+  compactStyles,
   composeDocument,
   documentCss,
   renderPdf,
@@ -40,6 +41,45 @@ describe("documentCss", () => {
     expect(css).not.toMatch(/@theme\s*\{/);
     expect(css).toContain("--type-body-family: var(--font-sans);");
     expect(css).toContain("--type-body-size: 10pt;");
+  });
+});
+
+describe("compactStyles", () => {
+  const ext = "@font-face { font-family: X; src: url(x.woff2); unicode-range: U+0100-017F; }";
+  const arrows = "@font-face { font-family: X; src: url(a.woff2); unicode-range: U+21??; }";
+  const page = (body: string, css = "") =>
+    `<html><head><style data-hw-document>/* internal: panel 8.3 */${ext}${arrows}${css}</style></head><body>${body}</body></html>`;
+
+  it("drops every CSS comment and each face no character of the page falls in", () => {
+    const out = compactStyles(page("<p>Metadata: Muller</p>"));
+    expect(out).not.toContain("/*");
+    expect(out).not.toContain("U+0100");
+    expect(out).not.toContain("U+21??");
+  });
+
+  it("control: a character in a face's range keeps it, written as text, entity or CSS escape", () => {
+    // Text after "data:" is no data URI.
+    expect(compactStyles(page("<p>Metadata: Čaluk</p>"))).toContain("U+0100");
+    expect(compactStyles(page("<p>&#x10C;aluk</p>"))).toContain("U+0100");
+    expect(compactStyles(page("", 'li::before { content: "\\2192"; }'))).toContain("U+21??");
+    // text-transform: uppercase prints ÿ as Ÿ (U+0178), and i as İ (U+0130) in Turkish.
+    expect(compactStyles(page("<p>ÿ</p>"))).toContain("U+0100");
+    expect(compactStyles(page("<p>i</p>").replace("<html>", '<html lang="tr">'))).toContain(
+      "U+0100",
+    );
+    expect(compactStyles(page("<p>i</p>"))).not.toContain("U+0100");
+  });
+
+  it("leaves text and selectors alone: a face in the body, an escape past U+10FFFF, a comment between selectors", () => {
+    const shown = "<pre>@font-face { unicode-range: U+0100; } C:\\facade</pre>";
+    expect(compactStyles(page(shown))).toContain(shown);
+    expect(compactStyles(page("", ".a/* x */ .b { color: red; }"))).toContain(".a .b {");
+  });
+
+  it("keeps the base composed documents free of comments and of the latin-ext faces they never print", async () => {
+    const html = await composeDocument("DocRateCard", rateCard);
+    expect(html).not.toMatch(/\/\*/);
+    expect(html).not.toContain("U+0100");
   });
 });
 

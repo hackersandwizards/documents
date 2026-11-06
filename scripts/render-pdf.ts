@@ -8,6 +8,7 @@ import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { chromeArgs, chromeBinaryAsync, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
+import { decodeHTML } from "entities";
 import { withElements } from "./elements";
 import { ROOT } from "./root";
 import { foreignStyles } from "./styles";
@@ -100,7 +101,10 @@ const stableBytes = (pdf: Buffer): Buffer => {
  * promise of that work on `globalThis.hwLayout`, an array the first such script creates. The print
  * waits for every one, and a layout still pending at the timeout fails the render instead of
  * printing it half done. Chrome's `--print-to-pdf` printed at load, before the handout's
- * `document.fonts.ready` work in 2 of 8 runs (measured 02.11.2026), so no render uses it.
+ * `document.fonts.ready` work in 2 of 8 runs (measured 02.11.2026), so no render uses it. The
+ * faces need no wait: inlined, they printed in 72 of 72 renders, 8 in parallel with every core
+ * busy, a face first asked for after load included; a face taking 10 s over HTTP after load
+ * printed the fallback, which assertBrandFonts fails (measured 06.11.2026).
  */
 const LAYOUT = "Promise.all(globalThis.hwLayout ?? []).then(() => true)";
 
@@ -580,12 +584,16 @@ export function brandCss(): string {
 export const brandFile = (file: string) =>
   createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
 
-/** A stylesheet with its `@import`s inlined and its comments dropped: a brand file's comment shows
- * sample markup, such as a figure, that a baked document must not carry. */
+/** CSS without comments. The space after one goes only where a space, brace or semicolon comes
+ * before it: elsewhere it may part two selectors. */
+const stripComments = (css: string) =>
+  css.replace(/(^|[\s{};])\/\*[\s\S]*?\*\/\s*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+
+/** A stylesheet with its `@import`s inlined and its comments dropped, as documentCss and brandCss
+ * export it (compactStyles strips the pages these never reach). */
 export function inlineCss(path: string): string {
   const dir = dirname(path);
-  return readFileSync(path, "utf-8")
-    .replace(/\/\*[\s\S]*?\*\/\s*/g, "")
+  return stripComments(readFileSync(path, "utf-8"))
     .replace(/@import "([^"]+)";/g, (_, file: string) =>
       inlineCss(file.startsWith("@") ? createRequire(path).resolve(file) : join(dir, file)),
     )
@@ -595,6 +603,59 @@ export function inlineCss(path: string): string {
       (_, file: string) =>
         `url(data:font/woff2;base64,${readFileSync(join(dir, file)).toString("base64")})`,
     );
+}
+
+/** A code point from a CSS or JS escape; one past U+10FFFF is no character. */
+const escaped = (match: string, hex: string) => {
+  const point = parseInt(hex, 16);
+  return point <= 0x10ffff ? String.fromCodePoint(point) : match;
+};
+
+/** Every character a page can print: its markup and scripts with entities, CSS and JS escapes
+ * decoded, each in both cases of the page's `lang` for `text-transform` (Turkish prints i as İ), its base64
+ * data URIs aside. A character a script builds from computed values is not seen: its face is
+ * dropped and the PDF prints a fallback, which assertBrandFonts fails. */
+function printableCodePoints(html: string): Set<number> {
+  const lang = /<html\b[^>]*\blang="([\w-]+)"/i.exec(html)?.[1] ?? "en";
+  const text = decodeHTML(
+    html.replace(/data:[\w.+-]+\/[\w.+-]+(?:;[\w.=-]+)*;base64,[\w+/=]+/g, ""),
+  )
+    .replace(/\\([\da-f]{1,6})\s?/gi, escaped)
+    .replace(/\\u\{?([\da-f]{4,6})\}?/gi, escaped);
+  const points = new Set<number>();
+  for (const c of new Set(text))
+    for (const form of [c, c.toLocaleUpperCase(lang), c.toLocaleLowerCase(lang)])
+      for (const p of form) points.add(p.codePointAt(0)!);
+  return points;
+}
+
+/** Each style element's CSS, rewritten by `edit`. */
+const editStyles = (html: string, edit: (css: string) => string) =>
+  html.replace(
+    /(<style\b[^>]*>)([\s\S]*?)(?=<\/style>)/gi,
+    (_, open: string, css: string) => open + edit(css),
+  );
+
+/**
+ * A standalone page as it leaves the engine: its style elements without comments, which name
+ * Company OS decisions and review scores a client must never read, and without each face whose
+ * `unicode-range` holds no character of the page, which Chrome never loads there: brand's
+ * latin-ext, arrow and box-drawing faces were about 260 KB of every page (measured 06.11.2026).
+ */
+export function compactStyles(html: string): string {
+  const bare = editStyles(html, stripComments);
+  const points = [...printableCodePoints(bare)];
+  return editStyles(bare, (css) =>
+    css.replace(/@font-face\s*\{[^}]*\}\s*/g, (face) => {
+      const range = /unicode-range:\s*([^;}]+)/.exec(face)?.[1];
+      if (!range) return face;
+      const spans = range.split(",").map((r): [number, number] => {
+        const [lo = "", hi = lo] = r.trim().replace(/^U\+/i, "").split("-");
+        return [parseInt(lo.replace(/\?/g, "0"), 16), parseInt(hi.replace(/\?/g, "f"), 16)];
+      });
+      return points.some((p) => spans.some(([lo, hi]) => p >= lo && p <= hi)) ? face : "";
+    }),
+  );
 }
 
 const DOCUMENT_STYLE = /<style data-hw-document>[\s\S]*?<\/style>/;
@@ -615,9 +676,11 @@ export function bakeDocumentCss(html: string): string {
   const scaled = /<html\b[^>]*\bdata-hw-scale=/.test(html)
     ? html
     : html.replace(/<html\b/, '<html data-hw-scale="print"');
-  return withElements(scaled).replace(
-    DOCUMENT_STYLE,
-    () => `<style data-hw-document>\n${css}\n</style>`,
+  return compactStyles(
+    withElements(scaled).replace(
+      DOCUMENT_STYLE,
+      () => `<style data-hw-document>\n${css}\n</style>`,
+    ),
   );
 }
 

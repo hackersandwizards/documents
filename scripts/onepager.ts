@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { decodeHTMLStrict } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
 import { ELEMENT_MAP, withElements } from "./elements";
-import { brandFile, inlineCss, renderPdf } from "./render-pdf";
+import { brandFile, compactStyles, inlineCss, renderPdf } from "./render-pdf";
 import { ROOT } from "./root";
 
 function rule(css: string, pattern: RegExp, what: string) {
@@ -131,7 +131,7 @@ export async function composeOnepager(
     readFileSync(join(ROOT, "onepager.css"), "utf8"),
     fitCss(page.fit),
   ].join("\n");
-  return `<!doctype html>
+  return compactStyles(`<!doctype html>
 <html lang="${page.lang}" class="${fitClasses(page.fit)}" data-hw-scale="print">
 <head>
 <meta charset="UTF-8" />
@@ -145,7 +145,7 @@ ${style}
 ${body.trim()}
 </body>
 </html>
-`;
+`);
 }
 
 const ONEPAGER_ELEMENTS = ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b/.test(selector));

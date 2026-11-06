@@ -50,7 +50,9 @@ real name the rules cannot see fails there; those names never enter this repo.
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
   Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
   renumbered so one input prints the same bytes, the document base baked into
-  `<style data-hw-document>`, `composeDocument` and the font check `assertBrandFonts`. `warm` on
+  `<style data-hw-document>`, `compactStyles`, which every standalone page passes (baked, onepager,
+  survey readout): its styles without CSS comments, which name internal decisions, and without a
+  face whose `unicode-range` none of its characters fall in, `composeDocument` and the font check `assertBrandFonts`. `warm` on
   `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
   page an `http(s)` URL serves. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
   with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a

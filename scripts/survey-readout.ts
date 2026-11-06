@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fill } from "./fill";
-import { brandCss, brandFile } from "./render-pdf";
+import { brandCss, brandFile, compactStyles } from "./render-pdf";
 import { ROOT } from "./root";
 
 /** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
@@ -416,19 +416,21 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
 <link rel="stylesheet" href="${brand("elements/strip.css")}" />
 `
     : "";
-  return PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
-    .replace("__STYLE__", () => STYLE)
-    .replace("<style data-hw-readout>", () => `${links}<style data-hw-readout>`)
-    .replace('lang="en"', () => `lang="${esc(t.lang)}"`)
-    .replace("__TITLE__", () => esc(fill(t.documentTitle, { customer: customerName })))
-    .replace("__SLIDES__", () =>
-      slides
-        .replace(
-          "<!--LOCKUP-->",
-          () => `<img class="lockup" src="${lockup}" alt="hackers&amp;wizards" />`,
-        )
-        .replaceAll("<!--WORDMARK-->", () => wordmark),
-    );
+  return compactStyles(
+    PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
+      .replace("__STYLE__", () => STYLE)
+      .replace("<style data-hw-readout>", () => `${links}<style data-hw-readout>`)
+      .replace('lang="en"', () => `lang="${esc(t.lang)}"`)
+      .replace("__TITLE__", () => esc(fill(t.documentTitle, { customer: customerName })))
+      .replace("__SLIDES__", () =>
+        slides
+          .replace(
+            "<!--LOCKUP-->",
+            () => `<img class="lockup" src="${lockup}" alt="hackers&amp;wizards" />`,
+          )
+          .replaceAll("<!--WORDMARK-->", () => wordmark),
+      ),
+  );
 }
 
 /** The most ratings whose bars each fit "99 answers": seven collided in Chrome. */
