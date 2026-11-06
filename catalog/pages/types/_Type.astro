@@ -1,5 +1,6 @@
 ---
 import DocElements from "../../../components/DocElements.astro";
+import { brandHref } from "../../brand";
 import tokensCss from "../../../tokens.css?raw";
 import documentCss from "../../../document.css?raw";
 import handoutCss from "../../../handout.css?raw";
@@ -13,7 +14,6 @@ interface Props {
   css?: string;
 }
 const { title, lang = "de", sheet = "document", css = "" } = Astro.props;
-const BRAND = "../../node_modules/@hackersandwizards/brand";
 const local = (file: string) =>
   file.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^@import [^;]+;\n/gm, "");
 const base = `
@@ -29,14 +29,14 @@ ${local(tokensCss)}${local(documentCss)}${sheet === "handout" ? local(handoutCss
   <head>
     <meta charset="utf-8" />
     {title && <title>{title}</title>}
-    <link rel="icon" href={`${BRAND}/logos/favicon.ico`} sizes="32x32" />
-    <link rel="icon" href={`${BRAND}/logos/favicon.svg`} type="image/svg+xml" />
-    <link rel="stylesheet" href={`${BRAND}/generated/tokens.root.css`} />
-    <link rel="stylesheet" href={`${BRAND}/tokens/print.css`} />
-    <link rel="stylesheet" href={`${BRAND}/tokens/document.css`} />
-    <link rel="stylesheet" href={`${BRAND}/tokens/marker.css`} />
+    <link rel="icon" href={brandHref("logos/favicon.ico")} sizes="32x32" />
+    <link rel="icon" href={brandHref("logos/favicon.svg")} type="image/svg+xml" />
+    <link rel="stylesheet" href={brandHref("tokens.root.css")} />
+    <link rel="stylesheet" href={brandHref("print.css")} />
+    <link rel="stylesheet" href={brandHref("document.css")} />
+    <link rel="stylesheet" href={brandHref("marker.css")} />
     <style is:inline data-hw-document set:html={base} />
-    <link rel="stylesheet" href={`${BRAND}/elements/elements.css`} />
+    <link rel="stylesheet" href={brandHref("elements.css")} />
   </head>
   <body>
     <DocElements>
