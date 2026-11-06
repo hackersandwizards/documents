@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { decodeHTML } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
 import { ELEMENT_MAP, withElements } from "./elements";
 import { brandFile, inlineCss, renderPdf } from "./render-pdf";
@@ -14,17 +15,16 @@ function rule(css: string, pattern: RegExp, what: string) {
 }
 
 /** The stylesheet ahead of the components' styles; the brand files inlined unless `link`. */
-function baseCss(brand: string, link: boolean) {
+function baseCss(link: boolean) {
   const documentCss = readFileSync(join(ROOT, "document.css"), "utf8");
   return [
     ...(link
       ? []
       : [
           readFileSync(brandFile("tokens.css"), "utf8").replace(/@theme\s*\{/, ":root {"),
-          readFileSync(brandFile("print.css"), "utf8").replaceAll(
-            'url("fonts/',
-            `url("${brand}/tokens/fonts/`,
-          ),
+          // The faces as data URIs, resolved beside brand's exported print.css, as the document
+          // base carries them: the page reaches no brand path and renders anywhere.
+          inlineCss(brandFile("print.css")),
           inlineCss(brandFile("document.css")),
         ]),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
@@ -91,9 +91,10 @@ function fitCss(fit: OnepagerFit = {}): string {
 .page > :nth-child(n + ${start + 1}):not(${KEPT}) { margin-top: var(--air-gap, 0); }`;
 }
 
-/** The onepager as a standalone HTML page. `brand` is the brand package's folder as the page
- * reaches it; `link` links the brand's tokens, faces and favicon instead of inlining them, as the
- * catalog does, so a brand release leaves the page current. */
+/** The onepager as a standalone HTML page, the brand files and faces inlined. `link` links the
+ * brand's tokens, faces and favicon from `brand`, the brand package's folder as the page reaches
+ * it, as the catalog does, so a brand release leaves the page current; without `link`, `brand` is
+ * unused. */
 export async function composeOnepager(
   composer: Awaited<ReturnType<typeof openComposer>>,
   page: OnepagerPage,
@@ -122,7 +123,7 @@ export async function composeOnepager(
   });
   const body = withElements(rendered, ONEPAGER_ELEMENTS);
   const style = [
-    baseCss(brand, link),
+    baseCss(link),
     await composer.styles(),
     readFileSync(join(ROOT, "onepager.css"), "utf8"),
     fitCss(page.fit),
@@ -164,15 +165,10 @@ function topLevelBlocks(html: string): string[] {
   return blocks;
 }
 
-const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', nbsp: " " };
-const flat = (text: string) =>
-  text
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&#(x[\da-f]+|\d+);/gi, (e, n: string) => {
-      const code = Number(`0${n}`);
-      return code <= 0x10ffff ? String.fromCodePoint(code) : e;
-    })
-    .replace(/&(\w+);/g, (e, n: string) => ENTITIES[n] ?? e)
+/** An HTML fragment or a page's extracted text as its words, lower case, on single spaces, so a
+ * block's markup compares with the PDF's text: every named and numeric entity decoded. */
+const flatText = (text: string) =>
+  decodeHTML(text.replace(/<[^>]*>/g, " "))
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
@@ -187,7 +183,7 @@ const pdfPageText = (pdf: string, page: number) =>
  * again under `tight`, the fallback for copy not yet cut; on two pages, each page's free space
  * spent between its blocks, page 1's after the hero (lift) and page 2's after its first one (air),
  * each at the widest level that keeps two pages and leaves page 1's text as it was. `dir` is the
- * folder the page is rendered from, where `brand` resolves. Returns the page count: a caller that
+ * folder the fits are rendered in; `brand` is unused, since the faces are inlined. Returns the page count: a caller that
  * holds two pages as a limit fails on more. Needs Chrome for Testing and poppler (pdfinfo,
  * pdftotext), as renderPdf and assertBrandFonts do.
  */
@@ -236,23 +232,23 @@ export async function fitOnepager(
     let { pages, pdf } = await render(fit);
     if (pages > 2) ({ pages, pdf } = await render((fit = { tight: true })));
     if (pages === 2) {
-      const line = flat(
+      const line = flatText(
         pdfPageText(pdf, 2)
           .split("\n")
           .find((l) => l.trim().length > 3) ?? "",
       );
-      const index = topLevelBlocks(page.html).findIndex((block) => flat(block).includes(line));
+      const index = topLevelBlocks(page.html).findIndex((block) => flatText(block).includes(line));
       if (!line || index < 0)
         throw new Error(`fitOnepager: no block of "${page.title}" holds page 2's first line`);
       // The header is .page's first child, the first block its second.
       fit = { ...fit, page2Start: index + 2 };
-      const first = flat(pdfPageText(pdf, 1));
+      const first = flatText(pdfPageText(pdf, 1));
       for (const kind of ["lift", "air"] as const) {
         const base = fit;
         for (const level of LEVELS) await files({ ...base, [kind]: level });
         const tries = await Promise.all(LEVELS.map((level) => render({ ...base, [kind]: level })));
         for (const [i, level] of LEVELS.entries()) {
-          if (tries[i]!.pages !== 2 || flat(pdfPageText(tries[i]!.pdf, 1)) !== first) break;
+          if (tries[i]!.pages !== 2 || flatText(pdfPageText(tries[i]!.pdf, 1)) !== first) break;
           fit = { ...fit, [kind]: level };
         }
       }
