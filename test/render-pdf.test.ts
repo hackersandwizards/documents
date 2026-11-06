@@ -346,16 +346,16 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
 describe.skipIf(!chromeBinary())("the quote, a page with a table", () => {
   // Chrome names each table header cell by a DOM node id that differed between cold renders: 3
   // variants in 20 renders of this page (measured 06.11.2026), so one pair could still match.
-  it("writes the same bytes in every cold render, its header cells numbered from 1", async () => {
+  it("writes the same bytes in every render, cold or warm, its header cells numbered from 1", async () => {
     const quote = join(import.meta.dir, "..", "dist/types/quote/index.html");
-    const pdfs = [];
-    for (let i = 0; i < 6; i++) {
+    const pdfs: Buffer[] = [];
+    for (let i = 0; i < 7; i++) {
       const out = join(dir, `quote-${i}.pdf`);
-      await renderPdf(quote, out);
+      await renderPdf(quote, out, { warm: i === 6 });
       pdfs.push(readFileSync(out));
     }
     expect(pdfs[0].toString("latin1")).toContain("/ID (node00000001)");
-    for (const pdf of pdfs) expect(pdf.equals(pdfs[0])).toBe(true);
+    expect(pdfs.findIndex((pdf) => !pdf.equals(pdfs[0]))).toBe(-1);
   }, 60_000);
 });
 
