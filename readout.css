@@ -170,13 +170,14 @@ h2 {
 .glance {
   display: flex;
   gap: var(--deck-px-48);
-  align-items: center;
   flex: 1;
 }
+/* The sentence reading the score sits under it: under the chart's ratings it read as one more axis label. */
 .bignum {
   color: var(--band);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   min-width: var(--deck-px-300);
 }
 .bignum b {
@@ -190,56 +191,69 @@ h2 {
   color: var(--muted);
   margin-top: var(--deck-12);
 }
+.bignum .caption {
+  max-width: var(--deck-448);
+  margin-top: var(--deck-32);
+  line-height: var(--deck-leading-quote);
+}
 .glancedist {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
+/* The top padding holds the tallest bar's count. */
 .dscale {
   display: flex;
   gap: var(--deck-px-18);
-  align-items: flex-end;
   height: var(--deck-384);
+  padding-top: var(--deck-48);
 }
 .dcol {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%;
 }
+/* The hairline at its foot is the axis every bar stands on. */
 .dbarwrap {
+  position: relative;
   flex: 1;
   width: 100%;
   display: flex;
   align-items: flex-end;
+  border-bottom: var(--deck-hairline) solid var(--line-soft);
 }
 .dbar {
+  position: relative;
   height: var(--share);
+  min-height: var(--deck-px-3);
   background: var(--band);
   width: 100%;
-  border-radius: 0;
-  min-height: var(--deck-px-3);
 }
+/* A count rides on its bar; with no bar it sits on the axis in muted ink. */
 .dn {
+  position: absolute;
+  inset: auto 0 0;
+  text-align: center;
+  white-space: nowrap;
+  font-size: var(--deck-text-caption);
+  color: var(--muted);
+}
+.dbar .dn {
+  bottom: 100%;
+  margin-bottom: var(--deck-8);
   font-family: var(--stat-family);
   font-weight: var(--weight-bold);
   font-size: var(--deck-text-body);
-  margin-top: var(--deck-px-8);
+  color: var(--ink);
 }
 .dv {
-  font-size: var(--deck-text-caption);
-  color: var(--muted);
+  font-size: var(--deck-text-body);
+  margin-top: var(--deck-8);
 }
-/* Names the two number rows under the bars, on the axis side, which read as interchangeable without it. */
-.dcol.dkey {
-  flex: 0 0 auto;
-  align-items: flex-end;
-}
-.dkey .dn {
-  font-family: var(--sans);
-  font-weight: var(--weight-regular);
-  font-size: var(--deck-text-caption);
-  color: var(--muted);
-  line-height: var(--deck-leading-key);
+.axis {
+  text-align: center;
 }
 .caption {
   font-size: var(--deck-text-caption);

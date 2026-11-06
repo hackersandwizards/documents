@@ -47,7 +47,7 @@ export interface SurveyReadout {
 /** Every word the deck prints itself, in English. */
 export const READOUT_TEXT = {
   lang: "en",
-  documentTitle: "Survey Readout — {customer}",
+  documentTitle: "Survey Readout: {customer}",
   eyebrow: "Attendee Feedback Readout · Internal",
   days: "{days}-day training",
   responses: "responses",
@@ -59,10 +59,14 @@ export const READOUT_TEXT = {
   kicker: "Attendee feedback · {customer}",
   glance: "At a glance",
   overall: "/ {end} overall satisfaction",
-  distribution:
-    "Distribution across {n} responses — small sample, read the spread not the decimal.",
-  answersKey: "answers",
-  ratingKey: "rating",
+  /** Under the overall score, naming the bars beside it; no "small sample", which 65 responses are not. */
+  distribution: "Mean of {n} responses. The bars show the spread behind it.",
+  /** Over each bar of the overall distribution, and on the baseline for a rating nobody chose. */
+  answers: "{n} answers",
+  answer: "{n} answer",
+  axis: "Rating, {start} (low) to {end} (high)",
+  /** The axis of a scale too long for "{n} answers" over each bar, which then prints the count alone. */
+  axisCounts: "Answers per rating, {start} (low) to {end} (high)",
   completed: "completed",
   /** Submissions an attendee left before the end: they score nothing. */
   unfinished: "{n} unfinished, not scored",
@@ -70,18 +74,18 @@ export const READOUT_TEXT = {
   scores: "Scores by dimension",
   /** The scores slide's sections in order; the first takes a scale without a group. */
   groups: ["Content & format", "Trainer", "Confidence & application"],
-  noDimension: "No dimension resolved for this form — see Flags on the readout slide.",
+  noDimension: "No dimension resolved for this form. See Flags on the readout slide.",
   barKey: "Bar = mean on {start}–{end}",
   bandFrom: "from {value}",
   bandBelow: "below",
   overallScale: "Overall satisfaction (page 2): {start}–{end}",
   stripKey: "Strip = share of answers per rating",
   risks: "Biggest perceived risk for applying agentic engineering",
-  noRisk: "“{label}”: {n} ({share}%), not ranked as a risk",
+  noRisk: '"{label}": {n} ({share}%), not ranked as a risk',
   riskCaption: "Multi-select · {n} respondents · bar = share of respondents",
   liked: "What they liked",
   improve: "What to improve",
-  asked: "Asked: “{question}”",
+  asked: 'Asked: "{question}"',
   noAnswers: "No free-text responses.",
   more: "Longest answers first. + {n} more in the raw snapshot.",
   readout: "Readout",
@@ -294,10 +298,11 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
      <div class="glance">
        <div class="bignum" style="--band:${h.n ? figureColor(bandColor(h.mean, h)) : "inherit"}">
          <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>${esc(fill(t.overall, { end: h.end }))}</span>
+         ${h.n ? `<div class="caption">${esc(fill(t.distribution, { n: h.n }))}</div>` : ""}
        </div>
        <div class="glancedist">
          ${distScale(t, h)}
-         <div class="caption">${esc(fill(t.distribution, { n: h.n }))}</div>
+         <div class="caption axis">${esc(fill(h.dist.length > WORDED_BARS ? t.axisCounts : t.axis, h))}</div>
        </div>
      </div>
      <div class="glancefoot">
@@ -421,20 +426,24 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
     );
 }
 
+/** The most ratings whose bars each fit "99 answers": seven collided in Chrome. */
+const WORDED_BARS = 5;
+
 function distScale(t: ReadoutText, s: ReadoutScale): string {
   // Bars scale to the most-chosen value, so the chart uses its height: scaled to the total, the
   // tallest bar stood at 40% and the chart read as a strip under an empty band.
   const total = Math.max(1, ...s.dist);
-  const key = `<div class="dcol dkey"><div class="dbarwrap"></div><div class="dn">${esc(t.answersKey)}</div><div class="dv">${esc(t.ratingKey)}</div></div>`;
-  return `<div class="dscale">${key}${s.dist
+  return `<div class="dscale">${s.dist
     .map((c, i) => {
       const val = s.start + i;
-      const h = (c / total) * 100;
-      // A value nobody chose draws no bar: the sliver a minimum height kept read as a response.
+      // Each count says what it counts, over its bar, so no key column names the rows. A value
+      // nobody chose draws no bar, only its count on the baseline: a sliver read as a response.
+      const words = s.dist.length > WORDED_BARS ? "{n}" : c === 1 ? t.answer : t.answers;
+      const n = `<div class="dn">${esc(fill(words, { n: c }))}</div>`;
       const bar = c
-        ? `<div class="dbar" style="--share:${h}%;--band:${rampColor(val, s)}"></div>`
-        : "";
-      return `<div class="dcol"><div class="dbarwrap">${bar}</div><div class="dn">${c}</div><div class="dv">${val}</div></div>`;
+        ? `<div class="dbar" style="--share:${(c / total) * 100}%;--band:${rampColor(val, s)}">${n}</div>`
+        : n;
+      return `<div class="dcol"><div class="dbarwrap">${bar}</div><div class="dv">${val}</div></div>`;
     })
     .join("")}</div>`;
 }
