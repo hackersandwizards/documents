@@ -2,7 +2,6 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "bun:test";
 import { foreignStyles, rawInlineStyles } from "../scripts/styles";
 
@@ -48,7 +47,7 @@ describe("foreignStyles", () => {
       expect(foreignStyles(html)).toHaveLength(1);
     expect(
       foreignStyles(
-        `<link rel="stylesheet" href="${relative(TYPES, fileURLToPath(import.meta.resolve("@hackersandwizards/brand/print.css")))}">`,
+        `<link rel="stylesheet" href="${relative(TYPES, Bun.resolveSync("@hackersandwizards/brand/print.css", ROOT))}">`,
       ),
     ).toEqual([]);
     for (const source of [
