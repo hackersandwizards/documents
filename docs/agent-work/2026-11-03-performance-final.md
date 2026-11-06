@@ -65,3 +65,30 @@ were measured once.
 
 Every consumer now pins a release past v0.7.3: os v1.7.0, website v1.8.0, trainer-hub v1.8.1
 (read 06.11.2026).
+
+## Pixel check and device check
+
+- 19 PDF types, 36 pages at 150 dpi, before against after: 0 differing pixels (byte-identical
+  PNGs). The fitted onepager HTML is byte-identical.
+- Catalog home, the 19 type pages and four dashboards and stories at 1440, 1024 and 390: same
+  sizes, 0 differing pixels on 66 of 72 shots and 4-3,680 pixels of value 1 (anti-aliasing) on six,
+  on byte-identical builds.
+
+## What stays below 100
+
+- Catalog home: mobile performance 77, LCP 5.9 s. The LCP element is the foundations paragraph; its
+  text waits for brand's print faces (no `font-display`) while scaffolding's tile iframes load
+  172 requests. Brief for scaffolding: load the tile iframes lazily. Brief for brand: `font-display`
+  on the print faces would let text paint first, which changes what a PDF shows while fonts load
+  and needs its own pixel check.
+- Type pages: accessibility 95-97 (`landmark-one-main`; onepager `heading-order`) and SEO 91 (no
+  meta description). The type pages mirror `composePage` output, which is the print document, and
+  the onepager headings are consumer document markup. Left as they are on purpose.
+- Mobile performance 94-96 on Angebot and Handout: A4 pages laid out at print width on a phone.
+- Catalog SEO 91 and desktop accessibility 96 (`target-size`): scaffolding's catalog shell.
+
+## Assumptions
+
+- The type pages are print artefacts; adding a `<main>` or meta description there would change
+  the document, not the catalog.
+- The Pages emulation stands in for `hackersandwizards.github.io/documents/`.
