@@ -5,7 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { surveyReadout } from "../scripts/samples";
-import { composeSurveyReadout, READOUT_TEXT } from "../scripts/survey-readout";
+import { composeSurveyReadout, READOUT_TEXT, SLIDE_COUNT } from "../scripts/survey-readout";
+
+test("every slide draws brand's hw-strip, whose rule the inlined brand files carry", () => {
+  const html = composeSurveyReadout(surveyReadout);
+  expect(html.match(/class="strip hw-strip"/g)).toHaveLength(SLIDE_COUNT);
+  expect(html).toMatch(/\.hw-strip\s*\{/);
+});
 
 test("a mark colour cannot open an attribute", () => {
   const weak = surveyReadout.readout.weak;

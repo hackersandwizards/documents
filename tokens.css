@@ -92,6 +92,7 @@
   --hw-marker-gap: var(--list-marker-gap);
   --hw-marker-indent: var(--list-indent);
   --hw-marker-color: var(--accent);
+  --hw-strip: var(--strip);
   --wizard-lift: var(--logo-wizard-lift);
 
   --card-pad: calc(var(--card-pad-base) * var(--density));

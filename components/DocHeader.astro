@@ -41,7 +41,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
 ---
 
 <header class="doc-header">
-  <div class="strip hw-strip"></div>
+  <div class="strip hw-strip" aria-hidden="true"></div>
   <div class="brand">
     <div class="brand-name">
       <img src={lockup} alt="hackers&wizards" />
@@ -92,7 +92,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     background: var(--tint) padding-box;
   }
 
-  /* brand's strip (hw-strip, 6pt at the print scale) across the header's full bleed. */
+  /* brand's strip (hw-strip) across the header's full bleed. */
   .strip {
     position: absolute;
     inset: 0 calc(-1 * var(--side)) auto;
