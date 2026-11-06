@@ -108,7 +108,7 @@ const EN: typeof DE = {
 type Amount = string | { list: string; offer: string };
 interface Props {
   lang: "de" | "en";
-  /** The document title, "Angebot AG-12345-2026" or "Quote AG-12345-2026". */
+  /** The document title, "Angebot <number>" or "Quote <number>". */
   title: string;
   number: string;
   date: string;

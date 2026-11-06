@@ -4,12 +4,10 @@
 @import "./tokens.css";
 
 /* A document sets the boxes' content in its own style element, the page number aside. Nothing
-   repeats between them: a blind panel on the handout and the proposal (Claude, Codex; participant
-   and procurement) ranked that first, 44 of 50 against 28 for brand and title repeated
-   (2026-11-01). A margin box draws a face only if the page content loads it, so these use the
+   repeats between them: readers preferred that to brand and title repeated on every page. A margin
+   box draws a face only if the page content loads it, so these use the
    small role, whose face every body text loads. From page 2 the header's gradient strip returns
-   as a rail across the two top boxes: a blind A/B on the quote (Opus, Codex; brand and buyer)
-   preferred it 4 of 4, brand recognition +2 to +10 (2026-10-28). */
+   as a rail across the two top boxes, so a later page still reads as h&w's. */
 @page {
   @top-left {
     width: 30%;
@@ -137,8 +135,7 @@ body {
   color: var(--muted);
 }
 
-/* The header's filled CTA was tried first and dropped: two of three blind reviewers named it a
-   button shape that a title does not take. */
+/* No filled CTA shape: readers took it for a button, which a title is not. */
 .doc-tag {
   margin-bottom: var(--space-tag);
 }
@@ -317,9 +314,8 @@ tr.subtotal td {
   font-weight: var(--weight-semibold);
 }
 
-/* Teal marks money. Blind round 4 (os/docs/agent-work/2026-10-29-document-accents.md, 12 reviews
-   each): quote 89.4, hours document 90.2, against 74.0 and 77.5 for the purple figure. Teal on the
-   tint 4.69:1, the rule on white 5.54:1. */
+/* Teal marks money; readers preferred it to a purple figure. Teal on the tint 4.69:1, the rule on
+   white 5.54:1. */
 tr.total td {
   padding-top: var(--total-pad-top);
   padding-bottom: var(--space-cell);
@@ -333,8 +329,8 @@ tr.total td {
 
 /* A table holding a band (a total row; DocPriceTable's sums alike) reaches --band-bleed past the
    text edge on each side, rules and band included, and pads its outer cells by as much: the band
-   gets equal room left and right, and every row's text stays on the edge of the heading above
-   (Benedikt, 01.11.: the total sat indented and its amount ran into the band's right edge). */
+   gets equal room left and right, and every row's text stays on the edge of the heading above,
+   rather than the total sitting indented with its amount against the band's right edge. */
 table:has(tr.total) {
   width: calc(100% + 2 * var(--band-bleed));
   margin-inline: calc(-1 * var(--band-bleed));
@@ -380,7 +376,7 @@ tr.total td.num {
   display: grid;
   grid-template-columns: 1.45fr 0.8fr;
   gap: var(--space-lead);
-  /* Room below the title and lead, which sat cramped on the greeting (Benedikt, 2026-10-29). */
+  /* Room below the title and lead, which sat cramped on the greeting. */
   margin: var(--lead-margin);
 }
 
@@ -571,8 +567,7 @@ pre .prompt {
   color: var(--prompt);
 }
 
-/* No ligatures: JetBrains Mono would join -> and == into glyphs a reader cannot type (hub handout
-   review, 2026-10-28). */
+/* No ligatures: JetBrains Mono would join -> and == into glyphs a reader cannot type. */
 pre,
 code {
   font-variant-ligatures: none;

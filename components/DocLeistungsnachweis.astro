@@ -3,7 +3,7 @@
 // header, the meta box with its fields in one order, the hours table with its total, and the
 // client's confirmation. Hours only, never a rate, an amount or a price: those are the invoice's.
 // A month of 23 single-line rows still fits one page with the confirmation, 24 carry the
-// confirmation whole onto page 2 (measured 2026-10-29), so the rows are set tight.
+// confirmation whole onto page 2 (measured), so the rows are set tight.
 import DocConfirmation from "./DocConfirmation.astro";
 import DocHeader from "./DocHeader.astro";
 import DocTitle from "./DocTitle.astro";
@@ -44,7 +44,7 @@ const TEXT = {
 };
 
 interface Entry {
-  /** "01.07." for a day, or the period of a lump-sum item without days. */
+  /** The day as `DD.MM.`, or the period of a lump-sum item without days. */
   date: string;
   /** "Mi"; empty for a period row. */
   day?: string;

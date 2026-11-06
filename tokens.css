@@ -14,7 +14,7 @@
   --ink: var(--color-ink);
   --muted: var(--color-muted);
   /* Rules and card borders: border-strong, since at 70% zoom the pale border token read as no line
-     at all to both blind reviewers. */
+     at all. */
   --line: var(--color-border-strong);
   /* A track or a hairline that is not a rule: the deck's bars and separators. */
   --line-soft: var(--color-border);

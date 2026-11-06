@@ -233,8 +233,7 @@ h2 {
   width: 100%;
 }
 /* A count rides on its bar; with no bar it stands on the axis at the same gap, in the same type,
-   so a zero reads as a count and not as a note (blind panel 06.11.: same type 8.8, muted mono
-   8.4, small muted sans 6.2, noise 0.7). */
+   so a zero reads as a count and not as a note. */
 .dn {
   position: absolute;
   inset: auto 0 0;

@@ -2,8 +2,8 @@
    does with Tailwind's theme layer imported ahead of this file. */
 @import "./document.css";
 /* The handout prints on tokens.css's `handout` page box: 4 mm more top margin than the base's
-   14 mm, so the running header stands apart from the text under it: at 14 mm, reviewers read a
-   page's first heading as its header. */
+   14 mm, so the running header stands apart from the text under it: at 14 mm, a page's first
+   heading read as its header. */
 body {
   page: handout;
 }
@@ -33,8 +33,7 @@ body {
 
 /* A chapter opens a page, so a participant finds it by flicking. The exporter lets a chapter run
    on under the one before where a page would otherwise stay more than half empty, and the notes
-   where enough lines fit. Blind A/B, 28.10.2026: five of six reviewers preferred this to chapters
-   that all run on. */
+   where enough lines fit, which readers preferred to chapters that all run on. */
 section.chapter {
   counter-increment: chapter;
   break-before: page;
@@ -94,8 +93,7 @@ section h1::before {
 }
 
 /* A chapter title closes on the brand's short teal bar (hw-rule, DocHandout), not a grey rule: a
-   grey rule read as one more table line, or on the notes page as the first writing line. Blind
-   A/B, 28.10.2026: three of four reviewers preferred the bar. */
+   grey rule read as one more table line, or on the notes page as the first writing line. */
 section h1 {
   margin-bottom: var(--handout-title-space);
 }

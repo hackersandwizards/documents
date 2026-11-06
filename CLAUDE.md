@@ -21,7 +21,10 @@ today's words the default); the samples are fictitious and every euro figure in 
 figures only as placeholders, mail only on example domains or ours, no phone, IBAN or street but
 the imprint's and the invented ones, and every person or client in the samples' props from its
 `INVENTED` words. Company OS runs it with its real names as `--deny` terms in its own gate, so a
-real name the rules cannot see fails there; those names never enter this repo.
+real name the rules cannot see fails there; those names never enter this repo. A comment in a
+shipped file says what the code does and why, never its history: scores, review rounds, dates,
+decision or item ids, pointers to review notes and names go to the commit message or
+`docs/agent-work/` (`test/history.test.ts`).
 
 ## Layout
 
@@ -51,7 +54,7 @@ real name the rules cannot see fails there; those names never enter this repo.
   Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
   renumbered so one input prints the same bytes, the document base baked into
   `<style data-hw-document>`, `compactStyles`, which every standalone page passes (baked, onepager,
-  survey readout): its styles without CSS comments, which name internal decisions, and without a
+  survey readout): its styles without CSS comments, which a reader of the page never needs, and without a
   face whose `unicode-range` none of its characters fall in, `composeDocument` and the font check `assertBrandFonts`. `warm` on
   `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
   page an `http(s)` URL serves. `renderHandoutPdf` prints a `DocHandout` in passes, each read back

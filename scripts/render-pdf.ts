@@ -17,7 +17,7 @@ const execFileAsync = promisify(execFile);
 
 /**
  * Runs in the printed copy. Chrome embeds every raster image at its source resolution: the 512px
- * header logo shown 22.5pt wide was 56 KB of a 129 KB quote (measured 2026-10-28). Each image is
+ * header logo shown 22.5pt wide was 56 KB of a 129 KB quote (measured). Each image is
  * redrawn at twice its displayed size, as the smaller of PNG and, where opaque, JPEG. The new src
  * is set from the image's own load event, which holds the window's load, so the print waits for
  * every redraw; work after load raced the print (measured). A document without a `<title>`
@@ -69,10 +69,10 @@ const PRINT_PARAMS = {
 /**
  * Two renders of one input differ in two places, both rewritten here to the same length, which
  * keeps the cross-reference offsets. Chrome stamps the render time as `/CreationDate` and
- * `/ModDate` (42 PDF pairs, measured 06.11.2026): both are blanked, since a document's date is in
+ * `/ModDate` (42 PDF pairs, measured): both are blanked, since a document's date is in
  * its text, never in its metadata. And Chrome names each table header cell in the structure tree
  * `node` plus Blink's DOM node id, a counter other nodes draw on first: in a cold Chrome the quote's
- * ids started at 51, 52 or 53 (20 renders, measured 06.11.2026; images, CSS, favicons and a wait
+ * ids started at 51, 52 or 53 (20 renders measured; images, CSS, favicons and a wait
  * before the print changed nothing, a warm Chrome printed one variant). Each id becomes its rank,
  * so the order the ID tree is sorted by stays.
  */
@@ -101,10 +101,10 @@ const stableBytes = (pdf: Buffer): Buffer => {
  * promise of that work on `globalThis.hwLayout`, an array the first such script creates. The print
  * waits for every one, and a layout still pending at the timeout fails the render instead of
  * printing it half done. Chrome's `--print-to-pdf` printed at load, before the handout's
- * `document.fonts.ready` work in 2 of 8 runs (measured 02.11.2026), so no render uses it. The
+ * `document.fonts.ready` work in 2 of 8 runs (measured), so no render uses it. The
  * faces need no wait: inlined, they printed in 72 of 72 renders, 8 in parallel with every core
  * busy, a face first asked for after load included; a face taking 10 s over HTTP after load
- * printed the fallback, which assertBrandFonts fails (measured 06.11.2026).
+ * printed the fallback, which assertBrandFonts fails (measured).
  */
 const LAYOUT = "Promise.all(globalThis.hwLayout ?? []).then(() => true)";
 
@@ -113,7 +113,7 @@ type RenderOptions = { timeoutMs?: number; warm?: boolean };
 /**
  * Prints an HTML file, or a page an `http:` or `https:` URL serves, to PDF. `warm` prints in a
  * Chrome kept running for the next call, for a long-running caller such as an app route: a cold
- * Chrome costs about 0.55 s a render, the kept one about 0.1 s (measured 2026-11-02). It quits
+ * Chrome costs about 0.55 s a render, the kept one about 0.1 s (measured). It quits
  * after a minute without a render, and with the caller.
  */
 export async function renderPdf(
@@ -280,8 +280,7 @@ function extent(
  *  than open a page. A longer chapter runs on when the one before ends in the top half of its last
  *  page. A one-page chapter runs on when it fits whole there, with the 12 mm gap, or when the one
  *  before ends in its top third; otherwise it keeps its page, since running on would split it.
- *  Blind screen rounds, 28.10.2026: reviewers chose the top-third limit 6 to 0 over none, and
- *  disliked it at a half because chapters then opened low and ran over. */
+ *  Readers preferred the top-third limit to none; at a half, chapters open low and run over. */
 function flowing(pdf: string, toc: number[]): number[] {
   const mm = 72 / 25.4;
   const gap = 12 * mm;
@@ -344,7 +343,7 @@ function kept<T>(
   let inFlight = 0;
   let idle: ReturnType<typeof setTimeout> | undefined;
   // Chrome writes its profile while it shuts down, so the cleanup waits for the exit: removed at
-  // once, a profile was left behind in 1 of 10 runs (measured 2026-11-03). The caller's `exit`
+  // once, a profile was left behind in 1 of 10 runs (measured). The caller's `exit`
   // cannot wait, so `beforeExit` stops the child first and holds the caller until it is gone;
   // `exit` remains for a caller ending by process.exit.
   const stop = () => {
@@ -637,10 +636,10 @@ const editStyles = (html: string, edit: (css: string) => string) =>
   );
 
 /**
- * A standalone page as it leaves the engine: its style elements without comments, which name
- * Company OS decisions and review scores a client must never read, and without each face whose
- * `unicode-range` holds no character of the page, which Chrome never loads there: brand's
- * latin-ext, arrow and box-drawing faces were about 260 KB of every page (measured 06.11.2026).
+ * A standalone page as it leaves the engine: its style elements without comments, which a reader
+ * of the page never needs, and without each face whose `unicode-range` holds no character of the
+ * page, which Chrome never loads there: brand's latin-ext, arrow and box-drawing faces were about
+ * 260 KB of every page (measured).
  */
 export function compactStyles(html: string): string {
   const bare = editStyles(html, stripComments);
@@ -688,8 +687,8 @@ export function bakeDocumentCss(html: string): string {
  * A document component composed by `scripts/compose.ts` into a standalone, baked HTML string.
  * A child process, so no Vite server starts inside the caller, which may be the app's own; `cwd`
  * is the Astro project whose compiler it runs. `warm` keeps that process for the next call, for
- * a long-running caller: a fresh one costs about 0.5 s, the kept one a few ms (measured
- * 2026-11-02). It quits after a minute without a call, and with the caller.
+ * a long-running caller: a fresh one costs about 0.5 s, the kept one a few ms (measured).
+ * It quits after a minute without a call, and with the caller.
  */
 export async function composeDocument(
   name: string,
@@ -788,7 +787,7 @@ export function assertBrandFonts(pdfPath: string): void {
   if (foreign.length > 0) {
     throw new Error(`${pdfPath} fell back to a non-brand face:\n${foreign.join("\n")}`);
   }
-  // Chrome embeds colour emoji as Type 3 bitmaps whatever the source, measured 2026-10-28.
+  // Chrome embeds colour emoji as Type 3 bitmaps whatever the source (measured).
   const type3 = fonts.filter((line) => / Type 3 /.test(line) && !/AppleColorEmoji/.test(line));
   if (type3.length > 0) {
     throw new Error(`${pdfPath} embeds Type 3 faces, from a variable font:\n${type3.join("\n")}`);
