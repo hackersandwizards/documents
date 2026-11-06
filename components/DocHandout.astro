@@ -83,42 +83,45 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 ---
 
 <style is:inline data-hw-page set:html={pageCss}></style>
+{/* The print scale for the brand elements, also in a consumer route whose <html> sets none. */}
 <DocElements>
-  <div class="cover">
-    <DocHeader kind={kind} />
-    <div class="title">
-      <DocTitle title={client ? `${title}, ${client}` : title} subtitle={subtitle} />
+  <div data-hw-scale="print">
+    <div class="cover">
+      <DocHeader kind={kind} />
+      <div class="title">
+        <DocTitle title={client ? `${title}, ${client}` : title} subtitle={subtitle} />
+      </div>
+      {(company || date) && (
+        <DocRecipient
+          label={t.recipient}
+          company={company ?? t.noCompany}
+          lines={[]}
+          contact={{ label: t.date, name: date ?? t.noDate }}
+        />
+      )}
+      <div class="toc">
+        <span class="label">{t.contents}</span>
+        <ol>
+          {chapters.map((chapter, i) => (
+            <li>
+              <a class="toc-link" href={`#chapter-${i + 1}`}>
+                <span>{chapter.title}</span>
+                {toc[i] > 0 && <span class="page">{toc[i]}</span>}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
-    {(company || date) && (
-      <DocRecipient
-        label={t.recipient}
-        company={company ?? t.noCompany}
-        lines={[]}
-        contact={{ label: t.date, name: date ?? t.noDate }}
-      />
-    )}
-    <div class="toc">
-      <span class="label">{t.contents}</span>
-      <ol>
-        {chapters.map((chapter, i) => (
-          <li>
-            <a class="toc-link" href={`#chapter-${i + 1}`}>
-              <span>{chapter.title}</span>
-              {toc[i] > 0 && <span class="page">{toc[i]}</span>}
-            </a>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </div>
 
-  {chapters.map((chapter, i) => (
-    <section class="chapter" id={`chapter-${i + 1}`}>
-      <DocProse
-        html={`<h1>${htmlText(chapter.title)}<span class="hw-rule" data-variant="bar" aria-hidden="true"></span></h1>\n${chapter.html}`}
-      />
-    </section>
-  ))}
+    {chapters.map((chapter, i) => (
+      <section class="chapter" id={`chapter-${i + 1}`}>
+        <DocProse
+          html={`<h1>${htmlText(chapter.title)}<span class="hw-rule" data-variant="bar" aria-hidden="true"></span></h1>\n${chapter.html}`}
+        />
+      </section>
+    ))}
+  </div>
 </DocElements>
 
 <script is:inline data-notes={notes} data-flow={flow}>

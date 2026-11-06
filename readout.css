@@ -143,6 +143,8 @@ h2 {
   color: var(--muted);
   margin-top: var(--deck-24);
 }
+/* brand's stage settings for the rule, set here: the readout takes no data-hw-scale, whose stage
+   scale would also restyle its KPIs. */
 .cover-rule {
   --hw-rule-accent: var(--deck-6);
   --hw-rule-bar: var(--deck-160);
@@ -230,9 +232,9 @@ h2 {
   background: var(--band);
   width: 100%;
 }
-/* A count rides on its bar; with no bar it sits on the axis, in the same type, so a zero reads as a
-   count and not as a note (blind panel 06.11.: same type 8.8, muted mono 8.4, small muted sans 6.2,
-   noise 0.7). */
+/* A count rides on its bar; with no bar it stands on the axis at the same gap, in the same type,
+   so a zero reads as a count and not as a note (blind panel 06.11.: same type 8.8, muted mono
+   8.4, small muted sans 6.2, noise 0.7). */
 .dn {
   position: absolute;
   inset: auto 0 0;
