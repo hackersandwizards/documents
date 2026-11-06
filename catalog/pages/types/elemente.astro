@@ -51,6 +51,11 @@ const TILES: [string, string, string][] = [
     "Balken unter einem Kapiteltitel im Handout, Linie unter den Kennzahlen der Umfrage-Auswertung",
     '<h3>Kapiteltitel<span class="hw-rule" data-variant="bar" aria-hidden="true"></span></h3>',
   ],
+  [
+    "strip",
+    "Verlaufsstreifen über dem Kopf, dem Zertifikat und jeder Folie der Umfrage-Auswertung",
+    '<div class="hw-strip"></div>',
+  ],
   ["code", "Codeblock", '<pre><code><span class="prompt">$</span> bun run check</code></pre>'],
   [
     "kpi",
@@ -62,7 +67,6 @@ const SAMPLES: Record<string, string> = {
   "section-label": '<span class="section-label">Leistungen</span>',
   "margin-note":
     '<p><em>Im Handout: eine Notiz am Rand neben dem Text, mit lila Linie.</em> <a href="../handout/index.html">Handout öffnen</a></p>',
-  "doc-header": "<p><em>Kopf jeder Seite oben auf diesem Blatt.</em></p>",
   "survey-readout": '<p><a href="../survey-readout/index.html">Survey Readout öffnen</a></p>',
   onepager: '<p><a href="../onepager/index.html">Onepager öffnen</a></p>',
 };

@@ -18,7 +18,19 @@
     "dist/types/trainer-briefing/index.html",
     "dist/types/dokument/index.html"
   ],
-  "uses": ["label", "pill", "card", "callout", "quote", "table", "link", "code", "kpi", "rule"],
+  "uses": [
+    "label",
+    "pill",
+    "card",
+    "callout",
+    "quote",
+    "table",
+    "link",
+    "code",
+    "kpi",
+    "rule",
+    "strip"
+  ],
   "exceptions": {
     "total-band": {
       "reason": "Die Summenzeile auf dem teal Band, 12 % Tönung unter der starken Linie, jeder Betrag teal und 1,2-fach. Summenbänder bleiben je System (Entscheidung shared-elements, 01.11.2026); die Tabelle darin misst das Gate nicht.",

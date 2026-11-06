@@ -246,7 +246,7 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
  *  page counter beside the corner wordmark. */
 function slideShell(inner: string, kicker: string, page: number): string {
   return `<section class="slide">
-    <div class="strip"></div>
+    <div class="strip hw-strip"></div>
     <div class="sbody"><div class="kicker label-caps">${esc(kicker)}</div>${inner}</div>
     <footer class="chrome"><span class="page">${pad2(page)} / ${pad2(SLIDE_COUNT)}</span><!--WORDMARK--></footer>
   </section>`;
@@ -273,7 +273,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
   const rate = m.attendees ? Math.round((a.counts.completed / m.attendees) * 100) : null;
 
   const s1 = `<section class="slide title">
-    <div class="strip"></div>
+    <div class="strip hw-strip"></div>
     <div class="sbody center">
       <div class="eyebrow">${esc(t.eyebrow)}</div>
       <h1>${esc(customerName)}</h1>
@@ -412,6 +412,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
 <link rel="stylesheet" href="${brand}/tokens/marker.css" />
 <link rel="stylesheet" href="${brand}/elements/kpi.css" />
 <link rel="stylesheet" href="${brand}/elements/rule.css" />
+<link rel="stylesheet" href="${brand}/elements/strip.css" />
 `
     : "";
   return PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))

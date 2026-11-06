@@ -41,6 +41,7 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
 ---
 
 <header class="doc-header">
+  <div class="strip hw-strip"></div>
   <div class="brand">
     <div class="brand-name">
       <img src={lockup} alt="hackers&wizards" />
@@ -88,9 +89,13 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     inset: 0 calc(-1 * var(--side));
     border-top: var(--strip) solid transparent;
     border-bottom: var(--rule) solid var(--line);
-    background:
-      var(--gradient-strip) top / 100% var(--strip) no-repeat border-box,
-      var(--tint) padding-box;
+    background: var(--tint) padding-box;
+  }
+
+  /* brand's strip (hw-strip, 6pt at the print scale) across the header's full bleed. */
+  .strip {
+    position: absolute;
+    inset: 0 calc(-1 * var(--side)) auto;
   }
 
   /* The lockup at the print logo's height, the header row's mark, which sets its wordmark at 952 of

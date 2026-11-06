@@ -103,6 +103,7 @@ const topicClass = [
   }
 </style>
 <div class="certificate">
+  <div class="strip hw-strip"></div>
   <div class="header">
     <img src={lockup} alt="hackers&wizards" class="logo" />
   </div>
@@ -258,14 +259,9 @@ const topicClass = [
     text-align: center;
   }
 
-  .certificate::before {
-    content: "";
+  .strip {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--strip);
-    background: var(--gradient-strip);
+    inset: 0 0 auto;
   }
 
   .logo {

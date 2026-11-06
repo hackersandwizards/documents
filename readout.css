@@ -31,11 +31,11 @@ body {
 .slide:last-child {
   page-break-after: auto;
 }
+/* brand's strip (hw-strip) at the stage scale's height, set here as for the rule below. */
 .strip {
+  --hw-strip: var(--deck-12);
   position: absolute;
   inset: 0 0 auto;
-  height: var(--deck-12);
-  background: var(--gradient-strip);
 }
 .chrome {
   position: absolute;
