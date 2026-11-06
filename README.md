@@ -38,7 +38,9 @@ Bun fetches the `git+https://` form through GitHub's tarball API without a GitHu
 | `bun run documents-privacy [--deny <terms.txt>]`          | fails on private data in the package, and on each term of the file                                              |
 | `bun run documents-styles <file or dir>...`               | fails on a style in a document HTML file that the engine did not draw                                           |
 
-Astro and Vite are peer dependencies: the consumer's own copies compile the components.
+Astro, Vite, `@hackersandwizards/brand` and `@hackersandwizards/scaffolding` are peer dependencies:
+the consumer's own copies compile the components, and `./render-pdf` imports scaffolding's
+`./chrome` at run time, so a consumer installs scaffolding beside its runtime dependencies.
 
 ## Work on the package
 

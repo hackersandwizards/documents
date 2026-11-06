@@ -61,6 +61,8 @@ export const READOUT_TEXT = {
   overall: "/ {end} overall satisfaction",
   /** Under the overall score, naming the bars beside it; no "small sample", which 65 responses are not. */
   distribution: "Mean of {n} responses. The bars show the spread behind it.",
+  /** The same line for a single response, which has no mean and no spread. */
+  distributionOne: "From a single response, shown by the bar.",
   /** Over each bar of the overall distribution, and on the baseline for a rating nobody chose. */
   answers: "{n} answers",
   answer: "{n} answer",
@@ -298,7 +300,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: string): string {
      <div class="glance">
        <div class="bignum" style="--band:${h.n ? figureColor(bandColor(h.mean, h)) : "inherit"}">
          <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>${esc(fill(t.overall, { end: h.end }))}</span>
-         ${h.n ? `<div class="caption">${esc(fill(t.distribution, { n: h.n }))}</div>` : ""}
+         ${h.n ? `<div class="caption">${esc(fill(h.n === 1 ? t.distributionOne : t.distribution, { n: h.n }))}</div>` : ""}
        </div>
        <div class="glancedist">
          ${distScale(t, h)}

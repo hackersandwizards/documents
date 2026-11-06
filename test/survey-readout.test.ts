@@ -131,6 +131,16 @@ test("each rating says its count, an empty one without a bar", () => {
   expect(html).toContain("Rating, 1 (low) to 4 (high)");
 });
 
+test("a single response gets its own line under the overall score", () => {
+  const one = { ...surveyReadout.headline, n: 1, dist: [0, 0, 0, 1, 0] };
+  const html = composeSurveyReadout({ ...surveyReadout, headline: one });
+  expect(html).toContain(READOUT_TEXT.distributionOne);
+  expect(html).not.toContain("Mean of 1 responses");
+  expect(composeSurveyReadout(surveyReadout)).toContain(
+    `Mean of ${surveyReadout.headline.n} responses.`,
+  );
+});
+
 // Words the engine prints itself reach clients: no dash sets off a clause, quotes are straight.
 test("the engine's own words carry no em dash and no curly quote", () => {
   expect(JSON.stringify(READOUT_TEXT)).not.toMatch(/[—“”‘’]/);
