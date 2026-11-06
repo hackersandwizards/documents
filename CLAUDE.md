@@ -48,8 +48,8 @@ real name the rules cannot see fails there; those names never enter this repo.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
   directory; the command composes one component from a props JSON, and `--serve` composes on
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
-  Chrome and flags of scaffolding's `./chrome`, the render date blanked so one input prints the same
-  bytes, the document base baked into
+  Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
+  renumbered so one input prints the same bytes, the document base baked into
   `<style data-hw-document>`, `composeDocument` and the font check `assertBrandFonts`. `warm` on
   `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
   page an `http(s)` URL serves. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
