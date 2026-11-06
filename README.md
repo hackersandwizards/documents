@@ -40,7 +40,9 @@ Bun fetches the `git+https://` form through GitHub's tarball API without a GitHu
 
 Astro, Vite, `@hackersandwizards/brand` and `@hackersandwizards/scaffolding` are peer dependencies:
 the consumer's own copies compile the components, and `./render-pdf` imports scaffolding's
-`./chrome` at run time, so a consumer installs scaffolding beside its runtime dependencies.
+`./chrome` at run time, so a consumer installs scaffolding beside its runtime dependencies. Brand
+and scaffolding are optional peers, so Bun never looks them up on the npm registry: pin both from
+their Git tags.
 
 ## Work on the package
 

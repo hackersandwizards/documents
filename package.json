@@ -71,13 +71,21 @@
     "astro": "^7.4.4",
     "vite": "^8.3.5"
   },
+  "peerDependenciesMeta": {
+    "@hackersandwizards/brand": {
+      "optional": true
+    },
+    "@hackersandwizards/scaffolding": {
+      "optional": true
+    }
+  },
   "overrides": {
     "minimatch": "11.0.3"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.5.0",
-    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v1.7.0",
+    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v1.8.0",
     "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v2.7.3",
     "@types/bun": "1.4.4",
     "astro": "7.4.4",
