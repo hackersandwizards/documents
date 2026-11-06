@@ -1,6 +1,6 @@
 ---
 kind: decision
-status: open
+status: assumed
 priority: 3
 order: 50
 area: brand
@@ -15,7 +15,7 @@ options:
     detail: "The voice skill's ASCII rule gains a carve-out for documents the engine typesets (English `“…”`, German `„…“`), made in the agent-config hub first. Then this engine picks the marks by the readout's `lang` for noRisk and asked, and the test that bans curly quotes in the engine's words turns into one that requires the language's marks. os asserts them again."
 ---
 
-# Straight or typographic quotes in the survey readout?
+# Straight quotes stay in the survey readout (assumed; veto to switch)
 
 The survey readout quotes two things: the answer kept off the risk ranking (slide 4) and the
 question the form asked (slides 5 and 6). Since v1.1.0 it prints them with straight quotes. Before
