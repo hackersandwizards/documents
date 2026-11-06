@@ -18,9 +18,8 @@ export default defineConfig({
   build: { inlineStylesheets: "always" },
   compressHTML: false,
   redirects: {
-    "/": `${BASE}/catalog/`,
-    "/design-system": `${BASE}/catalog/`,
-    "/specimen": `${BASE}/catalog/`,
+    "/design-system": `${BASE}/`,
+    "/specimen": `${BASE}/`,
     ...Object.fromEntries(
       TYPES.map((t) => [`/specimen/${t.file}.html`, `${BASE}/types/${t.file}/index.html`]),
     ),

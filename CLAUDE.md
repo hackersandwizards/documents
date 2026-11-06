@@ -82,7 +82,7 @@ real name the rules cannot see fails there; those names never enter this repo.
 - `scripts/samples.ts`: the fictitious props the catalog and the tests share.
 - `catalog/`: the catalog, one Astro app in scaffolding's shell (`@hackersandwizards/scaffolding`,
   preset `catalog` in `catalog/astro.config.ts`, decision repo-uniformity-plan). Astrobook over
-  `catalog/stories` at `/catalog/`, the tiles grouped `Typen`, then `Komponenten`; each story
+  `catalog/stories` at the site's root, the tiles grouped `Typen`, then `Komponenten`; each story
   renders its component on an A4 sheet at the print scale (`Sheet.astro`). Every document type is
   an Astro page at `/types/<type>/index.html` (`catalog/pages/types/`, listed in `catalog/types.ts`): the
   component on `_Type.astro`, the document base as `composePage` prints it, and the elements page
@@ -92,8 +92,8 @@ real name the rules cannot see fails there; those names never enter this repo.
   component without a story or on no type page. `bun run build` writes it all to `dist/`, never
   committed: the type pages link the brand files the preset's `copy` puts beside them, so they
   open from disk, and the tests, `brand-markers` and `brand-elements` read them there. The old
-  addresses `/design-system/` and `/specimen/` redirect. Astro, Astrobook and scaffolding are dev
-  dependencies for it alone, outside `files` and `exports`, so no consumer gets them.
+  addresses `/design-system/` and `/specimen/` redirect, and the former `/catalog/` pages forward.
+  Astro, Astrobook and scaffolding are dev dependencies for it alone, outside `files` and `exports`, so no consumer gets them.
 
 A consumer reaches the engine through `exports` (`./tokens.css`, `./document.css`, `./onepager.css`,
 `./handout.css`, `./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`) and the `documents-compose`, `documents-privacy` and `documents-styles` commands, run as `bun run <command>`. Every other
@@ -117,8 +117,9 @@ are peer dependencies; `keywords: ["astro-component"]` makes Astro compile the c
   `brand-copies`, and `brand-elements`. The tests read `dist/`, so they run after the build, not
   among the shared steps. No hook runs the gate: `.githooks/pre-commit` runs `bun run check:staged`
   (scaffolding's `check-staged`). `bun install` points `core.hooksPath` at `.githooks/`.
-- `bun run dev` (or `bun run catalog`): serve the catalog at
-  `http://127.0.0.1:4330/documents/catalog/`, the type pages at `/documents/types/<type>/index.html`.
+- `bun run dev` (or `bun run catalog`): serve the catalog at `http://127.0.0.1:4330/`, the type
+  pages at `/types/<type>/index.html`. Dev serves at the root; the build keeps the Pages base
+  `/documents` and writes the type pages to `dist/types/`.
 - `bun run build`: write the catalog to `dist/`.
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
 - One test file: `bun test <file>`.

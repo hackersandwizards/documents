@@ -1,6 +1,7 @@
 ---
 // A document styles html and body, so the dashboard frames the story's own preview page, and the
 // stylesheets are inlined, since an import would load them on the dashboard too.
+import config from "virtual:astrobook/global-config.mjs";
 import { ELEMENT_MAP, withElements } from "../scripts/elements";
 import tokensCss from "../tokens.css?raw";
 import documentCss from "../document.css?raw";
@@ -15,8 +16,9 @@ interface Props {
 }
 const { pages = 1, sheet = "document" } = Astro.props;
 const path = Astro.url.pathname;
-const preview = path.includes("/catalog/stories/");
-const src = path.replace("/catalog/dashboard/", "/catalog/stories/");
+const trim = (s: string) => s.replace(/\/$/, "");
+const preview = path.startsWith(`${trim(config.storyBase)}/`);
+const src = path.replace(`${trim(config.dashboardBase)}/`, `${trim(config.storyBase)}/`);
 
 // Astrobook's layout styles body by class, so the document's body rules, its stylesheets' and its
 // components' page styles alike, move to the sheet's div.

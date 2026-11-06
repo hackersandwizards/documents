@@ -9,7 +9,7 @@ may not be public.
 
 The catalog shows every document type and component with invented data, and each type as a whole
 page at `/documents/types/<type>/index.html`. It is published at
-https://hackersandwizards.github.io/documents/catalog/ on every push to `main`; `bun run build`
+https://hackersandwizards.github.io/documents/ on every push to `main`; `bun run build`
 writes it to `dist/`, never committed.
 
 ## Use it in another repo
@@ -49,7 +49,7 @@ and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 ```sh
 git clone https://github.com/hackersandwizards/documents.git && cd documents
 bun install      # also points the git hooks at .githooks/
-bun run dev      # the catalog at http://127.0.0.1:4330/documents/catalog/
+bun run dev      # the catalog at http://127.0.0.1:4330/
 bun run check    # scaffolding's gate with the catalog build, then tests, markers, privacy, brand colours and elements
 ```
 
