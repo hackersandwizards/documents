@@ -15,11 +15,11 @@ import { join } from "node:path";
 import {
   assertBrandFonts,
   bakeDocumentCss,
-  chromeBinary,
   composeDocument,
   documentCss,
   renderPdf,
 } from "../scripts/render-pdf";
+import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { rateCard } from "../scripts/samples";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));

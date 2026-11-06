@@ -7,20 +7,12 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
-import {
-  chromeArgs,
-  chromeBinary,
-  chromeBinaryAsync,
-  INSTALL_HINT,
-} from "@hackersandwizards/scaffolding/chrome";
+import { chromeArgs, chromeBinaryAsync, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { withElements } from "./elements";
 import { ROOT } from "./root";
 import { foreignStyles } from "./styles";
 
 const execFileAsync = promisify(execFile);
-
-/** The browser every render starts, from the one owner of Chrome discovery. */
-export { chromeBinary };
 
 /**
  * Runs in the printed copy. Chrome embeds every raster image at its source resolution: the 512px
