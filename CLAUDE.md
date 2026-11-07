@@ -122,8 +122,8 @@ it beside its runtime dependencies) are peer dependencies, brand and scaffolding
   the confidential-terms and history checks, the catalog build and `admin-check` side by side, then this
   repository's steps from `scaffolding.check` in `package.json`: the tests (every component renders
   standalone, compose, the render and font checks, the certificate fit in Chrome, the base's class
-  list, the type pages), the brand's list-marker check on every type page with a marked list
-  (`check:markers`; the handout's numbered contents carry no marker), the privacy check
+  list, the type pages, the markers `brand-markers` leaves out: step numbers and squares outside a
+  list), `brand-markers` on every type page holding a `<ul>` (`check:markers`), the privacy check
   (`check:privacy`), the brand colour scan (`brand-colours.json` holds the exceptions) beside
   `brand-copies` and `brand-retired` over `dist/` (`check:retired`), and `brand-elements`. The
   tests read `dist/`, so they run after the build, not among the shared steps. No hook runs the

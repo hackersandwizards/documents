@@ -4,42 +4,28 @@ import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
 
-// Every marker on the type pages (dist/types/, written by `bun run build`), measured on the pixels Chrome paints: a square's middle
-// two thirds of the way from the x-height middle of the first line beside it to its cap-height
-// middle (the brand's --hw-marker-mid in marker.css; the caps' middle beside capitals), a step
-// number's baseline on that line's baseline. Markers drifted 1.2 to 3.4 px off for months
-// while every check passed, since only a render shows where they land. The line's first words
-// become "xxxxHHHH" beside a square, so the x's ink is the x-height band and the H's the cap-height
-// band (both the cap band under text-transform), and "xxxx" beside a step number.
-// Each page runs twice: as composed, and with a newline and indent opening every list item, as
-// hand-written HTML has it (30 of 43 os onepagers, 2026-11-01), where an inline-block marker kept
-// the newline as a space and pushed the first line 3.5 px right of the wrapped ones.
-const TOLERANCE = 0.6; // CSS px; the fix measured within 0.6 px at 600 dpi (2026-11-01)
-// A list's square, cut to the exact half ex (document.css), measured within 0.1 px (2026-11-01);
-// the lift rounded to whole pixels before sat up to 0.56 px off.
-const LIST_TOLERANCE = 0.25;
-const CAP_SHARE = 2 / 3; // brand's --hw-marker-mid: 1ex / 6 + 1cap / 3
+// The markers on the type pages (dist/types/, written by `bun run build`) that brand-markers leaves
+// out, measured on the pixels Chrome paints. `check:markers` runs brand-markers on every type page
+// holding a <ul>, which measures each list square and its item's first line; this test measures
+// the rest: a step number's baseline on its line's baseline (a numbered item's counter, a numeral
+// element in an item or heading), and a square outside a list (a section label's), whose middle
+// sits two thirds of the way from the x-height middle of its line to the cap-height middle, as
+// brand's --hw-marker-mid has it. The line's first words become "xxxxHHHH" beside a square, so the
+// x's ink is the x-height band and the H's the cap-height band, and "xxxx" beside a step number.
+const TOLERANCE = 0.6; // CSS px
+const LIST_TOLERANCE = 0.25; // CSS px, for a marker on a list item, as brand-markers holds them
+// brand-markers' CAP_SHARE, which brand does not export: --hw-marker-mid, 1ex / 6 + 1cap / 3.
+const CAP_SHARE = 2 / 3;
 const SCALE = 4;
 const TYPES = resolve(import.meta.dir, "..", "dist/types");
 const pages = readdirSync(TYPES);
 
 type Box = { x: number; y: number; width: number; height: number };
-type Probe = {
-  label: string;
-  edge: "middle" | "bottom";
-  marker: Box;
-  text: Box;
-  caps: Box | null;
-  indent: number;
-};
+type Probe = { label: string; edge: "middle" | "bottom"; marker: Box; text: Box; caps: Box | null };
 
-/** Runs in the page: rewrites the line beside each marker and returns the boxes to read, and for
- * a square marker how far its first line starts right of the item's content edge, where wrapped
- * lines start. `newline` first opens every list item with a newline and an indent. */
-function collect(newline: boolean): Probe[] {
-  if (newline)
-    for (const li of document.querySelectorAll("li"))
-      li.insertBefore(document.createTextNode("\n      "), li.firstChild);
+/** Runs in the page: rewrites the line beside each marker brand-markers leaves out and returns the
+ * boxes to read, with the count of list squares it left to brand-markers. */
+function collect(): { probes: Probe[]; listSquares: number } {
   const firstText = (el: Element) => {
     const list = el.closest("ul, ol");
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
@@ -60,10 +46,18 @@ function collect(newline: boolean): Probe[] {
         : 0;
   const label = (el: Element) =>
     `${el.tagName.toLowerCase()}.${el.className.toString().split(" ")[0]} "${el.textContent!.trim().slice(0, 30)}"`;
+  // A list item's square and its opening paragraph's are brand-markers' to measure.
+  const listItem = (el: Element) =>
+    el.tagName === "LI" || (el.tagName === "P" && el.parentElement?.tagName === "LI");
   const marked: { host: Element; text: Text; edge: Probe["edge"]; mark?: Element }[] = [];
+  let listSquares = 0;
   for (const host of document.querySelectorAll("body *")) {
     const before = getComputedStyle(host, "::before");
     const square = before.content === '""' && markerSize(before) > 0 && markerSize(before) <= 16;
+    if (square && listItem(host)) {
+      listSquares++;
+      continue;
+    }
     const counter = host.tagName === "LI" && /^counter\(/.test(before.content);
     if (!square && !counter) continue;
     const text = firstText(host);
@@ -97,11 +91,9 @@ function collect(newline: boolean): Probe[] {
     width: right - left,
     height: bottom - top,
   });
-  return marked.map(({ host, text, edge, mark }) => {
+  const probes = marked.map(({ host, text, edge, mark }) => {
     const t = rectOf(text, 4);
-    const c = edge === "middle" ? rectOf(text, 8, 4) : null;
     let marker: Box;
-    let indent = 0;
     if (mark) {
       const n = rectOf(mark.firstChild!);
       marker = box(n.left, n.right, n.top, n.bottom);
@@ -113,24 +105,17 @@ function collect(newline: boolean): Probe[] {
       const left =
         edge === "middle" ? right - markerSize(before) : host.getBoundingClientRect().left;
       marker = box(left - 1, right + 1, t.top - 3, t.bottom + 3);
-      if (edge === "middle" && host.closest("li")) {
-        const hostStyle = getComputedStyle(host);
-        indent =
-          t.left -
-          host.getBoundingClientRect().left -
-          parseFloat(hostStyle.borderLeftWidth) -
-          parseFloat(hostStyle.paddingLeft);
-      }
     }
+    const c = edge === "middle" ? rectOf(text, 8, 4) : null;
     return {
       label: label(host),
       edge,
       marker,
       text: box(t.left, t.right, t.top, t.bottom),
       caps: c && box(c.left, c.right, c.top, c.bottom),
-      indent,
     };
   });
+  return { probes, listSquares };
 }
 
 /**
@@ -178,12 +163,11 @@ beforeAll(async () => {
 });
 afterAll(() => browser?.close());
 
-/** A list square is held to its own tolerance, every other marker to the page-wide one. */
 const tolerance = (label: string) => (/^(li|p)\./.test(label) ? LIST_TOLERANCE : TOLERANCE);
 
-/** Each marker on a type page, how far it sits off its line in CSS px and how far its first
- * line starts right of the wrapped lines, after `css` is added. */
-async function measure(file: string, newline: boolean, css = "") {
+/** Each marker on a type page that brand-markers leaves out, how far it sits off its line in CSS
+ * px, after `css` is added, and how many list squares the page holds. */
+async function measure(file: string, css = "") {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width: 1100, height: 1400, deviceScaleFactor: SCALE });
@@ -198,75 +182,49 @@ async function measure(file: string, newline: boolean, css = "") {
         SCALE,
         edge,
       ));
-    const offsets: { label: string; offset: number; indent: number }[] = [];
-    for (const p of await page.evaluate(collect, newline)) {
+    const offsets: { label: string; offset: number }[] = [];
+    const { probes, listSquares } = await page.evaluate(collect);
+    for (const p of probes) {
       const x = await read(p.text, p.edge);
       const target = p.caps ? x + CAP_SHARE * ((await read(p.caps, p.edge)) - x) : x;
-      offsets.push({
-        label: p.label,
-        offset: (await read(p.marker, p.edge)) - target,
-        indent: p.indent,
-      });
+      offsets.push({ label: p.label, offset: (await read(p.marker, p.edge)) - target });
     }
-    return offsets;
+    return { offsets, listSquares };
   } finally {
     await page.close();
   }
 }
 
-// The survey readout writes its own markup, every item on one line, so it runs as composed only.
-const cases = pages.flatMap((file) =>
-  file === "survey-readout"
-    ? [[file, false]]
-    : [
-        [file, false],
-        [file, true],
-      ],
-) as [string, boolean][];
-
-test.each(cases)(
-  "%s (newline after <li>: %p): every marker sits on its line, first lines start on the wrapped ones",
-  async (file, newline) => {
-    const measured = await measure(file, newline);
-    const off = measured.filter((m) => Math.abs(m.offset) > tolerance(m.label));
+test.each(pages)(
+  "%s: every step number and every square outside a list sits on its line",
+  async (file) => {
+    const { offsets, listSquares } = await measure(file);
+    const off = offsets.filter((m) => Math.abs(m.offset) > tolerance(m.label));
     expect(off.map((m) => `${m.label}: ${m.offset.toFixed(2)} px`)).toEqual([]);
-    const indented = measured.filter((m) => Math.abs(m.indent) > TOLERANCE);
-    expect(indented.map((m) => `${m.label}: first line ${m.indent.toFixed(2)} px in`)).toEqual([]);
+    // check:markers takes the pages holding a <ul>; a list square elsewhere would go unmeasured.
+    if (listSquares)
+      expect(await Bun.file(join(TYPES, file, "index.html")).text()).toContain("<ul");
   },
   60_000,
 );
 
-// The control: a marker moved a pixel down on one page and up on the other must fail.
+// The controls: each kind of marker measured here, moved by a pixel, must fail.
 test.each([
-  ["onepager", 1],
-  ["dokument", -1],
+  ["angebot", "span.section-label", ".section-label::before { position: relative; top: 1px }"],
+  ["vorbereitung", "h3.", ".step { position: relative; top: -1px }"],
+  ["handout", "li.", "li::before { position: relative; top: 1px }"],
 ])(
-  "%s with every square marker moved by %d px fails",
-  async (file, px) => {
-    const moved = await measure(file, false, `li::before { position: relative; top: ${px}px }`);
-    const squares = moved.filter((m) => m.label.startsWith("li."));
-    expect(squares.length).toBeGreaterThan(0);
-    for (const m of squares) expect(Math.abs(m.offset)).toBeGreaterThan(TOLERANCE);
+  "%s with its %s marker moved by a pixel fails",
+  async (file, label, css) => {
+    const moved = (await measure(file, css)).offsets.filter((m) => m.label.startsWith(label));
+    expect(moved.length).toBeGreaterThan(0);
+    for (const m of moved) expect(Math.abs(m.offset)).toBeGreaterThan(tolerance(m.label));
   },
   60_000,
 );
 
-// The control for the list checks: document.css's marker before 2026-11-01, an inline-block lifted
-// by whole pixels, fails both on the onepager, off centre beyond the list tolerance as composed and
-// its first lines indented once a newline opens the items.
-const OLD_MARKER = `ul li::before, ul li > p:first-child::before { display: inline-block;
-  float: none; margin: 0 6pt 0 -12pt; transform: none;
-  vertical-align: round(calc(0.273em - var(--print-bullet) / 2), 1px) }`;
-
-test("onepager.html with the old inline-block marker fails centring and first-line alignment", async () => {
-  const composed = (await measure("onepager", false, OLD_MARKER)).filter((m) =>
-    m.label.startsWith("li."),
-  );
-  expect(composed.length).toBeGreaterThan(0);
-  for (const m of composed) expect(Math.abs(m.offset)).toBeGreaterThan(LIST_TOLERANCE);
-  const newline = (await measure("onepager", true, OLD_MARKER)).filter((m) =>
-    m.label.startsWith("li."),
-  );
-  expect(newline.length).toBeGreaterThan(0);
-  for (const m of newline) expect(m.indent).toBeGreaterThan(TOLERANCE);
+// The control for the page guard: a square on the handout's <ol> items, a page with no <ul>, counts.
+test("a square on a list item is counted on a page without a <ul>", async () => {
+  const css = `.toc li::before { content: ""; display: inline-block; width: 6px; height: 6px }`;
+  expect((await measure("handout", css)).listSquares).toBeGreaterThan(0);
 }, 60_000);

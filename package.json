@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "1.13.1",
+  "version": "1.13.2",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -59,7 +59,7 @@
     "check": "scaffolding check",
     "test": "bun test",
     "check:tests": "bun run test",
-    "check:markers": "brand-markers dist/types/angebot-ohne-preise/index.html dist/types/angebot/index.html dist/types/certificate/index.html dist/types/delivery-briefing/index.html dist/types/dokument/index.html dist/types/geheimhaltungsvereinbarung/index.html dist/types/honorarsaetze/index.html dist/types/leistungsnachweis-pauschal/index.html dist/types/onepager/index.html dist/types/quote/index.html dist/types/survey-readout/index.html dist/types/trainer-briefing/index.html dist/types/zertifikat/index.html",
+    "check:markers": "brand-markers $(grep -l '<ul' dist/types/*/index.html)",
     "check:privacy": "bun scripts/privacy.ts",
     "check:colours": "brand-colours",
     "check:copies": "brand-copies",
