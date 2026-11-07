@@ -3,19 +3,29 @@ import Home from "@hackersandwizards/scaffolding/catalog/Home.astro";
 import elements from "../brand-elements.json";
 import { TYPES } from "./types";
 
-const TYPES_URL = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/types/`;
+const ROOT = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/`;
+const TYPES_URL = `${ROOT}types/`;
 const exceptions = Object.entries(
   elements.exceptions as Record<string, string | { reason: string }>,
 ).map(([name, e]) => [name, typeof e === "string" ? e : e.reason]);
 ---
 
 <Home>
-  <Fragment slot="nav">
-    {/* prettier-ignore */}
-    <a class="hw-header-link" href="https://hackersandwizards.github.io/brand/">Brand</a>
-    {/* prettier-ignore */}
-    <a class="hw-header-link" href="https://hackersandwizards.github.io/slides/">Slides</a>
-  </Fragment>
+  {/* The published catalogs; aria-current marks this one. */}
+  <nav slot="nav" class="hw-header-nav" aria-label="Main">
+    <a class="hw-header-link" href="https://hackersandwizards.github.io/brand/">
+      Brand
+    </a>
+    <a class="hw-header-link" href="https://hackersandwizards.github.io/slides/">
+      Slides
+    </a>
+    <a class="hw-header-link" href={ROOT} aria-current="page">
+      Documents
+    </a>
+    <a class="hw-header-link" href="https://hackersandwizards.github.io/mail/">
+      Mail
+    </a>
+  </nav>
   <div class="foundations">
     {/* prettier-ignore */}
     <p>
@@ -57,7 +67,8 @@ const exceptions = Object.entries(
   </div>
 </Home>
 
-<style>
+{/* Global, so Astro stamps no scope attribute on the header links; .foundations is this page's alone. */}
+<style is:global>
   .foundations {
     margin-top: 1.5rem;
     max-width: 60rem;

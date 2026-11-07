@@ -27,7 +27,7 @@ export default defineConfig({
   },
   integrations: [
     catalog({
-      product: "Dokumente",
+      product: "Documents",
       lead: "Jeder Dokumenttyp der Engine @hackersandwizards/documents und die Komponenten, aus denen die Typen bestehen, auf A4 im Druckmaß. Alle Daten sind erfunden, jeder Betrag ist ein Platzhalter.",
       css: [
         // tokens.css holds an @theme block a browser skips: tokens.root.css is its :root twin.
