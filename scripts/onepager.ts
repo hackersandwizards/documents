@@ -14,32 +14,56 @@ function rule(css: string, pattern: RegExp, what: string) {
   return found;
 }
 
-// The brand's tokens, faces and document scale, read once a process: a fit composes up to 13
-// times, and the faces alone are about 0.3 MB to encode.
-let inlinedBrand: string | undefined;
-const brandBase = () =>
-  (inlinedBrand ??= [
-    readFileSync(brandFile("tokens.css"), "utf8").replace(/@theme\s*\{/, ":root {"),
+/** A brand file's text, its path added to `read`. */
+function brandText(file: string, read?: Set<string>) {
+  const path = brandFile(file);
+  read?.add(path);
+  return readFileSync(path, "utf8");
+}
+
+const brandBaseOf = (read?: Set<string>) =>
+  [
+    brandText("tokens.css", read).replace(/@theme\s*\{/, ":root {"),
     // The faces as data URIs, resolved beside brand's exported print.css, as the document base
     // carries them: the page reaches no brand path and renders anywhere.
-    inlineCss(brandFile("print.css")),
-    inlineCss(brandFile("document.css")),
-  ].join("\n"));
+    inlineCss(brandFile("print.css"), read),
+    inlineCss(brandFile("document.css"), read),
+  ].join("\n");
 
-/** The stylesheet ahead of the components' styles; the brand files inlined unless `link`. */
-function baseCss(link: boolean) {
+// The brand's tokens, faces and document scale, read once a process: a fit composes up to 13
+// times, and the faces alone are about 0.3 MB to encode. A `read` set reads them again to fill it.
+let inlinedBrand: string | undefined;
+const brandBase = (read?: Set<string>) =>
+  read ? brandBaseOf(read) : (inlinedBrand ??= brandBaseOf());
+
+/** The stylesheet ahead of the components' styles; the brand files inlined unless `link`. Each
+ * brand file it reads goes into `read`. */
+function baseCss(link: boolean, read?: Set<string>) {
   const documentCss = readFileSync(join(ROOT, "document.css"), "utf8");
   return [
-    ...(link ? [] : [brandBase()]),
+    ...(link ? [] : [brandBase(read)]),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
     // DocHeader's tag and DocCard are the brand's pill and card; the rest of the page keeps its own
     // forms (brand-elements.json, exception "onepager").
-    inlineCss(brandFile("elements.css")),
+    inlineCss(brandFile("elements.css"), read),
     // Every h&w document draws the identical list marker: the brand's rule, switched on in
     // tokens.css above, and the base's list indent, never a copy.
-    readFileSync(brandFile("marker.css"), "utf8"),
+    brandText("marker.css", read),
     rule(documentCss, /^ul li \{[\s\S]*?^\}/m, "`ul li` rule holding the list indent"),
   ].join("\n");
+}
+
+let brandFiles: string[] | undefined;
+
+/** Every brand file a render of the standalone onepager (composeOnepager without `link`, and so
+ * fitOnepager) reads, as absolute paths, sorted: those baseCss reads, the faces among them, and
+ * the lockup DocHeader inlines. A consumer hashes this list to tell whether a brand raise changes
+ * its onepagers. Read once a process, as the brand base is. */
+export function onepagerBrandFiles(): string[] {
+  if (brandFiles) return [...brandFiles];
+  const read = new Set([brandFile("logos/lockup.svg")]);
+  baseCss(false, read);
+  return [...(brandFiles = [...read].sort())];
 }
 
 /** The brand's tokens, faces and favicon as links, as every type page in the catalog carries them;

@@ -63,7 +63,8 @@ decision or item ids, pointers to review notes and names go to the commit messag
 - `onepager.css` and `scripts/onepager.ts`: the training-offering onepager's own stylesheet,
   `composeOnepager`, which composes `DocOnepager` on it instead of the whole document base, and
   `fitOnepager`, which renders it and picks the fit (tight, page-2 start, lift and air levels) that
-  keeps it on two pages.
+  keeps it on two pages. `onepagerBrandFiles` lists every brand file that render reads, for a
+  consumer that hashes them; `test/onepager-trace.ts` traces a render to hold the list exact.
 - `handout.css` and `components/DocHandout.astro`: the printed training handout, the document base
   plus its own layout (margin notes, cover with contents, chapter openings) and the script that
   keeps headings with their blocks; `scripts/handout.ts` exports its own words, `HANDOUT_TEXT`, per

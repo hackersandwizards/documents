@@ -46,3 +46,12 @@ describe("fitOnepager", () => {
     expect(page2.trimStart().toLowerCase()).toStartWith("schön zu wissen");
   }, 60_000);
 });
+
+describe("onepagerBrandFiles", () => {
+  // The trace mocks node:fs, so it runs in its own process; a failed expect fails the command.
+  it("lists exactly the brand files a traced render reads", () => {
+    expect(() =>
+      execFileSync("bun", ["test", "./test/onepager-trace.ts"], { cwd: ROOT, timeout: 55_000 }),
+    ).not.toThrow();
+  }, 60_000);
+});

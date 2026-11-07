@@ -633,19 +633,21 @@ const stripComments = (css: string) =>
   css.replace(/(^|[\s{};])\/\*[\s\S]*?\*\/\s*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
 
 /** A stylesheet with its `@import`s inlined and its comments dropped, as documentCss and brandCss
- * export it (compactStyles strips the pages these never reach). */
-export function inlineCss(path: string): string {
+ * export it (compactStyles strips the pages these never reach). Each file it reads, the faces
+ * included, goes into `read`. */
+export function inlineCss(path: string, read?: Set<string>): string {
   const dir = dirname(path);
+  read?.add(path);
   return stripComments(readFileSync(path, "utf-8"))
     .replace(/@import "([^"]+)";/g, (_, file: string) =>
-      inlineCss(file.startsWith("@") ? createRequire(path).resolve(file) : join(dir, file)),
+      inlineCss(file.startsWith("@") ? createRequire(path).resolve(file) : join(dir, file), read),
     )
     .replace(/@theme\s*\{/g, ":root {")
-    .replace(
-      /url\("(fonts\/[^"]+)"\)/g,
-      (_, file: string) =>
-        `url(data:font/woff2;base64,${readFileSync(join(dir, file)).toString("base64")})`,
-    );
+    .replace(/url\("(fonts\/[^"]+)"\)/g, (_, file: string) => {
+      const face = join(dir, file);
+      read?.add(face);
+      return `url(data:font/woff2;base64,${readFileSync(face).toString("base64")})`;
+    });
 }
 
 /** A code point from a CSS or JS escape; one past U+10FFFF is no character. */
