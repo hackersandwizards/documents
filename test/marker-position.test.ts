@@ -76,8 +76,15 @@ function collect(newline: boolean): Probe[] {
     const text = next && (next instanceof Text ? next : firstText(next as Element));
     if (text) marked.push({ host: mark.parentElement!, text, edge: "bottom", mark });
   }
-  for (const m of marked)
+  for (const m of marked) {
     m.text.data = (m.edge === "middle" ? "xxxxHHHH " : "xxxx ") + m.text.data.trimStart();
+    // An underline or shadow would add ink below the bands; an ancestor's decoration reaches
+    // every descendant, so it goes on each element from the text up to the host.
+    for (let el = m.text.parentElement; el && el !== m.host.parentElement; el = el.parentElement) {
+      el.style.textDecorationLine = "none";
+      el.style.textShadow = "none";
+    }
+  }
   const rectOf = (node: Node, end?: number, start = 0) => {
     const range = document.createRange();
     range.setStart(node, start);
