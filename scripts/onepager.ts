@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { decodeHTMLStrict } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
-import { ELEMENT_MAP, type Edit, withElements } from "./elements";
+import { CARD_AND_TAG, type Edit, withElements } from "./elements";
 import { languageTag } from "./fill";
 import { brandFile, compactStyles, inlineCss, renderPdf } from "./render-pdf";
 import { ROOT } from "./root";
@@ -177,29 +177,28 @@ ${body.trim()}
 `);
 }
 
-/** The brand's elements on the onepager's blocks: DocHeader's tag and DocCard from the document
- * map, then the labels, the boxes as callouts, the testimonial as a quote and the figures' chips as
- * pills. The hero is night, so its claim takes the label's night colour. */
+const BOXES = [".cover-box", ".goals-box", ".proof-box", ".scope-box"];
+
+/** The brand's elements on the onepager's blocks: DocCard and DocHeader's tag, the labels, the boxes
+ * as callouts, the testimonial as a quote and the figures' chips as pills. The hero is night, so
+ * its claim takes the label's night colour. */
 const ONEPAGER_ELEMENTS: Edit[] = [
-  ...ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b/.test(selector)),
+  ...CARD_AND_TAG,
   [".hero", undefined, { "data-theme": "dark" }],
   [
-    [
-      ".label, .hero > .claim, .price-label, .proof-label, .facts dt, .planning h3, .planning dt",
-      ".module h3, .deliverable-banner h3, .kpi-section h3, .pricing-section h3",
-      ".cover-box > h3, .goals-box > h3, .proof-box > h3, .scope-box > h3",
-      ".testimonial cite, .references strong",
-    ].join(", "),
+    ".label, .hero > .claim, .price-label, .proof-label, .facts dt, .planning > h3, " +
+      ".deliverable-banner > h3, .pricing-section > h3, .testimonial > cite, .references > strong, " +
+      ".references-lead > strong",
     "hw-label",
   ],
-  [".module h3", undefined, { "data-hue": "purple" }],
-  [".kpi-section h3", undefined, { "data-tone": "ink" }],
+  [".module > h3", "hw-label", { "data-hue": "purple" }],
+  [".kpi-section > h3", "hw-label", { "data-tone": "ink" }],
   [
-    ".facts .details dt, .planning dt, .cover-box > h3, .goals-box > h3, .proof-box > h3, .scope-box > h3",
-    undefined,
+    [".facts .details dt", ".planning dt", ...BOXES.map((box) => `${box} > h3`)].join(", "),
+    "hw-label",
     { "data-tone": "muted" },
   ],
-  [".cover-box, .goals-box, .proof-box, .scope-box", "hw-callout"],
+  [BOXES.join(", "), "hw-callout"],
   [".testimonial", "hw-quote"],
   [".kpi-item", "hw-pill"],
   // An exception of the engine's own, listed with its reason in brand-elements.json.

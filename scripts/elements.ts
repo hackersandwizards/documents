@@ -1,13 +1,18 @@
 export type Edit = [selector: string, cls?: string, attrs?: Record<string, string>];
 
-// In order: a later entry's attribute wins where two match one element.
-export const ELEMENT_MAP: Edit[] = [
+/** DocCard and DocHeader's tag, which the onepager shares with the document base. */
+export const CARD_AND_TAG: Edit[] = [
   [".card, .panel, .prepared", "hw-card"],
   [".card.tint, .card.accent, .panel.soft, .prepared", undefined, { "data-variant": "tint" }],
+  [".doc-tag", "hw-pill", { "data-caps": "" }],
+];
+
+// In order: a later entry's attribute wins where two match one element.
+export const ELEMENT_MAP: Edit[] = [
+  ...CARD_AND_TAG,
   [".callout, .note", "hw-callout"],
   [".outcome", undefined, { "data-hue": "purple" }],
   [".chip", "hw-pill"],
-  [".doc-tag", "hw-pill", { "data-caps": "" }],
   [".eyebrow", "hw-label"],
   [".label", "hw-label", { "data-tone": "ink" }],
   [".note > .label, .callout > .label", undefined, { "data-tone": "muted" }],

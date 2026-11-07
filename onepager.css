@@ -1,11 +1,14 @@
+/* The brand elements' settings: cards and callouts at the card padding, pills at the chip's, as in
+   the document base. */
 .onepager {
   --side: var(--op-side);
   --hw-card-pad: var(--card-pad);
   --hw-callout-pad: calc(var(--card-pad) * var(--op-box-pad)) var(--card-pad);
+  --hw-pill-pad: var(--chip-pad);
 }
 
 /* A block's labels and pills at the type roles' size, which --density narrows under .tight; the
-   header's tag keeps the family's. */
+   header's tag keeps the print scale's. */
 .page > :not(.doc-header) {
   --hw-label-size: calc(var(--label-size) * var(--density));
   --hw-pill-size: calc(var(--small-size) * var(--density));
@@ -182,8 +185,6 @@ ul {
 .format-box h3,
 .company-grid h3,
 .contrast-col h4 {
-  color: var(--ink);
-  text-transform: none;
   margin-bottom: var(--op-3);
 }
 
@@ -503,7 +504,6 @@ ul {
 
 .testimonial p {
   font-weight: var(--weight-medium);
-  color: var(--ink);
 }
 
 .testimonial cite {
