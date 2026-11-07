@@ -53,14 +53,14 @@ The catalog home's previews cause its mobile score. Control: the same build with
 iframes removed scores 94 on mobile (FCP 2.1 s) and 100 on desktop. Each preview is a story page
 of about 94 KB gzipped: 46 KB the lockup as a data URI (brand's `lockup.svg` embeds a PNG), 39 KB
 inline CSS (`inlineStylesheets: "always"`, which the type pages need to open from disk), 8 KB the
-rest. Neither cause belongs to this repository; the briefs are below.
+rest. Since v1.20.0 the header carries brand's `lockup-screen.svg`: the same story page
+(`dist/stories/Types/doc-proposal/angebot-mit-staffel-und-unterschrift/index.html`) is 68 KB
+gzipped, 17 KB of it the lockup. The preview iframes do not belong to this repository; the brief
+is below.
 
 ## Open in other repositories
 
-- brand: `logos/lockup.svg` carries the wizard as an embedded PNG, 46 KB gzipped in every document
-  and catalog preview that inlines the header. A vector wizard or a smaller raster shrinks every
-  composed document. Measure: gzip size of `dist/stories/Typen/doc-proposal/angebot/index.html`.
-  brand does not export the marker's cap share (`--hw-marker-mid`, 2/3) as a value a test can
+- brand: it does not export the marker's cap share (`--hw-marker-mid`, 2/3) as a value a test can
   read, so `test/marker-position.test.ts` retypes it as `CAP_SHARE`.
 - scaffolding: the catalog home loads a live iframe per visible story (`catalog/render.ts`, already
   lazy). Static preview images, or iframes deferred until the tile scrolls into view past the first

@@ -1,8 +1,9 @@
 ---
 // The document header, the twin of the website's Nav.astro: a bar in the page tint across the
 // paper, the gradient strip on top, a rule under it, the lockup left and the document tag right.
-// The lockup is the brand package's, inlined as a data URI, so the header renders in any app.
-import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
+// The lockup is the brand package's screen cut, which brand gives a header up to 40 px tall on screen
+// or in print, at half the full lockup's bytes; inlined as a data URI, so it renders in any app.
+import lockupSvg from "@hackersandwizards/brand/logos/lockup-screen.svg?raw";
 import { svgUri } from "../scripts/fill";
 
 interface Props {

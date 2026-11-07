@@ -51,7 +51,7 @@ test("onepagerBrandFiles lists exactly the brand files a traced render reads", a
     .filter((path) => path.startsWith(brand) && path !== `${brand}package.json`)
     .sort();
   // The control: the trace sees Vite's read of DocHeader's lockup and the engine's of a face.
-  expect(traced.some((path) => path.endsWith("logos/lockup.svg"))).toBe(true);
+  expect(traced.some((path) => path.endsWith("logos/lockup-screen.svg"))).toBe(true);
   expect(traced.some((path) => path.endsWith(".woff2"))).toBe(true);
   expect(onepagerBrandFiles()).toEqual(traced);
   // Bun's own loader reads an imported module without node:fs: no script imports a brand module.

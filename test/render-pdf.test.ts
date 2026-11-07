@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -358,11 +359,12 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
   beforeAll(async () => {
     const logo = readFileSync(brand("lockup.png"));
     writeFileSync(join(dir, "mark.png"), logo);
+    copyFileSync(brand("lockup.svg"), join(dir, "lockup.svg"));
     // The data URI, the file beside the page at its own proportions, and brand's lockup, whose
-    // wizard is a 512 px PNG inside the SVG.
+    // wizard is a 512 px PNG inside the SVG, as a data URI and as a file beside the page.
     writeFileSync(
       join(dir, "doc.html"),
-      `<!doctype html><html lang="en"><body><h1>One</h1><img src="data:image/png;base64,${logo.toString("base64")}" style="width:108px;height:20px"><img src="mark.png" style="height:20px"><img src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:40px"><h2>Two</h2></body></html>`,
+      `<!doctype html><html lang="en"><body><h1>One</h1><img src="data:image/png;base64,${logo.toString("base64")}" style="width:108px;height:20px"><img src="mark.png" style="height:20px"><img src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:40px"><img src="lockup.svg" style="height:20px"><h2>Two</h2></body></html>`,
     );
     pdf = join(dir, `doc-${warm}.pdf`);
     await renderPdf(join(dir, "doc.html"), pdf, { warm });
@@ -455,11 +457,30 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       .map((row) => row.trim().split(/\s+/))
       .filter((cells) => cells[2] === "image")
       .map((cells) => cells.slice(3, 5).map(Number));
-    // The data URI, the file beside the page, and the wizard 40 px tall, as tall as the lockup's box.
+    // The data URI, the file beside the page, and the wizard as tall as the lockup's box, 40 px
+    // from the data URI and 20 px from the file.
     expect(sizes[0]).toEqual([324, 60]);
     expect(sizes[1]![1]).toBe(60);
     expect(sizes[2]).toEqual([120, 120]);
+    expect(sizes[3]).toEqual([60, 60]);
   });
+
+  it("prints a vector SVG beside the page as paths, not as an image", async () => {
+    copyFileSync(brand("wordmark.svg"), join(dir, "mark.svg"));
+    const file = join(dir, "vector.html");
+    writeFileSync(
+      file,
+      `<!doctype html><html lang="en"><body><img src="mark.svg" style="height:17px"></body></html>`,
+    );
+    const out = join(dir, `vector-${warm}.pdf`);
+    await renderPdf(file, out, { warm });
+    expect(execFileSync("pdfimages", ["-list", out], { encoding: "utf8" }).split("\n")[2]).toBe("");
+    // The control: the mark printed, so the page has ink.
+    const pgm = execFileSync("pdftoppm", ["-gray", "-r", "72", "-f", "1", "-l", "1", out]);
+    // A PGM: three header lines, then one byte a pixel.
+    const pixels = pgm.subarray(pgm.toString("latin1").split("\n", 3).join("\n").length + 1);
+    expect(pixels.some((value) => value < 200)).toBe(true);
+  }, 60_000);
 
   it("prints an SVG data URI it cannot read as it is", async () => {
     const file = join(dir, "bad-svg.html");

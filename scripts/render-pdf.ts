@@ -20,12 +20,13 @@ import { foreignStyles, styleAttributes } from "./styles";
 const execFileAsync = promisify(execFile);
 
 /**
- * Runs in the printed copy. Chrome embeds every raster image at its source resolution: the 512px
- * header logo shown 22.5pt wide was 56 KB of a 129 KB quote (measured). Each image is redrawn at
+ * Runs in the printed copy. Chrome embeds every raster image at its source resolution: a 512 px
+ * logo shown 22.5pt wide was 56 KB of a 129 KB quote (measured). Each image is redrawn at
  * three times its displayed size as PNG, or as the smaller of PNG and JPEG where the source is a
  * JPEG, and so is each raster an SVG image carries as a data URI, such as the wizard in brand's
- * lockup, which printed at 512 px for 37 px shown (measured). Twice the size, or JPEG for an
- * opaque image, leaves the onepager's small client marks visibly soft at 200% zoom and in print.
+ * full lockup, which printed at 512 px for 37 px shown (measured). Twice the size, or JPEG for an
+ * opaque image, leaves the onepager's small raster client marks visibly soft at 200% zoom and in
+ * print. A vector SVG, such as a client mark, prints as paths, inlined from a file or not.
  * A redrawn raster keeps its source's proportions, and its source's size where the page left the
  * size to the image, so nothing moves; the page's own CSS, print rules included, still sizes it.
  * An SVG keeps its viewBox and size. A raster image's new src is set from its own load event,
@@ -113,12 +114,13 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
-/** `html` with each `<img>` whose src is a raster file beside it as a data URI: a file:// image
+/** `html` with each `<img>` whose src is an image file beside it as a data URI: a file:// image
  * taints the canvas PRINT_JS redraws it on, so it printed at its source size, as the onepager's
- * client marks did at four times theirs (measured). */
+ * client marks did at four times theirs (measured), and an SVG file's rasters are redrawn only
+ * from a data URI. */
 function withLocalImages(html: string, dir: string): string {
   return html.replace(
-    /(<img\b[^>]*?\ssrc=)(["'])([^"':/#?][^"':#?]*?\.(?:png|jpe?g|gif|webp))\2/gi,
+    /(<img\b[^>]*?\ssrc=)(["'])([^"':/#?][^"':#?]*?\.(?:png|jpe?g|gif|webp|svg))\2/gi,
     (tag, start: string, quote: string, src: string) => {
       let path: string;
       try {

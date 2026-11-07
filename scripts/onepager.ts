@@ -70,7 +70,7 @@ let brandFiles: string[] | undefined;
  * its onepagers. Read once a process, as the brand base is. */
 export function onepagerBrandFiles(): string[] {
   if (brandFiles) return [...brandFiles];
-  const read = new Set([brandFile("logos/lockup.svg")]);
+  const read = new Set([brandFile("logos/lockup-screen.svg")]);
   baseCss(false, read);
   return [...(brandFiles = [...read].sort())];
 }
