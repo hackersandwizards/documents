@@ -102,6 +102,15 @@ test("a URL gets each pass as its query, and its page names the eyebrow", async 
   }
 }, 120_000);
 
+test("a server that is not running is named in plain words, the way a bad status is", async () => {
+  const server = Bun.serve({ port: 0, fetch: () => new Response(null) });
+  const url = `http://127.0.0.1:${server.port}/print`;
+  server.stop(true);
+  const pdf = join(dir, "refused.pdf");
+  const plain = `${url} refused the connection: is its server running?`;
+  await expect(renderHandoutPdf(url, pdf)).rejects.toThrow(`renderHandoutPdf: ${plain}`);
+}, 60_000);
+
 test("without pdftotext the first render stands, unnumbered, and the result says so", async () => {
   const path = process.env.PATH;
   // Chrome is found by its absolute path; only poppler drops off the PATH.

@@ -3,6 +3,7 @@ import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
 import { withElements } from "../scripts/elements";
+import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -231,6 +232,20 @@ test.each([
   const html = await composer.render(name, { ...base, labels: { [key]: "[LABEL]" } });
   expect(html).toContain("[LABEL]");
   expect(html).not.toContain(text);
+});
+
+// A consumer reads the handout's words from HANDOUT_TEXT, so these are the words it prints.
+test.each(["de", "en"] as const)("DocHandout %s prints HANDOUT_TEXT's words", async (lang) => {
+  const html = await composer.render("DocHandout", {
+    ...props.DocHandout,
+    lang,
+    company: P,
+    date: P,
+  });
+  const { noCompany, noDate, ...printed } = HANDOUT_TEXT[lang];
+  for (const word of Object.values(printed)) expect(html).toContain(word);
+  // Company and date are both given, so neither placeholder prints.
+  for (const placeholder of [noCompany, noDate]) expect(html).not.toContain(placeholder);
 });
 
 // The hub renders the handout in its own Astro route, without composePage: the handout maps the

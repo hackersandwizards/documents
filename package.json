@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -22,6 +22,7 @@
     "./onepager": "./scripts/onepager.ts",
     "./onepager.css": "./onepager.css",
     "./handout.css": "./handout.css",
+    "./handout": "./scripts/handout.ts",
     "./survey-readout": "./scripts/survey-readout.ts"
   },
   "bin": {
@@ -39,6 +40,7 @@
     "scripts/onepager.ts",
     "scripts/survey-readout.ts",
     "scripts/fill.ts",
+    "scripts/handout.ts",
     "scripts/compose.ts",
     "scripts/elements.ts",
     "scripts/render-pdf.ts",

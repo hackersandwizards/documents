@@ -11,42 +11,17 @@ import DocProse from "./DocProse.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
 import { cssString } from "../scripts/fill";
-
-// The handout's own words, English and German; `labels` replaces any of them.
-const EN = {
-  /** The running header's left box. */
-  runningBrand: "hackers&wizards",
-  /** The document kind in the header tag, where `kind` gives none. */
-  kind: "Training Handout",
-  recipient: "For",
-  date: "Training date",
-  /** Stand in for the company or the date where only the other is given. */
-  noCompany: "[COMPANY]",
-  noDate: "[DATE]",
-  contents: "Contents",
-  /** The eyebrow before each chapter's number. */
-  chapter: "Chapter ",
-};
-const DE: typeof EN = {
-  ...EN,
-  kind: "Trainings-Handout",
-  recipient: "Für",
-  date: "Trainingsdatum",
-  noCompany: "[FIRMA]",
-  noDate: "[DATUM]",
-  contents: "Inhalt",
-  chapter: "Kapitel ",
-};
+import { HANDOUT_TEXT, type HandoutLang, type HandoutText } from "../scripts/handout";
 
 interface Props {
   /** The language of the handout's own words; English where none is given. */
-  lang?: "de" | "en";
+  lang?: HandoutLang;
   /** The product's title: the running header, and the cover title. */
   title: string;
   /** A delivery's client and month ("Musterwerk 2026-11"): the running footer, and the cover title
    *  after the product's. A standard handout has none, so its footer shows the page number alone. */
   client?: string;
-  /** The document kind in the header tag; the language's own (`kind` in EN, DE) where none is given. */
+  /** The document kind in the header tag; the language's own (`HANDOUT_TEXT`) where none is given. */
   kind?: string;
   subtitle: string;
   /** Each chapter's title and its Markdown body as sanitized HTML. */
@@ -63,8 +38,8 @@ interface Props {
   /** The 1-based chapters, comma-separated, that run on under the one before instead of opening a
    *  page. */
   flow?: string;
-  /** Replaces any of the handout's own words (EN, DE above) but `kind`, which is the prop. */
-  labels?: Partial<Omit<typeof EN, "kind">>;
+  /** Replaces any of the handout's own words (`HANDOUT_TEXT`) but `kind`, which is the prop. */
+  labels?: Partial<Omit<HandoutText, "kind">>;
 }
 const {
   lang,
@@ -80,7 +55,8 @@ const {
   flow,
   labels,
 } = Astro.props;
-const t = { ...(lang === "de" ? DE : EN), ...labels };
+// Props JSON is untyped: a language without words of its own prints English.
+const t = { ...(HANDOUT_TEXT[lang as HandoutLang] ?? HANDOUT_TEXT.en), ...labels };
 
 const htmlText = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

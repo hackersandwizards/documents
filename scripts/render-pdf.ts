@@ -10,6 +10,7 @@ import { promisify } from "node:util";
 import { chromeArgs, chromeBinaryAsync, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { decodeHTML } from "entities";
 import { withElements } from "./elements";
+import { HANDOUT_TEXT } from "./handout";
 import { ROOT } from "./root";
 import { foreignStyles } from "./styles";
 
@@ -108,6 +109,9 @@ const stableBytes = (pdf: Buffer): Buffer => {
  */
 const LAYOUT = "Promise.all(globalThis.hwLayout ?? []).then(() => true)";
 
+/** The error message for a URL whose server refused the connection, worded like a bad status. */
+const refused = (url: string) => `${url} refused the connection: is its server running?`;
+
 type RenderOptions = { timeoutMs?: number; warm?: boolean };
 
 /**
@@ -199,7 +203,18 @@ export async function renderHandoutPdf(
       if (pass.flow) url.searchParams.set("flow", pass.flow);
       if (pass.notes) url.searchParams.set("notes", pass.notes);
       if (label === undefined) {
-        const page = await fetch(url, { signal: AbortSignal.timeout(options.timeoutMs ?? 60_000) });
+        const page = await fetch(url, {
+          signal: AbortSignal.timeout(options.timeoutMs ?? 60_000),
+        }).catch((error: unknown) => {
+          const reason =
+            // Bun's fetch sets the code on the error, Node's on its cause.
+            [error, (error as Error).cause].some(
+              (e) => (e as { code?: string } | undefined)?.code === "ECONNREFUSED",
+            )
+              ? refused(url.href)
+              : `${url.href} could not be fetched: ${(error as Error).message}`;
+          throw new Error(`renderHandoutPdf: ${reason}`, { cause: error });
+        });
         if (!page.ok) throw new Error(`renderHandoutPdf: ${url.href} answered ${page.status}`);
         label = chapterLabelOf(await page.text());
       }
@@ -256,7 +271,7 @@ function chapterLabelOf(html: string): string {
     /<style\b[^>]*\bdata-hw-page\b[^>]*>[^<]*?--chapter-label:\s*"((?:[^"\\]|\\.)*)"/.exec(
       html,
     )?.[1];
-  if (value === undefined) return "Chapter";
+  if (value === undefined) return HANDOUT_TEXT.en.chapter;
   return value.replace(/\\(?:([\da-f]{1,6}) ?|(.))/gi, (_, hex?: string, char?: string) =>
     hex ? String.fromCodePoint(parseInt(hex, 16)) : char!,
   );
@@ -481,7 +496,11 @@ function pipeChrome(chrome: string) {
       const { errorText } = await send("Page.navigate", { url }, sessionId);
       if (errorText) {
         loads.delete(sessionId);
-        throw new Error(`Chrome could not load ${url}: ${errorText}`);
+        throw new Error(
+          errorText === "net::ERR_CONNECTION_REFUSED"
+            ? refused(url)
+            : `Chrome could not load ${url}: ${errorText}`,
+        );
       }
       await loaded;
       loads.delete(sessionId);

@@ -66,8 +66,9 @@ decision or item ids, pointers to review notes and names go to the commit messag
   keeps it on two pages.
 - `handout.css` and `components/DocHandout.astro`: the printed training handout, the document base
   plus its own layout (margin notes, cover with contents, chapter openings) and the script that
-  keeps headings with their blocks. The trainer hub keeps the chapters and the exporter that
-  measures a first render for the contents' page numbers, the chapters that run on and the notes.
+  keeps headings with their blocks; `scripts/handout.ts` exports its own words, `HANDOUT_TEXT`, per
+  language. The trainer hub keeps the chapters and the exporter that measures a first render for
+  the contents' page numbers, the chapters that run on and the notes.
 - `scripts/survey-readout.ts` and `readout.css`: `composeSurveyReadout`, the attendee-feedback
   readout, seven 1280x720 slides on the document tokens, and its score bands (`bandColor`,
   `scalePosition`). A TypeScript module that writes one HTML string, not an Astro component.
@@ -103,7 +104,7 @@ decision or item ids, pointers to review notes and names go to the commit messag
   consumer gets them.
 
 A consumer reaches the engine through `exports` (`./tokens.css`, `./document.css`, `./onepager.css`,
-`./handout.css`, `./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`) and the `documents-compose`, `documents-privacy` and `documents-styles` commands, run as `bun run <command>`. Every other
+`./handout.css`, `./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`, `./handout`) and the `documents-compose`, `documents-privacy` and `documents-styles` commands, run as `bun run <command>`. Every other
 path is internal. `scaffolding.styles` in `package.json` lists `document.css` and `handout.css`, the
 stylesheets a consumer loads beside the components, which scaffolding's `check-coupling` then lets
 through. Renaming a command, changing its arguments or moving an exported file breaks
