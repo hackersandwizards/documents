@@ -189,7 +189,7 @@ const topicClass = [
   // or more lines; once it fits, each earlier step the page holds without is undone. Content that
   // still does not fit drops the fixed height, so it runs onto a second page, never clipped, and
   // the renderer's one-page check fails. Runs once the faces are ready: measured before, a page
-  // fits too few steps (measured). The promise goes on `hwLayout`, which renderPdf waits for.
+  // fits too few steps (measured).
   (() => {
     const cert = document.currentScript.previousElementSibling;
     const steps = [

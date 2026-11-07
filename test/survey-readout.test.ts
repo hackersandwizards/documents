@@ -34,7 +34,7 @@ test("a scale in a group outside text.groups is shown, not dropped", () => {
   expect(html).toContain("[OWN-GROUP-ROW]");
 });
 
-// A 1-4 mean of 2.66 printed "2,7" but took the band below "from 2.69" (os readout, 01.11.): the
+// A 1-4 mean of 2.66 printed "2,7" but took the band below "from 2.69": the
 // bar is coloured by the printed one-decimal mean, and the legend keeps its exact thresholds.
 test("a bar takes the band of its printed mean", () => {
   const row = { ...surveyReadout.scales[0], title: "[ROUNDED-ROW]", start: 1, end: 4, mean: 2.66 };
@@ -78,7 +78,7 @@ function probeDeck(html: string, probe: string): string {
 }
 
 // A free-text page a few pixels too full squeezed its kicker, a flex item of fixed height, and the
-// title rose 3px on that slide alone (a real os readout, 01.11.). Twelve invented answers of these
+// title rose 3px on that slide alone (a real readout). Twelve invented answers of these
 // lengths reproduce it in Chrome; every slide's title must sit at the same height.
 test("every slide's title sits at the same height", () => {
   const words = "the review loop on our own codebase made the difference and the exercises fit";

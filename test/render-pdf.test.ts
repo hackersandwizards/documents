@@ -404,7 +404,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
 
 describe.skipIf(!chromeBinary())("the quote, a page with a table", () => {
   // Chrome names each table header cell by a DOM node id that differed between cold renders: 3
-  // variants in 20 renders of this page (measured 06.11.2026), so one pair could still match.
+  // variants in 20 renders of this page (measured), so one pair could still match.
   it("writes the same bytes in every render, cold or warm, its header cells numbered from 1", async () => {
     const quote = join(import.meta.dir, "..", "dist/types/quote/index.html");
     const pdfs: Buffer[] = [];

@@ -1,5 +1,4 @@
-// The base is where the Pages workflow publishes dist/ (https://hackersandwizards.github.io/documents/),
-// and Astro runs under Bun, since DocElements maps the brand's elements with Bun's HTMLRewriter.
+// Astro runs under Bun, since DocElements maps the brand's elements with Bun's HTMLRewriter.
 import { readFileSync, writeFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import { catalog } from "@hackersandwizards/scaffolding/catalog";

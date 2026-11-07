@@ -9,7 +9,7 @@ import { documentCss, renderPdf } from "../scripts/render-pdf";
 import { handout, proposalDe, rateCard } from "../scripts/samples";
 
 // The running header holds the document's title on one line. The longest title on record is the
-// trainer hub's AE-DEV-TTT product (73 characters, 2026-11-01). Measured in Chrome on 2026-11-01:
+// trainer hub's AE-DEV-TTT product (73 characters). Measured in Chrome:
 // that title takes 361 pt; Chrome lets the right box grow into the room the brand name leaves, and
 // the header wraps once a title needs more than about 417 pt (83 characters of the same mix).
 const longest = "Agentic Engineering for Developers and QA, Train-the-Trainer (AE-DEV-TTT)";
@@ -60,7 +60,7 @@ function headerLinesPerPage(pdf: string): number[] {
       // The running head's words start at 14.1 pt, or clipped at 1.3 pt on a page 1 with no top
       // margin; page 1's document tag starts at 21.3 pt under the three-line imprint, a handout
       // chapter's eyebrow lower still. A wrapped title prints its two lines either side of the
-      // brand name, three baselines in all (measured 01.11.2026).
+      // brand name, three baselines in all (measured).
       return new Set(tops.filter((y) => y < 20).map((y) => y.toFixed(1))).size;
     });
 }
@@ -98,7 +98,7 @@ test.skipIf(!chromeBinary())(
 );
 
 // Page 1 carries the document header, so its running head would print clipped at the paper's top
-// edge: invisible, but in the PDF's text, for copy, search and screen readers (measured 01.11.2026).
+// edge: invisible, but in the PDF's text, for copy, search and screen readers (measured).
 test.skipIf(!chromeBinary())(
   "page 1 of a proposal and a rate card carries no running head, page 2 does",
   async () => {
@@ -133,8 +133,8 @@ test.skipIf(!chromeBinary())(
 );
 
 // The opening pages are named once the faces are in, which can come after the page's load: a render
-// printing at load printed the opening page with its running head in 11 of 20 runs (measured
-// 02.11.2026). Held back a second past the faces, the naming must still reach the print.
+// printing at load printed the opening page with its running head in 11 of 20 runs (measured).
+// Held back a second past the faces, the naming must still reach the print.
 test.skipIf(!chromeBinary()).each([false, true])(
   "the print waits for the chapter openings to be named, warm: %p",
   async (warm) => {

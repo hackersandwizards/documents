@@ -59,7 +59,7 @@ export const READOUT_TEXT = {
   kicker: "Attendee feedback · {customer}",
   glance: "At a glance",
   overall: "/ {end} overall satisfaction",
-  /** Under the overall score, naming the bars beside it; no "small sample", which 65 responses are not. */
+  /** Under the overall score, naming the bars beside it. */
   distribution: "Mean of {n} responses. The bars show the spread behind it.",
   /** The same line for a single response, which has no mean and no spread. */
   distributionOne: "From a single response, shown by the bar.",
@@ -115,14 +115,10 @@ const esc = (text: string) =>
 export const scalePosition = (value: number, s: { start: number; end: number }): number =>
   s.end > s.start ? (value - s.start) / (s.end - s.start) : 0;
 
-/**
- * The old absolute cutoffs, 4.0 and 3.5, expressed as positions on the 1-5 scale they were written
- * for. A 1-5 question therefore keeps exactly the verdict it had, and only a narrower scale moves:
- * on 1-4 these land at 3.25 and 2.875.
- */
+/** A strength's cutoff as a position on its own scale: 4.0 on 1-5, 3.25 on 1-4. */
 export const STRENGTH_AT = 0.75;
 
-// The bar colours of every h&w bar (slides v0.20.0):
+// The bar colours of every h&w bar:
 // teal for strong, teal at the ladder's 70 % for good, the context grey for middling, the design
 // guide's Error Red for weak. A mean's figure takes its band's colour where the band is a full
 // colour and ink on a tint, which reaches no 4.5:1 as text.
@@ -186,7 +182,7 @@ function shortDim(title: string): string {
 }
 
 /** A rating's shade, ink on the opacity ladder, the top step for the top rating: answer
- * distributions carry no band colour, which on 1-4 painted ratings 1 and 2 the same red. */
+ * distributions carry no band colour, which on 1-4 would paint ratings 1 and 2 the same red. */
 const LADDER = [15, 25, 40, 70, 100];
 function rampColor(val: number, s: { start: number; end: number }): string {
   const steps = LADDER.slice(-Math.min(LADDER.length, s.end - s.start + 1));

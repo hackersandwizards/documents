@@ -243,8 +243,8 @@ export async function fitOnepager(
     let pages = rendered.get(key);
     if (!pages) {
       // In the kept Chrome: a fit renders up to a dozen times, and a fresh Chrome per render
-      // cost about 0.4 s each. One retry, kept from the fresh-Chrome renders, which sometimes
-      // exited non-zero on macOS; whether a kept-Chrome render still fails that way is not measured.
+      // cost about 0.4 s each. One retry: a fresh-Chrome render sometimes exited non-zero on macOS,
+      // and whether a kept one still does is not measured.
       pages = renderPdf(html, pdf, { warm: true })
         .catch(() => renderPdf(html, pdf, { warm: true }))
         .then(() => pdfPages(pdf));

@@ -10,7 +10,7 @@ import { documentCss, renderPdf } from "../scripts/render-pdf";
 // DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
 // fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
 // which the generator refuses. The cases are the worst found across os's certificate ledger and
-// curricula on 2026-10-29 (866 credentials: up to 14 topics, topics up to 120 characters, names
+// curricula (866 credentials: up to 14 topics, topics up to 120 characters, names
 // wrapping onto two lines), with invented names.
 const chrome = chromeBinary();
 

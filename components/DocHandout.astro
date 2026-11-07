@@ -1,10 +1,8 @@
 ---
 // The printed training handout: a cover with the header, the title, an optional recipient card and
-// the contents, then one section per chapter, each opening on its title. Its layout is handout.css
-// (exported as ./handout.css), which imports the document base. Chrome's own print pipeline
-// paginates it against the `@page` rule and draws the running header and footer in the page
-// margins. The consumer keeps the chapters; `renderHandoutPdf` (scripts/render-pdf.ts) measures
-// each render for `toc`, `notes` and `flow` and passes them on the next.
+// the contents, then one section per chapter, each opening on its title. Chrome's own print
+// pipeline paginates it against the `@page` rule and draws the running header and footer in the
+// page margins.
 import DocElements from "./DocElements.astro";
 import DocHeader from "./DocHeader.astro";
 import DocProse from "./DocProse.astro";
@@ -195,8 +193,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
   // column, or runs into it, opens the rest. A chapter whose whole text fits before a chapter that
   // runs on under it is left alone, since the change of name would force that one onto a page.
   // Measured once the faces are in: measured at parse time, a chapter's text set in the fallback
-  // face fitted one block more than the print. The promise goes on `hwLayout`, which renderPdf
-  // waits for before it prints.
+  // face fitted one block more than the print.
   (globalThis.hwLayout ??= []).push(
     document.fonts.ready.then(() => {
       const sections = [...document.querySelectorAll("section.chapter")];
