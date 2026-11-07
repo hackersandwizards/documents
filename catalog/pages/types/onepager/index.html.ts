@@ -2,7 +2,8 @@ import type { APIRoute } from "astro";
 import { openComposer } from "../../../../scripts/compose";
 import { composeOnepager } from "../../../../scripts/onepager";
 import { ROOT } from "../../../../scripts/root";
-import { brandHref, NOINDEX } from "../../../brand";
+import { NOINDEX } from "@hackersandwizards/scaffolding/catalog/robots.ts";
+import { brandHref } from "../../../brand";
 import { onepager } from "../../../../scripts/samples";
 
 export const GET: APIRoute = async () => {
