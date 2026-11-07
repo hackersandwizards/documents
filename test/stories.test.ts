@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { NOINDEX } from "../catalog/brand";
 import { TYPES } from "../catalog/types";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -49,9 +48,13 @@ test("every component appears on a type page, and every type page is listed", ()
   expect([...listed].sort()).toEqual(TYPES.map((t) => t.file).sort());
 });
 
-test("every type page is kept out of search", () => {
-  const indexed = TYPES.map((t) => t.file).filter(
-    (file) => !readFileSync(join(ROOT, "dist/types", file, "index.html"), "utf8").includes(NOINDEX),
-  );
-  expect(indexed).toEqual([]);
+test("every type page carries one robots tag, noindex", () => {
+  const tags = TYPES.map((t) => [
+    t.file,
+    readFileSync(join(ROOT, "dist/types", t.file, "index.html"), "utf8").match(
+      /<meta\b[^>]*\bname="robots"[^>]*>/g,
+    ) ?? [],
+  ]);
+  const off = tags.filter(([, found]) => found.length !== 1 || !found[0]!.includes("noindex"));
+  expect(off).toEqual([]);
 });

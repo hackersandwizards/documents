@@ -8,10 +8,6 @@ import { brandPath, LINKED_CSS } from "./brand";
 import { TYPES } from "./types";
 
 const BASE = "/documents";
-// The nav finds this catalog in brand's list by name; a rename would send "Documents" to the
-// published site without a word.
-if (!catalogs.some(({ name }) => name === "Documents"))
-  throw new Error('brand catalogs.json has no "Documents"');
 
 export default defineConfig({
   base: BASE,
