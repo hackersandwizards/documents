@@ -1,4 +1,4 @@
-type Edit = [selector: string, cls?: string, attrs?: Record<string, string>];
+export type Edit = [selector: string, cls?: string, attrs?: Record<string, string>];
 
 // In order: a later entry's attribute wins where two match one element.
 export const ELEMENT_MAP: Edit[] = [

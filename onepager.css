@@ -1,17 +1,31 @@
 .onepager {
   --side: var(--op-side);
+  --hw-card-pad: var(--card-pad);
+  --hw-callout-pad: calc(var(--card-pad) * var(--op-box-pad)) var(--card-pad);
+}
+
+/* A block's labels and pills at the type roles' size, which --density narrows under .tight; the
+   header's tag keeps the family's. */
+.page > :not(.doc-header) {
+  --hw-label-size: calc(var(--label-size) * var(--density));
+  --hw-pill-size: calc(var(--small-size) * var(--density));
 }
 
 .page {
   page: onepager;
 }
 
-/* In the base layer, so the brand's card and pill (layer components) keep their padding. */
+/* In the base layer, so the brand's elements (layer components) keep their padding, and a label
+   set in strong its type. */
 @layer base {
   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+  }
+  strong {
+    font-weight: var(--weight-semibold);
+    color: var(--ink);
   }
 }
 
@@ -31,10 +45,6 @@ body {
 
 p {
   text-wrap: pretty;
-}
-strong {
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
 }
 ul {
   list-style: none;
@@ -82,9 +92,6 @@ ul {
 .goals-lead,
 .po-track-box p,
 .mentoring-why,
-.path-note,
-.track-note,
-.executive-note,
 .block-lead,
 .mentoring-box p,
 .format-box p,
@@ -104,33 +111,8 @@ ul {
 .pricing-card .price-detail,
 .pricing-note,
 .contact-footer,
-.kpi-item,
 .planning dd {
   font: var(--role-small);
-}
-
-.label,
-.claim,
-.module h3,
-.deliverable-banner h3,
-.kpi-section h3,
-.pricing-section h3,
-.scope-box h3,
-.cover-box h3,
-.goals-box h3,
-.proof-box h3,
-.facts dt,
-.price-label,
-.proof-label,
-.testimonial cite,
-.references strong,
-.legal,
-.planning h3,
-.planning dt {
-  font: var(--role-label);
-  letter-spacing: var(--tracking-caps);
-  text-transform: var(--case-label);
-  color: var(--accent-text);
 }
 
 /* The side margin sits on .page, not on @page: Chrome clips content to the page box, and the
@@ -169,16 +151,12 @@ ul {
   break-inside: avoid;
 }
 
-.claim {
-  color: var(--night-accent);
+.hero > .claim {
   margin-bottom: var(--op-6);
 }
 
 .page > .claim {
   font: var(--role-lead);
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--ink);
   margin-bottom: var(--op-section);
 }
 .page > .claim strong {
@@ -198,7 +176,6 @@ ul {
 
 .page .card {
   margin: 0;
-  padding: var(--card-pad);
 }
 
 .mentoring-box h3,
@@ -332,9 +309,6 @@ ul {
 .facts dl.details > div:last-child:nth-child(3n + 2) {
   grid-column: span 2;
 }
-.facts dl.details dt {
-  color: var(--muted);
-}
 .facts .url {
   white-space: nowrap;
 }
@@ -361,13 +335,7 @@ ul {
 }
 
 .module h3 {
-  color: var(--result);
-  font-weight: var(--weight-bold);
   margin-bottom: var(--op-1);
-}
-
-.page .module {
-  border-color: var(--accent-line);
 }
 
 .module h4 {
@@ -391,10 +359,6 @@ ul {
 .goals-box,
 .proof-box,
 .scope-box {
-  border-left: var(--rule-accent) solid var(--accent);
-  background: var(--accent-soft);
-  border-radius: var(--radius);
-  padding: calc(var(--card-pad) * var(--op-box-pad)) var(--card-pad);
   margin-bottom: var(--op-section);
   break-inside: avoid;
 }
@@ -410,9 +374,6 @@ ul {
 /* A ruled block's text starts on its rule's left edge, as every box's border does: no
    indent. */
 .deliverable-banner {
-  border-left: 0;
-  border-radius: 0;
-  background: none;
   border-top: var(--op-2) solid var(--accent);
   padding: var(--op-8) 0 0;
 }
@@ -509,8 +470,6 @@ ul {
 }
 
 .kpi-section h3 {
-  color: var(--ink);
-  font-weight: var(--weight-bold);
   margin-right: var(--op-4);
 }
 .kpi-row {
@@ -522,18 +481,6 @@ ul {
 .kpi-item {
   display: inline-flex;
   gap: var(--op-chip-gap);
-  padding: var(--chip-pad);
-  border-radius: var(--pill);
-  background: var(--accent-chip);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-chip);
-  color: var(--ink);
-}
-
-.kpi-number,
-.kpi-label {
-  font: inherit;
-  color: inherit;
 }
 
 .proof-row {
@@ -549,8 +496,7 @@ ul {
 }
 
 .testimonial {
-  border-left: var(--rule-accent) solid var(--result);
-  padding: var(--op-2) 0 var(--op-2) var(--space-list);
+  padding-block: var(--op-2);
   margin-bottom: var(--op-section);
   break-inside: avoid;
 }
@@ -598,7 +544,6 @@ ul {
   gap: var(--op-9) var(--op-14);
 }
 .planning dt {
-  color: var(--muted);
   margin-bottom: var(--op-1);
 }
 .planning dd {
@@ -714,7 +659,7 @@ ul {
   display: inline-block;
   background: var(--accent);
   color: var(--surface);
-  border-radius: var(--radius);
+  border-radius: var(--hw-corner-sm);
   padding: var(--op-button-pad);
   font-weight: var(--weight-medium);
   line-height: var(--op-button-leading);
@@ -722,8 +667,7 @@ ul {
 
 .legal {
   margin-top: var(--op-6);
-  text-transform: none;
-  letter-spacing: 0;
+  font: var(--role-label);
   text-align: center;
   color: var(--muted);
 }
@@ -788,9 +732,6 @@ ul {
 }
 .tight .po-track-box p,
 .tight .mentoring-why,
-.tight .path-note,
-.tight .track-note,
-.tight .executive-note,
 .tight .mentoring-box p,
 .tight .format-box p,
 .tight .community-box p,

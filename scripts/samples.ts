@@ -419,6 +419,13 @@ export const onepager = {
     <div><dt>Absage</dt><dd>Wie im Angebot vereinbart</dd></div>
   </dl>
 </div>
+<div class="cover-box">
+  <h3>Was abgedeckt ist</h3>
+  <ul>
+    <li>Ein Satz, was das Training abdeckt.</li>
+    <li>Ein Satz, was es bewusst auslässt.</li>
+  </ul>
+</div>
 <div class="testimonial">
   <p>„Ein erfundenes Zitat, ein bis zwei Sätze lang, wie es eine Teilnehmerin nach dem Training sagen könnte.“</p>
   <cite>Mara Beispiel, Engineering Lead, Musterwerk AG</cite>

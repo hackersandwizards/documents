@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { decodeHTMLStrict } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
-import { ELEMENT_MAP, withElements } from "./elements";
+import { ELEMENT_MAP, type Edit, withElements } from "./elements";
 import { languageTag } from "./fill";
 import { brandFile, compactStyles, inlineCss, renderPdf } from "./render-pdf";
 import { ROOT } from "./root";
@@ -44,8 +44,7 @@ function baseCss(link: boolean, read?: Set<string>) {
   return [
     ...(link ? [] : [brandBase(read)]),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
-    // DocHeader's tag and DocCard are the brand's pill and card; the rest of the page keeps its own
-    // forms (brand-elements.json, exception "onepager").
+    // The brand's elements, which ONEPAGER_ELEMENTS puts on the page's blocks.
     inlineCss(brandFile("elements.css"), read),
     // Every h&w document draws the identical list marker: the brand's rule, switched on in
     // tokens.css above, and the base's list indent, never a copy.
@@ -178,7 +177,34 @@ ${body.trim()}
 `);
 }
 
-const ONEPAGER_ELEMENTS = ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b/.test(selector));
+/** The brand's elements on the onepager's blocks: DocHeader's tag and DocCard from the document
+ * map, then the labels, the boxes as callouts, the testimonial as a quote and the figures' chips as
+ * pills. The hero is night, so its claim takes the label's night colour. */
+const ONEPAGER_ELEMENTS: Edit[] = [
+  ...ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b/.test(selector)),
+  [".hero", undefined, { "data-theme": "dark" }],
+  [
+    [
+      ".label, .hero > .claim, .price-label, .proof-label, .facts dt, .planning h3, .planning dt",
+      ".module h3, .deliverable-banner h3, .kpi-section h3, .pricing-section h3",
+      ".cover-box > h3, .goals-box > h3, .proof-box > h3, .scope-box > h3",
+      ".testimonial cite, .references strong",
+    ].join(", "),
+    "hw-label",
+  ],
+  [".module h3", undefined, { "data-hue": "purple" }],
+  [".kpi-section h3", undefined, { "data-tone": "ink" }],
+  [
+    ".facts .details dt, .planning dt, .cover-box > h3, .goals-box > h3, .proof-box > h3, .scope-box > h3",
+    undefined,
+    { "data-tone": "muted" },
+  ],
+  [".cover-box, .goals-box, .proof-box, .scope-box", "hw-callout"],
+  [".testimonial", "hw-quote"],
+  [".kpi-item", "hw-pill"],
+  // An exception of the engine's own, listed with its reason in brand-elements.json.
+  [".facts", undefined, { "data-hw-exception": "facts" }],
+];
 
 const VOID = /^(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
 

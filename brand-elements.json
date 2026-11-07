@@ -13,6 +13,7 @@
     "dist/types/certificate/index.html",
     "dist/types/zertifikat/index.html",
     "dist/types/handout/index.html",
+    "dist/types/onepager/index.html",
     "dist/types/vorbereitung/index.html",
     "dist/types/delivery-briefing/index.html",
     "dist/types/trainer-briefing/index.html",
@@ -42,9 +43,7 @@
       "reason": "The survey readout is a 1280 × 720 slide set on the slide scale of brand's document.css (--deck-*), not an A4 document. Its quotes and labels follow the slides, its figures are brand's hw-kpi at slide size.",
       "files": ["readout.css"]
     },
-    "onepager": {
-      "reason": "The onepager prints the website's training page on the onepager scale of brand's document.css (--op-*), with its own label and note forms. Its header and page number are the family's; moving its blocks onto the brand elements is this engine's next step, with a pixel comparison and a blind review.",
-      "files": ["onepager.css"]
-    }
+    "facts": "The onepager's facts box: one card in two surfaces, the decision row on a teal band over the details on white, the band reaching the card's edge. brand's card has one surface and its padding all round.",
+    "pricing-note": "The line under the onepager's price cards: a sentence in the small role, muted, in the text flow. A note in name only; the brand's callout is a box."
   }
 }
