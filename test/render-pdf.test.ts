@@ -315,7 +315,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     const port = closed.port;
     await closed.stop(true);
     await expect(renderPdf(`http://127.0.0.1:${port}/x`, out, { warm })).rejects.toThrow(
-      /ERR_CONNECTION_REFUSED/,
+      "refused the connection: is its server running?",
     );
     const server = Bun.serve({
       port: 0,
