@@ -25,9 +25,8 @@ const exceptions = Object.entries(
       {TYPES.map((t, i) => (
         <>
           {i > 0 && " · "}
-          <a class="hw-link" href={`${TYPES_URL}${t.file}/index.html`}>
-            {t.title}
-          </a>
+          {/* prettier-ignore */}
+          <a class="hw-link" href={`${TYPES_URL}${t.file}/index.html`}>{t.title}</a>
         </>
       ))}
     </p>
