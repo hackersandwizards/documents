@@ -2,7 +2,6 @@
 import { globSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import { catalog } from "@hackersandwizards/scaffolding/catalog";
-import catalogs from "@hackersandwizards/brand/catalogs.json";
 import { NOINDEX } from "@hackersandwizards/scaffolding/catalog/robots.ts";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,7 +46,6 @@ export default defineConfig({
       home: "./Home.astro",
       previewSize: [794, 1123],
       groupOrder: ["Types", "Components"],
-      nav: { items: catalogs, current: "Documents" },
       // The brand files the type pages link: the Git install's PNG logos are LFS pointers.
       copy: [
         ...new Set(LINKED_CSS.map((f) => dirname(brandPath(f)))),
