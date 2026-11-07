@@ -1,17 +1,19 @@
 /* The brand elements' settings: cards and callouts at the card padding, pills at the chip's, as in
-   the document base. */
+   the document base, the button at the onepager's own. */
 .onepager {
   --side: var(--op-side);
   --hw-card-pad: var(--card-pad);
   --hw-callout-pad: calc(var(--card-pad) * var(--op-box-pad)) var(--card-pad);
   --hw-pill-pad: var(--chip-pad);
+  --hw-button-pad: var(--op-button-pad);
 }
 
-/* A block's labels and pills at the type roles' size, which --density narrows under .tight; the
-   header's tag keeps the print scale's. */
+/* A block's labels, pills and button at the type roles' size, which --density narrows under .tight;
+   the header's tag keeps the print scale's. */
 .page > :not(.doc-header) {
   --hw-label-size: calc(var(--label-size) * var(--density));
   --hw-pill-size: calc(var(--small-size) * var(--density));
+  --hw-button-size: var(--hw-pill-size);
 }
 
 .page {
@@ -649,7 +651,7 @@ ul {
   margin-bottom: var(--op-2);
 }
 
-.contact-footer a {
+.contact-footer a:not(.hw-button) {
   color: var(--night-accent);
   text-decoration: none;
   font-weight: var(--weight-semibold);
@@ -660,14 +662,12 @@ ul {
   line-height: var(--op-cta-leading);
 }
 
-.contact-footer a.button {
-  display: inline-block;
-  background: var(--accent);
-  color: var(--surface);
-  border-radius: var(--hw-corner-sm);
-  padding: var(--op-button-pad);
-  font-weight: var(--weight-medium);
-  line-height: var(--op-button-leading);
+/* The print scale gives the button the screen's least height; its corner is the small one, not
+   the card's. */
+.contact-footer .hw-button {
+  --hw-button-height: 0;
+  --hw-button-height-wide: 0;
+  --hw-card-corner: var(--hw-corner-sm);
 }
 
 .legal {

@@ -189,8 +189,8 @@ ${body.trim()}
 const BOXES = [".cover-box", ".goals-box", ".proof-box", ".scope-box"];
 
 /** The brand's elements on the onepager's blocks: DocCard and DocHeader's tag, the labels, the boxes
- * as callouts, the testimonial as a quote and the figures' chips as pills. The hero is night, so
- * its claim takes the label's night colour. */
+ * as callouts, the testimonial as a quote, the figures' chips as pills and the call link as a
+ * button. The hero is night, so its claim takes the label's night colour. */
 const ONEPAGER_ELEMENTS: Edit[] = [
   ...CARD_AND_TAG,
   [".hero", undefined, { "data-theme": "dark" }],
@@ -210,6 +210,7 @@ const ONEPAGER_ELEMENTS: Edit[] = [
   [BOXES.join(", "), "hw-callout"],
   [".testimonial", "hw-quote"],
   [".kpi-item", "hw-pill"],
+  [".contact-footer a.button", "hw-button"],
   // An exception of the engine's own, listed with its reason in brand-elements.json.
   [".facts", undefined, { "data-hw-exception": "facts" }],
 ];

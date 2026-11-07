@@ -30,7 +30,8 @@
     "code",
     "kpi",
     "rule",
-    "strip"
+    "strip",
+    "button"
   ],
   "exceptions": {
     "total-band": {

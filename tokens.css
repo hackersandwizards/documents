@@ -22,9 +22,9 @@
   --tint: var(--color-bg);
   --accent: var(--color-teal);
   --accent-text: var(--color-teal-dark);
-  /* Card tint (Card.astro surface "tint"): print takes the teal border and the 7% tint fill so both
-     survive 70% zoom. */
-  --accent-soft: color-mix(in srgb, var(--color-teal) 7%, white);
+  /* Card tint (Card.astro surface "tint"): print takes the teal border and brand's 7% teal wash so
+     both survive 70% zoom. */
+  --accent-soft: var(--color-teal-soft);
   --accent-line: var(--color-teal);
   --accent-chip: var(--color-teal-light);
   --result: var(--color-purple);
