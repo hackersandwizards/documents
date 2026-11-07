@@ -15,6 +15,7 @@ import DocSectionHead from "./DocSectionHead.astro";
 import DocSteps from "./DocSteps.astro";
 import DocTitle from "./DocTitle.astro";
 import { cssString, fill } from "../scripts/fill";
+import verbal from "@hackersandwizards/brand/verbal.json";
 
 // The proposal's own words, German and English; `labels` replaces any of them, `{name}` marks a
 // value filled in.
@@ -32,7 +33,7 @@ const DE = {
   about: "Über hackers&wizards",
   aboutText: [
     "hackers&wizards ist ein Team von Praktikern mit über 20 Jahren Erfahrung. Wir entwickeln Software und betreiben Produktionssysteme.",
-    "Geführt von Stefan und Benedikt, unterstützt von einem Netzwerk erfahrener Praktiker, mit denen sie seit Jahren zusammenarbeiten und denen sie vertrauen. Wir bringen jede Rolle, die die Produkte unserer Kunden baut, als ein Team in den Flow mit Agentic Engineering.",
+    `Geführt von Stefan und Benedikt, unterstützt von einem Netzwerk erfahrener Praktiker, mit denen sie seit Jahren zusammenarbeiten und denen sie vertrauen. ${verbal.mission.de}`,
   ],
   scope: "Leistungsumfang",
   community: "Inklusive: hackers&wizards Community",
@@ -76,7 +77,7 @@ const EN: typeof DE = {
   about: "About hackers&wizards",
   aboutText: [
     "hackers&wizards is a team of practitioners with 20+ years of experience. We build and operate production systems.",
-    "Led by Stefan and Benedikt, supported by a network of experienced practitioners whom they have worked with and trusted for years. We bring every role that builds our clients' products into flow with agentic engineering, as one team.",
+    `Led by Stefan and Benedikt, supported by a network of experienced practitioners whom they have worked with and trusted for years. ${verbal.mission.en}`,
   ],
   scope: "Scope",
   community: "Included: hackers&wizards Community",

@@ -1,4 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import verbal from "@hackersandwizards/brand/verbal.json";
+import { decodeHTML } from "entities";
 import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
@@ -178,6 +180,14 @@ test.each(["de", "en"])("DocProposal %s prints its terms from props only", async
       price: { ...proposal.price, vatLabel: undefined },
     }),
   ).rejects.toThrow("vatLabel");
+});
+
+// About us closes on brand's mission, read from its verbal.json; labels.aboutText is the control.
+test.each(["de", "en"] as const)("DocProposal %s prints brand's mission", async (lang) => {
+  const text = async (props: object) =>
+    decodeHTML(await composer.render("DocProposal", { ...proposal, lang, ...props }));
+  expect(await text({})).toContain(verbal.mission[lang]);
+  expect(await text({ labels: { aboutText: [P] } })).not.toContain(verbal.mission[lang]);
 });
 
 test("styles() returns each scoped style once, however often it is called", async () => {
