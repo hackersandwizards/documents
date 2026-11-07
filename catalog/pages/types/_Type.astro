@@ -1,6 +1,6 @@
 ---
 import DocElements from "../../../components/DocElements.astro";
-import { brandHref } from "../../brand";
+import { brandHref, NOINDEX } from "../../brand";
 import tokensCss from "../../../tokens.css?raw";
 import documentCss from "../../../document.css?raw";
 import handoutCss from "../../../handout.css?raw";
@@ -28,6 +28,7 @@ ${local(tokensCss)}${local(documentCss)}${sheet === "handout" ? local(handoutCss
 <html lang={lang} data-hw-scale="print">
   <head>
     <meta charset="utf-8" />
+    <Fragment set:html={NOINDEX} />
     {title && <title>{title}</title>}
     <link rel="icon" href={brandHref("logos/favicon.ico")} sizes="32x32" />
     <link rel="icon" href={brandHref("logos/favicon.svg")} type="image/svg+xml" />

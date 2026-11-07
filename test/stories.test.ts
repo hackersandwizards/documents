@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { NOINDEX } from "../catalog/brand";
 import { TYPES } from "../catalog/types";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -46,4 +47,11 @@ test("every component appears on a type page, and every type page is listed", ()
       .filter((p) => !p.includes(".") && !p.startsWith("_")),
   );
   expect([...listed].sort()).toEqual(TYPES.map((t) => t.file).sort());
+});
+
+test("every type page is kept out of search", () => {
+  const indexed = TYPES.map((t) => t.file).filter(
+    (file) => !readFileSync(join(ROOT, "dist/types", file, "index.html"), "utf8").includes(NOINDEX),
+  );
+  expect(indexed).toEqual([]);
 });

@@ -2,11 +2,16 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import { catalog } from "@hackersandwizards/scaffolding/catalog";
+import catalogs from "@hackersandwizards/brand/catalogs.json";
 import { dirname } from "node:path";
 import { brandPath, LINKED_CSS } from "./brand";
 import { TYPES } from "./types";
 
 const BASE = "/documents";
+// The nav finds this catalog in brand's list by name; a rename would send "Documents" to the
+// published site without a word.
+if (!catalogs.some(({ name }) => name === "Documents"))
+  throw new Error('brand catalogs.json has no "Documents"');
 
 export default defineConfig({
   base: BASE,
@@ -40,6 +45,7 @@ export default defineConfig({
       home: "./Home.astro",
       previewSize: [794, 1123],
       groupOrder: ["Typen", "Komponenten"],
+      nav: { items: catalogs, current: "Documents" },
       // The brand files the type pages link: the Git install's PNG logos are LFS pointers.
       copy: [
         ...new Set(LINKED_CSS.map((f) => dirname(brandPath(f)))),

@@ -3,19 +3,17 @@ import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
+import { CAP_SHARE, TOLERANCE as LIST_TOLERANCE } from "@hackersandwizards/brand/markers";
 
 // The markers on the type pages (dist/types/, written by `bun run build`) that brand-markers leaves
 // out, measured on the pixels Chrome paints. `check:markers` runs brand-markers on every type page
 // holding a <ul>, which measures each list square and its item's first line; this test measures
 // the rest: a step number's baseline on its line's baseline (a numbered item's counter, a numeral
 // element in an item or heading), and a square outside a list (a section label's), whose middle
-// sits two thirds of the way from the x-height middle of its line to the cap-height middle, as
+// sits CAP_SHARE of the way from the x-height middle of its line to the cap-height middle, as
 // brand's --hw-marker-mid has it. The line's first words become "xxxxHHHH" beside a square, so the
 // x's ink is the x-height band and the H's the cap-height band, and "xxxx" beside a step number.
 const TOLERANCE = 0.6; // CSS px
-const LIST_TOLERANCE = 0.25; // CSS px, for a marker on a list item, as brand-markers holds them
-// brand-markers' CAP_SHARE, which brand does not export: --hw-marker-mid, 1ex / 6 + 1cap / 3.
-const CAP_SHARE = 2 / 3;
 const SCALE = 4;
 const TYPES = resolve(import.meta.dir, "..", "dist/types");
 const pages = readdirSync(TYPES);

@@ -27,3 +27,8 @@ export const LINKED_CSS = [
 /** A brand file as a type page (dist/types/<type>/index.html) links it: two folders up from the
  * page, computed so no path in this file reads as leaving the repository. */
 export const brandHref = (file: string) => posix.relative("types/<type>", brandPath(file));
+
+/** The robots tag every type page carries, as every catalog page does: _Type.astro writes it, and
+ * the onepager's and the readout's routes add it to their composer's page, which a consumer's
+ * document receives without it. */
+export const NOINDEX = '<meta name="robots" content="noindex">';
