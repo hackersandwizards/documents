@@ -88,7 +88,6 @@
   --page-height: var(--print-page-height);
   --page-margin-bottom: var(--print-margin-bottom);
 
-  --radius: var(--print-radius);
   --pill: var(--radius-pill);
   --hw-markers: on;
   --hw-marker-size: var(--bullet);
@@ -110,6 +109,12 @@
   --small-size: var(--type-small-size);
   --small-leading: var(--type-small-line-height);
   --label-leading: var(--type-label-line-height);
+}
+
+/* Set on every element, not once at the root, so --radius takes the small corner wherever brand
+   sets --print-radius to it: inside a brand-cornered block (elements/card.css). */
+* {
+  --radius: var(--print-radius);
 }
 
 :root {
