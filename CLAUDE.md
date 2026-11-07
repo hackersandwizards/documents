@@ -139,7 +139,7 @@ it beside its runtime dependencies) are peer dependencies, brand and scaffolding
 - `bun run dev` (or `bun run catalog`): serve the catalog at `http://127.0.0.1:4330/`, the type
   pages at `/types/<type>/index.html`. Dev serves at the root; the build keeps the Pages base
   `/documents` and writes the type pages to `dist/types/`.
-- `bun run build`: write the catalog to `dist/`.
+- `bun run build`: write the catalog to `dist/`, under scaffolding's `check-lock`.
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
 - One test file: `bun test <file>`.
 

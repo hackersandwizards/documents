@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "1.19.0",
+  "version": "1.19.1",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -56,7 +56,7 @@
     "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath .githooks || true",
     "dev": "cd catalog && bun --bun astro dev",
     "catalog": "bun run dev",
-    "build": "cd catalog && bun --bun astro build",
+    "build": "check-lock sh -c 'cd catalog && bun --bun astro build'",
     "check": "scaffolding check",
     "test": "bun test",
     "check:tests": "bun run test",
@@ -88,9 +88,9 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.11.1",
+    "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.11.2",
     "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v1.33.0",
-    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v2.20.1",
+    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v2.21.0",
     "@types/bun": "1.4.4",
     "@typescript/native": "npm:typescript@7.0.2",
     "astro": "7.4.7",
