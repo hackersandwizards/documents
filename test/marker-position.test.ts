@@ -4,11 +4,13 @@ import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
 
-// Every marker on the type pages (dist/types/, written by `bun run build`), measured on the pixels Chrome paints: a square's middle on
-// the middle of the x-height of the first line beside it (on the caps' middle beside capitals), a
-// step number's baseline on that line's baseline. Markers drifted 1.2 to 3.4 px off for months
+// Every marker on the type pages (dist/types/, written by `bun run build`), measured on the pixels Chrome paints: a square's middle
+// two thirds of the way from the x-height middle of the first line beside it to its cap-height
+// middle (the brand's --hw-marker-mid in marker.css; the caps' middle beside capitals), a step
+// number's baseline on that line's baseline. Markers drifted 1.2 to 3.4 px off for months
 // while every check passed, since only a render shows where they land. The line's first words
-// become "xxxx", so its ink is the x-height band itself (the cap band under text-transform).
+// become "xxxxHHHH" beside a square, so the x's ink is the x-height band and the H's the cap-height
+// band (both the cap band under text-transform), and "xxxx" beside a step number.
 // Each page runs twice: as composed, and with a newline and indent opening every list item, as
 // hand-written HTML has it (30 of 43 os onepagers, 2026-11-01), where an inline-block marker kept
 // the newline as a space and pushed the first line 3.5 px right of the wrapped ones.
@@ -16,12 +18,20 @@ const TOLERANCE = 0.6; // CSS px; the fix measured within 0.6 px at 600 dpi (202
 // A list's square, cut to the exact half ex (document.css), measured within 0.1 px (2026-11-01);
 // the lift rounded to whole pixels before sat up to 0.56 px off.
 const LIST_TOLERANCE = 0.25;
+const CAP_SHARE = 2 / 3; // brand's --hw-marker-mid: 1ex / 6 + 1cap / 3
 const SCALE = 4;
 const TYPES = resolve(import.meta.dir, "..", "dist/types");
 const pages = readdirSync(TYPES);
 
 type Box = { x: number; y: number; width: number; height: number };
-type Probe = { label: string; edge: "middle" | "bottom"; marker: Box; text: Box; indent: number };
+type Probe = {
+  label: string;
+  edge: "middle" | "bottom";
+  marker: Box;
+  text: Box;
+  caps: Box | null;
+  indent: number;
+};
 
 /** Runs in the page: rewrites the line beside each marker and returns the boxes to read, and for
  * a square marker how far its first line starts right of the item's content edge, where wrapped
@@ -66,10 +76,11 @@ function collect(newline: boolean): Probe[] {
     const text = next && (next instanceof Text ? next : firstText(next as Element));
     if (text) marked.push({ host: mark.parentElement!, text, edge: "bottom", mark });
   }
-  for (const m of marked) m.text.data = "xxxx " + m.text.data.trimStart();
-  const rectOf = (node: Node, end?: number) => {
+  for (const m of marked)
+    m.text.data = (m.edge === "middle" ? "xxxxHHHH " : "xxxx ") + m.text.data.trimStart();
+  const rectOf = (node: Node, end?: number, start = 0) => {
     const range = document.createRange();
-    range.setStart(node, 0);
+    range.setStart(node, start);
     range.setEnd(node, end ?? node.textContent!.length);
     return range.getClientRects()[0]!;
   };
@@ -81,6 +92,7 @@ function collect(newline: boolean): Probe[] {
   });
   return marked.map(({ host, text, edge, mark }) => {
     const t = rectOf(text, 4);
+    const c = edge === "middle" ? rectOf(text, 8, 4) : null;
     let marker: Box;
     let indent = 0;
     if (mark) {
@@ -108,6 +120,7 @@ function collect(newline: boolean): Probe[] {
       edge,
       marker,
       text: box(t.left, t.right, t.top, t.bottom),
+      caps: c && box(c.left, c.right, c.top, c.bottom),
       indent,
     };
   });
@@ -179,12 +192,15 @@ async function measure(file: string, newline: boolean, css = "") {
         edge,
       ));
     const offsets: { label: string; offset: number; indent: number }[] = [];
-    for (const p of await page.evaluate(collect, newline))
+    for (const p of await page.evaluate(collect, newline)) {
+      const x = await read(p.text, p.edge);
+      const target = p.caps ? x + CAP_SHARE * ((await read(p.caps, p.edge)) - x) : x;
       offsets.push({
         label: p.label,
-        offset: (await read(p.marker, p.edge)) - (await read(p.text, p.edge)),
+        offset: (await read(p.marker, p.edge)) - target,
         indent: p.indent,
       });
+    }
     return offsets;
   } finally {
     await page.close();
