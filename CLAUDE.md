@@ -123,7 +123,7 @@ it beside its runtime dependencies) are peer dependencies, brand and scaffolding
   list, the type pages), the brand's list-marker check on every type page with a marked list
   (`check:markers`; the handout's numbered contents carry no marker), the privacy check
   (`check:privacy`), the brand colour scan (`brand-colours.json` holds the exceptions) beside
-  `brand-copies`, and `brand-elements`. The tests read `dist/`, so they run after the build, not
+  `brand-copies` and `brand-retired` over `dist/` (`check:retired`), and `brand-elements`. The tests read `dist/`, so they run after the build, not
   among the shared steps. No hook runs the gate: `.githooks/pre-commit` runs `bun run check:staged`
   (scaffolding's `check-staged`). `bun install` points `core.hooksPath` at `.githooks/`.
 - `bun run dev` (or `bun run catalog`): serve the catalog at `http://127.0.0.1:4330/`, the type
