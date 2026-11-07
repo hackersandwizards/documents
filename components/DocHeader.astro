@@ -14,14 +14,12 @@ interface Props {
    * place of five and a mail address. The imprint sits under the lockup rather than in the page-1
    * footer, which would need an exception in the margin boxes. */
   legal?: boolean;
-  /** Lines under the tag, such as the date and the validity. */
-  meta?: string[];
+  /** Lines under the tag, such as the date and the validity; a line with `href` links there. */
+  meta?: (string | { text: string; href: string })[];
   /** The imprint's language. */
   lang?: "de" | "en";
-  /** Sets the tag as a link to this address, such as the website the tag names. */
-  href?: string;
 }
-const { kind, legal = false, meta = [], lang = "de", href } = Astro.props;
+const { kind, legal = false, meta = [], lang = "de" } = Astro.props;
 const imprint = {
   de: [
     "hackers&wizards GmbH, Osterstraße 95, 20259 Hamburg",
@@ -56,12 +54,11 @@ const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("bas
     )}
   </div>
   <div class="doc-meta">
-    {/* prettier-ignore */}
-    <span class="doc-tag">{href ? <a class="doc-tag-link" href={href}>{kind}</a> : kind}</span>
+    <span class="doc-tag">{kind}</span>
     {meta.map((line) => (
       <>
         <br />
-        {line}
+        {typeof line === "string" ? line : <a href={line.href}>{line.text}</a>}
       </>
     ))}
   </div>

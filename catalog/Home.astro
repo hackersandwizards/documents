@@ -14,15 +14,14 @@ const exceptions = Object.entries(
   <div class="foundations">
     {/* prettier-ignore */}
     <p>
-      Drei Ebenen. <strong>Tokens</strong>: <code>tokens.css</code> gibt jedem Wert eine Rolle aus{" "}
-      <code>@hackersandwizards/brand</code>. <strong>Basis</strong>: <code>document.css</code> setzt
-      Seite, Laufkopf und die Elemente, die jeder Typ und jeder Markdown-Text nutzt.{" "}
-      <strong>Komponenten</strong> setzen sich nur aus Tokens und Basis zusammen,{" "}
-      <strong>Typen</strong> nur aus Komponenten. Jede Story steht im Druckmaß
-      (<code>data-hw-scale="print"</code>) auf einem A4-Blatt.
+      Three layers. <strong>Tokens</strong>: <code>tokens.css</code> gives each value from{" "}
+      <code>@hackersandwizards/brand</code> a role. <strong>Base</strong>: <code>document.css</code>
+      sets the page, the running heads and the elements every type and Markdown body uses.{" "}
+      <strong>Components</strong> use only tokens and base, <strong>types</strong> only components.
+      Each story sits on an A4 sheet at print size (<code>data-hw-scale="print"</code>).
     </p>
     <p>
-      Jeder Typ als ganze Seite, so wie die Engine ihn druckt:
+      Each type as a whole page, as the engine prints it:
       {TYPES.map((t, i) => (
         <>
           {i > 0 && " · "}
@@ -34,8 +33,8 @@ const exceptions = Object.entries(
     </p>
     {/* prettier-ignore */}
     <p>
-      Aus brand: {elements.uses.map((name) => <code>hw-{name}</code>)}. Als eigene behalten, jede mit
-      ihrem Grund:
+      From brand: {elements.uses.map((name) => <code>hw-{name}</code>)}. Kept as the engine's own,
+      each with its reason:
     </p>
     <ul>
       {exceptions.map(([name, reason]) => (
@@ -46,8 +45,8 @@ const exceptions = Object.entries(
     </ul>
     {/* prettier-ignore */}
     <p>
-      <a class="hw-link" href={`${TYPES_URL}elemente/index.html`}>Die Elementseite</a> zeigt jedes als
-      Kachel; dort misst <code>brand-elements</code> sie in <code>bun run check</code>.
+      <a class="hw-link" href={`${TYPES_URL}elements/index.html`}>The elements page</a> shows each as
+      a tile, and <code>brand-elements</code> measures them there in <code>bun run check</code>.
     </p>
   </div>
 </Home>

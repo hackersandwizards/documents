@@ -1,14 +1,16 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "bun:test";
+import { TYPES as LISTED } from "../catalog/types";
 import { foreignStyles, rawInlineStyles } from "../scripts/styles";
 
 const ROOT = resolve(import.meta.dir, "..");
 // The type pages `bun run build` writes, each a document as the engine prints it.
 const TYPES = join(ROOT, "dist/types");
-const pages = readdirSync(TYPES).map((t) => join(TYPES, t, "index.html"));
+// The listed pages only: a former address in dist/types/ is a redirect.
+const pages = LISTED.map((t) => join(TYPES, t.file, "index.html"));
 const dir = mkdtempSync(join(tmpdir(), "documents-styles-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 

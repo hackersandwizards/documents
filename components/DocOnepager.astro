@@ -1,5 +1,6 @@
 ---
-// The training-offering onepager: DocHeader with the website's address as its linked tag, then the
+// The training-offering onepager: DocHeader with its kind in the tag and the website's address
+// linked under it, as the other types carry their date there, then the
 // body. The body is HTML in the blocks onepager.css styles (hero, facts, module-grid, deliverable
 // banner, planning, testimonial, references, closing; the catalog shows each). Every card is a
 // `<div class="card">`, plus `tint` for its tinted surface, which composeOnepager
@@ -11,19 +12,22 @@ interface Props {
   lang: "de" | "en";
   /** The body: the blocks after the header, as HTML. */
   html: string;
-  /** The header's tag and the address it links to. */
+  /** The header's tag. */
+  kind?: string;
+  /** The address under the tag and where it links. */
   site?: string;
   siteUrl?: string;
 }
 const {
   lang,
   html,
+  kind = "Training",
   site = "hackersandwizards.dev",
   siteUrl = "https://hackersandwizards.dev",
 } = Astro.props;
 ---
 
 <div class="page">
-  <DocHeader kind={site} href={siteUrl} lang={lang} />
+  <DocHeader kind={kind} meta={[{ text: site, href: siteUrl }]} lang={lang} />
   <Fragment set:html={html} />
 </div>

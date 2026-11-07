@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
+import { TYPES as TYPES_LISTED } from "../catalog/types";
 import { CAP_SHARE, TOLERANCE as LIST_TOLERANCE } from "@hackersandwizards/brand/markers";
 
 // The markers on the type pages (dist/types/, written by `bun run build`) that brand-markers leaves
@@ -16,7 +16,8 @@ import { CAP_SHARE, TOLERANCE as LIST_TOLERANCE } from "@hackersandwizards/brand
 const TOLERANCE = 0.6; // CSS px
 const SCALE = 4;
 const TYPES = resolve(import.meta.dir, "..", "dist/types");
-const pages = readdirSync(TYPES);
+// The listed pages only: a former address in dist/types/ is a redirect.
+const pages = TYPES_LISTED.map((t) => t.file);
 
 type Box = { x: number; y: number; width: number; height: number };
 type Probe = { label: string; edge: "middle" | "bottom"; marker: Box; text: Box; caps: Box | null };

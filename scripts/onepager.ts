@@ -51,6 +51,8 @@ function baseCss(link: boolean, read?: Set<string>) {
     // tokens.css above, and the base's list indent, never a copy.
     brandText("marker.css", read),
     rule(documentCss, /^ul li \{[\s\S]*?^\}/m, "`ul li` rule holding the list indent"),
+    // The page number every document carries bottom right, the base's margin box.
+    `@page onepager { ${rule(documentCss, /^ {2}@bottom-right \{[\s\S]*?^ {2}\}/m, "@bottom-right page number")} }`,
   ].join("\n");
 }
 
@@ -92,6 +94,8 @@ export interface OnepagerFit {
 export interface OnepagerPage {
   lang: "de" | "en";
   title: string;
+  /** The header's tag, DocOnepager's `kind`. */
+  kind?: string;
   /** The blocks after the header, as HTML, one top-level element per block. */
   html: string;
   fit?: OnepagerFit;
@@ -140,17 +144,16 @@ export async function composeOnepager(
     return open.trim();
   };
   const cards = { card: await cardTag(false), tint: await cardTag(true) };
-  const rendered = (await composer.render("DocOnepager", { lang, html: page.html })).replace(
-    /<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g,
-    (tag, cls: string) => {
-      const own = cls.split(" ");
-      if (!own.includes("card")) return tag;
-      const card = own.includes("tint") ? cards.tint : cards.card;
-      const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
-      const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
-      return card.replace(/class="[^"]*"/, `class="${all}"`);
-    },
-  );
+  const rendered = (
+    await composer.render("DocOnepager", { lang, kind: page.kind, html: page.html })
+  ).replace(/<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g, (tag, cls: string) => {
+    const own = cls.split(" ");
+    if (!own.includes("card")) return tag;
+    const card = own.includes("tint") ? cards.tint : cards.card;
+    const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
+    const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
+    return card.replace(/class="[^"]*"/, `class="${all}"`);
+  });
   const body = withElements(rendered, ONEPAGER_ELEMENTS);
   const style = [
     baseCss(link !== undefined),

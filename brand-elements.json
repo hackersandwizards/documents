@@ -1,6 +1,6 @@
 {
   "pages": [
-    "dist/types/elemente/index.html",
+    "dist/types/elements/index.html",
     "dist/types/angebot/index.html",
     "dist/types/quote/index.html",
     "dist/types/angebot-ohne-preise/index.html",
@@ -33,17 +33,17 @@
   ],
   "exceptions": {
     "total-band": {
-      "reason": "Die Summenzeile auf dem teal Band, 12 % Tönung unter der starken Linie, jeder Betrag teal und 1,2-fach. Summenbänder bleiben je System; die Tabelle darin misst das Gate nicht.",
+      "reason": "The total row on the teal band: a 12 % tint under the strong rule, every amount in teal at 1.2 times the size. Total bands stay per system; the gate does not measure the table inside.",
       "files": ["components/DocTotalRow.astro"]
     },
-    "section-label": "Der Abschnittskopf im h4-Maß, mono 600 in Versalien hinter einem teal Quadrat, die Gruppenüberschrift der Website-Trainingsliste. Kein Label, sondern ein Abschnittsband, und die bleiben je System.",
-    "margin-note": "Die Randnotiz im Handout: rechts neben dem Absatz umflossen, mit lila Linie. brand hat kein Element für Randnotizen; nur Papier hat einen Rand dafür.",
+    "section-label": "The section head at h4 size, mono 600 in capitals behind a teal square, the group heading of the website's training list. A section band rather than a label, and section bands stay per system.",
+    "margin-note": "The margin note in the handout: floated right of its paragraph, with a purple rule. brand has no element for margin notes, since only paper has a margin for them.",
     "survey-readout": {
-      "reason": "Die Umfrage-Auswertung ist ein Foliensatz in 1280 × 720 auf der Folienskala aus brands document.css (--deck-*), kein A4-Dokument; ihre Zitate und Labels folgen den Folien, ihre Kennzahlen sind brands hw-kpi im Folienmaß.",
+      "reason": "The survey readout is a 1280 × 720 slide set on the slide scale of brand's document.css (--deck-*), not an A4 document. Its quotes and labels follow the slides, its figures are brand's hw-kpi at slide size.",
       "files": ["readout.css"]
     },
     "onepager": {
-      "reason": "Der Onepager druckt die Trainingsseite der Website auf der Onepager-Skala aus brands document.css (--op-*), mit eigenen Label- und Notizformen. Noch nicht auf die brand-Elemente umgestellt: der nächste Schritt dieser Engine, mit Pixelvergleich und Blind-Review.",
+      "reason": "The onepager prints the website's training page on the onepager scale of brand's document.css (--op-*), with its own label and note forms. Its header and page number are the family's; moving its blocks onto the brand elements is this engine's next step, with a pixel comparison and a blind review.",
       "files": ["onepager.css"]
     }
   }
