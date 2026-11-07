@@ -108,6 +108,25 @@ describe("bakeDocumentCss", () => {
     expect(bakeDocumentCss(baked)).toBe(baked);
   });
 
+  const withComponents = (css: string) =>
+    `<html><head><style data-hw-document></style><style data-hw-components>${css}</style></head></html>`;
+
+  it("bakes component styles that read the strip as --gradient", () => {
+    expect(() => bakeDocumentCss(withComponents(".x{background:var(--gradient)}"))).not.toThrow();
+  });
+
+  it("refuses a document whose styles read a custom property they define nowhere", () => {
+    expect(() => bakeDocumentCss(withComponents(".x{color:var(--retired-token)}"))).toThrow(
+      /--retired-token/,
+    );
+    expect(() => bakeDocumentCss(withComponents("/* var(--retired-token) */"))).not.toThrow();
+    const inText = withComponents(".x{color:var(--retired-token)}").replace(
+      "</head>",
+      "</head><body><code>--retired-token: 1</code><code>var(--in-text)</code></body>",
+    );
+    expect(() => bakeDocumentCss(inText)).toThrow(/^(?!.*--in-text).*--retired-token/s);
+  });
+
   it("passes HTML without the marker through unchanged", () => {
     const plain = "<html><head><style>body{}</style></head></html>";
     expect(bakeDocumentCss(plain)).toBe(plain);

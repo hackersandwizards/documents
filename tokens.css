@@ -38,6 +38,9 @@
   --on-dark: var(--color-white);
   --prompt: var(--color-green);
   --shadow: var(--shadow-card);
+  /* The strip's name in component styles stored with a document, kept while a stored document
+     reads it. New styles read --gradient-strip. */
+  --gradient: var(--gradient-strip);
 
   /* Every text takes one role through its shorthand, never a size or face of its own. */
   --sans: var(--font-sans);

@@ -703,12 +703,26 @@ export function compactStyles(html: string): string {
   );
 }
 
+/** Each custom property the page's style elements and attributes read through `var()` without a
+ * fallback and define nowhere. */
+function unsetProperties(html: string): string[] {
+  const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>|\sstyle="([^"]*)"/gi)]
+    .map(([, sheet, attribute]) => sheet ?? attribute)
+    .join("\n");
+  const names = (pattern: RegExp) => new Set([...css.matchAll(pattern)].map(([, n]) => n!));
+  const defined = names(/(--[\w-]+)\s*:/g);
+  return [...names(/var\(\s*(--[\w-]+)\s*\)/g)].filter((name) => !defined.has(name));
+}
+
 const DOCUMENT_STYLE = /<style data-hw-document>[\s\S]*?<\/style>/;
 
 /**
  * Fills a document's `<style data-hw-document>` with the current base, maps its elements onto the
  * brand's (withElements) and puts it on the print scale. HTML without the marker passes unchanged. A document carrying a style the engine did not write fails: it would print a
- * look no engine type owns (foreignStyles, the documents-styles command).
+ * look no engine type owns (foreignStyles, the documents-styles command). So does one reading a
+ * custom property through `var()` without a fallback that the baked page defines nowhere: a
+ * document keeps the component styles it was composed with, so a token name the base drops would
+ * otherwise empty their rules silently.
  */
 export function bakeDocumentCss(html: string): string {
   if (!DOCUMENT_STYLE.test(html)) return html;
@@ -721,12 +735,18 @@ export function bakeDocumentCss(html: string): string {
   const scaled = /<html\b[^>]*\bdata-hw-scale=/.test(html)
     ? html
     : html.replace(/<html\b/, '<html data-hw-scale="print"');
-  return compactStyles(
+  const baked = compactStyles(
     withElements(scaled).replace(
       DOCUMENT_STYLE,
       () => `<style data-hw-document>\n${css}\n</style>`,
     ),
   );
+  const unset = unsetProperties(baked);
+  if (unset.length > 0)
+    throw new Error(
+      `This document reads custom properties no stylesheet defines: ${unset.join(", ")}. Re-compose a stored document with the current engine; where a fresh compose fails too, report the names to @hackersandwizards/documents.`,
+    );
+  return baked;
 }
 
 /**
