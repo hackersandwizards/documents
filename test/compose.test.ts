@@ -24,7 +24,7 @@ describe("scripts/compose.ts", () => {
     const out = join(dir, "rate-card.html");
     execFileSync("bun", [SCRIPT, "DocRateCard", join(dir, "props.json"), out]);
     const html = readFileSync(out, "utf8");
-    expect(html).toMatch(/<style data-hw-document>\n\S/);
+    expect(html).toMatch(/<style data-hw-document>\n?\S/);
     // The container renders markup only: without the collected styles, the header has no rule.
     expect(html).toMatch(/\.doc-header\[data-astro-cid-\w+\]/);
     expect(html).toMatch(/<header class="doc-header" data-astro-cid-\w+/);
@@ -106,7 +106,7 @@ describe("scripts/compose.ts", () => {
         `<p class="footer-credential"[^>]*>Credential ID: ${certificate.credentialId}</p>`,
       ),
     );
-    expect(en).toMatch(/<img src="data:image\/svg\+xml;base64,[^"]+" alt="hackers&wizards"/);
+    expect(en).toMatch(/<img src="data:image\/svg\+xml,%3Csvg [^"]+" alt="hackers&wizards"/);
     const de = compose({ ...certificate, lang: "de" });
     expect(de).toContain("Abschlusszertifikat");
     expect(de).not.toContain("Teilnahmezertifikat");

@@ -2,7 +2,7 @@
 // caller's own readout colours a weak spot's marker as its bar.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fill, languageTag } from "./fill";
+import { fill, languageTag, svgUri } from "./fill";
 import { brandCss, brandFile, compactStyles } from "./render-pdf";
 import { ROOT } from "./root";
 
@@ -393,8 +393,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
   );
 
   const slides = [s1, s2, s3, s4, s5, s6, s7].join("\n");
-  const logo = (file: string) =>
-    `data:image/svg+xml;base64,${readFileSync(brandFile(`logos/${file}`)).toString("base64")}`;
+  const logo = (file: string) => svgUri(readFileSync(brandFile(`logos/${file}`), "utf8"));
   const lockup = logo("lockup.svg");
   const wordmark = `<img class="wordmark" src="${logo("wordmark.svg")}" alt="hackers&amp;wizards" />`;
   // Replacer functions, since a replacement string reads $& and $$ out of attendee quotes. The

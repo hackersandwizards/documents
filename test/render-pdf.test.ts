@@ -23,6 +23,7 @@ import {
 } from "../scripts/render-pdf";
 import { decompress } from "woff2-encoder";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
+import { svgUri } from "../scripts/fill";
 import { rateCard } from "../scripts/samples";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
@@ -63,7 +64,9 @@ describe("compactStyles", () => {
     // Text after "data:" is no data URI.
     expect(compactStyles(page("<p>Metadata: Čaluk</p>"))).toContain("U+0100");
     expect(compactStyles(page("<p>&#x10C;aluk</p>"))).toContain("U+0100");
-    expect(compactStyles(page("", 'li::before { content: "\\2192"; }'))).toContain("U+21??");
+    expect(
+      compactStyles(page("<ul><li>x</li></ul>", 'li::before { content: "\\2192"; }')),
+    ).toContain("U+21??");
     // text-transform: uppercase prints ÿ as Ÿ (U+0178), and i as İ (U+0130) in Turkish.
     expect(compactStyles(page("<p>ÿ</p>"))).toContain("U+0100");
     expect(compactStyles(page("<p>i</p>").replace("<html>", '<html lang="tr">'))).toContain(
@@ -75,10 +78,12 @@ describe("compactStyles", () => {
   it("leaves text and selectors alone: a face in the body, an escape past U+10FFFF, a comment between selectors", () => {
     const shown = "<pre>@font-face { unicode-range: U+0100; } C:\\facade</pre>";
     expect(compactStyles(page(shown))).toContain(shown);
-    expect(compactStyles(page("", ".a/* x */ .b { color: red; }"))).toContain(".a .b {");
+    expect(
+      compactStyles(page('<p class="a"><b class="b">x</b></p>', ".a/* x */ .b { color: red; }")),
+    ).toContain(".a .b{");
     const quoted = '.a { content: "x /* y"; } .b { color: red; } /* c */';
-    expect(compactStyles(page("", quoted))).toContain(
-      '.a { content: "x /* y"; } .b { color: red; }',
+    expect(compactStyles(page('<p class="a b">x</p>', quoted))).toContain(
+      '.a{ content: "x /* y"}.b{ color: red}',
     );
   });
 
@@ -144,12 +149,12 @@ describe("subsetFaces", () => {
 
 describe("bakeDocumentCss", () => {
   const doc =
-    "<html><head><style data-hw-document></style><style data-hw-components>.own{}</style></head></html>";
+    '<html><head><style data-hw-document></style><style data-hw-components>.own{color:red}</style></head><body><header class="doc-header"></header><p class="own">x</p></body></html>';
 
   it("fills the marked style element and leaves the engine's component styles alone", () => {
     const baked = bakeDocumentCss(doc);
     expect(baked).toContain(".doc-header");
-    expect(baked).toContain("<style data-hw-components>.own{}</style>");
+    expect(baked).toContain("<style data-hw-components>.own{color:red}</style>");
   });
 
   it("re-bakes to the same bytes, so a re-render touches no stored file", () => {
@@ -168,7 +173,7 @@ describe("bakeDocumentCss", () => {
   });
 
   const withComponents = (css: string) =>
-    `<html><head><style data-hw-document></style><style data-hw-components>${css}</style></head></html>`;
+    `<html><head><style data-hw-document></style><style data-hw-components>${css}</style></head><body><p class="x">x</p></body></html>`;
 
   it("bakes component styles that read the strip as --gradient", () => {
     expect(() => bakeDocumentCss(withComponents(".x{background:var(--gradient)}"))).not.toThrow();
@@ -180,14 +185,14 @@ describe("bakeDocumentCss", () => {
     );
     expect(() => bakeDocumentCss(withComponents("/* var(--retired-token) */"))).not.toThrow();
     const inText = withComponents(".x{color:var(--retired-token)}").replace(
-      "</head>",
-      "</head><body><code>--retired-token: 1</code><code>var(--in-text)</code></body>",
+      "<body>",
+      "<body><code>--retired-token: 1</code><code>var(--in-text)</code>",
     );
     expect(() => bakeDocumentCss(inText)).toThrow(/^(?!.*--in-text).*--retired-token/s);
     // Pandoc keeps the quotes of inline code as written.
     const shown = withComponents("").replace(
-      "</head>",
-      '</head><body><code>&lt;div style="--a: var(--shown)"&gt;</code></body>',
+      "<body>",
+      '<body><code>&lt;div style="--a: var(--shown)"&gt;</code>',
     );
     expect(() => bakeDocumentCss(shown)).not.toThrow();
   });
@@ -347,13 +352,17 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     return join(dir, `${name}-${warm}.pdf`);
   };
 
+  const brand = (file: string) =>
+    createRequire(import.meta.url).resolve(`@hackersandwizards/brand/logos/${file}`);
+
   beforeAll(async () => {
-    const logo = readFileSync(
-      createRequire(import.meta.url).resolve("@hackersandwizards/brand/logos/lockup.png"),
-    ).toString("base64");
+    const logo = readFileSync(brand("lockup.png"));
+    writeFileSync(join(dir, "mark.png"), logo);
+    // The data URI, the file beside the page at its own proportions, and brand's lockup, whose
+    // wizard is a 512 px PNG inside the SVG.
     writeFileSync(
       join(dir, "doc.html"),
-      `<!doctype html><html lang="en"><body><h1>One</h1><img src="data:image/png;base64,${logo}" style="width:108px;height:20px"><h2>Two</h2></body></html>`,
+      `<!doctype html><html lang="en"><body><h1>One</h1><img src="data:image/png;base64,${logo.toString("base64")}" style="width:108px;height:20px"><img src="mark.png" style="height:20px"><img src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:40px"><h2>Two</h2></body></html>`,
     );
     pdf = join(dir, `doc-${warm}.pdf`);
     await renderPdf(join(dir, "doc.html"), pdf, { warm });
@@ -439,10 +448,48 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(pdfinfo()).toMatch(/^Title:\s+One$/m);
   });
 
-  it("embeds a raster image at twice its displayed size, not its source size", () => {
-    const [, , row] = execFileSync("pdfimages", ["-list", pdf], { encoding: "utf8" }).split("\n");
-    expect(row.trim().split(/\s+/).slice(3, 5)).toEqual(["216", "40"]);
+  it("embeds each raster image at three times its displayed size, not its source size", () => {
+    const sizes = execFileSync("pdfimages", ["-list", pdf], { encoding: "utf8" })
+      .split("\n")
+      .slice(2)
+      .map((row) => row.trim().split(/\s+/))
+      .filter((cells) => cells[2] === "image")
+      .map((cells) => cells.slice(3, 5).map(Number));
+    // The data URI, the file beside the page, and the wizard 40 px tall, as tall as the lockup's box.
+    expect(sizes[0]).toEqual([324, 60]);
+    expect(sizes[1]![1]).toBe(60);
+    expect(sizes[2]).toEqual([120, 120]);
   });
+
+  it("prints an SVG data URI it cannot read as it is", async () => {
+    const file = join(dir, "bad-svg.html");
+    writeFileSync(
+      file,
+      `<!doctype html><html lang="en"><body><p>Kept</p><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='100%' height='10'/%3E%3C/svg%3E" style="height:10px"></body></html>`,
+    );
+    const out = join(dir, `bad-svg-${warm}.pdf`);
+    await renderPdf(file, out, { warm });
+    expect(execFileSync("pdftotext", [out, "-"], { encoding: "utf8" })).toContain("Kept");
+  }, 60_000);
+
+  it("keeps every image in the box it was laid out in", async () => {
+    // A word after each image sits where it sits beside the same images left unredrawn, which
+    // data-print-scaled marks as done.
+    const after = async (name: string, attr: string) => {
+      writeFileSync(
+        join(dir, `${name}.html`),
+        `<!doctype html><html lang="en"><body><p><img ${attr} src="mark.png" style="height:13px">Alpha <img ${attr} src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:17px">Beta</p></body></html>`,
+      );
+      const out = join(dir, `${name}-${warm}.pdf`);
+      await renderPdf(join(dir, `${name}.html`), out, { warm });
+      return execFileSync("pdftotext", ["-bbox", out, "-"], { encoding: "utf8" })
+        .match(/<word xMin="[\d.]+"[^>]*>(Alpha|Beta)</g)
+        ?.join();
+    };
+    const redrawn = await after("boxes", "");
+    expect(redrawn).toContain("Beta");
+    expect(redrawn).toBe(await after("boxes-kept", "data-print-scaled"));
+  }, 60_000);
 
   it("passes a document on the base's static faces and fails one on the browser default", async () => {
     expect(() => assertBrandFonts(pdf)).toThrow(/non-brand face/);

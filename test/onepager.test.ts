@@ -1,11 +1,11 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { encodeNonAsciiHTML } from "entities";
 import { openComposer } from "../scripts/compose";
-import { fitOnepager } from "../scripts/onepager";
+import { composeOnepager, fitOnepager } from "../scripts/onepager";
 import { assertBrandFonts, renderPdf } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
 import { onepager } from "../scripts/samples";
@@ -44,6 +44,15 @@ describe("fitOnepager", () => {
     // The control holds only while page 2 opens on the heading with the entity.
     const page2 = execFileSync("pdftotext", ["-f", "2", "-l", "2", pdf, "-"], { encoding: "utf8" });
     expect(page2.trimStart().toLowerCase()).toStartWith("schön zu wissen");
+    // The faces the print never set are gone, the rest cut to what each set, and the page prints
+    // the same text as the page composed with every face whole.
+    const whole = join(work, "whole.html");
+    writeFileSync(whole, await composeOnepager(composer, { ...onepager, html, fit: fit.fit }));
+    const faces = (file: string) => readFileSync(file, "utf8").match(/data:font\/woff2/g)!.length;
+    expect(faces(file)).toBeLessThan(faces(whole));
+    await renderPdf(whole, join(work, "whole.pdf"));
+    const text = (file: string) => execFileSync("pdftotext", [file, "-"], { encoding: "utf8" });
+    expect(text(pdf)).toBe(text(join(work, "whole.pdf")));
   }, 60_000);
 });
 

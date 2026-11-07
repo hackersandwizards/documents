@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "1.17.1",
+  "version": "1.18.0",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -47,6 +47,7 @@
     "scripts/root.ts",
     "scripts/privacy.ts",
     "scripts/prose.ts",
+    "scripts/prune.ts",
     "scripts/styles.ts",
     "scripts/samples.ts",
     "LICENSE"

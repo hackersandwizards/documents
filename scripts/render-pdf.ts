@@ -1,17 +1,19 @@
 import { type ChildProcess, execFile, spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { inflateSync } from "node:zlib";
 import { chromeArgs, chromeBinaryAsync, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { decodeHTML } from "entities";
 import { compress, decompress } from "woff2-encoder";
 import { withElements } from "./elements";
 import { HANDOUT_TEXT } from "./handout";
+import { editStyles, pruneStyles } from "./prune";
 import { ROOT } from "./root";
 import { foreignStyles, styleAttributes } from "./styles";
 
@@ -19,37 +21,89 @@ const execFileAsync = promisify(execFile);
 
 /**
  * Runs in the printed copy. Chrome embeds every raster image at its source resolution: the 512px
- * header logo shown 22.5pt wide was 56 KB of a 129 KB quote (measured). Each image is
- * redrawn at twice its displayed size, as the smaller of PNG and, where opaque, JPEG. The new src
- * is set from the image's own load event, which holds the window's load, so the print waits for
- * every redraw; work after load raced the print (measured). A document without a `<title>`
- * takes its first heading's.
+ * header logo shown 22.5pt wide was 56 KB of a 129 KB quote (measured). Each image is redrawn at
+ * three times its displayed size as PNG, or as the smaller of PNG and JPEG where the source is a
+ * JPEG, and so is each raster an SVG image carries as a data URI, such as the wizard in brand's
+ * lockup, which printed at 512 px for 37 px shown (measured). Twice the size, or JPEG for an
+ * opaque image, leaves the onepager's small client marks visibly soft at 200% zoom and in print.
+ * A redrawn raster keeps its source's proportions, and its source's size where the page left the
+ * size to the image, so nothing moves; the page's own CSS, print rules included, still sizes it.
+ * An SVG keeps its viewBox and size. A raster image's new src is set from its own load event,
+ * which holds the window's load, so the print waits for every redraw; work after load raced the
+ * print (measured). An SVG's rasters decode asynchronously, so that work goes on
+ * `globalThis.hwLayout`, which the print waits for; an SVG it cannot read prints as it is. A
+ * document without a `<title>` takes its first heading's.
  */
 const PRINT_JS = `
 if (!document.title) document.title = document.querySelector("h1")?.textContent?.trim() ?? "";
+const redraw = (source, src, scale) => {
+  if (!(scale > 0 && scale < 1)) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+  canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+  const png = canvas.toDataURL("image/png");
+  if (!/^data:image\\/jpeg|\\.jpe?g($|[?#])/i.test(src)) return png;
+  const jpeg = canvas.toDataURL("image/jpeg", 0.9);
+  return jpeg.length < png.length ? jpeg : png;
+};
+const keep = (img, rect) => {
+  if (getComputedStyle(img).aspectRatio.startsWith("auto"))
+    img.style.aspectRatio = img.naturalWidth + " / " + img.naturalHeight;
+  // A presentational width, which any CSS width outranks.
+  if (Math.abs(rect.width - img.naturalWidth) < 0.5 && Math.abs(rect.height - img.naturalHeight) < 0.5)
+    img.setAttribute("width", String(rect.width));
+  img.srcset = "";
+};
+const svgText = (src) => {
+  const comma = src.indexOf(",");
+  const data = src.slice(comma + 1);
+  if (!/;base64/i.test(src.slice(0, comma))) return decodeURIComponent(data);
+  return new TextDecoder().decode(Uint8Array.from(atob(data), (c) => c.charCodeAt(0)));
+};
+const svgRasters = async (img, rect) => {
+  const doc = new DOMParser().parseFromString(svgText(img.currentSrc), "image/svg+xml");
+  const box = doc.documentElement.viewBox?.baseVal;
+  if (!box?.width || !box.height) return;
+  const unit = Math.min(rect.width / box.width, rect.height / box.height);
+  let changed = false;
+  for (const image of doc.querySelectorAll("image")) {
+    const href = image.getAttribute("href") ?? image.getAttribute("xlink:href") ?? "";
+    if (!/^data:image\\/(png|jpeg|webp|gif)/i.test(href)) continue;
+    const raster = new Image();
+    raster.src = href;
+    await raster.decode();
+    const url = redraw(raster, href, Math.max((3 * unit * image.width.baseVal.value) / raster.naturalWidth, (3 * unit * image.height.baseVal.value) / raster.naturalHeight));
+    if (!url) continue;
+    image.removeAttribute("xlink:href");
+    image.setAttribute("href", url);
+    changed = true;
+  }
+  if (!changed) return;
+  img.srcset = "";
+  img.src = "data:image/svg+xml," + encodeURIComponent(new XMLSerializer().serializeToString(doc));
+  await img.decode();
+};
 for (const img of document.images) {
   const shrink = () => {
-    if ("printScaled" in img.dataset || !img.naturalWidth || /^data:image\\/svg|\\.svg($|[?#])/i.test(img.currentSrc)) return;
+    if ("printScaled" in img.dataset || !img.naturalWidth) return;
     img.dataset.printScaled = "";
-    const { width, height } = img.getBoundingClientRect();
-    const fit = getComputedStyle(img).objectFit === "contain" ? Math.min : Math.max;
-    const scale = fit((2 * width) / img.naturalWidth, (2 * height) / img.naturalHeight);
-    if (!(scale > 0 && scale < 1)) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
-    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    let alpha;
-    // A file:// image taints the canvas; it prints at its source size.
-    try { alpha = ctx.getImageData(0, 0, canvas.width, canvas.height).data; } catch { return; }
-    let opaque = true;
-    for (let i = 3; i < alpha.length; i += 4) if (alpha[i] < 255) { opaque = false; break; }
-    const png = canvas.toDataURL("image/png");
-    const jpeg = opaque ? canvas.toDataURL("image/jpeg", 0.9) : png;
-    img.srcset = "";
-    // A QR code is opaque, yet its hard edges took 18.5 KB as JPEG against 3.8 KB as PNG (measured).
-    img.src = jpeg.length < png.length ? jpeg : png;
+    const rect = img.getBoundingClientRect();
+    if (/^data:image\\/svg/i.test(img.currentSrc)) {
+      (globalThis.hwLayout ??= []).push(svgRasters(img, rect).catch(() => {}));
+      return;
+    }
+    if (/\\.svg($|[?#])/i.test(img.currentSrc)) return;
+    const contain = getComputedStyle(img).objectFit === "contain";
+    // A box object-fit fills or covers needs the larger side; contain the smaller.
+    const fit = contain ? Math.min : Math.max;
+    const scale = fit((3 * rect.width) / img.naturalWidth, (3 * rect.height) / img.naturalHeight);
+    let url;
+    // A file:// image the render could not inline taints the canvas; it prints at its source size.
+    try { url = redraw(img, img.currentSrc, scale); } catch { return; }
+    if (!url) return;
+    keep(img, rect);
+    img.src = url;
   };
   if (img.complete) shrink(); else img.addEventListener("load", shrink, { once: true });
 }
@@ -58,6 +112,26 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
 /** The same for a page served over HTTP, which the render cannot edit: run before the page's own
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
+
+/** `html` with each `<img>` whose src is a raster file beside it as a data URI: a file:// image
+ * taints the canvas PRINT_JS redraws it on, so it printed at its source size, as the onepager's
+ * client marks did at four times theirs (measured). */
+function withLocalImages(html: string, dir: string): string {
+  return html.replace(
+    /(<img\b[^>]*?\ssrc=)(["'])([^"':/#?][^"':#?]*?\.(?:png|jpe?g|gif|webp))\2/gi,
+    (tag, start: string, quote: string, src: string) => {
+      let path: string;
+      try {
+        path = join(dir, decodeURIComponent(src));
+      } catch {
+        return tag;
+      }
+      if (!existsSync(path)) return tag;
+      const data = readFileSync(path).toString("base64");
+      return `${start}${quote}data:${Bun.file(path).type};base64,${data}${quote}`;
+    },
+  );
+}
 
 /** The print settings. Chrome tags the PDF without being asked; the outline needs the flag. */
 const PRINT_PARAMS = {
@@ -137,7 +211,7 @@ export async function renderPdf(
     writeFileSync(pdfPath, pdf);
     return;
   }
-  const html = readFileSync(htmlPath, "utf-8");
+  const html = withLocalImages(readFileSync(htmlPath, "utf-8"), dirname(htmlPath));
   const end = html.lastIndexOf("</body>");
   // Beside the input, so relative resources resolve; the stored HTML stays free of the script. A
   // name per call, since a render that finishes deletes its file while another may still load it.
@@ -675,7 +749,10 @@ function printableCodePoints(html: string): Set<number> {
     }
   })();
   const text = decodeHTML(
-    html.replace(/data:[\w.+-]+\/[\w.+-]+(?:;[\w.=-]+)*;base64,[\w+/=]+/g, ""),
+    html.replace(
+      /data:[\w.+-]+\/[\w.+-]+(?:;[\w.=-]+)*;base64,[\w+/=]+|data:image\/svg\+xml,[^"'\s)]*/g,
+      "",
+    ),
   )
     .replace(/\\([\da-f]{1,6})\s?/gi, escaped)
     .replace(/\\u\{?([\da-f]{4,6})\}?/gi, escaped);
@@ -686,33 +763,29 @@ function printableCodePoints(html: string): Set<number> {
   return points;
 }
 
-/** Each style element's CSS, rewritten by `edit`. */
-const editStyles = (html: string, edit: (css: string) => string) =>
-  html.replace(
-    /(<style\b[^>]*>)([\s\S]*?)(?=<\/style>)/gi,
-    (_, open: string, css: string) => open + edit(css),
-  );
+/** Each `@font-face` rule of a page's style elements, kept, rewritten or dropped ("") by `edit`. */
+const editFaces = (html: string, edit: (face: string) => string) =>
+  editStyles(html, (css) => css.replace(/@font-face\s*\{[^}]*\}\s*/g, edit));
 
 /**
  * A standalone page as it leaves the engine: its style elements without comments, which a reader
- * of the page never needs, and without each face whose `unicode-range` holds no character of the
+ * of the page never needs, without the rules and custom properties its markup cannot use
+ * (pruneStyles), and without each face whose `unicode-range` holds no character of the
  * page, which Chrome never loads there: brand's latin-ext, arrow and box-drawing faces were about
  * 260 KB of every page (measured).
  */
 export function compactStyles(html: string): string {
-  const bare = editStyles(html, stripComments);
+  const bare = pruneStyles(editStyles(html, stripComments));
   const points = [...printableCodePoints(bare)];
-  return editStyles(bare, (css) =>
-    css.replace(/@font-face\s*\{[^}]*\}\s*/g, (face) => {
-      const range = /unicode-range:\s*([^;}]+)/.exec(face)?.[1];
-      if (!range) return face;
-      const spans = range.split(",").map((r): [number, number] => {
-        const [lo = "", hi = lo] = r.trim().replace(/^U\+/i, "").split("-");
-        return [parseInt(lo.replace(/\?/g, "0"), 16), parseInt(hi.replace(/\?/g, "f"), 16)];
-      });
-      return points.some((p) => spans.some(([lo, hi]) => p >= lo && p <= hi)) ? face : "";
-    }),
-  );
+  return editFaces(bare, (face) => {
+    const range = /unicode-range:\s*([^;}]+)/.exec(face)?.[1];
+    if (!range) return face;
+    const spans = range.split(",").map((r): [number, number] => {
+      const [lo = "", hi = lo] = r.trim().replace(/^U\+/i, "").split("-");
+      return [parseInt(lo.replace(/\?/g, "0"), 16), parseInt(hi.replace(/\?/g, "f"), 16)];
+    });
+    return points.some((p) => spans.some(([lo, hi]) => p >= lo && p <= hi)) ? face : "";
+  });
 }
 
 /** subset-font (HarfBuzz) ships no types; this is the call subsetFaces makes. woff2-encoder, not
@@ -753,20 +826,28 @@ const FACES = /data:font\/woff2;base64,([\w+/=]+)/g;
 const decoded = new Map<string, Promise<Uint8Array>>();
 let lastCut = { text: "", faces: new Map<string, Promise<string>>() };
 
+/** A face's base64 decoded to TrueType, through the cache. */
+const decodedFace = (data: string) => {
+  let ttf = decoded.get(data);
+  if (!ttf) {
+    // A page whose faces were cut before brings faces of its own: the cache keeps the brand's.
+    if (decoded.size >= 64) decoded.clear();
+    decoded.set(data, (ttf = decompress(Buffer.from(data, "base64"))));
+  }
+  return ttf;
+};
+
+/** A TrueType face cut to `text`, as WOFF2 base64. */
+const cutTo = async (font: Uint8Array, text: string) =>
+  Buffer.from(
+    await compress(await subsetFont(Buffer.from(font), text, { targetFormat: "truetype" })),
+  ).toString("base64");
+
 const cutFace = (data: string, text: string) => {
   if (lastCut.text !== text) lastCut = { text, faces: new Map() };
   let face = lastCut.faces.get(data);
   if (!face) {
-    let ttf = decoded.get(data);
-    if (!ttf) {
-      // A page whose faces were cut before brings faces of its own: the cache keeps the brand's.
-      if (decoded.size >= 64) decoded.clear();
-      decoded.set(data, (ttf = decompress(Buffer.from(data, "base64"))));
-    }
-    face = ttf
-      .then((font) => subsetFont(Buffer.from(font), text, { targetFormat: "truetype" }))
-      .then(compress)
-      .then((woff2) => Buffer.from(woff2).toString("base64"));
+    face = decodedFace(data).then((font) => cutTo(font, text));
     lastCut.faces.set(data, face);
   }
   return face;
@@ -788,6 +869,108 @@ export async function subsetFaces(html: string): Promise<string> {
     await Promise.all(faces.map(async (d) => [d, await cutFace(d, text)] as const)),
   );
   return html.replace(FACES, (_, data: string) => `data:font/woff2;base64,${cut.get(data)}`);
+}
+
+/** A font's PostScript name (name ID 6) from its sfnt tables. */
+function postScriptName(font: Uint8Array): string | undefined {
+  const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
+  for (let i = 0; i < view.getUint16(4); i++) {
+    const record = 12 + i * 16;
+    if (String.fromCharCode(...font.subarray(record, record + 4)) !== "name") continue;
+    const table = view.getUint32(record + 8);
+    const strings = table + view.getUint16(table + 4);
+    for (let n = 0; n < view.getUint16(table + 2); n++) {
+      const r = table + 6 + n * 12;
+      if (view.getUint16(r + 6) !== 6) continue;
+      const bytes = font.subarray(
+        strings + view.getUint16(r + 10),
+        strings + view.getUint16(r + 10) + view.getUint16(r + 8),
+      );
+      // Unicode and Windows names are UTF-16BE, Macintosh ones single bytes.
+      return view.getUint16(r) === 1
+        ? Buffer.from(bytes).toString("latin1")
+        : Buffer.from(bytes).swap16().toString("utf16le");
+    }
+  }
+  return undefined;
+}
+
+/** The characters each font of a Chrome PDF prints, by PostScript name, from its ToUnicode map. */
+function printedCharacters(pdf: Buffer): Map<string, Set<number>> {
+  const text = pdf.toString("latin1");
+  const stream = (id: string) => {
+    const head = new RegExp(`(?<![\\d])${id} 0 obj\\s*<<([\\s\\S]*?)>>\\s*stream\\r?\\n`).exec(
+      text,
+    );
+    const length = Number(/\/Length (\d+)/.exec(head?.[1] ?? "")?.[1]);
+    if (!head || !length) throw new Error(`printedCharacters: no stream ${id} in the PDF`);
+    const start = head.index + head[0].length;
+    return inflateSync(pdf.subarray(start, start + length)).toString("latin1");
+  };
+  const utf16 = (hex: string) => Buffer.from(hex, "hex").swap16().toString("utf16le");
+  const fonts = new Map<string, Set<number>>();
+  for (const [dict] of text.matchAll(/<<[^<>]*\/Subtype \/Type0[^<>]*>>/g)) {
+    const name = /\/BaseFont \/(?:[A-Z]{6}\+)?([^\s/]+)/.exec(dict)?.[1];
+    const map = /\/ToUnicode (\d+) 0 R/.exec(dict)?.[1];
+    if (!name || !map) throw new Error(`printedCharacters: a font without a name or ToUnicode`);
+    const points = fonts.get(name) ?? new Set<number>();
+    const cmap = stream(map);
+    const add = (s: string) => {
+      for (const c of s) points.add(c.codePointAt(0)!);
+    };
+    for (const [, block] of cmap.matchAll(/beginbfchar([\s\S]*?)endbfchar/g))
+      for (const [, dst] of block!.matchAll(/<[\da-f]+>\s*<([\da-f]+)>/gi)) add(utf16(dst!));
+    for (const [, block] of cmap.matchAll(/beginbfrange([\s\S]*?)endbfrange/g))
+      for (const [, lo, hi, dst] of block!.matchAll(
+        /<([\da-f]+)>\s*<([\da-f]+)>\s*<([\da-f]+)>/gi,
+      )) {
+        const first = utf16(dst!).codePointAt(0)!;
+        for (let k = 0; k <= parseInt(hi!, 16) - parseInt(lo!, 16); k++) points.add(first + k);
+      }
+    fonts.set(name, points);
+  }
+  return fonts;
+}
+
+/** The hyphens and spaces a screen may break or space a line with where the print did not. */
+const BREAKS = "  ­-‐";
+
+/**
+ * The page `pdf` printed, each inlined face cut to the characters that face printed there, and
+ * each face it never printed dropped: subsetFaces keeps every character of the page in every face,
+ * though most faces print a few words. The onepager's faces were half of its HTML (measured). The
+ * screen sets the same words in the same faces, the print styles holding no other face, and only
+ * a hyphen or space its other line breaks may add, which every face keeps.
+ */
+export async function cutFacesToPdf(html: string, pdf: string): Promise<string> {
+  const bytes = readFileSync(pdf);
+  // A Type 3 face carries no name to match: the page stays as it is.
+  if (bytes.includes("/Subtype /Type3")) return html;
+  const printed = printedCharacters(bytes);
+  const faces = await Promise.all(
+    [...new Set([...html.matchAll(FACES)].map(([, data]) => data!))].map(async (data) => {
+      // Not through `decoded`, which holds the brand's faces: these are this page's cuts.
+      const font = await decompress(Buffer.from(data, "base64"));
+      return { data, font, name: postScriptName(font) ?? "" };
+    }),
+  );
+  // A printed font no face is named for may be one of them under another name: nothing is cut.
+  if ([...printed.keys()].some((name) => !faces.some((face) => face.name === name))) return html;
+  const cut = new Map(
+    await Promise.all(
+      faces.map(async ({ data, font, name }) => {
+        const points = printed.get(name);
+        if (!points) return [data, ""] as const;
+        const text = String.fromCodePoint(...[...points].sort((a, b) => a - b)) + BREAKS;
+        return [data, await cutTo(font, text)] as const;
+      }),
+    ),
+  );
+  return editFaces(html, (face) => {
+    const data = new RegExp(FACES.source).exec(face)?.[1];
+    if (!data) return face;
+    return cut.get(data) ? face.replace(data, cut.get(data)!) : "";
+  });
 }
 
 /** Each custom property the page's style elements and attributes read through `var()` without a
@@ -822,13 +1005,14 @@ export function bakeDocumentCss(html: string): string {
   const scaled = /<html\b[^>]*\bdata-hw-scale=/.test(html)
     ? html
     : html.replace(/<html\b/, '<html data-hw-scale="print"');
-  const baked = compactStyles(
-    withElements(scaled).replace(
-      DOCUMENT_STYLE,
-      () => `<style data-hw-document>\n${css}\n</style>`,
-    ),
+  const full = withElements(scaled).replace(
+    DOCUMENT_STYLE,
+    () => `<style data-hw-document>\n${css}\n</style>`,
   );
-  const unset = unsetProperties(baked);
+  // Read before compactStyles prunes: a property defined under a rule the page cannot use still
+  // counts as defined, as it did before pruning.
+  const unset = unsetProperties(editStyles(full, stripComments));
+  const baked = compactStyles(full);
   if (unset.length > 0)
     throw new Error(
       `This document reads custom properties no stylesheet defines: ${unset.join(", ")}. Re-compose a stored document with the current engine; where a fresh compose fails too, report the names to @hackersandwizards/documents.`,

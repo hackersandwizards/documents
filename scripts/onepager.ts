@@ -6,7 +6,14 @@ import { decodeHTMLStrict } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
 import { CARD_AND_TAG, type Edit, withElements } from "./elements";
 import { languageTag } from "./fill";
-import { brandFile, compactStyles, inlineCss, renderPdf, subsetFaces } from "./render-pdf";
+import {
+  brandFile,
+  compactStyles,
+  cutFacesToPdf,
+  inlineCss,
+  renderPdf,
+  subsetFaces,
+} from "./render-pdf";
 import { ROOT } from "./root";
 
 function rule(css: string, pattern: RegExp, what: string) {
@@ -310,9 +317,13 @@ export async function fitOnepager(
           fit = { ...fit, [kind]: level };
         }
       }
-      ({ pages } = await render(fit));
+      ({ pages, pdf } = await render(fit));
     }
-    return { html: readFileSync((await files(fit)).html, "utf8"), pages, fit };
+    return {
+      html: await cutFacesToPdf(readFileSync((await files(fit)).html, "utf8"), pdf),
+      pages,
+      fit,
+    };
   } finally {
     for (const { html } of renders.values()) rmSync(html, { force: true });
     rmSync(work, { recursive: true, force: true });

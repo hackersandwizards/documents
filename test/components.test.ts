@@ -136,7 +136,7 @@ test.each(components)(
     });
     expect(html).toContain(P);
     if (["DocHeader", "DocProposal", "DocRateCard", "DocMarkdown"].includes(name))
-      expect(html).toMatch(/data:image\/svg\+xml;base64,/);
+      expect(html).toMatch(/data:image\/svg\+xml,%3Csvg /);
     // The header and the certificate draw their strip as brand's element, not a hand-drawn gradient.
     if (["DocHeader", "DocCertificate"].includes(name))
       expect(html).toContain('class="strip hw-strip"');

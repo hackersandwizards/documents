@@ -5,7 +5,7 @@
 // in Inter: only Inter carries latin-ext (Ł, ř), at 400 and 600. The generator in Company OS's
 // .claude/skills/certificates/generator/ writes these props.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
-import { fill } from "../scripts/fill";
+import { fill, svgUri } from "../scripts/fill";
 
 // The certificate's own words, German and English; `labels` replaces any of them, `{name}` marks a
 // value filled in.
@@ -79,7 +79,7 @@ interface Props {
 }
 const p = Astro.props;
 // A data URI, not a file:// one, which would print at its full source size.
-const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("base64")}`;
+const lockup = svgUri(lockupSvg);
 const t = { ...(p.lang === "de" ? DE : EN), ...p.labels };
 const place = p.remote ? t.remote : p.location ? fill(t.location, p) : "";
 const hours = p.durationHours ? fill(t.duration, p) : "";

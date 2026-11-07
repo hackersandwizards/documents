@@ -55,10 +55,13 @@ decision or item ids, pointers to review notes and names go to the commit messag
   Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
   renumbered so one input prints the same bytes, the document base baked into
   `<style data-hw-document>`, `compactStyles`, which every standalone page passes (baked, onepager,
-  survey readout): its styles without CSS comments, which a reader of the page never needs, and without a
+  survey readout): its styles without CSS comments, which a reader of the page never needs, without the
+  rules and custom properties its markup cannot use (`pruneStyles`, `scripts/prune.ts`), and without a
   face whose `unicode-range` none of its characters fall in, `subsetFaces`, which cuts each inlined face to
   the page's characters for a composed page and the onepager (a consumer that bakes a stored page in place
-  runs it after `bakeDocumentCss`), `composeDocument` and the font check `assertBrandFonts`. `warm` on
+  runs it after `bakeDocumentCss`), `cutFacesToPdf`, which cuts each face of a printed page to the
+  characters that face printed and drops the faces it never printed (`fitOnepager` runs it),
+  `composeDocument` and the font check `assertBrandFonts`. `warm` on
   `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
   page an `http(s)` URL serves. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
   with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a

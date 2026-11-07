@@ -3,6 +3,7 @@
 // paper, the gradient strip on top, a rule under it, the lockup left and the document tag right.
 // The lockup is the brand package's, inlined as a data URI, so the header renders in any app.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
+import { svgUri } from "../scripts/fill";
 
 interface Props {
   /** The document kind in the tag, e.g. "Honorarsätze". */
@@ -32,8 +33,7 @@ const imprint = {
     "Managing Directors: Benedikt Stemmildt, Stefan Munz",
   ],
 }[lang];
-// Base64 rather than Vite's URL-encoded SVG inline.
-const lockup = `data:image/svg+xml;base64,${Buffer.from(lockupSvg).toString("base64")}`;
+const lockup = svgUri(lockupSvg);
 ---
 
 <header class="doc-header">
