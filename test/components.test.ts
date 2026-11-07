@@ -172,6 +172,8 @@ test("DocProposal prints its tiers and signature lines, and an outcome without m
   const plain = await composer.render("DocProposal", proposal);
   expect(plain).not.toContain('class="tiers');
   expect(plain).not.toContain('class="signatures');
+  expect(plain).toContain("Woran ihr es messt");
+  expect(plain).toContain('class="acceptance');
   const html = await composer.render("DocProposal", {
     ...proposal,
     price: {
@@ -189,7 +191,10 @@ test("DocProposal prints its tiers and signature lines, and an outcome without m
   for (const text of ["[TIERS]", "[TIER]", "[LIST]", "[OFFER]", "[TIER-NOTE]", "[PARTY]"])
     expect(html).toContain(text);
   expect(html).toContain("Unterschrift: [SIGNER]");
+  expect(html).toContain('class="tiers');
+  expect(html).toContain('class="signatures');
   expect(html).not.toContain("Woran ihr es messt");
+  expect(html).not.toContain('class="acceptance');
   expect(html).not.toContain("undefined");
 });
 

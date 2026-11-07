@@ -160,7 +160,8 @@ interface Props {
   terms: { title: string; paragraphs: string[] }[];
   signOff: string;
   personName: string;
-  /** Omitted with false; an object replaces the total line, as in the price-free variant. */
+  /** Omitted with false, and by default beside `signatures`; an object replaces the total line,
+   *  as in the price-free variant. */
   acceptance?: false | { label: string; value: string };
   /** The acceptance's last sentence, after the ask to reply: what the reply counts as. */
   orderTerm?: string;
@@ -200,7 +201,7 @@ const foot = [
 ].filter((row): row is { label: string; figure: string } => !!row);
 // Without a subtotal and an acceptance object the block carries no total line.
 const acceptance =
-  p.acceptance === false
+  p.acceptance === false || (p.acceptance === undefined && p.signatures)
     ? undefined
     : (p.acceptance ??
       (p.price.subtotal ? { label: t.total, value: fill(t.totalValue, p.price) } : {}));

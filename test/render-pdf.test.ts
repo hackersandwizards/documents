@@ -133,8 +133,6 @@ describe("subsetFaces", () => {
     expect(await subsetFaces(bakeDocumentCss(html))).toBe(html);
   }, 60_000);
 
-  // Chrome's decoder keeps each glyph's overlap flag; a codec dropping it changed how a PDF viewer
-  // on FreeType drew those glyphs' edges.
   it("keeps the overlap flags of the glyphs it keeps; control: the brand face carries them", async () => {
     const page = `<html><head><style>${documentCss()}</style></head><body>Agenten</body></html>`;
     const [source] = faces(page);

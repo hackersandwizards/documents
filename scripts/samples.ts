@@ -323,7 +323,6 @@ export const proposalDeSigned = {
     },
   },
   outcome: { result: proposalDe.outcome.result },
-  acceptance: false as const,
   orderTerm: undefined,
   signatures: [
     { label: "Auftraggeber", party: "Musterwerk AG", name: "Jonas Probst" },

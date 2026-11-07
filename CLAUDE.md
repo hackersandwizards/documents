@@ -41,8 +41,9 @@ decision or item ids, pointers to review notes and names go to the commit messag
   length or colour written anywhere but `tokens.css`, and on an inline style setting anything but a
   custom property.
 - `components/`: one component per document type or building block; a type composes only
-  components, and every type starts with `DocHeader`. `DocAgreement` is every document signed by
-  hand (contract, NDA, framework agreement, order confirmation) in its contract or letter form. A component imports only this
+  components, and every type starts with `DocHeader`. `DocAgreement` is every agreement signed by
+  hand (contract, NDA, framework agreement, order confirmation) in its contract or letter form; a
+  proposal the client signs takes `DocProposal`'s `signatures`. A component imports only this
   repo's files and the brand package's exported files (`@hackersandwizards/brand/logos/...`), never
   an app path. `DocElements` maps the brand's elements over what it wraps, so a component a
   consumer renders in its own Astro route (the hub's handout, through `DocHandout`) matches a composed page.

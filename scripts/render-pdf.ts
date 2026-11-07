@@ -715,10 +715,9 @@ export function compactStyles(html: string): string {
   );
 }
 
-/** subset-font ships no types; this is the call subsetFaces makes. It runs HarfBuzz on a TrueType
- * face. Its own WOFF2 codec (wawoff2) drops each glyph's overlap flag, which FreeType anti-aliases
- * by, so a PDF viewer on FreeType printed every flagged glyph's edges differently (measured), and
- * woff2-encoder, which keeps the flags, decodes and encodes instead. */
+/** subset-font (HarfBuzz) ships no types; this is the call subsetFaces makes. woff2-encoder, not
+ * subset-font's wawoff2, decodes and encodes: wawoff2 drops the glyph overlap flag FreeType
+ * anti-aliases by. */
 const subsetFont = createRequire(import.meta.url)("subset-font") as (
   font: Buffer,
   text: string,
@@ -735,11 +734,43 @@ const ALWAYS = String.fromCodePoint(
   0x2011,
   0x2018,
   0x2019,
+  0xab,
+  0xbb,
+  0x201a,
   0x201c,
   0x201d,
   0x201e,
   0x2026,
+  0x2039,
+  0x203a,
 );
+
+/** Every face a page inlines, its base64 as the group. */
+const FACES = /data:font\/woff2;base64,([\w+/=]+)/g;
+
+/** Each brand face decoded once a process; the cuts for the last page text, since fitOnepager
+ * composes one onepager many times over. */
+const decoded = new Map<string, Promise<Uint8Array>>();
+let lastCut = { text: "", faces: new Map<string, Promise<string>>() };
+
+const cutFace = (data: string, text: string) => {
+  if (lastCut.text !== text) lastCut = { text, faces: new Map() };
+  let face = lastCut.faces.get(data);
+  if (!face) {
+    let ttf = decoded.get(data);
+    if (!ttf) {
+      // A page whose faces were cut before brings faces of its own: the cache keeps the brand's.
+      if (decoded.size >= 64) decoded.clear();
+      decoded.set(data, (ttf = decompress(Buffer.from(data, "base64"))));
+    }
+    face = ttf
+      .then((font) => subsetFont(Buffer.from(font), text, { targetFormat: "truetype" }))
+      .then(compress)
+      .then((woff2) => Buffer.from(woff2).toString("base64"));
+    lastCut.faces.set(data, face);
+  }
+  return face;
+};
 
 /**
  * A standalone page with each inlined face cut to the characters the page can print (its text,
@@ -749,23 +780,14 @@ const ALWAYS = String.fromCodePoint(
  * after load and the page holds nowhere prints a fallback, which assertBrandFonts fails.
  */
 export async function subsetFaces(html: string): Promise<string> {
-  const text = String.fromCodePoint(...printableCodePoints(html)) + ALWAYS;
-  const faces = new Map<string, Promise<string>>();
-  for (const [, data] of html.matchAll(/data:font\/woff2;base64,([\w+/=]+)/g))
-    if (!faces.has(data!))
-      faces.set(
-        data!,
-        decompress(Buffer.from(data!, "base64"))
-          .then((ttf) => subsetFont(Buffer.from(ttf), text, { targetFormat: "truetype" }))
-          .then(compress)
-          .then((woff2) => Buffer.from(woff2).toString("base64")),
-      );
-  const cut = new Map<string, string>();
-  for (const [data, face] of faces) cut.set(data, await face);
-  return html.replace(
-    /(data:font\/woff2;base64,)([\w+/=]+)/g,
-    (_, prefix: string, data: string) => prefix + cut.get(data),
+  // Sorted, so one page under another fit, which reorders its first appearances, cuts the same.
+  const text =
+    String.fromCodePoint(...[...printableCodePoints(html)].sort((a, b) => a - b)) + ALWAYS;
+  const faces = [...new Set([...html.matchAll(FACES)].map(([, data]) => data!))];
+  const cut = new Map(
+    await Promise.all(faces.map(async (d) => [d, await cutFace(d, text)] as const)),
   );
+  return html.replace(FACES, (_, data: string) => `data:font/woff2;base64,${cut.get(data)}`);
 }
 
 /** Each custom property the page's style elements and attributes read through `var()` without a
@@ -786,7 +808,8 @@ const DOCUMENT_STYLE = /<style data-hw-document>[\s\S]*?<\/style>/;
  * look no engine type owns (foreignStyles, the documents-styles command). So does one reading a
  * custom property through `var()` without a fallback that the baked page defines nowhere: a
  * document keeps the component styles it was composed with, so a token name the base drops would
- * otherwise empty their rules silently.
+ * otherwise empty their rules silently. The faces come back whole: a consumer storing the page
+ * runs subsetFaces on it after.
  */
 export function bakeDocumentCss(html: string): string {
   if (!DOCUMENT_STYLE.test(html)) return html;
@@ -817,7 +840,8 @@ export function bakeDocumentCss(html: string): string {
  * A document component composed by `scripts/compose.ts` into a standalone, baked HTML string.
  * A child process, so no Vite server starts inside the caller, which may be the app's own; `cwd`
  * is the Astro project whose compiler it runs. `warm` keeps that process for the next call, for
- * a long-running caller: a fresh one costs about 0.5 s, the kept one a few ms (measured).
+ * a long-running caller: a fresh one costs about 0.5 s, the kept one a few ms, plus 0.4 to 0.8 s
+ * cutting the faces where the page's characters differ from the last call's (measured).
  * It quits after a minute without a call, and with the caller.
  */
 export async function composeDocument(
