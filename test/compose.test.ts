@@ -42,13 +42,21 @@ describe("scripts/compose.ts", () => {
     expect(wrong.stderr).toContain("Usage:");
   });
 
-  it("escapes the lang prop into the html element", () => {
-    writeFileSync(join(dir, "lang.json"), JSON.stringify({ ...rateCard, lang: 'de"><b>x' }));
-    const out = join(dir, "lang.html");
-    execFileSync("bun", [SCRIPT, "DocRateCard", join(dir, "lang.json"), out]);
-    expect(readFileSync(out, "utf8")).toContain(
-      '<html lang="de&quot;&gt;&lt;b&gt;x" data-hw-scale="print">',
-    );
+  it("refuses a lang that is no language tag, so none reaches the html element", () => {
+    for (const lang of ["de_DE", 'de"><b>x']) {
+      writeFileSync(join(dir, "lang.json"), JSON.stringify({ ...rateCard, lang }));
+      const run = spawnSync(
+        "bun",
+        [SCRIPT, "DocRateCard", join(dir, "lang.json"), join(dir, "x.html")],
+        {
+          encoding: "utf8",
+        },
+      );
+      expect(run.status).not.toBe(0);
+      expect(run.stderr).toContain(
+        `lang must be a language tag such as de or en, not ${JSON.stringify(lang)}`,
+      );
+    }
   });
 
   it("composes the Leistungsnachweis, its total row and its lump-sum confirmation", () => {

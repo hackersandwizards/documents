@@ -89,7 +89,7 @@ decision or item ids, pointers to review notes and names go to the commit messag
   or list an exception.
 - `scripts/samples.ts`: the fictitious props the catalog and the tests share.
 - `catalog/`: the catalog, one Astro app in scaffolding's shell (`@hackersandwizards/scaffolding`,
-  preset `catalog` in `catalog/astro.config.ts`, decision repo-uniformity-plan). Astrobook over
+  preset `catalog` in `catalog/astro.config.ts`). Astrobook over
   `catalog/stories` at the site's root, the tiles grouped `Typen`, then `Komponenten`; each story
   renders its component on an A4 sheet at the print scale (`Sheet.astro`). Every document type is
   an Astro page at `/types/<type>/index.html` (`catalog/pages/types/`, listed in `catalog/types.ts`): the

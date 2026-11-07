@@ -34,6 +34,7 @@ Bun fetches the `git+https://` form through GitHub's tarball API without a GitHu
 | `@hackersandwizards/documents/compose`                    | `openComposer`, `composePage`                                                                                   |
 | `@hackersandwizards/documents/onepager`                   | `composeOnepager`, `fitOnepager`: the onepager and its two-page fit                                             |
 | `@hackersandwizards/documents/survey-readout`             | `composeSurveyReadout`: the attendee-feedback readout deck                                                      |
+| `@hackersandwizards/documents/handout`                    | `HANDOUT_TEXT`: the handout's own words per language                                                            |
 | `bun run documents-compose <Doc> <props.json> <out.html>` | one component with its props as standalone HTML                                                                 |
 | `bun run documents-privacy [--deny <terms.txt>]`          | fails on private data in the package, and on each term of the file                                              |
 | `bun run documents-styles <file or dir>...`               | fails on a style in a document HTML file that the engine did not draw                                           |
@@ -54,7 +55,7 @@ and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 git clone https://github.com/hackersandwizards/documents.git && cd documents
 bun install      # also points the git hooks at .githooks/
 bun run dev      # the catalog at http://127.0.0.1:4330/
-bun run check    # scaffolding's gate with the catalog build, then tests, markers, privacy, brand colours and elements
+bun run check    # scaffolding's gate with the catalog build, then this repository's steps (CLAUDE.md, Commands)
 ```
 
 The git hooks check the staged files, the commit message and each push;

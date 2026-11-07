@@ -12,7 +12,7 @@ import { decodeHTML } from "entities";
 import { withElements } from "./elements";
 import { HANDOUT_TEXT } from "./handout";
 import { ROOT } from "./root";
-import { foreignStyles } from "./styles";
+import { foreignStyles, styleAttributes } from "./styles";
 
 const execFileAsync = promisify(execFile);
 
@@ -627,10 +627,13 @@ export function brandCss(): string {
 export const brandFile = (file: string) =>
   createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
 
-/** CSS without comments. The space after one goes only where a space, brace or semicolon comes
- * before it: elsewhere it may part two selectors. */
+/** CSS without comments, its strings untouched. The space after one goes only where a space,
+ * brace or semicolon comes before it: elsewhere it may part two selectors. */
 const stripComments = (css: string) =>
-  css.replace(/(^|[\s{};])\/\*[\s\S]*?\*\/\s*/g, "$1").replace(/\/\*[\s\S]*?\*\//g, "");
+  css.replace(
+    /("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')|(^|[\s{};])\/\*[\s\S]*?\*\/\s*|\/\*[\s\S]*?\*\//g,
+    (_, string?: string, before?: string) => string ?? before ?? "",
+  );
 
 /** A stylesheet with its `@import`s inlined and its comments dropped, as documentCss and brandCss
  * export it (compactStyles strips the pages these never reach). Each file it reads, the faces
@@ -661,7 +664,15 @@ const escaped = (match: string, hex: string) => {
  * data URIs aside. A character a script builds from computed values is not seen: its face is
  * dropped and the PDF prints a fallback, which assertBrandFonts fails. */
 function printableCodePoints(html: string): Set<number> {
-  const lang = /<html\b[^>]*\blang="([\w-]+)"/i.exec(html)?.[1] ?? "en";
+  const tag = /<html\b[^>]*\blang="([\w-]+)"/i.exec(html)?.[1] ?? "en";
+  // An invalid tag such as de_DE, on which toLocaleUpperCase throws, cases as English.
+  const lang = (() => {
+    try {
+      return Intl.getCanonicalLocales(tag)[0]!;
+    } catch {
+      return "en";
+    }
+  })();
   const text = decodeHTML(
     html.replace(/data:[\w.+-]+\/[\w.+-]+(?:;[\w.=-]+)*;base64,[\w+/=]+/g, ""),
   )
@@ -706,9 +717,8 @@ export function compactStyles(html: string): string {
 /** Each custom property the page's style elements and attributes read through `var()` without a
  * fallback and define nowhere. */
 function unsetProperties(html: string): string[] {
-  const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>|\sstyle="([^"]*)"/gi)]
-    .map(([, sheet, attribute]) => sheet ?? attribute)
-    .join("\n");
+  const sheets = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(([, css]) => css);
+  const css = [...sheets, ...styleAttributes(html)].join("\n");
   const names = (pattern: RegExp) => new Set([...css.matchAll(pattern)].map(([, n]) => n!));
   const defined = names(/(--[\w-]+)\s*:/g);
   return [...names(/var\(\s*(--[\w-]+)\s*\)/g)].filter((name) => !defined.has(name));

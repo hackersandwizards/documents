@@ -3,6 +3,7 @@ import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
 import { withElements } from "../scripts/elements";
+import { cssString } from "../scripts/fill";
 import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
 
@@ -242,8 +243,10 @@ test.each(["de", "en"] as const)("DocHandout %s prints HANDOUT_TEXT's words", as
     company: P,
     date: P,
   });
-  const { noCompany, noDate, ...printed } = HANDOUT_TEXT[lang];
+  const { noCompany, noDate, runningBrand, ...printed } = HANDOUT_TEXT[lang];
   for (const word of Object.values(printed)) expect(html).toContain(word);
+  // The lockup's alt text names the brand too: the running head's word is read in its margin box.
+  expect(html).toContain(`@top-left { content: ${cssString(runningBrand)};`);
   // Company and date are both given, so neither placeholder prints.
   for (const placeholder of [noCompany, noDate]) expect(html).not.toContain(placeholder);
 });

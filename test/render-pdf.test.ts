@@ -74,6 +74,16 @@ describe("compactStyles", () => {
     const shown = "<pre>@font-face { unicode-range: U+0100; } C:\\facade</pre>";
     expect(compactStyles(page(shown))).toContain(shown);
     expect(compactStyles(page("", ".a/* x */ .b { color: red; }"))).toContain(".a .b {");
+    const quoted = '.a { content: "x /* y"; } .b { color: red; } /* c */';
+    expect(compactStyles(page("", quoted))).toContain(
+      '.a { content: "x /* y"; } .b { color: red; }',
+    );
+  });
+
+  it("cases the page's characters as English where its lang is no valid tag", () => {
+    expect(() =>
+      compactStyles(page("<p>i</p>").replace("<html>", '<html lang="de_DE">')),
+    ).not.toThrow();
   });
 
   it("keeps the base composed documents free of comments and of the latin-ext faces they never print", async () => {
@@ -125,6 +135,12 @@ describe("bakeDocumentCss", () => {
       "</head><body><code>--retired-token: 1</code><code>var(--in-text)</code></body>",
     );
     expect(() => bakeDocumentCss(inText)).toThrow(/^(?!.*--in-text).*--retired-token/s);
+    // Pandoc keeps the quotes of inline code as written.
+    const shown = withComponents("").replace(
+      "</head>",
+      '</head><body><code>&lt;div style="--a: var(--shown)"&gt;</code></body>',
+    );
+    expect(() => bakeDocumentCss(shown)).not.toThrow();
   });
 
   it("passes HTML without the marker through unchanged", () => {

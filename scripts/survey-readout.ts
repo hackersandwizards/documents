@@ -2,7 +2,7 @@
 // caller's own readout colours a weak spot's marker as its bar.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fill } from "./fill";
+import { fill, languageTag } from "./fill";
 import { brandCss, brandFile, compactStyles } from "./render-pdf";
 import { ROOT } from "./root";
 
@@ -415,7 +415,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
     PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
       .replace("__STYLE__", () => STYLE)
       .replace("<style data-hw-readout>", () => `${links}<style data-hw-readout>`)
-      .replace('lang="en"', () => `lang="${esc(t.lang)}"`)
+      .replace('lang="en"', () => `lang="${languageTag(t.lang)}"`)
       .replace("__TITLE__", () => esc(fill(t.documentTitle, { customer: customerName })))
       .replace("__SLIDES__", () =>
         slides

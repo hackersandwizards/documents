@@ -24,6 +24,11 @@ test("a mark colour cannot open an attribute", () => {
   expect(html).toContain("--mark:red&quot; onmouseover=&quot;x");
 });
 
+test("a text.lang that is no language tag is refused", () => {
+  const text = { ...READOUT_TEXT, lang: "en_GB" };
+  expect(() => composeSurveyReadout({ ...surveyReadout, text })).toThrow(/not "en_GB"/);
+});
+
 // A scale whose group the deck's words do not list still reaches the scores slide.
 test("a scale in a group outside text.groups is shown, not dropped", () => {
   const html = composeSurveyReadout({

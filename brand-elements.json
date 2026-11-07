@@ -33,10 +33,10 @@
   ],
   "exceptions": {
     "total-band": {
-      "reason": "Die Summenzeile auf dem teal Band, 12 % Tönung unter der starken Linie, jeder Betrag teal und 1,2-fach. Summenbänder bleiben je System (Entscheidung shared-elements, 01.11.2026); die Tabelle darin misst das Gate nicht.",
+      "reason": "Die Summenzeile auf dem teal Band, 12 % Tönung unter der starken Linie, jeder Betrag teal und 1,2-fach. Summenbänder bleiben je System; die Tabelle darin misst das Gate nicht.",
       "files": ["components/DocTotalRow.astro"]
     },
-    "section-label": "Der Abschnittskopf im h4-Maß, mono 600 in Versalien hinter einem teal Quadrat, die Gruppenüberschrift der Website-Trainingsliste. Kein Label, sondern ein Abschnittsband, und die bleiben je System (Entscheidung shared-elements, 01.11.2026).",
+    "section-label": "Der Abschnittskopf im h4-Maß, mono 600 in Versalien hinter einem teal Quadrat, die Gruppenüberschrift der Website-Trainingsliste. Kein Label, sondern ein Abschnittsband, und die bleiben je System.",
     "margin-note": "Die Randnotiz im Handout: rechts neben dem Absatz umflossen, mit lila Linie. brand hat kein Element für Randnotizen; nur Papier hat einen Rand dafür.",
     "survey-readout": {
       "reason": "Die Umfrage-Auswertung ist ein Foliensatz in 1280 × 720 auf der Folienskala aus brands document.css (--deck-*), kein A4-Dokument; ihre Zitate und Labels folgen den Folien, ihre Kennzahlen sind brands hw-kpi im Folienmaß.",

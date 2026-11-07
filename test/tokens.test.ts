@@ -42,6 +42,10 @@ describe("tokens", () => {
       "weight: font-weight: 6",
       "leading: line-height: 1.5",
     ]);
+    // A "/*" or an escaped quote inside a string hides no value after it.
+    expect(
+      rawValues(`a { content: "/*"; width: 12pt; } b { content: "\\" /*"; width: 3mm; } /* c */`),
+    ).toEqual(["length: 12pt", "length: 3mm"]);
     expect(rawInlineStyles(`<b style="--share: 4%"></b><i style="width: 4%"></i>`)).toEqual([
       "width: 4%",
     ]);

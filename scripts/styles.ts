@@ -46,10 +46,12 @@ const RAW: [string, RegExp][] = [
 /** Every raw value in a stylesheet, comments, strings and url() left out: a length, a colour, a
  *  brand token named past tokens.css, a numeric weight or line height. */
 export function rawValues(css: string): string[] {
+  // One pass, so a "/*" inside a string is no comment and a quote inside a comment no string.
   const code = css
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/url\([^)]*\)/g, "url()")
-    .replace(/"[^"\n]*"|'[^'\n]*'/g, '""');
+    .replace(/"[^"\\\n]*(?:\\.[^"\\\n]*)*"|'[^'\\\n]*(?:\\.[^'\\\n]*)*'|\/\*[\s\S]*?\*\//g, (m) =>
+      m[0] === "/" ? "" : '""',
+    )
+    .replace(/url\([^)]*\)/g, "url()");
   return RAW.flatMap(([kind, re]) => [...code.matchAll(re)].map((m) => `${kind}: ${m[0]}`));
 }
 
@@ -113,6 +115,19 @@ export function foreignStyles(html: string): string[] {
     })
     .transform(html);
   return found;
+}
+
+/** Every element's style attribute in `html`, read as the browser reads markup. */
+export function styleAttributes(html: string): string[] {
+  const styles: string[] = [];
+  new HTMLRewriter()
+    .on("*", {
+      element(el) {
+        for (const [name, style] of el.attributes) if (name === "style") styles.push(style);
+      },
+    })
+    .transform(html);
+  return styles;
 }
 
 function htmlFiles(path: string): string[] {

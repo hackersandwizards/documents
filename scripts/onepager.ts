@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { decodeHTMLStrict } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
 import { ELEMENT_MAP, withElements } from "./elements";
+import { languageTag } from "./fill";
 import { brandFile, compactStyles, inlineCss, renderPdf } from "./render-pdf";
 import { ROOT } from "./root";
 
@@ -128,6 +129,7 @@ export async function composeOnepager(
   page: OnepagerPage,
   link?: (file: string) => string,
 ): Promise<string> {
+  const lang = languageTag(page.lang);
   const SLOT = "\u0001";
   const cardTag = async (tint: boolean) => {
     const [open, close] = (await composer.render("DocCard", { tint }, { default: SLOT })).split(
@@ -138,16 +140,17 @@ export async function composeOnepager(
     return open.trim();
   };
   const cards = { card: await cardTag(false), tint: await cardTag(true) };
-  const rendered = (
-    await composer.render("DocOnepager", { lang: page.lang, html: page.html })
-  ).replace(/<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g, (tag, cls: string) => {
-    const own = cls.split(" ");
-    if (!own.includes("card")) return tag;
-    const card = own.includes("tint") ? cards.tint : cards.card;
-    const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
-    const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
-    return card.replace(/class="[^"]*"/, `class="${all}"`);
-  });
+  const rendered = (await composer.render("DocOnepager", { lang, html: page.html })).replace(
+    /<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g,
+    (tag, cls: string) => {
+      const own = cls.split(" ");
+      if (!own.includes("card")) return tag;
+      const card = own.includes("tint") ? cards.tint : cards.card;
+      const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
+      const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
+      return card.replace(/class="[^"]*"/, `class="${all}"`);
+    },
+  );
   const body = withElements(rendered, ONEPAGER_ELEMENTS);
   const style = [
     baseCss(link !== undefined),
@@ -156,7 +159,7 @@ export async function composeOnepager(
     fitCss(page.fit),
   ].join("\n");
   return compactStyles(`<!doctype html>
-<html lang="${page.lang}" class="${fitClasses(page.fit)}" data-hw-scale="print">
+<html lang="${lang}" class="${fitClasses(page.fit)}" data-hw-scale="print">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />

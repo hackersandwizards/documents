@@ -5,6 +5,7 @@ import { createInterface } from "node:readline";
 import { getViteConfig } from "astro/config";
 import { createServer } from "vite";
 import { withElements } from "./elements";
+import { languageTag } from "./fill";
 import { bakeDocumentCss } from "./render-pdf";
 import { ROOT } from "./root";
 
@@ -70,13 +71,13 @@ export async function composePage(
   props: Record<string, unknown>,
   base = bakeDocumentCss,
 ): Promise<string> {
+  const lang = languageTag(typeof props.lang === "string" ? props.lang : "de");
   const body = withElements(await composer.render(name, props));
-  const lang = typeof props.lang === "string" ? props.lang : "de";
   // Without a title the renderer takes the first heading's, as for every document without one.
   const title =
     typeof props.title === "string" ? `<title>${escapeHtml(props.title)}</title>\n` : "";
   return base(`<!doctype html>
-<html lang="${escapeHtml(lang)}" data-hw-scale="print">
+<html lang="${lang}" data-hw-scale="print">
 <head>
 <meta charset="utf-8" />
 ${title}<style data-hw-document></style>
