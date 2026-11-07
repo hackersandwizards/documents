@@ -1,6 +1,7 @@
 ---
-// The proposal (Angebot), German or English: the lead, the price on page 1, about us, scope, the
-// optional sequence, the outcome, terms, closing and acceptance, in that fixed order. The canonical
+// The proposal (Angebot), German or English: the lead, the price on page 1 with its optional
+// tiers, about us, scope, the optional sequence, the outcome, terms, closing, acceptance and the
+// optional signature lines, in that fixed order. The canonical
 // props with the standard terms are Company OS's .claude/skills/quote/proposal-de.json and
 // proposal-en.json.
 // A proposal without a rate in any row is the price-free variant: the table keeps item and basis.
@@ -12,6 +13,7 @@ import DocLead from "./DocLead.astro";
 import DocPriceTable from "./DocPriceTable.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocSectionHead from "./DocSectionHead.astro";
+import DocSignatures from "./DocSignatures.astro";
 import DocSteps from "./DocSteps.astro";
 import DocTitle from "./DocTitle.astro";
 import { cssString, fill } from "../scripts/fill";
@@ -62,6 +64,9 @@ const DE = {
   /** The running header, left and right. */
   runningBrand: "hackers&wizards GmbH",
   runningTitle: "{kind} {number}",
+  /** The captions under the signature lines; `{name}` marks the signer. */
+  placeDate: "Ort, Datum",
+  signature: "Unterschrift: {name}",
 };
 const EN: typeof DE = {
   kind: "Quote",
@@ -102,6 +107,8 @@ const EN: typeof DE = {
   replyBy: " by {validUntil}",
   runningBrand: "hackers&wizards GmbH",
   runningTitle: "{kind} {number}",
+  placeDate: "Place, date",
+  signature: "Signature: {name}",
 };
 
 type Amount = string | { list: string; offer: string };
@@ -133,6 +140,14 @@ interface Props {
     vatLabel?: string;
     gross?: string;
     calculation?: string;
+    /** A second table after the price, such as the price per unit each order size earns: the
+     *  column labels, the first over the rows' items, and a muted note under it. */
+    tiers?: {
+      heading: string;
+      columns: string[];
+      rows: { item: string; cells: Amount[] }[];
+      note?: string;
+    };
   };
   scopeHeadline: string;
   services: { name: string; format?: string; items: string[] }[];
@@ -140,7 +155,8 @@ interface Props {
    *  computed from the participant count, and `meta`, who gets it for how long. */
   community?: { price: string; seats?: string; value?: string; meta?: string };
   sequence?: { headline: string; steps: { when: string; name: string; text?: string }[] };
-  outcome: { result: string; measures: string };
+  /** Without `measures` the outcome prints the result alone. */
+  outcome: { result: string; measures?: string };
   terms: { title: string; paragraphs: string[] }[];
   signOff: string;
   personName: string;
@@ -148,6 +164,8 @@ interface Props {
   acceptance?: false | { label: string; value: string };
   /** The acceptance's last sentence, after the ask to reply: what the reply counts as. */
   orderTerm?: string;
+  /** Lines for the parties to sign by hand, after the closing and any acceptance block. */
+  signatures?: { label: string; party: string; name: string }[];
   /** Replaces any of the proposal's own words (DE, EN above). */
   labels?: Partial<typeof DE>;
 }
@@ -175,6 +193,7 @@ const rows = p.price.rows.map((row) => ({
   detail: row.detail,
   cells: priced ? [row.basis, row.rate ?? "", row.amount ?? ""] : [row.basis],
 }));
+const tiers = p.price.tiers;
 const foot = [
   p.price.vat && { label: p.price.vatLabel!, figure: p.price.vat },
   p.price.gross && { label: t.gross, figure: p.price.gross },
@@ -230,6 +249,16 @@ const running = `@page {
     foot={foot}
   />
   {p.price.calculation && <p class="calc">{p.price.calculation}</p>}
+  {tiers && (
+    <div class="tiers">
+      <h2>{tiers.heading}</h2>
+      <DocPriceTable
+        columns={tiers.columns.map((label, i) => ({ label, num: i > 0 }))}
+        rows={tiers.rows}
+      />
+      {tiers.note && <p class="calc">{tiers.note}</p>}
+    </div>
+  )}
 </div>
 
 <DocCard title={t.about} small>
@@ -274,9 +303,11 @@ const running = `@page {
 
 <DocCallout title={t.outcome}>
   <p>{p.outcome.result}</p>
-  <p>
-    <strong>{t.measures}</strong> {p.outcome.measures}
-  </p>
+  {p.outcome.measures && (
+    <p>
+      <strong>{t.measures}</strong> {p.outcome.measures}
+    </p>
+  )}
 </DocCallout>
 
 <DocSectionHead title={t.terms} />
@@ -318,9 +349,17 @@ const running = `@page {
   </div>
 )}
 
+{p.signatures && (
+  <DocSignatures signatures={p.signatures} placeDate={t.placeDate} signature={t.signature} />
+)}
+
 <style>
   .section {
     margin-top: var(--section-space);
+  }
+
+  .tiers {
+    break-inside: avoid;
   }
 
   .calc {

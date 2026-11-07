@@ -6,7 +6,7 @@ import { decodeHTMLStrict } from "entities";
 import { escapeHtml, type openComposer } from "./compose";
 import { CARD_AND_TAG, type Edit, withElements } from "./elements";
 import { languageTag } from "./fill";
-import { brandFile, compactStyles, inlineCss, renderPdf } from "./render-pdf";
+import { brandFile, compactStyles, inlineCss, renderPdf, subsetFaces } from "./render-pdf";
 import { ROOT } from "./root";
 
 function rule(css: string, pattern: RegExp, what: string) {
@@ -160,7 +160,8 @@ export async function composeOnepager(
     readFileSync(join(ROOT, "onepager.css"), "utf8"),
     fitCss(page.fit),
   ].join("\n");
-  return compactStyles(`<!doctype html>
+  return subsetFaces(
+    compactStyles(`<!doctype html>
 <html lang="${lang}" class="${fitClasses(page.fit)}" data-hw-scale="print">
 <head>
 <meta charset="UTF-8" />
@@ -174,7 +175,8 @@ ${style}
 ${body.trim()}
 </body>
 </html>
-`);
+`),
+  );
 }
 
 const BOXES = [".cover-box", ".goals-box", ".proof-box", ".scope-box"];

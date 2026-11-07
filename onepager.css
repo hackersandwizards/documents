@@ -601,6 +601,11 @@ ul {
   content: none;
 }
 
+/* A mark's height comes from the page that sets it, inline as --mark-height. */
+.client-row img {
+  height: var(--mark-height, auto);
+}
+
 .pricing-section {
   margin-bottom: var(--op-section);
   break-inside: avoid;

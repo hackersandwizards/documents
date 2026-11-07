@@ -55,7 +55,9 @@ decision or item ids, pointers to review notes and names go to the commit messag
   renumbered so one input prints the same bytes, the document base baked into
   `<style data-hw-document>`, `compactStyles`, which every standalone page passes (baked, onepager,
   survey readout): its styles without CSS comments, which a reader of the page never needs, and without a
-  face whose `unicode-range` none of its characters fall in, `composeDocument` and the font check `assertBrandFonts`. `warm` on
+  face whose `unicode-range` none of its characters fall in, `subsetFaces`, which cuts each inlined face to
+  the page's characters for a composed page and the onepager (a consumer that bakes a stored page in place
+  runs it after `bakeDocumentCss`), `composeDocument` and the font check `assertBrandFonts`. `warm` on
   `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
   page an `http(s)` URL serves. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
   with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a
@@ -112,7 +114,8 @@ through. Renaming a command, changing its arguments or moving an exported file b
 consumers: the release commit names it and every consumer follows in the same pass. Astro, Vite, brand
 and scaffolding (its `./chrome`, which `render-pdf.ts` imports at run time, so a consumer installs
 it beside its runtime dependencies) are peer dependencies, brand and scaffolding optional in
-`peerDependenciesMeta` so Bun never looks them up on the npm registry; `entities`, which `fitOnepager` decodes copy with, is the one runtime dependency; `keywords: ["astro-component"]` makes Astro compile the components from
+`peerDependenciesMeta` so Bun never looks them up on the npm registry; the runtime dependencies are `entities`, which `fitOnepager` decodes copy with, and `subset-font`
+(HarfBuzz) with `woff2-encoder`, which `subsetFaces` cuts and re-encodes the faces with; `keywords: ["astro-component"]` makes Astro compile the components from
 `node_modules`.
 
 ## Commands

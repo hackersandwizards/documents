@@ -19,7 +19,9 @@ import {
   composeDocument,
   documentCss,
   renderPdf,
+  subsetFaces,
 } from "../scripts/render-pdf";
+import { decompress } from "woff2-encoder";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { rateCard } from "../scripts/samples";
 
@@ -90,6 +92,55 @@ describe("compactStyles", () => {
     const html = await composeDocument("DocRateCard", rateCard);
     expect(html).not.toMatch(/\/\*/);
     expect(html).not.toContain("U+0100");
+  });
+});
+
+/** The glyphs of a TrueType face whose first point carries the overlap flag (0x40), which FreeType
+ * anti-aliases by. */
+function overlapFlagged(ttf: Uint8Array): number {
+  const view = new DataView(ttf.buffer, ttf.byteOffset, ttf.byteLength);
+  const tables = new Map<string, number>();
+  for (let i = 0; i < view.getUint16(4); i++) {
+    const at = 12 + 16 * i;
+    tables.set(String.fromCharCode(...ttf.subarray(at, at + 4)), view.getUint32(at + 8));
+  }
+  const [head, maxp, loca, glyf] = ["head", "maxp", "loca", "glyf"].map((t) => tables.get(t)!);
+  const long = view.getInt16(head! + 50) === 1;
+  const offset = (i: number) =>
+    long ? view.getUint32(loca! + 4 * i) : 2 * view.getUint16(loca! + 2 * i);
+  let flagged = 0;
+  for (let g = 0; g < view.getUint16(maxp! + 4); g++) {
+    if (offset(g + 1) === offset(g)) continue;
+    const at = glyf! + offset(g);
+    const contours = view.getInt16(at);
+    if (contours <= 0) continue;
+    const instructions = at + 10 + 2 * contours;
+    if (ttf[instructions + 2 + view.getUint16(instructions)]! & 0x40) flagged++;
+  }
+  return flagged;
+}
+
+describe("subsetFaces", () => {
+  const faces = (html: string) =>
+    [...html.matchAll(/data:font\/woff2;base64,([\w+/=]+)/g)].map(([, data]) => data!);
+
+  it("cuts each face of a composed document, and a re-bake cut again writes the same bytes", async () => {
+    const html = await composeDocument("DocRateCard", rateCard);
+    const whole = faces(bakeDocumentCss(html));
+    const cut = faces(html);
+    expect(cut.length).toBe(whole.length);
+    expect(cut.join("").length).toBeLessThan(0.75 * whole.join("").length);
+    expect(await subsetFaces(bakeDocumentCss(html))).toBe(html);
+  }, 60_000);
+
+  // Chrome's decoder keeps each glyph's overlap flag; a codec dropping it changed how a PDF viewer
+  // on FreeType drew those glyphs' edges.
+  it("keeps the overlap flags of the glyphs it keeps; control: the brand face carries them", async () => {
+    const page = `<html><head><style>${documentCss()}</style></head><body>Agenten</body></html>`;
+    const [source] = faces(page);
+    const [kept] = faces(await subsetFaces(page));
+    expect(overlapFlagged(await decompress(Buffer.from(source!, "base64")))).toBeGreaterThan(0);
+    expect(overlapFlagged(await decompress(Buffer.from(kept!, "base64")))).toBeGreaterThan(0);
   });
 });
 

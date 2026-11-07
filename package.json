@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -128,6 +128,8 @@
     ]
   },
   "dependencies": {
-    "entities": "9.0.0"
+    "entities": "9.0.0",
+    "subset-font": "2.9.0",
+    "woff2-encoder": "2.0.0"
   }
 }

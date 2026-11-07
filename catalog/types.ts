@@ -6,6 +6,7 @@ export const TYPES: { file: string; title: string }[] = [
     file: "angebot-ohne-preise",
     title: "Quote without prices (German)",
   },
+  { file: "angebot-unterschrift", title: "Quote signed by hand, with price tiers (German)" },
   { file: "honorarsaetze", title: "Rate card (German)" },
   {
     file: "leistungsnachweis-monat",

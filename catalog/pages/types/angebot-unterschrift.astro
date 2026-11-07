@@ -1,0 +1,9 @@
+---
+import Type from "./_Type.astro";
+import DocProposal from "../../../components/DocProposal.astro";
+import { proposalDeSigned as props } from "../../../scripts/samples";
+---
+
+<Type title={props.title} lang={props.lang}>
+  <DocProposal {...props} />
+</Type>

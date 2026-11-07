@@ -168,6 +168,31 @@ test("DocProposal prints the amount of a fixed-price row that has no rate", asyn
   expect(html).not.toContain("undefined");
 });
 
+test("DocProposal prints its tiers and signature lines, and an outcome without measures alone", async () => {
+  const plain = await composer.render("DocProposal", proposal);
+  expect(plain).not.toContain('class="tiers');
+  expect(plain).not.toContain('class="signatures');
+  const html = await composer.render("DocProposal", {
+    ...proposal,
+    price: {
+      ...proposal.price,
+      tiers: {
+        heading: "[TIERS]",
+        columns: [P, P],
+        rows: [{ item: "[TIER]", cells: [{ list: "[LIST]", offer: "[OFFER]" }] }],
+        note: "[TIER-NOTE]",
+      },
+    },
+    outcome: { result: "[RESULT]" },
+    signatures: [{ label: P, party: "[PARTY]", name: "[SIGNER]" }],
+  });
+  for (const text of ["[TIERS]", "[TIER]", "[LIST]", "[OFFER]", "[TIER-NOTE]", "[PARTY]"])
+    expect(html).toContain(text);
+  expect(html).toContain("Unterschrift: [SIGNER]");
+  expect(html).not.toContain("Woran ihr es messt");
+  expect(html).not.toContain("undefined");
+});
+
 // The VAT label, the community's access and the order by reply are terms, so the props carry them.
 test.each(["de", "en"])("DocProposal %s prints its terms from props only", async (lang) => {
   const html = await composer.render("DocProposal", { ...proposal, lang });

@@ -6,7 +6,7 @@ import { getViteConfig } from "astro/config";
 import { createServer } from "vite";
 import { withElements } from "./elements";
 import { languageTag } from "./fill";
-import { bakeDocumentCss } from "./render-pdf";
+import { bakeDocumentCss, subsetFaces } from "./render-pdf";
 import { ROOT } from "./root";
 
 const USAGE = `Usage: bun run documents-compose <Component> <props.json> <output.html>
@@ -64,7 +64,8 @@ export async function openComposer(root = process.cwd()) {
   };
 }
 
-/** One component with its props as a standalone page: `base` fills the marked style element. */
+/** One component with its props as a standalone page: `base` fills the marked style element, and
+ * the faces it inlines are cut to the page's characters (subsetFaces). */
 export async function composePage(
   composer: Awaited<ReturnType<typeof openComposer>>,
   name: string,
@@ -76,7 +77,8 @@ export async function composePage(
   // Without a title the renderer takes the first heading's, as for every document without one.
   const title =
     typeof props.title === "string" ? `<title>${escapeHtml(props.title)}</title>\n` : "";
-  return base(`<!doctype html>
+  return subsetFaces(
+    base(`<!doctype html>
 <html lang="${lang}" data-hw-scale="print">
 <head>
 <meta charset="utf-8" />
@@ -89,7 +91,8 @@ ${await composer.styles()}
 ${body}
 </body>
 </html>
-`);
+`),
+  );
 }
 
 /** `--serve`: composes each request read from stdin, one JSON line `{ id, name, props }`, and

@@ -9,6 +9,7 @@ import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { chromeArgs, chromeBinaryAsync, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { decodeHTML } from "entities";
+import { compress, decompress } from "woff2-encoder";
 import { withElements } from "./elements";
 import { HANDOUT_TEXT } from "./handout";
 import { ROOT } from "./root";
@@ -711,6 +712,59 @@ export function compactStyles(html: string): string {
       });
       return points.some((p) => spans.some(([lo, hi]) => p >= lo && p <= hi)) ? face : "";
     }),
+  );
+}
+
+/** subset-font ships no types; this is the call subsetFaces makes. It runs HarfBuzz on a TrueType
+ * face. Its own WOFF2 codec (wawoff2) drops each glyph's overlap flag, which FreeType anti-aliases
+ * by, so a PDF viewer on FreeType printed every flagged glyph's edges differently (measured), and
+ * woff2-encoder, which keeps the flags, decodes and encodes instead. */
+const subsetFont = createRequire(import.meta.url)("subset-font") as (
+  font: Buffer,
+  text: string,
+  options: { targetFormat: "truetype" },
+) => Promise<Uint8Array>;
+
+/** Printable ASCII, which a page's counters, list numbers and hyphenation may print without its
+ * text holding it, beside the hyphen, ellipsis and quotes Chrome may set in their place. */
+const ALWAYS = String.fromCodePoint(
+  ...Array.from({ length: 0x5f }, (_, i) => 0x20 + i),
+  0xa0,
+  0xad,
+  0x2010,
+  0x2011,
+  0x2018,
+  0x2019,
+  0x201c,
+  0x201d,
+  0x201e,
+  0x2026,
+);
+
+/**
+ * A standalone page with each inlined face cut to the characters the page can print (its text,
+ * the style elements' `content` and printable ASCII), every OpenType feature kept, so tabular
+ * figures and kerning print as before. The page as it is stored then carries a fraction of the
+ * faces; a page baked again (bakeDocumentCss) gets the whole base back. A character a script adds
+ * after load and the page holds nowhere prints a fallback, which assertBrandFonts fails.
+ */
+export async function subsetFaces(html: string): Promise<string> {
+  const text = String.fromCodePoint(...printableCodePoints(html)) + ALWAYS;
+  const faces = new Map<string, Promise<string>>();
+  for (const [, data] of html.matchAll(/data:font\/woff2;base64,([\w+/=]+)/g))
+    if (!faces.has(data!))
+      faces.set(
+        data!,
+        decompress(Buffer.from(data!, "base64"))
+          .then((ttf) => subsetFont(Buffer.from(ttf), text, { targetFormat: "truetype" }))
+          .then(compress)
+          .then((woff2) => Buffer.from(woff2).toString("base64")),
+      );
+  const cut = new Map<string, string>();
+  for (const [data, face] of faces) cut.set(data, await face);
+  return html.replace(
+    /(data:font\/woff2;base64,)([\w+/=]+)/g,
+    (_, prefix: string, data: string) => prefix + cut.get(data),
   );
 }
 

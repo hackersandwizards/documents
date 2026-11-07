@@ -305,6 +305,32 @@ export const proposalDeNoPrice = {
   acceptance: { label: "Umfang", value: "Training und Mentoring wie oben" },
 };
 
+/** A proposal signed by hand: price tiers with struck list prices, signature lines in place of
+ *  the acceptance block, and an outcome without measures. */
+export const proposalDeSigned = {
+  ...proposalDe,
+  price: {
+    ...proposalDe.price,
+    tiers: {
+      heading: "Staffelpreise",
+      columns: ["Gruppen", "Rabatt", "Preis je Gruppe"],
+      rows: [
+        { item: "1 Gruppe", cells: ["0 %", "XX.XXX,XX €"] },
+        { item: "3 Gruppen", cells: ["XX %", { list: "XX.XXX,XX €", offer: "XX.XXX,XX €" }] },
+        { item: "5 Gruppen", cells: ["XX %", { list: "XX.XXX,XX €", offer: "XX.XXX,XX €" }] },
+      ],
+      note: "Die Stufe richtet sich nach der Zahl der beauftragten Gruppen.",
+    },
+  },
+  outcome: { result: proposalDe.outcome.result },
+  acceptance: false as const,
+  orderTerm: undefined,
+  signatures: [
+    { label: "Auftraggeber", party: "Musterwerk AG", name: "Jonas Probst" },
+    { label: "Auftragnehmer", party: "hackers&wizards GmbH", name: "Mara Beispiel" },
+  ],
+};
+
 /** A certificate with its verification footer; the QR code encodes the fictitious verification URL. */
 export const certificate = {
   lang: "en" as const,
