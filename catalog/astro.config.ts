@@ -17,8 +17,6 @@ export default defineConfig({
   srcDir: ".",
   devToolbar: { enabled: false },
   server: { host: "127.0.0.1", port: 4330 },
-  // Astro's default build.inlineStylesheets ("auto") links the catalog's shared stylesheet, so the
-  // home's preview frames load one cached copy; the type pages inline theirs (`type-page-styles`).
   compressHTML: false,
   redirects: {
     "/design-system": `${BASE}/`,
@@ -80,20 +78,28 @@ export default defineConfig({
       },
     },
     {
-      // A type page opens from disk, as the gate's checks and the PDF path read it: the components'
-      // stylesheets Astro links go inline, with the marker a composed document's carry
-      // (data-hw-components), so documents-styles reads the page as one. Its brand files stay
-      // linked beside it (`copy`).
+      // The catalog keeps Astro's default inlineStylesheets ("auto"), which links its shared
+      // stylesheet, so the home's preview frames load one cached copy. A type page opens from disk,
+      // as the gate's checks and the PDF path read it: the components' stylesheets Astro links go
+      // inline, with the marker a composed document's carry (data-hw-components), so
+      // documents-styles reads the page as one. Its brand files stay linked beside it (`copy`).
       name: "type-page-styles",
       hooks: {
         "astro:build:done": ({ pages, dir }) => {
+          const linked = new RegExp(
+            `<link\\b[^>]*\\bhref="${BASE}/(_astro/[^"]+\\.css)"[^>]*>`,
+            "g",
+          );
           for (const { pathname } of pages.filter((p) => p.pathname.startsWith("types/"))) {
             const file = new URL(`${pathname}index.html`, dir);
             const html = readFileSync(file, "utf8").replace(
-              new RegExp(`<link rel="stylesheet" href="${BASE}/(_astro/[^"]+\\.css)">`, "g"),
+              linked,
               (_, css: string) =>
                 `<style data-hw-components>${readFileSync(new URL(css, dir), "utf8")}</style>`,
             );
+            // A link left would open from disk without the components' styles.
+            if (html.includes(`${BASE}/_astro/`))
+              throw new Error(`type-page-styles: ${pathname} still links ${BASE}/_astro/`);
             writeFileSync(file, html.replaceAll("<style>", "<style data-hw-components>"));
           }
         },
