@@ -41,9 +41,11 @@ describe("a composed page declares the layer order once, the brand's, first", ()
 
   it("the catalog's home, ahead of its bundle", () => {
     const html = readFileSync(join(ROOT, "dist/index.html"), "utf8");
-    // The first layer statement or stylesheet link on the page is brand's order.
-    const order = html.indexOf(brandOrder);
-    expect(order).toBeGreaterThan(-1);
-    expect(html.search(/@layer\b|<link\b[^>]*\brel="?stylesheet/)).toBe(order);
+    // The shell's ground layer comes first, brand's order right after it, both ahead of the first
+    // stylesheet link.
+    const ground = "@layer hw-catalog-ground;";
+    expect(html.search(/@layer\b|<link\b[^>]*\brel="?stylesheet/)).toBe(html.indexOf(ground));
+    const rest = html.slice(html.indexOf(ground) + ground.length);
+    expect(rest.search(/@layer\b|<link\b[^>]*\brel="?stylesheet/)).toBe(rest.indexOf(brandOrder));
   });
 });

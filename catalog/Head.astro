@@ -1,11 +1,8 @@
 ---
 import faviconIco from "@hackersandwizards/brand/logos/favicon.ico?url&no-inline";
-import layers from "@hackersandwizards/brand/layers.css?raw";
 ---
 
 <link rel="icon" href={faviconIco} sizes="32x32" />
-{/* brand's layer order, ahead of the bundle, which could put document.css's reset first. */}
-<style is:inline set:html={layers} />
 <script is:inline>
   document.documentElement.dataset.hwScale = "dense";
   document.documentElement.classList.add("hw-focus-ring");
