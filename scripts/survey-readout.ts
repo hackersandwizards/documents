@@ -403,7 +403,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
 <link rel="icon" href="${brand("logos/favicon.svg")}" type="image/svg+xml" />
 <link rel="stylesheet" href="${brand("tokens.root.css")}" />
 <link rel="stylesheet" href="${brand("print.css")}" />
-<link rel="stylesheet" href="${brand("document.css")}" />
+<link rel="stylesheet" href="${brand("document.flat.css")}" />
 <link rel="stylesheet" href="${brand("marker.css")}" />
 <link rel="stylesheet" href="${brand("elements/kpi.css")}" />
 <link rel="stylesheet" href="${brand("elements/rule.css")}" />

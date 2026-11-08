@@ -201,12 +201,7 @@ ul {
 }
 
 .facts dl > div {
-  border-top: var(--rule) solid var(--accent-line);
   padding: var(--op-4) 0 var(--op-5);
-}
-
-.facts dl > div:nth-child(-n + 3) {
-  border-top: 0;
 }
 .facts dl > .wide {
   grid-column: 1 / -1;
@@ -247,9 +242,6 @@ ul {
   padding-bottom: var(--op-4);
 }
 
-.facts .key-row > div {
-  border-top: 0;
-}
 .facts .key-row dd {
   font: var(--role-lead);
   font-weight: var(--weight-semibold);
@@ -301,7 +293,6 @@ ul {
 }
 
 .facts dl.details > div {
-  border-top: 0;
   padding: 0;
 }
 /* The last row is full: a lone last fact spans the row, a pair takes it as one and two. */

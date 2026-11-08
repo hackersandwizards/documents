@@ -127,10 +127,11 @@ Worker file referenced by `import.meta.url` survives that bundle is not tested.
 
 ## Open in other repositories
 
-- brand: `elements/elements.css` is 29 `@import`s and `tokens/document.css` imports
-  `stage.css`, so a page that links them waits on a request chain before first paint. Ship a flat
-  build of each (imports resolved, one file) beside the source, and the type pages link that. The
-  control above measured 91 to 98 on mobile for the Angebot type page.
+- brand (done in v1.53.0): flat builds `elements.flat.css` and `document.flat.css`, which the type
+  pages now link. Angebot type page on mobile, Lighthouse 12.8.2, five alternating runs each, load
+  5.2 to 9.2: 82 before (FCP 3.6 s, 73 requests), 96 after (FCP 2.25 s, 14 requests). The control
+  above inlined the brand files and scored 98; the five brand links left (tokens.root, print,
+  document, marker, elements) still block the first paint by about 1.5 s by Lighthouse's estimate.
 - brand (from 07.11., still open): the marker's cap share (`--hw-marker-mid`, 2/3) is no value a
   test can read, so `test/marker-position.test.ts` retypes it.
 - scaffolding (from 07.11., narrowed): the home still loads a live iframe per visible story. With

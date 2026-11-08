@@ -93,7 +93,7 @@ decision or item ids, pointers to review notes and names go to the commit messag
   documents in its own gate.
 - `scripts/elements.ts`: `withElements`, which gives the engine's classes (card, callout, chip,
   doc-tag, eyebrow, label, table, quote, code block, link in text) the brand's shared elements
-  (`@hackersandwizards/brand/elements.css`) on every composed and baked page; the base and the
+  (`@hackersandwizards/brand/elements.flat.css`) on every composed and baked page; the base and the
   components keep only layout. `brand-elements.json` lists the elements used and each exception
   with its reason, and `brand-elements` in the gate measures the type pages against the brand. A
   rule restyling an element-named class fails there: set the element's `--hw-*` setting instead,

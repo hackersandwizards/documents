@@ -755,7 +755,7 @@ export function brandCss(): string {
   return [
     "tokens.css",
     "print.css",
-    "document.css",
+    "document.flat.css",
     "marker.css",
     "elements/kpi.css",
     "elements/rule.css",

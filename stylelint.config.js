@@ -6,8 +6,8 @@ export default styles({
     "document.css",
     "inline-properties.css",
     "@hackersandwizards/brand/print.css",
-    "@hackersandwizards/brand/document.css",
+    "@hackersandwizards/brand/document.flat.css",
     "@hackersandwizards/brand/marker.css",
-    "@hackersandwizards/brand/elements.css",
+    "@hackersandwizards/brand/elements.flat.css",
   ],
 });

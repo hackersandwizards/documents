@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "bun:test";
@@ -59,6 +59,20 @@ describe("foreignStyles", () => {
     ])
       expect(rawInlineStyles(source)).toHaveLength(1);
   });
+});
+
+// The catalog copies the brand files of LINKED_CSS (catalog/brand.ts) beside the type pages, while
+// _Type.astro, the onepager's and the readout's composers each write their own links: a file one
+// of them links that the copy leaves out loads nothing from disk or on Pages.
+describe("type page links", () => {
+  for (const page of pages)
+    it(`${page.slice(TYPES.length + 1)} links only files in dist/`, () => {
+      const hrefs = [...readFileSync(page, "utf8").matchAll(/<link\b[^>]*\bhref="([^"]+)"/g)]
+        .map((m) => m[1]!)
+        .filter((href) => !/^[a-z]+:|^\//.test(href));
+      expect(hrefs.length).toBeGreaterThan(0);
+      expect(hrefs.filter((href) => !existsSync(resolve(page, "..", href)))).toEqual([]);
+    });
 });
 
 describe("documents-styles", () => {

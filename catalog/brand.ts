@@ -18,9 +18,9 @@ function fromRoot(absolute: string): string {
 const LINKED_CSS = [
   "tokens.root.css",
   "print.css",
-  "document.css",
+  "document.flat.css",
   "marker.css",
-  "elements.css",
+  "elements.flat.css",
   "elements/kpi.css",
   "elements/rule.css",
   "elements/strip.css",

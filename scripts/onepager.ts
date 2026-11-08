@@ -35,7 +35,7 @@ const brandBaseOf = (read?: Set<string>) =>
     // The faces as data URIs, resolved beside brand's exported print.css, as the document base
     // carries them: the page reaches no brand path and renders anywhere.
     inlineCss(brandFile("print.css"), read),
-    inlineCss(brandFile("document.css"), read),
+    inlineCss(brandFile("document.flat.css"), read),
   ].join("\n");
 
 // The brand's tokens, faces and document scale, read once a process: a fit composes up to 13
@@ -52,7 +52,7 @@ function baseCss(link: boolean, read?: Set<string>) {
     ...(link ? [] : [brandBase(read)]),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
     // The brand's elements, which ONEPAGER_ELEMENTS puts on the page's blocks.
-    inlineCss(brandFile("elements.css"), read),
+    inlineCss(brandFile("elements.flat.css"), read),
     // Every h&w document draws the identical list marker: the brand's rule, switched on in
     // tokens.css above, and the base's list indent, never a copy.
     brandText("marker.css", read),
@@ -83,7 +83,7 @@ const linked = (
 <link rel="icon" href="${href("logos/favicon.svg")}" type="image/svg+xml" />
 <link rel="stylesheet" href="${href("tokens.root.css")}" />
 <link rel="stylesheet" href="${href("print.css")}" />
-<link rel="stylesheet" href="${href("document.css")}" />
+<link rel="stylesheet" href="${href("document.flat.css")}" />
 `;
 
 /** The page balance fitOnepager picks: `tight` for copy over two pages, then the widest gap level

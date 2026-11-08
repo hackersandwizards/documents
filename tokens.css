@@ -1,8 +1,8 @@
 @import "@hackersandwizards/brand/tokens.css";
 @import "@hackersandwizards/brand/print.css";
-@import "@hackersandwizards/brand/document.css";
+@import "@hackersandwizards/brand/document.flat.css";
 @import "@hackersandwizards/brand/marker.css";
-@import "@hackersandwizards/brand/elements.css";
+@import "@hackersandwizards/brand/elements.flat.css";
 
 :root {
   /* Teal (accent) marks what a reader scans and money, purple (result) the result and nothing
