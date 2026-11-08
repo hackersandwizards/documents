@@ -311,7 +311,8 @@ describe("inlineImages", () => {
   });
 
   it("types each image by its extension, without Bun", () => {
-    for (const ext of ["gif", "webp", "JPEG", "svg"]) writeFileSync(join(page, `t.${ext}`), ext);
+    const types = { gif: "gif", webp: "webp", JPEG: "jpeg", svg: "svg+xml" };
+    for (const ext of Object.keys(types)) writeFileSync(join(page, `t.${ext}`), ext);
     const file = Bun.file;
     Bun.file = () => {
       throw new Error("Bun.file called");
@@ -319,15 +320,14 @@ describe("inlineImages", () => {
     try {
       expect(
         inlineImages(
-          `<img src="t.gif"><img src="t.webp"><img src="t.JPEG"><img src="t.svg">`,
+          Object.keys(types)
+            .map((ext) => `<img src="t.${ext}">`)
+            .join(""),
           page,
         ),
       ).toBe(
-        ["gif", "webp", "jpeg", "svg+xml"]
-          .map(
-            (type, i) =>
-              `<img src="data:image/${type};base64,${btoa(["gif", "webp", "JPEG", "svg"][i]!)}">`,
-          )
+        Object.entries(types)
+          .map(([ext, type]) => `<img src="data:image/${type};base64,${btoa(ext)}">`)
           .join(""),
       );
     } finally {
@@ -357,6 +357,13 @@ describe("inlineImages", () => {
   it("throws on a brand src brand does not export, or keeps it with keepMissing", () => {
     const html = `<img src="@hackersandwizards/brand/logos/none.svg">`;
     expect(() => inlineImages(html, page)).toThrow("brand exports no image");
+    expect(inlineImages(html, page, { keepMissing: true })).toBe(html);
+  });
+
+  // brand keeps this mark in Git LFS, so a Git install holds only its pointer.
+  it("throws on a brand file installed as its Git LFS pointer, or keeps it with keepMissing", () => {
+    const html = `<img src="@hackersandwizards/brand/logos/emoji-logo-short.png">`;
+    expect(() => inlineImages(html, page)).toThrow("only its Git LFS pointer");
     expect(inlineImages(html, page, { keepMissing: true })).toBe(html);
   });
 });

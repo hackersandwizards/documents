@@ -122,7 +122,7 @@ export type InlineImagesOptions = { within?: string; keepMissing?: boolean };
 /** Each brand image as a data URI, read once: the installed package does not change while the
  * process runs, and a viewer inlines the same marks on every request. */
 const brandImages = new Map<string, string>();
-/** The MIME type by extension, the ones `inlineImages` matches, so the export needs no Bun. */
+/** The MIME type by extension, the images `inlineImages` takes, so the export needs no Bun. */
 const IMAGE_TYPES: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
@@ -131,59 +131,68 @@ const IMAGE_TYPES: Record<string, string> = {
   webp: "image/webp",
   svg: "image/svg+xml",
 };
-const dataUri = (path: string, bytes: Buffer) =>
-  `data:${IMAGE_TYPES[path.slice(path.lastIndexOf(".") + 1).toLowerCase()]};base64,${bytes.toString("base64")}`;
+const IMAGE_SRC = new RegExp(
+  `(<img\\b[^>]*?\\ssrc=)(["'])([^"':/#?][^"':#?]*?\\.(${Object.keys(IMAGE_TYPES).join("|")}))\\2`,
+  "gi",
+);
 /** A file Git LFS has not fetched holds this pointer instead of the image. */
 const LFS_POINTER = Buffer.from("version https://git-lfs.github.com/spec/v1\n");
+/** `bytes` as a data URI, or undefined for a Git LFS pointer. */
+const dataUri = (ext: string, bytes: Buffer) =>
+  bytes.subarray(0, LFS_POINTER.length).equals(LFS_POINTER)
+    ? undefined
+    : `data:${IMAGE_TYPES[ext.toLowerCase()]};base64,${bytes.toString("base64")}`;
 
 /** `html` with each `<img>` whose src is an image file beside it, or a file brand exports
  * (`@hackersandwizards/brand/clients/...`, which the stored page names instead of carrying), as a
  * data URI. The print and a consumer's viewer of stored pages both call it: a file:// image taints
  * the canvas PRINT_JS redraws it on, so it printed at its source size, an SVG file's rasters are
  * redrawn only from a data URI, and a sandboxed iframe resolves neither path. A brand src brand
- * does not export throws, so a print fails rather than print without the image. A file beside the
- * page that cannot be read (missing, a folder, no permission) or is a Git LFS pointer stays as it
- * is, so the page shows its alt text. */
+ * does not export, or exports as a Git LFS pointer, throws, so a print fails rather than print
+ * without the image. A file beside the page that cannot be read (missing, a folder, no permission)
+ * or is a Git LFS pointer stays as it is, so the page shows its alt text. */
 export function inlineImages(html: string, dir: string, options: InlineImagesOptions = {}): string {
   const root = options.within === undefined ? undefined : realpathSync(options.within);
-  return html.replace(
-    /(<img\b[^>]*?\ssrc=)(["'])([^"':/#?][^"':#?]*?\.(?:png|jpe?g|gif|webp|svg))\2/gi,
-    (tag, start: string, quote: string, src: string) => {
-      let file: string;
+  return html.replace(IMAGE_SRC, (tag, start: string, quote: string, src: string, ext: string) => {
+    let file: string;
+    try {
+      file = decodeURIComponent(src);
+    } catch {
+      return tag;
+    }
+    let uri = brandImages.get(file);
+    if (uri === undefined && file.startsWith(BRAND)) {
+      let cause: unknown;
       try {
-        file = decodeURIComponent(src);
+        uri = dataUri(ext, readFileSync(brandFile(file.slice(BRAND.length))));
+      } catch (error) {
+        cause = error;
+      }
+      if (uri === undefined) {
+        if (options.keepMissing) return tag;
+        throw new Error(
+          `inlineImages: brand exports no image ${src}${cause ? "" : ", only its Git LFS pointer"}`,
+          { cause },
+        );
+      }
+      brandImages.set(file, uri);
+    } else if (uri === undefined) {
+      const path = join(dir, file);
+      let bytes: Buffer;
+      try {
+        if (root !== undefined) {
+          const inside = relative(root, realpathSync(path));
+          if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) return tag;
+        }
+        bytes = readFileSync(path);
       } catch {
         return tag;
       }
-      let uri = brandImages.get(file);
-      if (uri === undefined && file.startsWith(BRAND)) {
-        let path: string;
-        try {
-          path = brandFile(file.slice(BRAND.length));
-        } catch (cause) {
-          if (options.keepMissing) return tag;
-          throw new Error(`inlineImages: brand exports no image ${src}`, { cause });
-        }
-        uri = dataUri(path, readFileSync(path));
-        brandImages.set(file, uri);
-      } else if (uri === undefined) {
-        const path = join(dir, file);
-        let bytes: Buffer;
-        try {
-          if (root !== undefined) {
-            const inside = relative(root, realpathSync(path));
-            if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) return tag;
-          }
-          bytes = readFileSync(path);
-        } catch {
-          return tag;
-        }
-        if (bytes.subarray(0, LFS_POINTER.length).equals(LFS_POINTER)) return tag;
-        uri = dataUri(path, bytes);
-      }
-      return `${start}${quote}${uri}${quote}`;
-    },
-  );
+      uri = dataUri(ext, bytes);
+      if (uri === undefined) return tag;
+    }
+    return `${start}${quote}${uri}${quote}`;
+  });
 }
 
 /** The print settings. Chrome tags the PDF without being asked; the outline needs the flag. */
