@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "1.22.3",
+  "version": "1.23.0",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -72,6 +72,7 @@
   "peerDependencies": {
     "@hackersandwizards/brand": "*",
     "@hackersandwizards/scaffolding": "*",
+    "@hackersandwizards/testimonials": "*",
     "astro": "^7.4.4",
     "vite": "^8.3.5"
   },
@@ -80,6 +81,9 @@
       "optional": true
     },
     "@hackersandwizards/scaffolding": {
+      "optional": true
+    },
+    "@hackersandwizards/testimonials": {
       "optional": true
     }
   },

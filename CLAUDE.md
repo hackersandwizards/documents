@@ -63,9 +63,10 @@ decision or item ids, pointers to review notes and names go to the commit messag
   characters that face printed and drops the faces it never printed (`fitOnepager` runs it),
   `composeDocument` and the font check `assertBrandFonts`. `warm` on
   `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
-  page an `http(s)` URL serves, an HTML file's images inlined: a file beside it, and a file brand
-  exports named by its package path (`src="@hackersandwizards/brand/clients/..."`), which fails
-  the render where brand does not export it. `inlineImages` does that inlining, exported for a
+  page an `http(s)` URL serves, an HTML file's images inlined: a file beside it, and a file one of
+  our packages exports named by its package path (`src="@hackersandwizards/testimonials/marks/..."`),
+  resolved from where this package is installed, which fails the render where that package does not
+  export it. `inlineImages` does that inlining, exported for a
   consumer's viewer of stored pages too. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
   with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a
   function composing the HTML; without poppler the first render stands and the result says so.
@@ -118,9 +119,10 @@ A consumer reaches the engine through `exports` (`./tokens.css`, `./document.css
 path is internal. `scaffolding.styles` in `package.json` lists `document.css` and `handout.css`, the
 stylesheets a consumer loads beside the components, which scaffolding's `check-coupling` then lets
 through. Renaming a command, changing its arguments or moving an exported file breaks
-consumers: the release commit names it and every consumer follows in the same pass. Astro, Vite, brand
-and scaffolding (its `./chrome`, which `render-pdf.ts` imports at run time, so a consumer installs
-it beside its runtime dependencies) are peer dependencies, brand and scaffolding optional in
+consumers: the release commit names it and every consumer follows in the same pass. Astro, Vite, brand,
+testimonials (whose marks a page names by package path) and scaffolding (its `./chrome`, which
+`render-pdf.ts` imports at run time, so a consumer installs it beside its runtime dependencies) are
+peer dependencies, brand, testimonials and scaffolding optional in
 `peerDependenciesMeta` so Bun never looks them up on the npm registry; the runtime dependencies are `entities`, which `fitOnepager` decodes copy with, and `subset-font`
 (HarfBuzz) with `woff2-encoder`, which `subsetFaces` cuts and re-encodes the faces with; `keywords: ["astro-component"]` makes Astro compile the components from
 `node_modules`.

@@ -30,12 +30,14 @@
       "peerDependencies": {
         "@hackersandwizards/brand": "*",
         "@hackersandwizards/scaffolding": "*",
+        "@hackersandwizards/testimonials": "*",
         "astro": "^7.4.4",
         "vite": "^8.3.5",
       },
       "optionalPeers": [
         "@hackersandwizards/brand",
         "@hackersandwizards/scaffolding",
+        "@hackersandwizards/testimonials",
       ],
     },
   },

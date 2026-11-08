@@ -354,10 +354,19 @@ describe("inlineImages", () => {
     }
   });
 
-  it("throws on a brand src brand does not export, or keeps it with keepMissing", () => {
-    const html = `<img src="@hackersandwizards/brand/logos/none.svg">`;
-    expect(() => inlineImages(html, page)).toThrow("brand exports no image");
-    expect(inlineImages(html, page, { keepMissing: true })).toBe(html);
+  it("throws on a package src its package does not export, or keeps it with keepMissing", () => {
+    for (const [src, error] of [
+      ["@hackersandwizards/brand/logos/none.svg", "@hackersandwizards/brand exports no image"],
+      [
+        "@hackersandwizards/testimonials/marks/none.svg",
+        "@hackersandwizards/testimonials exports no image",
+      ],
+      ["@hackersandwizards/none/marks/a.svg", "@hackersandwizards/none exports no image"],
+    ]) {
+      const html = `<img src="${src}">`;
+      expect(() => inlineImages(html, page)).toThrow(error);
+      expect(inlineImages(html, page, { keepMissing: true })).toBe(html);
+    }
   });
 });
 

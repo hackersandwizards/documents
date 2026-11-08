@@ -115,13 +115,17 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
 /** How `inlineImages` takes a page: `within`, the folder a file beside the page must resolve into,
- * symlinks followed (a viewer of stored pages passes its root); `keepMissing` leaves a brand src
- * brand does not export as it is instead of throwing, so a viewer shows its alt text. */
+ * symlinks followed (a viewer of stored pages passes its root); `keepMissing` leaves a package src
+ * its package does not export as it is instead of throwing, so a viewer shows its alt text. */
 export type InlineImagesOptions = { within?: string; keepMissing?: boolean };
 
-/** Each brand image as a data URI, read once: the installed package does not change while the
+/** Each package image as a data URI, read once: an installed package does not change while the
  * process runs, and a viewer inlines the same marks on every request. */
-const brandImages = new Map<string, string>();
+const packageImages = new Map<string, string>();
+/** A src naming a file one of our packages exports, its package name captured. */
+const PACKAGE_SRC = /^(@hackersandwizards\/[^/]+)\//;
+/** Resolves a package path from where this package is installed. */
+const packageRequire = createRequire(import.meta.url);
 /** The MIME type by extension, the images `inlineImages` takes, so the export needs no Bun. */
 const IMAGE_TYPES: Record<string, string> = {
   png: "image/png",
@@ -143,14 +147,15 @@ const dataUri = (ext: string, bytes: Buffer) =>
     ? undefined
     : `data:${IMAGE_TYPES[ext.toLowerCase()]};base64,${bytes.toString("base64")}`;
 
-/** `html` with each `<img>` whose src is an image file beside it, or a file brand exports
- * (`@hackersandwizards/brand/clients/...`, which the stored page names instead of carrying), as a
- * data URI. The print and a consumer's viewer of stored pages both call it: a file:// image taints
- * the canvas PRINT_JS redraws it on, so it printed at its source size, an SVG file's rasters are
- * redrawn only from a data URI, and a sandboxed iframe resolves neither path. A brand src brand
- * does not export, or exports as a Git LFS pointer, throws, so a print fails rather than print
- * without the image. A file beside the page that cannot be read (missing, a folder, no permission)
- * or is a Git LFS pointer stays as it is, so the page shows its alt text. */
+/** `html` with each `<img>` whose src is an image file beside it, or a file one of our packages
+ * exports (`@hackersandwizards/testimonials/marks/...`, which the stored page names instead of
+ * carrying), resolved from where this package is installed, as a data URI. The print and a consumer's
+ * viewer of stored pages both call it: a file:// image taints the canvas PRINT_JS redraws it on, so
+ * it printed at its source size, an SVG file's rasters are redrawn only from a data URI, and a
+ * sandboxed iframe resolves neither path. A package src its package does not export, or exports as
+ * a Git LFS pointer, throws, so a print fails rather than print without the image. A file beside
+ * the page that cannot be read (missing, a folder, no permission) or is a Git LFS pointer stays as
+ * it is, so the page shows its alt text. */
 export function inlineImages(html: string, dir: string, options: InlineImagesOptions = {}): string {
   const root = options.within === undefined ? undefined : realpathSync(options.within);
   return html.replace(IMAGE_SRC, (tag, start: string, quote: string, src: string, ext: string) => {
@@ -160,22 +165,23 @@ export function inlineImages(html: string, dir: string, options: InlineImagesOpt
     } catch {
       return tag;
     }
-    let uri = brandImages.get(file);
-    if (uri === undefined && file.startsWith(BRAND)) {
+    let uri = packageImages.get(file);
+    const pkg = PACKAGE_SRC.exec(file)?.[1];
+    if (uri === undefined && pkg !== undefined) {
       let cause: unknown;
       try {
-        uri = dataUri(ext, readFileSync(brandFile(file.slice(BRAND.length))));
+        uri = dataUri(ext, readFileSync(packageRequire.resolve(file)));
       } catch (error) {
         cause = error;
       }
       if (uri === undefined) {
         if (options.keepMissing) return tag;
         throw new Error(
-          `inlineImages: brand exports no image ${src}${cause ? "" : ", only its Git LFS pointer"}`,
+          `inlineImages: ${pkg} exports no image ${src}${cause ? "" : ", only its Git LFS pointer"}`,
           { cause },
         );
       }
-      brandImages.set(file, uri);
+      packageImages.set(file, uri);
     } else if (uri === undefined) {
       const path = join(dir, file);
       let bytes: Buffer;
@@ -762,7 +768,7 @@ export function brandCss(): string {
 const BRAND = "@hackersandwizards/brand/";
 
 /** A file the brand package exports, such as `tokens.css`, as an absolute path. */
-export const brandFile = (file: string) => createRequire(import.meta.url).resolve(BRAND + file);
+export const brandFile = (file: string) => packageRequire.resolve(BRAND + file);
 
 /** CSS without comments, its strings untouched. The space after one goes only where a space,
  * brace or semicolon comes before it: elsewhere it may part two selectors. */
@@ -853,7 +859,7 @@ export function compactStyles(html: string): string {
 /** subset-font (HarfBuzz) ships no types; this is the call subsetFaces makes. woff2-encoder, not
  * subset-font's wawoff2, decodes and encodes: wawoff2 drops the glyph overlap flag FreeType
  * anti-aliases by. */
-const subsetFont = createRequire(import.meta.url)("subset-font") as (
+const subsetFont = packageRequire("subset-font") as (
   font: Buffer,
   text: string,
   options: { targetFormat: "truetype" },
