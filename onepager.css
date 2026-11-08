@@ -601,8 +601,9 @@ ul {
   content: none;
 }
 
-/* A mark's height is its share of the row, brand's clients.json `height`, which the page sets
-   inline as --mark-scale; a page setting --mark-height in px keeps that. */
+/* A mark's height is its share of the row, `scale` in @hackersandwizards/testimonials'
+   marks.json, which the page sets inline as --mark-scale; a page setting --mark-height in px
+   keeps that. */
 .client-row img {
   height: var(--mark-height, calc(var(--op-17) * var(--mark-scale, 1)));
 }

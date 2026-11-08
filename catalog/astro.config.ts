@@ -2,7 +2,6 @@
 import { globSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import { catalog } from "@hackersandwizards/scaffolding/catalog";
-import { NOINDEX } from "@hackersandwizards/scaffolding/catalog/robots.ts";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brandPath, LINKED_CSS } from "./brand";
@@ -46,6 +45,8 @@ export default defineConfig({
       // The brand files the type pages link.
       copy: [
         ...new Set(LINKED_CSS.map((f) => dirname(brandPath(f)))),
+        // elements.css imports it from outside its folder.
+        brandPath("disclosure.css"),
         `${dirname(brandPath("logos/favicon.svg"))}/*.svg`,
         brandPath("logos/favicon.ico"),
       ],
@@ -70,7 +71,7 @@ export default defineConfig({
               mkdirSync(dirname(stub), { recursive: true });
               writeFileSync(
                 stub,
-                `<!doctype html><meta charset="utf-8"><title>Moved</title>${NOINDEX}<link rel="canonical" href="${to}"><meta http-equiv="refresh" content="0; url=${to}"><script>location.replace(${JSON.stringify(to)}+location.search+location.hash)</script><a href="${to}">${to}</a>\n`,
+                `<!doctype html><meta charset="utf-8"><title>Moved</title><link rel="canonical" href="${to}"><meta http-equiv="refresh" content="0; url=${to}"><script>location.replace(${JSON.stringify(to)}+location.search+location.hash)</script><a href="${to}">${to}</a>\n`,
               );
             }
           }

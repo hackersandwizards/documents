@@ -47,14 +47,3 @@ test("every component appears on a type page, and every type page is listed", ()
   );
   expect([...listed].sort()).toEqual(TYPES.map((t) => t.file).sort());
 });
-
-test("every type page carries one robots tag, noindex", () => {
-  const tags = TYPES.map((t) => [
-    t.file,
-    readFileSync(join(ROOT, "dist/types", t.file, "index.html"), "utf8").match(
-      /<meta\b[^>]*\bname="robots"[^>]*>/g,
-    ) ?? [],
-  ]);
-  const off = tags.filter(([, found]) => found.length !== 1 || !found[0]!.includes("noindex"));
-  expect(off).toEqual([]);
-});
