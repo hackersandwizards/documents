@@ -2,7 +2,7 @@
 kind: decision
 status: assumed
 priority: 3
-order: 695
+order: 1000
 area: brand
 owner: Benedikt
 recommended: straight
