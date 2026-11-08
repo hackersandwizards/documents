@@ -5,10 +5,10 @@ import faviconSvg from "@hackersandwizards/brand/logos/favicon.svg?url&no-inline
 
 <link rel="icon" href={faviconIco} sizes="32x32" />
 <link rel="icon" href={faviconSvg} type="image/svg+xml" />
-{/* tokens.css's layer order, ahead of the bundle, whose elements.css would open with components
-    and put document.css's reset after it. */}
+{/* brand's layer order, ahead of the bundle, which could put document.css's reset first;
+    test/layers.test.ts holds it to brand's elements.css. */}
 <style is:inline>
-  @layer base, components;
+  @layer properties, theme, base, components, utilities;
 </style>
 <script is:inline>
   document.documentElement.dataset.hwScale = "dense";

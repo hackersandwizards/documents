@@ -835,6 +835,21 @@ function printableCodePoints(html: string): Set<number> {
 const editFaces = (html: string, edit: (face: string) => string) =>
   editStyles(html, (css) => css.replace(/@font-face\s*\{[^}]*\}\s*/g, edit));
 
+/** A page's style elements with each `@layer` order statement dropped that names only layers
+ * declared before it: only a layer's first mention places it, and brand opens every element file
+ * with the whole order, 55 times on the onepager. */
+function layerOnce(html: string): string {
+  const seen = new Set<string>();
+  return editStyles(html, (css) =>
+    css.replace(/@layer\s+([\w.,\s-]+?)\s*([;{])/g, (at, names: string, end: string) => {
+      const layers = names.split(",").map((n) => n.trim());
+      const fresh = layers.some((n) => !seen.has(n));
+      for (const n of layers) seen.add(n);
+      return end === "{" || fresh ? at : "";
+    }),
+  );
+}
+
 /**
  * A standalone page as it leaves the engine: its style elements without comments, which a reader
  * of the page never needs, without the rules and custom properties its markup cannot use
@@ -843,7 +858,7 @@ const editFaces = (html: string, edit: (face: string) => string) =>
  * 260 KB of every page (measured).
  */
 export function compactStyles(html: string): string {
-  const bare = pruneStyles(editStyles(html, stripComments));
+  const bare = pruneStyles(layerOnce(editStyles(html, stripComments)));
   const points = [...printableCodePoints(bare)];
   return editFaces(bare, (face) => {
     const range = /unicode-range:\s*([^;}]+)/.exec(face)?.[1];

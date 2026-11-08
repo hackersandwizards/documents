@@ -1,7 +1,3 @@
-/* The base layer (document.css's reset) under the brand elements' components layer, so a reset
-   never takes their padding. */
-@layer base, components;
-
 @import "@hackersandwizards/brand/tokens.css";
 @import "@hackersandwizards/brand/print.css";
 @import "@hackersandwizards/brand/document.css";
