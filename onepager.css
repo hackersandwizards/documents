@@ -565,7 +565,6 @@ ul {
   break-inside: avoid;
 }
 
-/* The consumer sets each client mark's height, as an inline style. */
 .references {
   border-top: var(--rule) solid var(--line);
   padding-top: var(--op-7);
@@ -602,9 +601,11 @@ ul {
   content: none;
 }
 
-/* A mark's height comes from the page that sets it, inline as --mark-height. */
+/* A mark's height is its share of the row, brand's clients.json `height`, which the page sets
+   inline as --mark-scale; a page setting --mark-height in px keeps that. The row is 17 px, a
+   step brand's onepager scale does not name. */
 .client-row img {
-  height: var(--mark-height, auto);
+  height: var(--mark-height, calc((var(--op-8) + var(--op-9)) * var(--mark-scale, 1)));
 }
 
 .pricing-section {

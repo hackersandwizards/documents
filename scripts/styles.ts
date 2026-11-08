@@ -28,6 +28,8 @@ export const DATA_PROPERTIES = [
   "--count",
   "--band",
   "--mark",
+  "--mark-scale",
+  // A client mark's height in px, which a stored onepager may set instead of --mark-scale.
   "--mark-height",
 ];
 

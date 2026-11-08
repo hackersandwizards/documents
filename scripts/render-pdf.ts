@@ -1,10 +1,17 @@
 import { type ChildProcess, execFile, spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { inflateSync } from "node:zlib";
@@ -114,12 +121,25 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
+/** How `inlineImages` takes a page: `within`, the folder a file beside the page must resolve into,
+ * symlinks followed (a viewer of stored pages passes its root); `keepMissing` leaves a brand src
+ * brand does not export as it is instead of throwing, so a viewer shows its alt text. */
+export type InlineImagesOptions = { within?: string; keepMissing?: boolean };
+
+/** Each brand image as a data URI, read once: the installed package does not change while the
+ * process runs, and a viewer inlines the same marks on every request. */
+const brandImages = new Map<string, string>();
+const dataUri = (path: string) =>
+  `data:${Bun.file(path).type};base64,${readFileSync(path).toString("base64")}`;
+
 /** `html` with each `<img>` whose src is an image file beside it, or a file brand exports
  * (`@hackersandwizards/brand/clients/...`, which the stored page names instead of carrying), as a
- * data URI: a file:// image taints the canvas PRINT_JS redraws it on, so it printed at its source
- * size, and an SVG file's rasters are redrawn only from a data URI. A brand src brand does not
- * export fails the render rather than print without the image. */
-function withLocalImages(html: string, dir: string): string {
+ * data URI. The print and a consumer's viewer of stored pages both call it: a file:// image taints
+ * the canvas PRINT_JS redraws it on, so it printed at its source size, an SVG file's rasters are
+ * redrawn only from a data URI, and a sandboxed iframe resolves neither path. A brand src brand
+ * does not export throws, so a print fails rather than print without the image. */
+export function inlineImages(html: string, dir: string, options: InlineImagesOptions = {}): string {
+  const root = options.within === undefined ? undefined : realpathSync(options.within);
   return html.replace(
     /(<img\b[^>]*?\ssrc=)(["'])([^"':/#?][^"':#?]*?\.(?:png|jpe?g|gif|webp|svg))\2/gi,
     (tag, start: string, quote: string, src: string) => {
@@ -129,19 +149,27 @@ function withLocalImages(html: string, dir: string): string {
       } catch {
         return tag;
       }
-      let path: string;
-      if (file.startsWith(BRAND)) {
+      let uri = brandImages.get(file);
+      if (uri === undefined && file.startsWith(BRAND)) {
+        let path: string;
         try {
           path = brandFile(file.slice(BRAND.length));
         } catch (cause) {
-          throw new Error(`renderPdf: brand exports no image ${src}`, { cause });
+          if (options.keepMissing) return tag;
+          throw new Error(`inlineImages: brand exports no image ${src}`, { cause });
         }
-      } else {
-        path = join(dir, file);
+        uri = dataUri(path);
+        brandImages.set(file, uri);
+      } else if (uri === undefined) {
+        const path = join(dir, file);
         if (!existsSync(path)) return tag;
+        if (root !== undefined) {
+          const inside = relative(root, realpathSync(path));
+          if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) return tag;
+        }
+        uri = dataUri(path);
       }
-      const data = readFileSync(path).toString("base64");
-      return `${start}${quote}data:${Bun.file(path).type};base64,${data}${quote}`;
+      return `${start}${quote}${uri}${quote}`;
     },
   );
 }
@@ -225,7 +253,7 @@ export async function renderPdf(
     writeFileSync(pdfPath, pdf);
     return;
   }
-  const html = withLocalImages(readFileSync(htmlPath, "utf-8"), dirname(htmlPath));
+  const html = inlineImages(readFileSync(htmlPath, "utf-8"), dirname(htmlPath));
   const end = html.lastIndexOf("</body>");
   // Beside the input, so relative resources resolve; the stored HTML stays free of the script. A
   // name per call, since a render that finishes deletes its file while another may still load it.

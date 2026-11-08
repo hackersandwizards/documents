@@ -8,6 +8,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
@@ -21,6 +22,7 @@ import {
   composeDocument,
   cutFacesToPdf,
   documentCss,
+  inlineImages,
   renderPdf,
   subsetFaces,
 } from "../scripts/render-pdf";
@@ -274,6 +276,43 @@ describe("bakeDocumentCss", () => {
       expect(() =>
         bakeDocumentCss(`<html><head><style data-hw-document></style>${foreign}</head></html>`),
       ).toThrow(/styles outside the document engine/);
+  });
+});
+
+describe("inlineImages", () => {
+  const page = join(dir, "inline", "page");
+  mkdirSync(page, { recursive: true });
+  writeFileSync(join(page, "a b.jpg"), "jpeg");
+  writeFileSync(join(page, "..dots.png"), "png");
+  writeFileSync(join(dir, "inline", "outside.png"), "png");
+  symlinkSync(join(dir, "inline", "outside.png"), join(page, "link.png"));
+
+  it("inlines a file beside the page and a brand file, quoted either way, a src percent-encoded", () => {
+    const html = inlineImages(
+      `<img alt='x' src='a%20b.jpg'><img src="./a b.jpg"><img src="@hackersandwizards/brand/logos/wordmark.svg">`,
+      page,
+    );
+    expect(html).toContain(`src='data:image/jpeg;base64,${btoa("jpeg")}'`);
+    expect(html).toContain(`src="data:image/jpeg;base64,${btoa("jpeg")}"`);
+    expect(html).toContain('src="data:image/svg+xml');
+  });
+
+  it("keeps a missing file, and with within, a file that resolves outside it", () => {
+    const html = `<img src="none.png"><img src="../outside.png"><img src="link.png">`;
+    expect(inlineImages(html, page)).toContain(
+      `src="data:image/png;base64,${btoa("png")}"><img src="data:image/png`,
+    );
+    expect(inlineImages(html, page, { within: page })).toBe(html);
+    // A name that only starts with two dots lies inside.
+    expect(inlineImages(`<img src="..dots.png">`, page, { within: page })).toContain(
+      "data:image/png",
+    );
+  });
+
+  it("throws on a brand src brand does not export, or keeps it with keepMissing", () => {
+    const html = `<img src="@hackersandwizards/brand/logos/none.svg">`;
+    expect(() => inlineImages(html, page)).toThrow("brand exports no image");
+    expect(inlineImages(html, page, { keepMissing: true })).toBe(html);
   });
 });
 

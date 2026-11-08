@@ -1,0 +1,37 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
+
+/** `html` rendered in Chrome, then `probe` (a script body run on load, after the page's own load
+ * listeners) returns the string the test reads. `args` adds Chrome flags, such as a window size. */
+export function probePage(html: string, probe: string, args: string[] = []): string {
+  const chrome = chromeBinary();
+  if (!chrome) throw new Error(INSTALL_HINT);
+  const script = `<script>addEventListener("load", () => {
+    const pre = document.createElement("pre");
+    pre.id = "probe";
+    pre.textContent = (() => { ${probe} })();
+    document.body.append(pre);
+  });</script>`;
+  const dir = mkdtempSync(join(tmpdir(), "probe-"));
+  try {
+    const page = join(dir, "page.html");
+    writeFileSync(page, html.replace("</body>", `${script}</body>`));
+    const dom = execFileSync(
+      chrome,
+      [
+        ...chromeArgs(join(dir, "profile")),
+        ...args,
+        "--virtual-time-budget=10000",
+        "--dump-dom",
+        `file://${page}`,
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    );
+    return dom.match(/<pre id="probe">([^<]*)<\/pre>/)![1]!;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}

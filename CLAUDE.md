@@ -65,7 +65,8 @@ decision or item ids, pointers to review notes and names go to the commit messag
   `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
   page an `http(s)` URL serves, an HTML file's images inlined: a file beside it, and a file brand
   exports named by its package path (`src="@hackersandwizards/brand/clients/..."`), which fails
-  the render where brand does not export it. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
+  the render where brand does not export it. `inlineImages` does that inlining, exported for a
+  consumer's viewer of stored pages too. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
   with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a
   function composing the HTML; without poppler the first render stands and the result says so.
 - `onepager.css` and `scripts/onepager.ts`: the training-offering onepager's own stylesheet,

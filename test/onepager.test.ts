@@ -6,9 +6,11 @@ import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { encodeNonAsciiHTML } from "entities";
 import { openComposer } from "../scripts/compose";
 import { composeOnepager, fitOnepager } from "../scripts/onepager";
-import { assertBrandFonts, renderPdf } from "../scripts/render-pdf";
+import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
+import { assertBrandFonts, inlineImages, renderPdf } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
 import { onepager } from "../scripts/samples";
+import { probePage } from "./probe";
 
 let composer: Awaited<ReturnType<typeof openComposer>>;
 const work = mkdtempSync(join(tmpdir(), "hw-onepager-test-"));
@@ -53,6 +55,22 @@ describe("fitOnepager", () => {
     await renderPdf(whole, join(work, "whole.pdf"));
     const text = (file: string) => execFileSync("pdftotext", [file, "-"], { encoding: "utf8" });
     expect(text(pdf)).toBe(text(join(work, "whole.pdf")));
+  }, 60_000);
+});
+
+describe.skipIf(!chromeBinary())("the client row", () => {
+  it("sets a mark at its --mark-scale share of the 17 px row", async () => {
+    const mark = (style: string) =>
+      `<li><img src="@hackersandwizards/brand/logos/wordmark.svg" alt="Musterwerk"${style}></li>`;
+    const row = `<ul class="client-row">${mark(' style="--mark-scale: 0.5"')}${mark("")}</ul>`;
+    const html = onepager.html.replace('<div class="references">', `$&${row}`);
+    expect(html).toContain(row);
+    const composed = await composeOnepager(composer, { ...onepager, html });
+    const heights = probePage(
+      inlineImages(composed, work),
+      `return [...document.querySelectorAll(".client-row img")].map((img) => img.getBoundingClientRect().height).join();`,
+    );
+    expect(heights).toBe("8.5,17");
   }, 60_000);
 });
 

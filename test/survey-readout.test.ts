@@ -1,11 +1,9 @@
 import { expect, test } from "bun:test";
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout, READOUT_TEXT, SLIDE_COUNT } from "../scripts/survey-readout";
+import { probePage } from "./probe";
 
 test("every slide draws brand's hw-strip, whose rule the inlined brand files carry", () => {
   const html = composeSurveyReadout(surveyReadout);
@@ -50,37 +48,8 @@ test("a bar takes the band of its printed mean", () => {
   expect(html).toContain("from 2.69");
 });
 
-/** The deck rendered in Chrome, then `probe` (a script body run after the page's own fit guard,
- * the first load listener) returns the string the test reads. */
-function probeDeck(html: string, probe: string): string {
-  const chrome = chromeBinary();
-  if (!chrome) throw new Error(INSTALL_HINT);
-  const script = `<script>addEventListener("load", () => {
-    const pre = document.createElement("pre");
-    pre.id = "probe";
-    pre.textContent = (() => { ${probe} })();
-    document.body.append(pre);
-  });</script>`;
-  const dir = mkdtempSync(join(tmpdir(), "survey-readout-"));
-  try {
-    const page = join(dir, "readout.html");
-    writeFileSync(page, html.replace("</body>", `${script}</body>`));
-    const dom = execFileSync(
-      chrome,
-      [
-        ...chromeArgs(join(dir, "profile")),
-        "--window-size=1280,720",
-        "--virtual-time-budget=10000",
-        "--dump-dom",
-        `file://${page}`,
-      ],
-      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
-    );
-    return dom.match(/<pre id="probe">([^<]*)<\/pre>/)![1]!;
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-}
+/** The deck in Chrome at its slide size. */
+const SLIDE = ["--window-size=1280,720"];
 
 // A free-text page a few pixels too full squeezed its kicker, a flex item of fixed height, and the
 // title rose 3px on that slide alone (a real readout). Twelve invented answers of these
@@ -90,9 +59,10 @@ test("every slide's title sits at the same height", () => {
   const answer = (k: number) =>
     `An invented answer: ${Array.from({ length: k }, (_, i) => words.split(" ")[i % 14]).join(" ")}.`;
   const liked = Array.from({ length: 12 }, (_, i) => answer(6 + ((i * 7) % 23)));
-  const tops = probeDeck(
+  const tops = probePage(
     composeSurveyReadout({ ...surveyReadout, liked }),
     `return [...document.querySelectorAll(".slide h2")].map((h) => h.getBoundingClientRect().top - h.closest(".slide").getBoundingClientRect().top).join(" ");`,
+    SLIDE,
   ).split(" ");
   expect(tops).toHaveLength(6);
   expect(new Set(tops).size).toBe(1);
@@ -108,9 +78,10 @@ test("a count fits over its bar on a five- and an eleven-point scale", () => {
     const headline = { ...surveyReadout.headline, start: 1, end: dist.length, dist };
     const html = composeSurveyReadout({ ...surveyReadout, headline });
     expect(html).toContain(dist.length > 5 ? ">55<" : ">99 answers<");
-    const over = probeDeck(
+    const over = probePage(
       html,
       `return [...document.querySelectorAll(".dn")].filter((e) => e.scrollWidth > e.closest(".dcol").clientWidth + 1).length;`,
+      SLIDE,
     );
     expect(over).toBe("0");
   }
