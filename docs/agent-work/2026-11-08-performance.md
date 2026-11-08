@@ -82,6 +82,26 @@ Launch to the first 200, three cold runs each:
   catalog deploys as static files.
 - `bun run build`, whole process: 2.13, 1.49, 1.51 s for 97 pages (load 3.0 to 3.3).
 
+## Dev routes, measured 07.11. (v1.14.0), 20 requests each after one warm-up
+
+Not measured again on 08.11.; the change above touches only the build. The paths are those of
+then: `Typen` is now `Types` and `elemente` is now `elements`, and the old paths forward.
+
+| Route                              | First  | p50      | p95      |
+| ---------------------------------- | ------ | -------- | -------- |
+| `/`                                | 4 ms   | 2.4 ms   | 3.4 ms   |
+| `/dashboard/Typen/.../angebot/`    | 98 ms  | 2.5 ms   | 3.7 ms   |
+| `/stories/Typen/.../angebot/`      | 18 ms  | 2.2 ms   | 3.1 ms   |
+| `/stories/Typen/.../handout/`      | 22 ms  | 1.9 ms   | 2.2 ms   |
+| `/types/angebot/index.html`        | 19 ms  | 1.2 ms   | 1.6 ms   |
+| `/types/handout/index.html`        | 4 ms   | 0.9 ms   | 1.1 ms   |
+| `/types/elemente/index.html`       | 6 ms   | 1.0 ms   | 1.2 ms   |
+| `/types/onepager/index.html`       | 304 ms | 150.6 ms | 164.1 ms |
+| `/types/survey-readout/index.html` | 8 ms   | 2.3 ms   | 2.9 ms   |
+
+Load 11.4 to 11.8. The onepager route opens a fresh Vite composer per request, so a component
+edit shows on reload: opening it takes 126 to 154 ms, composing 14 to 18 ms (six runs). Kept.
+
 ## The engine (the endpoints of this package)
 
 DocProposal from the samples, load 3.79 at start and 5.26 at the end:
