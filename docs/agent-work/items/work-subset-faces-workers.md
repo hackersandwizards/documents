@@ -2,7 +2,7 @@
 kind: work
 status: open
 priority: 3
-order: 1400
+order: 1970
 area: engine
 owner: an agent
 evidence: "docs/agent-work/2026-11-08-performance.md, section The engine: encoding eight faces over four Bun Workers took 174 and 187 ms instead of 448 and 459 ms (prototype, not shipped)"
