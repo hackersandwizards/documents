@@ -602,10 +602,9 @@ ul {
 }
 
 /* A mark's height is its share of the row, brand's clients.json `height`, which the page sets
-   inline as --mark-scale; a page setting --mark-height in px keeps that. The row is 17 px, a
-   step brand's onepager scale does not name. */
+   inline as --mark-scale; a page setting --mark-height in px keeps that. */
 .client-row img {
-  height: var(--mark-height, calc((var(--op-8) + var(--op-9)) * var(--mark-scale, 1)));
+  height: var(--mark-height, calc(var(--op-17) * var(--mark-scale, 1)));
 }
 
 .pricing-section {

@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  chmodSync,
   copyFileSync,
   existsSync,
   mkdirSync,
@@ -307,6 +308,50 @@ describe("inlineImages", () => {
     expect(inlineImages(`<img src="..dots.png">`, page, { within: page })).toContain(
       "data:image/png",
     );
+  });
+
+  it("types each image by its extension, without Bun", () => {
+    for (const ext of ["gif", "webp", "JPEG", "svg"]) writeFileSync(join(page, `t.${ext}`), ext);
+    const file = Bun.file;
+    Bun.file = () => {
+      throw new Error("Bun.file called");
+    };
+    try {
+      expect(
+        inlineImages(
+          `<img src="t.gif"><img src="t.webp"><img src="t.JPEG"><img src="t.svg">`,
+          page,
+        ),
+      ).toBe(
+        ["gif", "webp", "jpeg", "svg+xml"]
+          .map(
+            (type, i) =>
+              `<img src="data:image/${type};base64,${btoa(["gif", "webp", "JPEG", "svg"][i]!)}">`,
+          )
+          .join(""),
+      );
+    } finally {
+      Bun.file = file;
+    }
+  });
+
+  it("keeps a file it cannot read and a Git LFS pointer, inside within too", () => {
+    mkdirSync(join(page, "folder.png"), { recursive: true });
+    writeFileSync(join(page, "locked.png"), "png");
+    chmodSync(join(page, "locked.png"), 0o000);
+    writeFileSync(
+      join(page, "stub.png"),
+      "version https://git-lfs.github.com/spec/v1\noid sha256:00\nsize 3\n",
+    );
+    try {
+      for (const name of ["folder.png", "locked.png", "stub.png"]) {
+        const html = `<img alt="${name}" src="${name}">`;
+        expect(inlineImages(html, page)).toBe(html);
+        expect(inlineImages(html, page, { within: page })).toBe(html);
+      }
+    } finally {
+      chmodSync(join(page, "locked.png"), 0o644);
+    }
   });
 
   it("throws on a brand src brand does not export, or keeps it with keepMissing", () => {

@@ -1,13 +1,6 @@
 import { type ChildProcess, execFile, spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -129,15 +122,28 @@ export type InlineImagesOptions = { within?: string; keepMissing?: boolean };
 /** Each brand image as a data URI, read once: the installed package does not change while the
  * process runs, and a viewer inlines the same marks on every request. */
 const brandImages = new Map<string, string>();
-const dataUri = (path: string) =>
-  `data:${Bun.file(path).type};base64,${readFileSync(path).toString("base64")}`;
+/** The MIME type by extension, the ones `inlineImages` matches, so the export needs no Bun. */
+const IMAGE_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+};
+const dataUri = (path: string, bytes: Buffer) =>
+  `data:${IMAGE_TYPES[path.slice(path.lastIndexOf(".") + 1).toLowerCase()]};base64,${bytes.toString("base64")}`;
+/** A file Git LFS has not fetched holds this pointer instead of the image. */
+const LFS_POINTER = Buffer.from("version https://git-lfs.github.com/spec/v1\n");
 
 /** `html` with each `<img>` whose src is an image file beside it, or a file brand exports
  * (`@hackersandwizards/brand/clients/...`, which the stored page names instead of carrying), as a
  * data URI. The print and a consumer's viewer of stored pages both call it: a file:// image taints
  * the canvas PRINT_JS redraws it on, so it printed at its source size, an SVG file's rasters are
  * redrawn only from a data URI, and a sandboxed iframe resolves neither path. A brand src brand
- * does not export throws, so a print fails rather than print without the image. */
+ * does not export throws, so a print fails rather than print without the image. A file beside the
+ * page that cannot be read (missing, a folder, no permission) or is a Git LFS pointer stays as it
+ * is, so the page shows its alt text. */
 export function inlineImages(html: string, dir: string, options: InlineImagesOptions = {}): string {
   const root = options.within === undefined ? undefined : realpathSync(options.within);
   return html.replace(
@@ -158,16 +164,22 @@ export function inlineImages(html: string, dir: string, options: InlineImagesOpt
           if (options.keepMissing) return tag;
           throw new Error(`inlineImages: brand exports no image ${src}`, { cause });
         }
-        uri = dataUri(path);
+        uri = dataUri(path, readFileSync(path));
         brandImages.set(file, uri);
       } else if (uri === undefined) {
         const path = join(dir, file);
-        if (!existsSync(path)) return tag;
-        if (root !== undefined) {
-          const inside = relative(root, realpathSync(path));
-          if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) return tag;
+        let bytes: Buffer;
+        try {
+          if (root !== undefined) {
+            const inside = relative(root, realpathSync(path));
+            if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) return tag;
+          }
+          bytes = readFileSync(path);
+        } catch {
+          return tag;
         }
-        uri = dataUri(path);
+        if (bytes.subarray(0, LFS_POINTER.length).equals(LFS_POINTER)) return tag;
+        uri = dataUri(path, bytes);
       }
       return `${start}${quote}${uri}${quote}`;
     },
