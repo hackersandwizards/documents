@@ -139,5 +139,4 @@ Worker file referenced by `import.meta.url` survives that bundle is not tested.
 
 ## Left open here
 
-- `subsetFaces` encoding in parallel (above): about 0.27 s off every fresh compose and every
-  warm compose with new characters. It needs a test of the Worker inside os's built server first.
+- `subsetFaces` encoding in parallel (above): item `work-subset-faces-workers`.
