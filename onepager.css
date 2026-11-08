@@ -643,6 +643,8 @@ ul {
   border-radius: var(--radius);
   padding: var(--card-pad);
   break-inside: avoid;
+  /* The footer draws the brand corner, so the button inside takes the small one. */
+  --hw-card-corner: var(--hw-corner-sm);
 }
 
 .contact-footer h2 {

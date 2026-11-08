@@ -43,7 +43,7 @@ export default defineConfig({
       home: "./Home.astro",
       previewSize: [794, 1123],
       groupOrder: ["Types", "Components"],
-      // The brand files the type pages link: the Git install's PNG logos are LFS pointers.
+      // The brand files the type pages link.
       copy: [
         ...new Set(LINKED_CSS.map((f) => dirname(brandPath(f)))),
         `${dirname(brandPath("logos/favicon.svg"))}/*.svg`,

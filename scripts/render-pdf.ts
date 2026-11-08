@@ -137,19 +137,15 @@ const IMAGE_SRC = new RegExp(
 );
 /** A file Git LFS has not fetched holds this pointer instead of the image. */
 const LFS_POINTER = Buffer.from("version https://git-lfs.github.com/spec/v1\n");
-/** `bytes` as a data URI, or undefined for a Git LFS pointer. */
 const dataUri = (ext: string, bytes: Buffer) =>
-  bytes.subarray(0, LFS_POINTER.length).equals(LFS_POINTER)
-    ? undefined
-    : `data:${IMAGE_TYPES[ext.toLowerCase()]};base64,${bytes.toString("base64")}`;
+  `data:${IMAGE_TYPES[ext.toLowerCase()]};base64,${bytes.toString("base64")}`;
 
 /** `html` with each `<img>` whose src is an image file beside it, or a file brand exports
  * (`@hackersandwizards/brand/clients/...`, which the stored page names instead of carrying), as a
  * data URI. The print and a consumer's viewer of stored pages both call it: a file:// image taints
  * the canvas PRINT_JS redraws it on, so it printed at its source size, an SVG file's rasters are
  * redrawn only from a data URI, and a sandboxed iframe resolves neither path. A brand src brand
- * does not export, or exports as a Git LFS pointer, throws, so a print fails rather than print
- * without the image. A file beside the page that cannot be read (missing, a folder, no permission)
+ * does not export throws, so a print fails rather than print without the image. A file beside the page that cannot be read (missing, a folder, no permission)
  * or is a Git LFS pointer stays as it is, so the page shows its alt text. */
 export function inlineImages(html: string, dir: string, options: InlineImagesOptions = {}): string {
   const root = options.within === undefined ? undefined : realpathSync(options.within);
@@ -162,18 +158,11 @@ export function inlineImages(html: string, dir: string, options: InlineImagesOpt
     }
     let uri = brandImages.get(file);
     if (uri === undefined && file.startsWith(BRAND)) {
-      let cause: unknown;
       try {
         uri = dataUri(ext, readFileSync(brandFile(file.slice(BRAND.length))));
       } catch (error) {
-        cause = error;
-      }
-      if (uri === undefined) {
         if (options.keepMissing) return tag;
-        throw new Error(
-          `inlineImages: brand exports no image ${src}${cause ? "" : ", only its Git LFS pointer"}`,
-          { cause },
-        );
+        throw new Error(`inlineImages: brand exports no image ${src}`, { cause: error });
       }
       brandImages.set(file, uri);
     } else if (uri === undefined) {
@@ -188,8 +177,8 @@ export function inlineImages(html: string, dir: string, options: InlineImagesOpt
       } catch {
         return tag;
       }
+      if (bytes.subarray(0, LFS_POINTER.length).equals(LFS_POINTER)) return tag;
       uri = dataUri(ext, bytes);
-      if (uri === undefined) return tag;
     }
     return `${start}${quote}${uri}${quote}`;
   });

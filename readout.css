@@ -472,7 +472,7 @@ h2 {
 .readout ul {
   --hw-markers: on;
   --hw-marker-size: var(--deck-marker);
-  --hw-marker-gap: var(--deck-12);
+  --hw-marker-gap: var(--deck-marker-gap);
   display: flex;
   flex-direction: column;
   gap: var(--deck-8);

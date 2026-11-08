@@ -359,13 +359,6 @@ describe("inlineImages", () => {
     expect(() => inlineImages(html, page)).toThrow("brand exports no image");
     expect(inlineImages(html, page, { keepMissing: true })).toBe(html);
   });
-
-  // brand keeps this mark in Git LFS, so a Git install holds only its pointer.
-  it("throws on a brand file installed as its Git LFS pointer, or keeps it with keepMissing", () => {
-    const html = `<img src="@hackersandwizards/brand/logos/emoji-logo-short.png">`;
-    expect(() => inlineImages(html, page)).toThrow("only its Git LFS pointer");
-    expect(inlineImages(html, page, { keepMissing: true })).toBe(html);
-  });
 });
 
 describe("renderPdf without output", () => {
