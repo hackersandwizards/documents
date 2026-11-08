@@ -465,22 +465,44 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(sizes[3]).toEqual([60, 60]);
   });
 
-  it("prints a vector SVG beside the page as paths, not as an image", async () => {
-    copyFileSync(brand("wordmark.svg"), join(dir, "mark.svg"));
-    const file = join(dir, "vector.html");
+  // The file beside the page, and the file brand exports named by its package path.
+  it.each(["mark.svg", "@hackersandwizards/brand/logos/wordmark.svg"])(
+    "prints a vector SVG, src %p, as paths, not as an image",
+    async (src) => {
+      copyFileSync(brand("wordmark.svg"), join(dir, "mark.svg"));
+      const file = join(dir, "vector.html");
+      writeFileSync(
+        file,
+        `<!doctype html><html lang="en"><body><img src="${src}" style="height:17px"></body></html>`,
+      );
+      const out = join(dir, `vector-${warm}.pdf`);
+      await renderPdf(file, out, { warm });
+      expect(execFileSync("pdfimages", ["-list", out], { encoding: "utf8" }).split("\n")[2]).toBe(
+        "",
+      );
+      // The control: the mark printed, so the page has ink.
+      const pgm = execFileSync("pdftoppm", ["-gray", "-r", "72", "-f", "1", "-l", "1", out]);
+      // A PGM: three header lines, then one byte a pixel.
+      const pixels = pgm.subarray(pgm.toString("latin1").split("\n", 3).join("\n").length + 1);
+      expect(pixels.some((value) => value < 200)).toBe(true);
+    },
+    60_000,
+  );
+
+  it("fails on an image src brand does not export", async () => {
+    const file = join(dir, "no-brand-image.html");
     writeFileSync(
       file,
-      `<!doctype html><html lang="en"><body><img src="mark.svg" style="height:17px"></body></html>`,
+      `<!doctype html><html lang="en"><body><img src="@hackersandwizards/brand/logos/none.svg"></body></html>`,
     );
-    const out = join(dir, `vector-${warm}.pdf`);
-    await renderPdf(file, out, { warm });
-    expect(execFileSync("pdfimages", ["-list", out], { encoding: "utf8" }).split("\n")[2]).toBe("");
-    // The control: the mark printed, so the page has ink.
-    const pgm = execFileSync("pdftoppm", ["-gray", "-r", "72", "-f", "1", "-l", "1", out]);
-    // A PGM: three header lines, then one byte a pixel.
-    const pixels = pgm.subarray(pgm.toString("latin1").split("\n", 3).join("\n").length + 1);
-    expect(pixels.some((value) => value < 200)).toBe(true);
-  }, 60_000);
+    // A PDF from an earlier render does not survive the failed one.
+    const out = join(dir, `no-brand-image-${warm}.pdf`);
+    writeFileSync(out, "earlier");
+    await expect(renderPdf(file, out, { warm })).rejects.toThrow(
+      "brand exports no image @hackersandwizards/brand/logos/none.svg",
+    );
+    expect(existsSync(out)).toBe(false);
+  });
 
   it("prints an SVG data URI it cannot read as it is", async () => {
     const file = join(dir, "bad-svg.html");

@@ -166,7 +166,7 @@ const topicClass = [
             <span>{t.scan}</span>
           </p>
           {p.linkedinUrl && (
-            <a class="linkedin-link" href={p.linkedinUrl}>
+            <a class="linkedin-link hw-button" data-hw-scale="screen" href={p.linkedinUrl}>
               {t.linkedin}
             </a>
           )}
@@ -444,17 +444,10 @@ const topicClass = [
     color: var(--muted);
   }
 
-  /* Read on a phone, never printed: the one tap that puts the credential on a LinkedIn profile. */
+  /* Read on a phone, never printed: the one tap that puts the credential on a LinkedIn profile,
+     brand's button at the screen scale. */
   .linkedin-link {
-    display: inline-block;
     margin: calc(2 * var(--cert-tight)) 0 var(--cert-tight);
-    padding: var(--cert-button-pad);
-    font: var(--role-lead);
-    font-weight: var(--weight-semibold);
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--on-dark);
-    text-decoration: none;
   }
 
   .footer-contact {

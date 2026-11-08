@@ -114,21 +114,32 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
-/** `html` with each `<img>` whose src is an image file beside it as a data URI: a file:// image
- * taints the canvas PRINT_JS redraws it on, so it printed at its source size, as the onepager's
- * client marks did at four times theirs (measured), and an SVG file's rasters are redrawn only
- * from a data URI. */
+/** `html` with each `<img>` whose src is an image file beside it, or a file brand exports
+ * (`@hackersandwizards/brand/clients/...`, which the stored page names instead of carrying), as a
+ * data URI: a file:// image taints the canvas PRINT_JS redraws it on, so it printed at its source
+ * size, and an SVG file's rasters are redrawn only from a data URI. A brand src brand does not
+ * export fails the render rather than print without the image. */
 function withLocalImages(html: string, dir: string): string {
   return html.replace(
     /(<img\b[^>]*?\ssrc=)(["'])([^"':/#?][^"':#?]*?\.(?:png|jpe?g|gif|webp|svg))\2/gi,
     (tag, start: string, quote: string, src: string) => {
-      let path: string;
+      let file: string;
       try {
-        path = join(dir, decodeURIComponent(src));
+        file = decodeURIComponent(src);
       } catch {
         return tag;
       }
-      if (!existsSync(path)) return tag;
+      let path: string;
+      if (file.startsWith(BRAND)) {
+        try {
+          path = brandFile(file.slice(BRAND.length));
+        } catch (cause) {
+          throw new Error(`renderPdf: brand exports no image ${src}`, { cause });
+        }
+      } else {
+        path = join(dir, file);
+        if (!existsSync(path)) return tag;
+      }
       const data = readFileSync(path).toString("base64");
       return `${start}${quote}data:${Bun.file(path).type};base64,${data}${quote}`;
     },
@@ -205,8 +216,9 @@ export async function renderPdf(
   const chrome = await chromeBinaryAsync();
   if (!chrome) throw new Error(INSTALL_HINT);
   const timeoutMs = options.timeoutMs ?? 60_000;
+  // A failed render must not leave a PDF from an earlier one in place.
+  rmSync(pdfPath, { force: true });
   if (/^https?:\/\//.test(htmlPath)) {
-    rmSync(pdfPath, { force: true });
     const pdf = options.warm
       ? await keptChrome(chrome).print(htmlPath, timeoutMs, PRINT_ON_NEW_DOCUMENT)
       : await coldPrint(chrome, htmlPath, timeoutMs, PRINT_ON_NEW_DOCUMENT);
@@ -222,8 +234,6 @@ export async function renderPdf(
     printPath,
     end < 0 ? html + PRINT_SCRIPT : html.slice(0, end) + PRINT_SCRIPT + html.slice(end),
   );
-  // A failed render must not leave a PDF from an earlier one in place.
-  rmSync(pdfPath, { force: true });
   const url = pathToFileURL(printPath).href;
   try {
     const pdf = options.warm
@@ -700,9 +710,10 @@ export function brandCss(): string {
     .join("\n");
 }
 
+const BRAND = "@hackersandwizards/brand/";
+
 /** A file the brand package exports, such as `tokens.css`, as an absolute path. */
-export const brandFile = (file: string) =>
-  createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
+export const brandFile = (file: string) => createRequire(import.meta.url).resolve(BRAND + file);
 
 /** CSS without comments, its strings untouched. The space after one goes only where a space,
  * brace or semicolon comes before it: elsewhere it may part two selectors. */

@@ -1,11 +1,10 @@
 /* The brand elements' settings: cards and callouts at the card padding, pills at the chip's, as in
-   the document base, the button at the onepager's own. */
+   the document base. */
 .onepager {
   --side: var(--op-side);
   --hw-card-pad: var(--card-pad);
   --hw-callout-pad: calc(var(--card-pad) * var(--op-box-pad)) var(--card-pad);
   --hw-pill-pad: var(--chip-pad);
-  --hw-button-pad: var(--op-button-pad);
 }
 
 /* A block's labels, pills and button at the type roles' size, which --density narrows under .tight;
@@ -660,14 +659,6 @@ ul {
   text-align: right;
   white-space: nowrap;
   line-height: var(--op-cta-leading);
-}
-
-/* The print scale gives the button the screen's least height; its corner is the small one, not
-   the card's. */
-.contact-footer .hw-button {
-  --hw-button-height: 0;
-  --hw-button-height-wide: 0;
-  --hw-card-corner: var(--hw-corner-sm);
 }
 
 .legal {
