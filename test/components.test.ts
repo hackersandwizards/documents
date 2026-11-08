@@ -275,6 +275,29 @@ test.each([
   expect(html).not.toContain(text);
 });
 
+test("DocProposal with an empty signatures list keeps its acceptance block", async () => {
+  const html = await composer.render("DocProposal", { ...proposal, signatures: [] });
+  expect(html).toContain('class="acceptance');
+  expect(html).not.toContain('class="signatures');
+});
+
+// languageTag lets a regional tag through to the page, so the words follow its language.
+test("a regional tag prints its language's words", async () => {
+  const handout = await composer.render("DocHandout", { ...props.DocHandout, lang: "de-AT" });
+  expect(handout).toContain(HANDOUT_TEXT.de.contents);
+  expect(handout).not.toContain(`>${HANDOUT_TEXT.en.contents}<`);
+  const imprint = await composer.render("DocMarkdown", {
+    ...props.DocMarkdown,
+    legal: true,
+    lang: "de-AT",
+  });
+  expect(imprint).toContain("Sitz und Registergericht Hamburg");
+  const offer = await composer.render("DocProposal", { ...proposal, lang: "de-AT" });
+  expect(offer).toContain("Woran ihr es messt");
+  const english = await composer.render("DocProposal", { ...proposal, lang: "en-GB" });
+  expect(english).not.toContain("Woran ihr es messt");
+});
+
 // A consumer reads the handout's words from HANDOUT_TEXT, so these are the words it prints.
 test.each(["de", "en"] as const)("DocHandout %s prints HANDOUT_TEXT's words", async (lang) => {
   const html = await composer.render("DocHandout", {

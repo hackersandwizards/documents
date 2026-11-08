@@ -13,11 +13,13 @@ import {
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { inflateSync } from "node:zlib";
 import {
   assertBrandFonts,
   bakeDocumentCss,
   compactStyles,
   composeDocument,
+  cutFacesToPdf,
   documentCss,
   renderPdf,
   subsetFaces,
@@ -146,6 +148,66 @@ describe("subsetFaces", () => {
     expect(overlapFlagged(await decompress(Buffer.from(source!, "base64")))).toBeGreaterThan(0);
     expect(overlapFlagged(await decompress(Buffer.from(kept!, "base64")))).toBeGreaterThan(0);
   });
+});
+
+describe.skipIf(!chromeBinary())("cutFacesToPdf", () => {
+  // Each ToUnicode map of `pdf` rewritten by `rewrite`; the cut reads the maps alone, so the
+  // cross-reference offsets the new lengths shift do not matter.
+  const withMaps = (pdf: Buffer, rewrite: (dict: string, map: Buffer) => [string, Buffer]) => {
+    const text = pdf.toString("latin1");
+    const ids = new Set([...text.matchAll(/\/ToUnicode (\d+) 0 R/g)].map(([, id]) => id!));
+    const heads = [...ids]
+      .map((id) =>
+        new RegExp(`(?<!\\d)(${id}) 0 obj\\s*<<([\\s\\S]*?)>>\\s*stream\\r?\\n`).exec(text)!,
+      )
+      .sort((a, b) => a.index - b.index);
+    const parts: Buffer[] = [];
+    let at = 0;
+    for (const m of heads) {
+      const length = Number(/\/Length (\d+)/.exec(m[2]!)![1]);
+      const start = m.index + m[0].length;
+      const [dict, map] = rewrite(m[2]!, pdf.subarray(start, start + length));
+      parts.push(pdf.subarray(at, m.index));
+      parts.push(
+        Buffer.from(
+          `${m[1]} 0 obj\n<<${dict.replace(/\/Length \d+/, `/Length ${map.length}`)}>>\nstream\n`,
+          "latin1",
+        ),
+        map,
+      );
+      at = start + length;
+    }
+    expect(parts.length).toBeGreaterThan(0);
+    return Buffer.concat([...parts, pdf.subarray(at)]);
+  };
+
+  it("reads a ToUnicode map stored uncompressed or with its filter in an array as a compressed one", async () => {
+    const html = await composeDocument("DocRateCard", rateCard);
+    const file = join(dir, "faces.html");
+    const pdf = join(dir, "faces.pdf");
+    writeFileSync(file, html);
+    await renderPdf(file, pdf);
+    const cut = await cutFacesToPdf(html, pdf);
+    expect(cut).not.toBe(html);
+    const plain = join(dir, "faces-plain.pdf");
+    writeFileSync(
+      plain,
+      withMaps(readFileSync(pdf), (dict, map) => [
+        dict.replace(/\/Filter\s*\/FlateDecode/, ""),
+        inflateSync(map),
+      ]),
+    );
+    expect(await cutFacesToPdf(html, plain)).toBe(cut);
+    const array = join(dir, "faces-array.pdf");
+    writeFileSync(
+      array,
+      withMaps(readFileSync(pdf), (dict, map) => [
+        dict.replace(/\/Filter\s*\/FlateDecode/, "/Filter [/FlateDecode]"),
+        map,
+      ]),
+    );
+    expect(await cutFacesToPdf(html, array)).toBe(cut);
+  }, 60_000);
 });
 
 describe("bakeDocumentCss", () => {

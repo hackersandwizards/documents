@@ -8,7 +8,7 @@ import DocHeader from "./DocHeader.astro";
 import DocProse from "./DocProse.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
-import { cssString } from "../scripts/fill";
+import { cssString, wordsFor } from "../scripts/fill";
 import { HANDOUT_TEXT, type HandoutLang, type HandoutText } from "../scripts/handout";
 
 interface Props {
@@ -53,8 +53,7 @@ const {
   flow,
   labels,
 } = Astro.props;
-// Props JSON is untyped: a language without words of its own prints English.
-const t = { ...(HANDOUT_TEXT[lang as HandoutLang] ?? HANDOUT_TEXT.en), ...labels };
+const t = { ...wordsFor(lang, HANDOUT_TEXT), ...labels };
 
 const htmlText = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

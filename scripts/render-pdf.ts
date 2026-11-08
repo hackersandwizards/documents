@@ -918,7 +918,11 @@ function printedCharacters(pdf: Buffer): Map<string, Set<number>> {
     const length = Number(/\/Length (\d+)/.exec(head?.[1] ?? "")?.[1]);
     if (!head || !length) throw new Error(`printedCharacters: no stream ${id} in the PDF`);
     const start = head.index + head[0].length;
-    return inflateSync(pdf.subarray(start, start + length)).toString("latin1");
+    const body = pdf.subarray(start, start + length);
+    // A stream without a filter is read as it stands.
+    return (/\/Filter\s*\[?\s*\/FlateDecode/.test(head[1]!) ? inflateSync(body) : body).toString(
+      "latin1",
+    );
   };
   const utf16 = (hex: string) => Buffer.from(hex, "hex").swap16().toString("utf16le");
   const fonts = new Map<string, Set<number>>();
@@ -1025,12 +1029,11 @@ export function bakeDocumentCss(html: string): string {
   // Read before compactStyles prunes: a property defined under a rule the page cannot use still
   // counts as defined, as it did before pruning.
   const unset = unsetProperties(editStyles(full, stripComments));
-  const baked = compactStyles(full);
   if (unset.length > 0)
     throw new Error(
       `This document reads custom properties no stylesheet defines: ${unset.join(", ")}. Re-compose a stored document with the current engine; where a fresh compose fails too, report the names to @hackersandwizards/documents.`,
     );
-  return baked;
+  return compactStyles(full);
 }
 
 /**

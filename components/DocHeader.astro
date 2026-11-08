@@ -4,7 +4,7 @@
 // The lockup is the brand package's screen cut, which brand gives a header up to 40 px tall on screen
 // or in print, at half the full lockup's bytes; inlined as a data URI, so it renders in any app.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup-screen.svg?raw";
-import { svgUri } from "../scripts/fill";
+import { svgUri, wordsFor } from "../scripts/fill";
 
 interface Props {
   /** The document kind in the tag, e.g. "Honorarsätze". */
@@ -22,7 +22,7 @@ interface Props {
   lang?: "de" | "en";
 }
 const { kind, legal = false, meta = [], lang = "de" } = Astro.props;
-const imprint = {
+const imprint = wordsFor(lang, {
   de: [
     "hackers&wizards GmbH, Osterstraße 95, 20259 Hamburg",
     "Sitz und Registergericht Hamburg, HRB 198840, USt-IdNr. DE463065921",
@@ -33,7 +33,7 @@ const imprint = {
     "Registered office and court Hamburg, HRB 198840, VAT ID DE463065921",
     "Managing Directors: Benedikt Stemmildt, Stefan Munz",
   ],
-}[lang];
+});
 const lockup = svgUri(lockupSvg);
 ---
 

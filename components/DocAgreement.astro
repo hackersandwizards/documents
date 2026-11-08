@@ -11,7 +11,7 @@ import DocProse from "./DocProse.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocSignatures from "./DocSignatures.astro";
 import DocTitle from "./DocTitle.astro";
-import { cssString, fill } from "../scripts/fill";
+import { cssString, fill, wordsFor } from "../scripts/fill";
 
 // The agreement's own words, German and English; `labels` replaces any of them, `{name}` marks a
 // value filled in.
@@ -74,7 +74,7 @@ interface Props {
 }
 const p = Astro.props;
 if (!p.parties === !p.letter) throw new Error("DocAgreement: give either parties or letter");
-const t = { ...(p.lang === "de" ? DE : EN), ...p.labels };
+const t = { ...wordsFor(p.lang, { de: DE, en: EN }), ...p.labels };
 const kind = p.kind ?? t.kind;
 const running = `@page {
   @top-left { content: ${cssString(t.runningBrand)}; }
