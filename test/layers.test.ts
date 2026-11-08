@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { composePage, openComposer } from "../scripts/compose";
 import { composeOnepager } from "../scripts/onepager";
 import { editStyles } from "../scripts/prune";
-import { brandFile, inlineCss } from "../scripts/render-pdf";
+import { brandFile } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
 import { onepager, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
@@ -12,7 +12,7 @@ import { composeSurveyReadout } from "../scripts/survey-readout";
 // Only a layer's first mention places it, so a page carries the brand's whole order once, ahead
 // of every layer block.
 const LAYER = /@layer\s+[\w.,\s-]+?\s*[;{]/g;
-const brandOrder = inlineCss(brandFile("elements.css")).match(LAYER)![0];
+const brandOrder = readFileSync(brandFile("layers.css"), "utf8").match(LAYER)![0];
 const layers = (html: string) => {
   const found: string[] = [];
   editStyles(html, (css) => (found.push(...(css.match(LAYER) ?? [])), css));
@@ -39,8 +39,11 @@ describe("a composed page declares the layer order once, the brand's, first", ()
       expect(found.filter((l) => l.endsWith(";"))).toEqual([brandOrder]);
     });
 
-  it("the catalog's head, ahead of its bundle", () => {
-    const head = readFileSync(join(ROOT, "catalog/Head.astro"), "utf8");
-    expect(head.match(LAYER)).toEqual([brandOrder]);
+  it("the catalog's home, ahead of its bundle", () => {
+    const html = readFileSync(join(ROOT, "dist/index.html"), "utf8");
+    // The first layer statement or stylesheet link on the page is brand's order.
+    const order = html.indexOf(brandOrder);
+    expect(order).toBeGreaterThan(-1);
+    expect(html.search(/@layer\b|<link\b[^>]*\brel="?stylesheet/)).toBe(order);
   });
 });
