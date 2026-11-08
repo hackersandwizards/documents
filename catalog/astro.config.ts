@@ -4,7 +4,7 @@ import { defineConfig } from "astro/config";
 import { catalog } from "@hackersandwizards/scaffolding/catalog";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { brandPath, LINKED_CSS } from "./brand";
+import { brandPath, linkedFiles } from "./brand";
 import { TYPES } from "./types";
 
 const BASE = "/documents";
@@ -44,9 +44,7 @@ export default defineConfig({
       groupOrder: ["Types", "Components"],
       // The brand files the type pages link.
       copy: [
-        ...new Set(LINKED_CSS.map((f) => dirname(brandPath(f)))),
-        // elements.css imports it from outside its folder.
-        brandPath("disclosure.css"),
+        ...linkedFiles(),
         `${dirname(brandPath("logos/favicon.svg"))}/*.svg`,
         brandPath("logos/favicon.ico"),
       ],
