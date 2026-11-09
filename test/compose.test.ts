@@ -168,8 +168,7 @@ describe("scripts/compose.ts", () => {
   });
 });
 
-// Astro's default compressHTML ("jsx") drops the line break between an inline element and the
-// text after it, and with it the space every reader sees.
+// openComposer's compressHTML, the catalog's: the line break after </a> stays a space.
 it("keeps the space between an inline element and the text on the next line", async () => {
   const composer = await openComposer(ROOT);
   try {

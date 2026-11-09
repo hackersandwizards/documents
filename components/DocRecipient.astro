@@ -22,8 +22,7 @@ const { label, company, lines, contact } = Astro.props;
   ))}
   {contact && (
     <>
-      <span class="label">{contact.label}</span>
-      {contact.name}
+      <span class="label">{contact.label}</span> {contact.name}
     </>
   )}
 </div>
