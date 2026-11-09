@@ -12,6 +12,8 @@ import {
   proposalEn,
   rateCard,
 } from "../scripts/samples";
+import { openComposer } from "../scripts/compose";
+import { ROOT } from "../scripts/root";
 import { foreignStyles } from "../scripts/styles";
 
 const SCRIPT = resolve(import.meta.dir, "../scripts/compose.ts");
@@ -77,8 +79,8 @@ describe("scripts/compose.ts", () => {
     execFileSync("bun", [SCRIPT, "DocProposal", join(dir, "q.json"), out]);
     const html = readFileSync(out, "utf8");
     expect(html).toContain("<title>Angebot AG-10004-2026</title>");
-    expect(html).toContain("Basis</th>");
-    expect(html).not.toContain("Betrag</th>");
+    expect(html).toMatch(/Basis\s*<\/th>/);
+    expect(html).not.toMatch(/Betrag\s*<\/th>/);
     expect(html).not.toContain("Summe netto");
   });
 
@@ -96,7 +98,7 @@ describe("scripts/compose.ts", () => {
     expect(en).toContain("Certificate of Completion");
     expect(en).not.toContain("Certificate of Attendance");
     // A long name breaks only between its words.
-    expect(en).toMatch(/<span[^>]*>Łukasz<\/span> <span[^>]*>Wiśniewski-Grzybowski<\/span>/);
+    expect(en).toMatch(/<span[^>]*>Łukasz<\/span>\s+<span[^>]*>Wiśniewski-Grzybowski<\/span>/);
     expect(en).toContain("Q&lt;b&gt;&amp;&lt;/b&gt;A");
     expect(en).toContain(`src="${certificate.qrCodeUri}"`);
     expect(en).toContain("Scan to verify &amp; add to LinkedIn");
@@ -164,6 +166,17 @@ describe("scripts/compose.ts", () => {
       execFileSync("bun", [SCRIPT, "Header", "x.json", "y.html"], { stdio: "pipe" }),
     ).toThrow();
   });
+});
+
+// Astro's default compressHTML ("jsx") drops the line break between an inline element and the
+// text after it, and with it the space every reader sees.
+it("keeps the space between an inline element and the text on the next line", async () => {
+  const composer = await openComposer(ROOT);
+  try {
+    expect(await composer.render("../test/fixtures/InlineSpace", {})).toMatch(/<\/a>\s+text/);
+  } finally {
+    await composer.close();
+  }
 });
 
 // The English quote sample spreads the German one: every block of German prose it shows needs its

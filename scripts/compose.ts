@@ -37,7 +37,15 @@ export async function openComposer(root = process.cwd()) {
       server: { middlewareMode: true, hmr: false, watch: null },
       optimizeDeps: { noDiscovery: true, include: [] },
     },
-    { root, configFile: false, logLevel: "silent", devToolbar: { enabled: false } },
+    {
+      root,
+      configFile: false,
+      logLevel: "silent",
+      devToolbar: { enabled: false },
+      // The catalog's setting: Astro's default ("jsx") drops a line break between an inline
+      // element and the text after it, and with it the space a reader sees.
+      compressHTML: false,
+    },
   )({ command: "serve", mode: "development" });
   const server = await createServer({ ...config, configFile: false });
   const { experimental_AstroContainer } = await server.ssrLoadModule("astro/container");
