@@ -21,8 +21,10 @@ export function languageTag(lang: string): string {
 
 /** A component's words for `lang` from its table per language, by the tag's language (`de-AT`
  *  takes `de`); a language the table lacks takes the English words. */
-export const wordsFor = <T>(lang: unknown, table: { en: T } & Partial<Record<string, T>>): T =>
-  (typeof lang === "string" ? table[lang.split("-")[0]!.toLowerCase()] : undefined) ?? table.en;
+export function wordsFor<T>(lang: unknown, table: { en: T } & Partial<Record<string, T>>): T {
+  const key = typeof lang === "string" ? lang.split("-")[0]!.toLowerCase() : "en";
+  return (Object.hasOwn(table, key) ? table[key] : undefined) ?? table.en;
+}
 
 /** An SVG as a data URI, percent-encoded only where a URL or an attribute needs it. Base64 grows
  *  the text by a third, and the PNG brand's lockup carries is base64 already: the lockup took

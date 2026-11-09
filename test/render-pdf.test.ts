@@ -14,7 +14,7 @@ import {
 } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { inflateSync } from "node:zlib";
 import {
   assertBrandFonts,
@@ -362,6 +362,19 @@ describe("inlineImages", () => {
         "@hackersandwizards/testimonials exports no image",
       ],
       ["@hackersandwizards/none/marks/a.svg", "@hackersandwizards/none exports no image"],
+      // A `..` segment leaves the package, here to a file it would otherwise inline.
+      [
+        `@hackersandwizards/${relative(
+          // The scope folder our packages are installed in.
+          dirname(
+            dirname(
+              createRequire(import.meta.url).resolve("@hackersandwizards/brand/package.json"),
+            ),
+          ),
+          join(dir, "inline", "outside.png"),
+        )}`,
+        "@hackersandwizards/.. exports",
+      ],
     ]) {
       const html = `<img src="${src}">`;
       expect(() => inlineImages(html, page)).toThrow(error);

@@ -170,7 +170,9 @@ export function inlineImages(html: string, dir: string, options: InlineImagesOpt
     if (uri === undefined && pkg !== undefined) {
       let cause: unknown;
       try {
-        uri = dataUri(ext, readFileSync(packageRequire.resolve(file)));
+        // A `..` segment would leave the package, so the package exports no such file.
+        if (!file.split("/").includes(".."))
+          uri = dataUri(ext, readFileSync(packageRequire.resolve(file)));
       } catch (error) {
         cause = error;
       }
@@ -268,11 +270,11 @@ export async function renderPdf(
   pdfPath: string,
   options: RenderOptions = {},
 ): Promise<void> {
+  // A failed render must not leave a PDF from an earlier one in place.
+  rmSync(pdfPath, { force: true });
   const chrome = await chromeBinaryAsync();
   if (!chrome) throw new Error(INSTALL_HINT);
   const timeoutMs = options.timeoutMs ?? 60_000;
-  // A failed render must not leave a PDF from an earlier one in place.
-  rmSync(pdfPath, { force: true });
   if (/^https?:\/\//.test(htmlPath)) {
     const pdf = options.warm
       ? await keptChrome(chrome).print(htmlPath, timeoutMs, PRINT_ON_NEW_DOCUMENT)
@@ -985,14 +987,17 @@ function printedCharacters(pdf: Buffer): Map<string, Set<number>> {
     const head = new RegExp(`(?<![\\d])${id} 0 obj\\s*<<([\\s\\S]*?)>>\\s*stream\\r?\\n`).exec(
       text,
     );
-    const length = Number(/\/Length (\d+)/.exec(head?.[1] ?? "")?.[1]);
-    if (!head || !length) throw new Error(`printedCharacters: no stream ${id} in the PDF`);
+    // An indirect length (`/Length 12 0 R`) reads as none, so the stream fails.
+    const length = Number(/\/Length (\d+)\b(?!\s+\d+\s+R)/.exec(head?.[1] ?? "")?.[1]);
+    if (!head || !length)
+      throw new Error(`printedCharacters: no stream ${id} with a direct length in the PDF`);
     const start = head.index + head[0].length;
     const body = pdf.subarray(start, start + length);
-    // A stream without a filter is read as it stands.
-    return (/\/Filter\s*\[?\s*\/FlateDecode/.test(head[1]!) ? inflateSync(body) : body).toString(
-      "latin1",
-    );
+    // A stream without a filter is read as it stands; one other than Chrome's FlateDecode alone fails.
+    const filter = /\/Filter\s*(\[[^\]]*\]|\/\w+)/.exec(head[1]!)?.[1].replace(/[[\]\s]/g, "");
+    if (filter && filter !== "/FlateDecode")
+      throw new Error(`printedCharacters: stream ${id} has the filter ${filter}`);
+    return (filter ? inflateSync(body) : body).toString("latin1");
   };
   const utf16 = (hex: string) => Buffer.from(hex, "hex").swap16().toString("utf16le");
   const fonts = new Map<string, Set<number>>();

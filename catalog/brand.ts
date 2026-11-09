@@ -16,6 +16,7 @@ function fromRoot(absolute: string): string {
 /** The brand stylesheets a type page links (_Type.astro, the onepager's and the readout's
  * composers). */
 const LINKED_CSS = [
+  "layers.css",
   "tokens.root.css",
   "print.css",
   "document.flat.css",

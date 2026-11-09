@@ -5,7 +5,7 @@ import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { openComposer } from "../scripts/compose";
 import { withElements } from "../scripts/elements";
-import { cssString } from "../scripts/fill";
+import { cssString, wordsFor } from "../scripts/fill";
 import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
 
@@ -371,4 +371,11 @@ test("DocAgreement numbers its clauses and takes one form", async () => {
   await expect(composer.render("DocAgreement", { ...props.DocAgreement, letter })).rejects.toThrow(
     "either parties or letter",
   );
+});
+
+test("wordsFor takes a language's words, else the English ones, never an inherited key", () => {
+  const table = { en: "en", de: "de" };
+  expect(wordsFor("de-AT", table)).toBe("de");
+  for (const lang of ["fr", "__proto__", "constructor", undefined])
+    expect(wordsFor(lang, table)).toBe("en");
 });
