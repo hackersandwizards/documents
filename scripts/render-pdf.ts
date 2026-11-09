@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
-import { tmpdir } from "node:os";
+import { availableParallelism, tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -922,10 +922,72 @@ const decodedFace = (data: string) => {
   return ttf;
 };
 
+type EncodeJob = {
+  font: Uint8Array;
+  resolve: (woff2: Uint8Array | Promise<Uint8Array>) => void;
+};
+
+/** Encoding is nearly all of a cut's time. Node has no global Worker and strips no types under
+ * node_modules, so only Bun spreads it. */
+let encoderLimit = process.versions.bun ? Math.min(4, availableParallelism()) : 1;
+const encodeQueue: EncodeJob[] = [];
+let encoders = 0;
+
+const encodeHere = ({ font, resolve }: EncodeJob) => resolve(compress(font));
+
+/** A Worker taking queued faces until none is left. Its file is found through ROOT: a consumer's
+ * bundle holds no copy of it beside the chunk `import.meta.url` would name. */
+function startEncoder() {
+  encoders++;
+  let job: EncodeJob | undefined;
+  // The page is the same either way, so a Worker that cannot run costs time and not the document.
+  const encodeAllHere = (reason: unknown) => {
+    if (encoderLimit > 1) console.warn(`Encoding font faces in-process: ${String(reason)}`);
+    encoderLimit = 1;
+    if (job) encodeHere(job);
+    job = undefined;
+    encodeQueue.splice(0).forEach(encodeHere);
+  };
+  let worker: Worker;
+  try {
+    worker = new Worker(join(ROOT, "scripts/encode-face.ts"));
+  } catch (error) {
+    return encodeAllHere(error);
+  }
+  const takeNext = () => {
+    job = encodeQueue.shift();
+    if (job) return worker.postMessage(job.font);
+    encoders--;
+    void worker.terminate();
+  };
+  worker.onmessage = ({ data }: MessageEvent<Uint8Array | null>) => {
+    if (data) job!.resolve(data);
+    else encodeHere(job!);
+    takeNext();
+  };
+  worker.onerror = (event) => {
+    encodeAllHere(event.message);
+    void worker.terminate();
+  };
+  // A Worker that exits during a job posts nothing and fires no error.
+  worker.addEventListener("close", () => {
+    if (job) encodeAllHere("a Worker exited");
+  });
+  takeNext();
+}
+
+const encodeFace = (font: Uint8Array) =>
+  new Promise<Uint8Array>((resolve) => {
+    const job = { font, resolve };
+    if (encoderLimit < 2) return encodeHere(job);
+    encodeQueue.push(job);
+    if (encoders < encoderLimit) startEncoder();
+  });
+
 /** A TrueType face cut to `text`, as WOFF2 base64. */
 const cutTo = async (font: Uint8Array, text: string) =>
   Buffer.from(
-    await compress(await subsetFont(Buffer.from(font), text, { targetFormat: "truetype" })),
+    await encodeFace(await subsetFont(Buffer.from(font), text, { targetFormat: "truetype" })),
   ).toString("base64");
 
 const cutFace = (data: string, text: string) => {

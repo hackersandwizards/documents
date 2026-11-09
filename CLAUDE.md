@@ -59,7 +59,7 @@ decision or item ids, pointers to review notes and names go to the commit messag
   brand's `@layer` order once, first (`test/layers.test.ts`), without the
   rules and custom properties its markup cannot use (`pruneStyles`, `scripts/prune.ts`), and without a
   face whose `unicode-range` none of its characters fall in, `subsetFaces`, which cuts each inlined face to
-  the page's characters for a composed page and the onepager (a consumer that bakes a stored page in place
+  the page's characters for a composed page and the onepager, its WOFF2 encoding, like `cutFacesToPdf`'s, on Bun Workers (`scripts/encode-face.ts`) and in-process where none can run (a consumer that bakes a stored page in place
   runs it after `bakeDocumentCss`), `cutFacesToPdf`, which cuts each face of a printed page to the
   characters that face printed and drops the faces it never printed (`fitOnepager` runs it),
   `composeDocument` and the font check `assertBrandFonts`. `warm` on

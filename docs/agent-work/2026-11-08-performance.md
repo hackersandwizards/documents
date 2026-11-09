@@ -120,10 +120,25 @@ characters, eight faces: decoding 21 ms, cutting with HarfBuzz 34 ms, encoding b
 350 ms. A kept composer pays the 0.4 s again whenever a page's characters differ from the last
 call's (395 to 472 ms over four such calls); the same characters again take 2 ms.
 
-`woff2-encoder` exposes no compression level. A prototype encoding the eight faces over four
-Bun Workers took 174 and 187 ms instead of 448 and 459 ms, Worker start included (load 3.6).
-Not shipped: os bundles this package into its Astro server build through Vite, and whether a
-Worker file referenced by `import.meta.url` survives that bundle is not tested.
+`woff2-encoder` exposes no compression level, so v1.24.6 spreads the encoding over up to four Bun
+Workers (`scripts/encode-face.ts`), found by the package's name rather than `import.meta.url`.
+Node has no global Worker and strips no types under `node_modules`, so there the faces encode
+in-process, as they do where a Worker fails to start; the page is byte-identical either way
+(`test/bundled.test.ts`). `composeDocument` spawns `bun` on the installed `scripts/compose.ts`, so
+a consumer's bundle does not reach the Worker for it; os's build also tree-shakes `subsetFaces`
+out of its chunk.
+
+Measured on 09.11. with the shipped code, alternating with the build before. A fresh
+`composeDocument`, DocProposal, six runs each, load 8.9 to 15.1: before 1149 to 1970 ms, median
+1171 ms; after 967 to 3007 ms, median 1009 ms. The 3007 ms was the first after-run, on a cold
+transpile cache. `subsetFaces` on the document base's 24 inlined faces, changed characters on each
+of eight calls in each of three processes per build, load 14.6 to 15.1: before 442 to 582 ms,
+median 455 ms; after 193 to 282 ms, median 211 ms. The load is above that of the 08.11. figures,
+so only the before-and-after pairs compare.
+
+os's production build from a scratch copy, with this change's packed files, served by
+`bun dist/server/entry.mjs`: the `trainer-briefing` route answered 200 with a PDF, four Workers
+started (logged from the scratch copy's Worker file).
 
 ## Open in other repositories
 
@@ -137,7 +152,3 @@ Worker file referenced by `import.meta.url` survives that bundle is not tested.
 - scaffolding (from 07.11., narrowed): the home still loads a live iframe per visible story. With
   the stylesheet shared, the home scores 78 on mobile; 94 was measured without the iframes on
   07.11.
-
-## Left open here
-
-- `subsetFaces` encoding in parallel (above): item `work-subset-faces-workers`.
