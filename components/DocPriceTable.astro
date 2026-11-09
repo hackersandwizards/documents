@@ -47,8 +47,7 @@ const span = columns.length - 1;
     {rows.map((row) => (
       <tr>
         <td>
-          <strong>{row.item}</strong>
-          {row.detail && <span class="detail">{row.detail}</span>}
+          <strong>{row.item}</strong> {row.detail && <span class="detail">{row.detail}</span>}
         </td>
         {row.cells.map((cell, i) => (
           <td class:list={{ num: columns[i + 1]?.num }}>
