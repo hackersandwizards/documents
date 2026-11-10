@@ -44,10 +44,12 @@ describe("documentCss", () => {
     expect(css).not.toMatch(/<\/style/i);
   });
 
-  it("inlines the brand files, with the website's @theme read as :root", () => {
+  it("inlines the brand files, with brand's tokens as :root", () => {
     const css = documentCss();
     expect(css).not.toContain("@import");
-    expect(css).not.toMatch(/@theme\s*\{/);
+    expect(css).not.toContain("@theme");
+    // brand's measures, which its elements read, sit in an @theme static block of tokens.css.
+    expect(css).toContain("--container-measure:");
     expect(css).toContain("--type-body-family: var(--font-sans);");
     expect(css).toContain("--type-body-size: 10pt;");
   });

@@ -42,6 +42,10 @@ export default defineConfig({
       home: "./Home.astro",
       previewSize: [794, 1123],
       groupOrder: ["Types", "Components"],
+      storyScale: "dense",
+      htmlClass: ["hw-focus-ring"],
+      // Every story is an Astro component: no story module reaches the browser bundle.
+      serverOnly: true,
       copy: [
         ...linkedFiles(),
         `${dirname(brandPath("logos/favicon.svg"))}/*.svg`,

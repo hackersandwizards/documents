@@ -742,8 +742,9 @@ function keptChrome(chrome: string) {
 
 /**
  * The document base `document.css` as one stylesheet: each `@import` inlined (the brand files from
- * `@hackersandwizards/brand`), `@theme` read as `:root`, and every face a data URI resolved beside the file
- * that names it, so the HTML it lands in renders anywhere.
+ * `@hackersandwizards/brand`, its `tokens.css` as its `:root` twin `tokens.root.css`), `@theme`
+ * read as `:root`, and every face a data URI resolved beside the file that names it, so the HTML
+ * it lands in renders anywhere.
  */
 export function documentCss(): string {
   const css = inlineCss(join(ROOT, "document.css"));
@@ -755,7 +756,7 @@ export function documentCss(): string {
 /** The brand files alone, tokens, print faces, the document scale, the list marker, the key figure, the rule and the strip, for a layout that is not a document page, such as the survey deck. */
 export function brandCss(): string {
   return [
-    "tokens.css",
+    "tokens.root.css",
     "print.css",
     "document.flat.css",
     "marker.css",
@@ -768,6 +769,9 @@ export function brandCss(): string {
 }
 
 const BRAND = "@hackersandwizards/brand/";
+// brand's tokens.css holds Tailwind's @theme forms (`static`, `--*: initial`), which a browser
+// skips: a page without Tailwind takes brand's generated :root twin.
+const BRAND_ROOT: Record<string, string> = { [`${BRAND}tokens.css`]: `${BRAND}tokens.root.css` };
 
 /** A file the brand package exports, such as `tokens.css`, as an absolute path. */
 export const brandFile = (file: string) => packageRequire.resolve(BRAND + file);
@@ -788,7 +792,12 @@ export function inlineCss(path: string, read?: Set<string>): string {
   read?.add(path);
   return stripComments(readFileSync(path, "utf-8"))
     .replace(/@import "([^"]+)";/g, (_, file: string) =>
-      inlineCss(file.startsWith("@") ? createRequire(path).resolve(file) : join(dir, file), read),
+      inlineCss(
+        file.startsWith("@")
+          ? createRequire(path).resolve(BRAND_ROOT[file] ?? file)
+          : join(dir, file),
+        read,
+      ),
     )
     .replace(/@theme\s*\{/g, ":root {")
     .replace(/url\("(fonts\/[^"]+)"\)/g, (_, file: string) => {

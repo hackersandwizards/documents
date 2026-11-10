@@ -31,7 +31,7 @@ function brandText(file: string, read?: Set<string>) {
 
 const brandBaseOf = (read?: Set<string>) =>
   [
-    brandText("tokens.css", read).replace(/@theme\s*\{/, ":root {"),
+    brandText("tokens.root.css", read),
     // The faces as data URIs, resolved beside brand's exported print.css, as the document base
     // carries them: the page reaches no brand path and renders anywhere.
     inlineCss(brandFile("print.css"), read),
