@@ -1,9 +1,19 @@
 import { type ChildProcess, execFile, spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  lstatSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  readlinkSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { rm } from "node:fs/promises";
 import type { Readable, Writable } from "node:stream";
 import { createRequire } from "node:module";
-import { availableParallelism, tmpdir } from "node:os";
+import { availableParallelism, hostname, tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -625,11 +635,54 @@ function kept<T>(
   return entry;
 }
 
+// A caller whose exit runs no handler, as `bun test` does, leaves its kept Chrome's profile behind,
+// and a Chrome killed outright leaves its SingletonLock in it too. A profile an hour old that no
+// running Chrome holds is removed; a younger one may be starting and has no lock yet.
+const PROFILE = "hw-chrome-";
+const STALE_PROFILE_MS = 3_600_000;
+let profilesSwept = 0;
+
+/** Whether a running Chrome holds the profile: its SingletonLock names `<host>-<pid>`, and a lock
+ * naming another host counts as held. */
+function profileHeld(profile: string): boolean {
+  let lock: string;
+  try {
+    lock = readlinkSync(join(profile, "SingletonLock"));
+  } catch {
+    return false;
+  }
+  const [, host, pid] = /^(.*)-(\d+)$/.exec(lock) ?? [];
+  if (host !== hostname()) return true;
+  try {
+    process.kill(Number(pid), 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/** Removes, at most once an hour and without waiting, each of our profiles in the temporary
+ * folder that no Chrome holds. A profile it cannot read is left. */
+function removeLeftProfiles() {
+  if (Date.now() - profilesSwept < STALE_PROFILE_MS) return;
+  profilesSwept = Date.now();
+  const root = tmpdir();
+  for (const name of readdirSync(root).filter((n) => n.startsWith(PROFILE))) {
+    const profile = join(root, name);
+    try {
+      const made = lstatSync(profile).mtimeMs;
+      if (Date.now() - made > STALE_PROFILE_MS && !profileHeld(profile))
+        rm(profile, { recursive: true, force: true }).catch(() => {});
+    } catch {}
+  }
+}
+
 /** A Chrome driven over its own debugging pipe (fd 3 in, fd 4 out), which no other process can
  * reach, unlike a debugging port, in its own temporary profile, so a render never runs inside, or
  * locks, the user's own Chrome profile. */
 function pipeChrome(chrome: string, hung?: () => void) {
-  const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
+  removeLeftProfiles();
+  const profile = mkdtempSync(join(tmpdir(), PROFILE));
   const child = spawn(chrome, [...chromeArgs(profile), "--remote-debugging-pipe", "about:blank"], {
     stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"],
   });

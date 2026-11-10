@@ -11,10 +11,11 @@ import {
   readFileSync,
   rmSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
-import { tmpdir } from "node:os";
+import { hostname, tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { inflateSync } from "node:zlib";
 import {
@@ -506,6 +507,42 @@ describe("a Chrome or composer that cannot start", () => {
     expect(composer[0]).toStartWith("Composing DocMarkdown failed");
     expect(composer[1]).toBe("ok");
     expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
+  }, 60_000);
+});
+
+describe("a profile left behind", () => {
+  it("is removed at the next start once an hour old and no running Chrome holds it", async () => {
+    const tmp = mkdtempSync(join(dir, "left-"));
+    const old = new Date(Date.now() - 2 * 3_600_000);
+    const gone = Bun.spawnSync(["true"]).pid;
+    const locks: Record<string, string | undefined> = {
+      "hw-chrome-stale": undefined,
+      "hw-chrome-crashed": `${hostname()}-${gone}`,
+      "hw-chrome-held": `${hostname()}-${process.pid}`,
+      "hw-chrome-elsewhere": "other-host-1",
+    };
+    for (const [name, lock] of Object.entries(locks)) {
+      mkdirSync(join(tmp, name));
+      if (lock) symlinkSync(lock, join(tmp, name, "SingletonLock"));
+      utimesSync(join(tmp, name), old, old);
+    }
+    mkdirSync(join(tmp, "hw-chrome-new"));
+    writeFileSync(join(dir, "left.html"), "<!doctype html><html><body>x</body></html>");
+    // A process of its own, so the sweep has not run yet in it.
+    const script = `
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      process.env.CHROME_BINARY = "/nonexistent/chrome";
+      await renderPdf(${JSON.stringify(join(dir, "left.html"))}, ${JSON.stringify(join(dir, "left.pdf"))}).catch(() => {});`;
+    const child = Bun.spawn([process.execPath, "-e", script], {
+      env: { ...process.env, TMPDIR: tmp },
+      stderr: "inherit",
+    });
+    await child.exited;
+    expect(readdirSync(tmp).sort()).toEqual([
+      "hw-chrome-elsewhere",
+      "hw-chrome-held",
+      "hw-chrome-new",
+    ]);
   }, 60_000);
 });
 
