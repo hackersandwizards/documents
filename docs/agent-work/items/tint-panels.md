@@ -3,7 +3,7 @@ kind: decision
 status: assumed
 priority: 3
 owner: Benedikt
-area: documents
+area: software-engineering
 recommended: a
 assumption: The hand-drawn tint panels keep their teal line, listed as the exception tint-panel in brand-elements.json.
 options:
