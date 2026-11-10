@@ -18,9 +18,13 @@ is a prop, and so is every word a component prints itself (`labels`, the survey 
 today's words the default); the samples are fictitious and every euro figure in them is a placeholder.
 `scripts/privacy.ts` (the `documents-privacy` command) holds that line without private data: euro
 figures only as placeholders, mail only on example domains or ours, no phone, IBAN or street but
-the imprint's and the invented ones, and every person or client in the samples' props from its
-`INVENTED` words. Company OS runs it with its real names as `--deny` terms in its own gate, so a
-real name the rules cannot see fails there; those names never enter this repo. A comment in a
+the imprint's and the invented ones, credential IDs only as `…-EXAMPLE0EXAMPLE0`, and every person
+or client in the samples' name props (`PERSON_KEYS`, `personAt`) from its `INVENTED` words; a name
+in free text, such as a title or an `html` body, is left to the deny terms. Company OS runs it with
+its real names as `--deny` terms in its own gate, each matched in file paths and text, in any case,
+across a line break and with `&` as an entity (an all-capitals term in lower case only in a slug), so
+a real name the rules cannot see fails there; those names never enter this repo, and an empty deny
+list fails. A comment in a
 shipped file says what the code does and why, never its history: scores, review rounds, dates,
 decision or item ids, pointers to review notes and names go to the commit message or
 `docs/agent-work/` (the gate's `history` step).

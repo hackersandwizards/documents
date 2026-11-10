@@ -47,9 +47,14 @@ test("every text rule hits a planted case", () => {
       "Euro" + " 4.200",
       "de89 3704" + " 0044 0532 0130 00",
       "Mail an jane" + "@acme-corp.de: sie antwortet",
+      "+33 1 23" + " 45 67 89",
+      "+1 415 555" + " 0100",
+      "4.200&#83" + "64;",
+      "info@mül" + "ler.de",
+      "HW-AE-DEV-260318-" + "ABCDEF0123456789",
     ].join("\n"),
   );
-  const lines = Array.from({ length: 27 }, (_, i) => i + 1);
+  const lines = Array.from({ length: 32 }, (_, i) => i + 1);
   expect(scanText(planted).map((f) => f.line)).toEqual(lines);
   // An SSH remote is no mailbox.
   writeFileSync(join(planted, "scripts", "leak.ts"), 'insteadOf="git' + '@github.com:"');
@@ -63,6 +68,49 @@ test("a deny term hits as a whole word only", () => {
   expect(scanText(ROOT, ["Muster" + "w"])).toEqual([]);
 });
 
+test("a deny term hits a file name, any case, an entity, a slug and a line break", () => {
+  const dir = mkdtempSync(join(tmpdir(), "hw-privacy-deny-"));
+  try {
+    writeFileSync(join(dir, "echtfirma-logo.svg"), "<svg/>");
+    expect(scanText(dir, ["Echtfirma"])).toEqual([
+      { file: "echtfirma-logo.svg", line: 0, what: 'the term "Echtfirma" in the path' },
+    ]);
+    rmSync(join(dir, "echtfirma-logo.svg"));
+    writeFileSync(
+      join(dir, "a.md"),
+      [
+        "ECHTFIRMA",
+        "E&amp;C Partner",
+        "echte-firma-2026",
+        "die Echte",
+        "Firma",
+        "MÜLLERBAU",
+        "muellerbau",
+        "ECHT, nicht echt",
+        "Echt",
+        "echt-2026 echt_logo 2026",
+      ].join("\n"),
+    );
+    const lines = (terms: string[]) => scanText(dir, terms).map((f) => f.line);
+    expect(lines(["Echtfirma"])).toEqual([1]);
+    expect(lines(["E&C"])).toEqual([2]);
+    expect(lines(["Echte Firma"])).toEqual([3, 4]);
+    expect(lines(["Müllerbau"])).toEqual([6, 7]);
+    // An all-capitals term is an acronym: in text in capitals, in any case only in a slug.
+    expect(lines(["ECHT"])).toEqual([8, 10, 10]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an empty deny list fails rather than passes", () => {
+  const empty = join(planted, "empty.txt");
+  writeFileSync(empty, "\n");
+  const run = Bun.spawnSync(["bun", join(ROOT, "scripts/privacy.ts"), "--deny", empty]);
+  expect(run.exitCode).toBe(1);
+  expect(run.stderr.toString()).toContain("holds no deny terms");
+});
+
 test("a person in the samples outside the invented names fails", () => {
   expect(scanSamples({ rateCard: { personName: "Anna Echt" } })).toEqual([
     "rateCard.personName: Anna Echt",
@@ -70,6 +118,10 @@ test("a person in the samples outside the invented names fails", () => {
   expect(scanSamples({ surveyReadout: { customerName: "Echtfirma GmbH" } })).toEqual([
     "surveyReadout.customerName: Echtfirma",
   ]);
+  // A name in lower or mixed case is a name too.
+  expect(
+    scanSamples({ rateCard: { client: { company: "echtfirma", shortName: "eFirma" } } }),
+  ).toEqual(["rateCard.client.company: echtfirma", "rateCard.client.shortName: eFirma"]);
   expect(scanSamples({ rateCard: { client: { shortName: "Echtfirma" } } })).toEqual([
     "rateCard.client.shortName: Echtfirma",
   ]);
