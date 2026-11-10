@@ -47,7 +47,7 @@ section.flow {
 /* A heading, and a sentence leading into code, stay with the block they introduce, and a table
    or a code block stays whole where it fits a page: a participant copies from it. */
 section :is(h1, h2, h3) + *,
-section :is(p, li) + pre {
+section p + pre {
   break-before: avoid;
 }
 

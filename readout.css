@@ -28,9 +28,6 @@ body {
   flex-direction: column;
   margin: 0 auto var(--deck-px-24);
 }
-.slide:last-child {
-  page-break-after: auto;
-}
 /* brand's strip (hw-strip) at the stage scale's height, set here as for the rule below. */
 .strip {
   --hw-strip: var(--deck-12);

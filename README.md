@@ -39,11 +39,12 @@ Bun fetches the `git+https://` form through GitHub's tarball API without a GitHu
 | `bun run documents-privacy [--deny <terms.txt>]`          | fails on private data in the package, and on each term of the file                                              |
 | `bun run documents-styles <file or dir>...`               | fails on a style in a document HTML file that the engine did not draw                                           |
 
-Astro, Vite, `@hackersandwizards/brand` and `@hackersandwizards/scaffolding` are peer dependencies:
-the consumer's own copies compile the components, and `./render-pdf` imports scaffolding's
-`./chrome` at run time, so a consumer installs scaffolding beside its runtime dependencies. Brand
-and scaffolding are optional peers, so Bun never looks them up on the npm registry: pin both from
-their Git tags.
+Astro, Vite, `@hackersandwizards/brand`, `@hackersandwizards/testimonials` and
+`@hackersandwizards/scaffolding` are peer dependencies: the consumer's own copies compile the
+components, a page names a testimonial's mark by its package path, and `./render-pdf` imports
+scaffolding's `./chrome` at run time, so a consumer installs scaffolding beside its runtime
+dependencies. Brand, testimonials and scaffolding are optional peers, so Bun never looks them up
+on the npm registry: pin each from its Git tag.
 
 ## Work on the package
 

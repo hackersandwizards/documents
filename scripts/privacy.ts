@@ -1,10 +1,9 @@
 #!/usr/bin/env bun
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative } from "node:path";
+import { ROOT } from "./root";
 import * as samples from "./samples";
-
-const ROOT = resolve(import.meta.dir, "..");
 
 const MAIL_DOMAINS = /^(hackersandwizards\.dev|example\.(com|org|net|de))$/i;
 const STREETS = new Set(["Osterstraße 95", "Beispielweg 12", "Example Road 12"]);

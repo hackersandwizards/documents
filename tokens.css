@@ -22,7 +22,6 @@
      both survive 70% zoom. */
   --accent-soft: var(--color-teal-soft);
   --accent-line: var(--color-teal);
-  --accent-chip: var(--color-teal-light);
   --result: var(--color-purple);
   --positive: var(--color-green-dark);
   --negative: var(--color-red);

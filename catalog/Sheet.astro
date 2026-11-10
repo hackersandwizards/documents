@@ -2,7 +2,7 @@
 // A document styles html and body, so the dashboard frames the story's own preview page, and the
 // stylesheets are inlined, since an import would load them on the dashboard too.
 import config from "virtual:astrobook/global-config.mjs";
-import { ELEMENT_MAP, withElements } from "../scripts/elements";
+import { ELEMENT_MAP, ONEPAGER_ELEMENTS, withElements } from "../scripts/elements";
 import tokensCss from "../tokens.css?raw";
 import documentCss from "../document.css?raw";
 import handoutCss from "../handout.css?raw";
@@ -34,11 +34,8 @@ const css = [
     .sheet { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; }
   }`,
 ].join("\n");
-// The onepager maps only its card and tag (composeOnepager); its other forms are its own.
-const map =
-  sheet === "onepager"
-    ? ELEMENT_MAP.filter(([selector]) => /\.(card|doc-tag)\b/.test(selector))
-    : ELEMENT_MAP;
+// The onepager takes its own map, as composeOnepager applies it.
+const map = sheet === "onepager" ? ONEPAGER_ELEMENTS : ELEMENT_MAP;
 const html = preview
   ? withElements(await Astro.slots.render("default"), map).replace(
       /(<style[^>]*>)([\s\S]*?)(<\/style>)/g,

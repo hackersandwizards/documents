@@ -2,7 +2,7 @@
 // caller's own readout colours a weak spot's marker as its bar.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fill, languageTag, svgUri } from "./fill";
+import { escapeHtml as esc, fill, languageTag, svgUri } from "./fill";
 import { brandCss, brandFile, compactStyles } from "./render-pdf";
 import { ROOT } from "./root";
 
@@ -100,12 +100,6 @@ export const READOUT_TEXT = {
   flagKey: "flag, not a score",
 };
 export type ReadoutText = typeof READOUT_TEXT;
-
-const esc = (text: string) =>
-  text.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
 
 /**
  * Where a mean sits on its own scale, 0 at the floor and 1 at the ceiling, because the matrix rows

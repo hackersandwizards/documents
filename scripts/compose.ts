@@ -5,7 +5,7 @@ import { createInterface } from "node:readline";
 import { getViteConfig } from "astro/config";
 import { createServer } from "vite";
 import { withElements } from "./elements";
-import { languageTag } from "./fill";
+import { escapeHtml, languageTag } from "./fill";
 import { bakeDocumentCss, subsetFaces } from "./render-pdf";
 import { ROOT } from "./root";
 
@@ -16,12 +16,8 @@ or DocLeistungsnachweis) with the props in the JSON file to a standalone HTML do
 scoped styles after it. A string prop "title" becomes the document's title. Runs Astro's compiler
 of the project in the current directory.`;
 
-/** The escape for text and attribute values set into the composed page. */
-export const escapeHtml = (text: string) =>
-  text.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
+// Consumers take the escape from here, beside the composer.
+export { escapeHtml };
 
 /** Astro's compiler for the document components: `render` returns a component's markup
  * (slots as HTML strings), `styles` the scoped styles of every component rendered so far. */

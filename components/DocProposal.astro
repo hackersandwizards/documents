@@ -1,9 +1,8 @@
 ---
 // The proposal (Angebot), German or English: the lead, the price on page 1 with its optional
 // tiers, about us, scope, the optional sequence, the outcome, terms, closing, acceptance and the
-// optional signature lines, in that fixed order. The canonical
-// props with the standard terms are Company OS's .claude/skills/quote/proposal-de.json and
-// proposal-en.json.
+// optional signature lines, in that fixed order. The standard terms come in as props from the
+// consumer.
 // A proposal without a rate in any row is the price-free variant: the table keeps item and basis.
 import DocCallout from "./DocCallout.astro";
 import DocCard from "./DocCard.astro";
@@ -371,20 +370,9 @@ const running = `@page {
     color: var(--muted);
   }
 
-  /* Two cards share a row; one alone in its row, or before the wide community panel, spans it. */
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-grid);
-    margin: var(--block-margin);
-  }
-
+  /* The base lays out the grid; a card's own margin yields to its gap. */
   .grid-2 > :global(.card) {
     margin: 0;
-  }
-
-  .grid-2 > :global(:nth-child(odd):is(:last-child, :has(+ .wide))) {
-    grid-column: 1 / -1;
   }
 
   .included {

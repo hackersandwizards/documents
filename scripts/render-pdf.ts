@@ -49,12 +49,9 @@ const redraw = (source, src, scale) => {
   const jpeg = canvas.toDataURL("image/jpeg", 0.9);
   return jpeg.length < png.length ? jpeg : png;
 };
-const keep = (img, rect) => {
+const keep = (img) => {
   if (getComputedStyle(img).aspectRatio.startsWith("auto"))
     img.style.aspectRatio = img.naturalWidth + " / " + img.naturalHeight;
-  // A presentational width, which any CSS width outranks.
-  if (Math.abs(rect.width - img.naturalWidth) < 0.5 && Math.abs(rect.height - img.naturalHeight) < 0.5)
-    img.setAttribute("width", String(rect.width));
   img.srcset = "";
 };
 const svgText = (src) => {
@@ -104,7 +101,7 @@ for (const img of document.images) {
     // A file:// image the render could not inline taints the canvas; it prints at its source size.
     try { url = redraw(img, img.currentSrc, scale); } catch { return; }
     if (!url) return;
-    keep(img, rect);
+    keep(img);
     img.src = url;
   };
   if (img.complete) shrink(); else img.addEventListener("load", shrink, { once: true });
@@ -925,8 +922,8 @@ const editFaces = (html: string, edit: (face: string) => string) =>
   editStyles(html, (css) => css.replace(/@font-face\s*\{[^}]*\}\s*/g, edit));
 
 /** A page's style elements with each `@layer` order statement dropped that names only layers
- * declared before it: only a layer's first mention places it, and brand opens every element file
- * with the whole order, 55 times on the onepager. */
+ * declared before it: only a layer's first mention places it, and a page joining several brand
+ * files can repeat the order. */
 function layerOnce(html: string): string {
   const seen = new Set<string>();
   return editStyles(html, (css) =>

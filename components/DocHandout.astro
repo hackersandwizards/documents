@@ -8,7 +8,7 @@ import DocHeader from "./DocHeader.astro";
 import DocProse from "./DocProse.astro";
 import DocRecipient from "./DocRecipient.astro";
 import DocTitle from "./DocTitle.astro";
-import { cssString, wordsFor } from "../scripts/fill";
+import { cssString, escapeHtml, wordsFor } from "../scripts/fill";
 import { HANDOUT_TEXT, type HandoutLang, type HandoutText } from "../scripts/handout";
 
 interface Props {
@@ -55,8 +55,6 @@ const {
 } = Astro.props;
 const t = { ...wordsFor(lang, HANDOUT_TEXT), ...labels };
 
-const htmlText = (text: string) =>
-  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /** The margin boxes take their text from CSS alone, so title and client land there as CSS strings.
  *  This style follows the base's, and Chrome lets the later margin-box content win over the
  *  base's `@page :first`, so the cover's running head is switched off again here: on the cover's
@@ -104,7 +102,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
     {chapters.map((chapter, i) => (
       <section class="chapter" id={`chapter-${i + 1}`}>
         <DocProse
-          html={`<h1>${htmlText(chapter.title)}<span class="hw-rule" data-variant="bar" aria-hidden="true"></span></h1>\n${chapter.html}`}
+          html={`<h1>${escapeHtml(chapter.title)}<span class="hw-rule" data-variant="bar" aria-hidden="true"></span></h1>\n${chapter.html}`}
         />
       </section>
     ))}

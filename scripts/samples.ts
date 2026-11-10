@@ -473,12 +473,14 @@ export const onepager = {
 </div>`,
 };
 
-/** An attendee-feedback readout: invented responses for an invented team. */
+/** A rating question's tally: its distribution over the scale from `start`, count and mean. */
 const ratings = (title: string, dist: number[], start = 1, group?: string) => {
   const n = dist.reduce((a, b) => a + b, 0);
   const mean = dist.reduce((sum, c, i) => sum + c * (start + i), 0) / n;
   return { title, n, mean, start, end: start + dist.length - 1, dist, group };
 };
+
+/** An attendee-feedback readout: invented responses for an invented team. */
 export const surveyReadout = {
   customerName: "Musterwerk AG",
   training: "Agentic Engineering Training",

@@ -36,3 +36,10 @@ export function wordsFor<T>(lang: unknown, table: { en: T } & Partial<Record<str
  *  67 KB as base64 against 50 KB this way (measured). */
 export const svgUri = (svg: string) =>
   `data:image/svg+xml,${svg.replace(/[%#"<>&\n\r\t]/g, encodeURIComponent)}`;
+
+/** The escape for text and attribute values set into a page. */
+export const escapeHtml = (text: string) =>
+  text.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
