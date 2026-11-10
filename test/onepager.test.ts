@@ -4,13 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { encodeNonAsciiHTML } from "entities";
+import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { openComposer } from "../scripts/compose";
 import { composeOnepager, fitOnepager, page2Block } from "../scripts/onepager";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { assertBrandFonts, inlineImages, renderPdf } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
 import { onepager } from "../scripts/samples";
-import { fallbackFamilies, probePage, rejection, withLinkedBrand } from "./probe";
+import { fallbackFamilies, probePage, withLinkedBrand } from "./probe";
 
 let composer: Awaited<ReturnType<typeof openComposer>>;
 const work = mkdtempSync(join(tmpdir(), "hw-onepager-test-"));

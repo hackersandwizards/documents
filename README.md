@@ -46,6 +46,10 @@ scaffolding's `./chrome` at run time, so a consumer installs scaffolding beside 
 dependencies. Brand, testimonials and scaffolding are optional peers, so Bun never looks them up
 on the npm registry: pin each from its Git tag.
 
+The TypeScript exports run under Bun only: they parse HTML with Bun's `HTMLRewriter`, which Node
+lacks, so `inlineImages` and every composer and render throw `HTMLRewriter is not defined` under
+Node (a Node test runner such as vitest included). Call them from a Bun process.
+
 ## Work on the package
 
 Requirements: Bun 1.3 or newer, poppler (`brew install poppler`) for the font and handout checks,

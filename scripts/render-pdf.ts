@@ -138,7 +138,7 @@ const packageImages = new Map<string, string>();
 const PACKAGE_SRC = /^(@hackersandwizards\/[^/]+)\//;
 /** Resolves a package path from where this package is installed. */
 const packageRequire = createRequire(import.meta.url);
-/** The MIME type by extension, the images `inlineImages` takes, so the export needs no Bun. */
+/** The MIME type by extension, the images `inlineImages` takes. */
 const IMAGE_TYPES: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
@@ -169,7 +169,8 @@ const dataUri = (ext: string, bytes: Buffer) =>
  * sandboxed iframe resolves neither path. A package src its package does not export, or exports as
  * a Git LFS pointer, throws, so a print fails rather than print without the image. A file beside
  * the page that cannot be read (missing, a folder, no permission) or is a Git LFS pointer stays as
- * it is, so the page shows its alt text. */
+ * it is, so the page shows its alt text. It parses with Bun's HTMLRewriter, so it runs under Bun
+ * only: under Node it throws `HTMLRewriter is not defined`. */
 export function inlineImages(html: string, dir: string, options: InlineImagesOptions = {}): string {
   const root = options.within === undefined ? undefined : realpathSync(options.within);
   /** The data URI for one src, or undefined to leave the tag as it is. */

@@ -32,10 +32,11 @@ import {
 } from "../scripts/render-pdf";
 import { decompress } from "woff2-encoder";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
+import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { svgUri } from "../scripts/fill";
 import { preparation, rateCard, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
-import { fallbackFamilies, probePage, rejection, withLinkedBrand } from "./probe";
+import { fallbackFamilies, probePage, withLinkedBrand } from "./probe";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));

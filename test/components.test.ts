@@ -3,13 +3,14 @@ import verbal from "@hackersandwizards/brand/verbal.json";
 import { decodeHTML } from "entities";
 import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { openComposer } from "../scripts/compose";
 import { withElements } from "../scripts/elements";
 import { cssString, wordsFor } from "../scripts/fill";
 import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
 import { foreignStyles } from "../scripts/styles";
-import { probePage, rejection } from "./probe";
+import { probePage } from "./probe";
 
 const ROOT = resolve(import.meta.dir, "..");
 const components = readdirSync(join(ROOT, "components"))

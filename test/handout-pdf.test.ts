@@ -3,10 +3,11 @@ import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
+import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { composePage, openComposer } from "../scripts/compose";
 import { documentCss, type HandoutPass, renderHandoutPdf } from "../scripts/render-pdf";
 import { handout } from "../scripts/samples";
-import { probePage, rejection } from "./probe";
+import { probePage } from "./probe";
 
 const ROOT = resolve(import.meta.dir, "..");
 const rules = readFileSync(join(ROOT, "handout.css"), "utf8").replace(/^@import [^;]+;\n/gm, "");
