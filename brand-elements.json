@@ -4,6 +4,7 @@
     "dist/types/angebot/index.html",
     "dist/types/quote/index.html",
     "dist/types/angebot-ohne-preise/index.html",
+    "dist/types/angebot-unterschrift/index.html",
     "dist/types/honorarsaetze/index.html",
     "dist/types/leistungsnachweis-monat/index.html",
     "dist/types/leistungsnachweis-training/index.html",

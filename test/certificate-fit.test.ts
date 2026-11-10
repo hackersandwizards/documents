@@ -4,8 +4,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
-import { openComposer } from "../scripts/compose";
-import { documentCss, renderPdf } from "../scripts/render-pdf";
+import { composePage, openComposer } from "../scripts/compose";
+import { renderPdf } from "../scripts/render-pdf";
 
 // DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
 // fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
@@ -136,8 +136,9 @@ afterAll(async () => {
 /** The case printed to PDF: its page count, and how far its content runs past the content box. */
 async function printCertificate(props: Record<string, unknown>) {
   if (!chrome) throw new Error(INSTALL_HINT);
-  const body = await composer.render("DocCertificate", props);
-  const css = await composer.styles();
+  // The page os prints through documents-compose: composePage, with the brand's elements and
+  // the print scale.
+  const composed = await composePage(composer, "DocCertificate", props);
   // Runs after the component's own fit, which waits on the same promise.
   const probe = `<script>document.fonts.ready.then(() => {
     const cert = document.querySelector(".certificate");
@@ -150,9 +151,7 @@ async function printCertificate(props: Record<string, unknown>) {
     document.body.append(pre);
   });</script>`;
   const html = (withProbe: boolean) =>
-    `<!doctype html><html lang="${props.lang}"><head><meta charset="utf-8"><style>${documentCss()}</style><style>${css}</style></head><body>${body}${
-      withProbe ? probe : ""
-    }</body></html>`;
+    withProbe ? composed.replace("</body>", () => `${probe}</body>`) : composed;
   const page = join(dir, "certificate.html");
   const pdf = join(dir, "certificate.pdf");
   writeFileSync(page, html(false));

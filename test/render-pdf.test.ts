@@ -534,10 +534,12 @@ describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
       const timer = setInterval(() => ticks++, 50);
       const render = () => renderPdf(${JSON.stringify(join(dir, "install.html"))}, ${JSON.stringify(join(dir, "install.pdf"))}).then(() => "ok", (e) => e.message);
       const failed = await render();
+      // The failed call is the install alone: no Chrome came back to print with.
+      const installing = ticks;
       unlinkSync(${JSON.stringify(flag)});
       const retried = await render();
       clearInterval(timer);
-      console.log(JSON.stringify({ failed, retried, ticks }));`;
+      console.log(JSON.stringify({ failed, retried, installing }));`;
     const env: Record<string, string | undefined> = {
       ...process.env,
       PATH: `${bin}:${process.env.PATH}`,
@@ -553,8 +555,8 @@ describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
     expect(readFileSync(`${flag}.pkg`, "utf8").trim()).toMatch(
       /^@puppeteer\/browsers@\d+\.\d+\.\d+$/,
     );
-    // Two installs of 0.5 s each: a blocking install leaves the 50 ms timer near zero.
-    expect(result.ticks).toBeGreaterThan(10);
+    // An install of 0.5 s: a blocking one leaves the 50 ms timer near zero, a print never counts.
+    expect(result.installing).toBeGreaterThan(5);
   });
 });
 
@@ -873,7 +875,9 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
       import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
       await composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true });
       await renderPdf(${JSON.stringify(join(dir, "doc.html"))}, ${JSON.stringify(join(dir, "exit.pdf"))}, { warm: true });
-      console.log(process.pid);`;
+      // The kept Chrome and composer, still running here; the test looks for them once this exits.
+      const { spawnSync } = await import("node:child_process");
+      console.log(spawnSync("pgrep", ["-P", String(process.pid)], { encoding: "utf8" }).stdout.trim());`;
     const started = performance.now();
     const child = Bun.spawn([process.execPath, "-e", script], {
       env: { ...process.env, TMPDIR: tmp },
@@ -883,9 +887,17 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
     expect(child.exitCode).toBe(0);
     expect(performance.now() - started).toBeLessThan(20_000);
     expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
-    // No process outlives the caller that started it.
-    const pid = (await new Response(child.stdout).text()).trim();
-    const orphans = spawnSync("pgrep", ["-P", pid], { encoding: "utf8" }).stdout.trim();
-    expect(orphans).toBe("");
+    // No process outlives the caller that started it: each child it had is gone.
+    const children = (await new Response(child.stdout).text()).trim().split(/\s+/).map(Number);
+    expect(children.length).toBeGreaterThanOrEqual(2);
+    const alive = children.filter((pid) => {
+      try {
+        process.kill(pid, 0);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    expect(alive).toEqual([]);
   }, 60_000);
 });

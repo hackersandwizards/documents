@@ -59,5 +59,19 @@ describe("tokens", () => {
     expect(rawInlineStyles(`<b style="--share: 4%"></b><i style="width: 4%"></i>`)).toEqual([
       "width: 4%",
     ]);
+    // Viewport and root-line units, a weight inside the font shorthand, a named colour outside
+    // the first few, and a single-quoted literal in an Astro expression.
+    expect(
+      rawValues(
+        `a { height: 2dvh; width: 3vmin; margin: 1rlh; font: italic 600 var(--x); color: orange; }`,
+      ),
+    ).toEqual([
+      "length: 2dvh",
+      "length: 3vmin",
+      "length: 1rlh",
+      "named colour: : orange",
+      "weight: font: italic 6",
+    ]);
+    expect(rawInlineStyles(`<b style={'width: 4%'}></b>`)).toEqual(["width: 4%"]);
   });
 });

@@ -34,14 +34,20 @@ export const DATA_PROPERTIES = [
 ];
 
 const RAW: [string, RegExp][] = [
-  ["length", /(?<![\w.#-])-?\d*\.?\d+(pt|mm|cm|in|pc|q|px|rem|em|ex|ch|lh|vh|vw)\b/gi],
+  [
+    "length",
+    /(?<![\w.#-])-?\d*\.?\d+(pt|mm|cm|in|pc|q|px|rem|em|ex|ch|r?lh|[dsl]?v(?:h|w|i|b|min|max)|cq(?:w|h|i|b|min|max))\b/gi,
+  ],
   ["colour", /#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(/gi],
-  ["named colour", /:\s*[^;{}]*\b(white|black|red|green|blue|gr[ae]y|teal|purple)\b/gi],
+  [
+    "named colour",
+    /:\s*[^;{}]*\b(white|black|red|green|blue|gr[ae]y|teal|purple|orange|yellow|pink|brown|navy|silver|maroon|olive|lime|aqua|cyan|fuchsia|magenta|gold|indigo|violet|coral|salmon|tomato|crimson|beige|ivory|khaki|turquoise|tan)\b/gi,
+  ],
   [
     "brand token",
     /var\(--((color|font|type|radius|print|text|spacing|shadow|logo-wizard)-|tracking-label\))/g,
   ],
-  ["weight", /font-weight:\s*\d/g],
+  ["weight", /font-weight:\s*\d|font:\s*(?:[a-z-]+\s+)*\d/g],
   ["leading", /line-height:\s*[\d.]+/g],
 ];
 
@@ -69,7 +75,7 @@ export function rawInlineStyles(text: string): string[] {
   ].flatMap(([, double, single, expr, bare]) =>
     expr === undefined
       ? [double ?? single ?? bare]
-      : [...expr.matchAll(/`([^`]*)`|"([^"]*)"/g)].map((m) => m[1] ?? m[2]),
+      : [...expr.matchAll(/`([^`]*)`|"([^"]*)"|'([^']*)'/g)].map((m) => m[1] ?? m[2] ?? m[3]),
   );
   return styles
     .map((style) => style.trim())
@@ -146,6 +152,11 @@ if (import.meta.main) {
     process.exit(args.length === 0 ? 1 : 0);
   }
   const files = args.flatMap((a) => htmlFiles(resolve(a)));
+  // A path holding no document is a wrong path, never a pass.
+  if (files.length === 0) {
+    console.error(`documents-styles: no .html file under ${args.join(", ")}`);
+    process.exit(1);
+  }
   let failed = 0;
   for (const file of files) {
     const found = foreignStyles(readFileSync(file, "utf8"));

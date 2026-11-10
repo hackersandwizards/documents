@@ -92,4 +92,11 @@ describe("documents-styles", () => {
     expect(result.stderr).toContain(join(dir, "hand.html"));
     expect(result.stderr).toContain("outside the document engine");
   });
+
+  it("exits 1 on a folder holding no document", () => {
+    const empty = mkdtempSync(join(dir, "empty-"));
+    const result = run(empty);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("no .html file");
+  });
 });

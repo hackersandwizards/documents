@@ -8,6 +8,7 @@ import { withElements } from "../scripts/elements";
 import { cssString, wordsFor } from "../scripts/fill";
 import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
+import { foreignStyles } from "../scripts/styles";
 import { probePage } from "./probe";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -136,6 +137,9 @@ test.each(components)(
       aside: `<p>${P}</p>`,
     });
     expect(html).toContain(P);
+    // A style element or attribute a component writes carries the engine's marker, as a consumer's
+    // bake requires; the catalog's type pages mark every bare one, so only this read sees it.
+    expect(foreignStyles(html)).toEqual([]);
     if (["DocHeader", "DocProposal", "DocRateCard", "DocMarkdown"].includes(name))
       expect(html).toMatch(/data:image\/svg\+xml,%3Csvg /);
     // The header and the certificate draw their strip as brand's element, not a hand-drawn gradient.
