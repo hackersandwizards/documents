@@ -84,6 +84,15 @@ describe("fitOnepager, page 2's first line", () => {
     const plain = await fitOnepager(composer, onepager, "unused", work);
     expect(fit.pages).toBe(2);
     expect(fit.fit.page2Start).toBe(plain.fit.page2Start);
+    // Page 2 opens on a short block whose word page 1 prints too, in its facts card: the fit
+    // balances on that block, not on the card.
+    const notes = onepager.html.replace(
+      '<div class="planning">',
+      '<p class="path-note">Erster Hinweis</p>\n<p class="path-note">Zweiter Hinweis</p>\n<p class="path-note">Format</p>\n<div class="planning">',
+    );
+    const short = await fitOnepager(composer, { ...onepager, html: notes }, "unused", work);
+    // The notes stand before the block that opens page 2 in the sample; the third is two blocks on.
+    expect(short.fit.page2Start).toBe(plain.fit.page2Start! + 2);
     // A commented-out block is no block of the page.
     const commented = `<!-- <section><p>Entwurf</p></section> -->${onepager.html}`;
     const kept = await fitOnepager(composer, { ...onepager, html: commented }, "unused", work);

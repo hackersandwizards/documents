@@ -285,13 +285,16 @@ export async function fitOnepager(
           .split("\n")
           .find((l) => l.trim().length > 3) ?? "",
       );
-      // Page 2 opens on the first block holding its first line that page 1 does not hold whole: an
-      // earlier block may hold the same words.
+      // Page 2 opens on the first block holding its first line that no later block follows on
+      // page 1: a block on page 1 may hold the same words, in a short block or in a card whose
+      // columns pdftotext reads out of order, but blocks after it stand on page 1 too.
       const page1Text = pdfPageText(pdf, 1);
       const page1 = letters(page1Text);
-      const index = topLevelBlocks(page.html)
-        .map(flatBlock)
-        .findIndex((block) => block.includes(line) && !page1.includes(block));
+      const blocks = topLevelBlocks(page.html).map(flatBlock);
+      const index = blocks.findIndex(
+        (block, i) =>
+          block.includes(line) && !blocks.slice(i + 1).some((b) => b && page1.includes(b)),
+      );
       if (!line || index < 0)
         throw new Error(`fitOnepager: no block of "${page.title}" holds page 2's first line`);
       // The header is .page's first child, the first block its second.
