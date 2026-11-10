@@ -631,6 +631,8 @@ function pipeChrome(chrome: string, hung?: () => void) {
   output?.setEncoding("utf8");
   output?.on("data", (chunk: string) => {
     buffer += chunk;
+    // The buffer holds no end before this chunk, so a large PDF's chunks are scanned once each.
+    if (!chunk.includes("\0")) return;
     for (let end = buffer.indexOf("\0"); end >= 0; end = buffer.indexOf("\0")) {
       const message = JSON.parse(buffer.slice(0, end));
       buffer = buffer.slice(end + 1);
