@@ -3,6 +3,14 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true
   },
-  "include": ["scripts/**/*.ts", "test/**/*.ts", "catalog/**/*.ts", "*.ts", "*.js"],
+  "include": [
+    "components/**/*.astro",
+    "catalog/**/*.astro",
+    "scripts/**/*.ts",
+    "test/**/*.ts",
+    "catalog/**/*.ts",
+    "*.ts",
+    "*.js"
+  ],
   "exclude": ["**/.astro", "dist", "**/node_modules"]
 }

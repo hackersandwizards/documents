@@ -632,7 +632,7 @@ const hw = {
 
 /** The contract form: a trainer's NDA for one client's training. */
 export const agreementNda = {
-  lang: "de",
+  lang: "de" as const,
   title: "Geheimhaltungsvereinbarung Erika Mustermann",
   kind: "Geheimhaltungsvereinbarung",
   date: "02.11.2026",
@@ -685,7 +685,7 @@ export const agreementNda = {
 
 /** The letter form: an order confirmation on the offer's terms. */
 export const agreementOrder = {
-  lang: "de",
+  lang: "de" as const,
   title: "Auftragsbestätigung AG-10001-2026",
   kind: "Auftragsbestätigung",
   number: "AB-10001-2026",

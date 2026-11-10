@@ -92,6 +92,7 @@
     "minimatch": "11.0.5"
   },
   "devDependencies": {
+    "@astrojs/check": "0.9.12",
     "@eslint/js": "10.0.1",
     "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.20.9",
     "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v2.7.0",
@@ -111,6 +112,7 @@
   },
   "prettier": "@hackersandwizards/scaffolding/prettier",
   "scaffolding": {
+    "typecheck": "tsc --noEmit && bun --bun astro check --root .",
     "styles": [
       "./document.css",
       "./handout.css"

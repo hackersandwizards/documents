@@ -200,7 +200,7 @@ const foot = [
   p.price.gross && { label: t.gross, figure: p.price.gross },
 ].filter((row): row is { label: string; figure: string } => !!row);
 // Without a subtotal and an acceptance object the block carries no total line.
-const acceptance =
+const acceptance: { label?: string; value?: string } | undefined =
   p.acceptance === false || (p.acceptance === undefined && p.signatures?.length)
     ? undefined
     : (p.acceptance ??
@@ -333,7 +333,7 @@ const running = `@page {
       <dd>
         {p.number}, {p.heading}
       </dd>
-      {"label" in acceptance && (
+      {acceptance.label && (
         <>
           <dt>{acceptance.label}</dt>
           <dd>{acceptance.value}</dd>
