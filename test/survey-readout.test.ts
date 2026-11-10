@@ -2,7 +2,12 @@ import { expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { surveyReadout } from "../scripts/samples";
-import { composeSurveyReadout, READOUT_TEXT, SLIDE_COUNT } from "../scripts/survey-readout";
+import {
+  bandColor,
+  composeSurveyReadout,
+  READOUT_TEXT,
+  SLIDE_COUNT,
+} from "../scripts/survey-readout";
 import { probePage } from "./probe";
 
 test("every slide draws brand's hw-strip, whose rule the inlined brand files carry", () => {
@@ -46,6 +51,42 @@ test("a bar takes the band of its printed mean", () => {
   expect(html.slice(at, at + 600)).toContain("--band:var(--deck-bar-step)");
   expect(html.slice(at, at + 600)).toContain(">2.7<");
   expect(html).toContain("from 2.69");
+});
+
+// The readout's markers follow its key, "the score's band on page 3": a weak spot's square takes the
+// colour its caller passes, a strength's the strong band, never the default teal or another colour.
+test("a weak spot's marker takes its band, a strength's the strong band", () => {
+  const html = composeSurveyReadout({
+    ...surveyReadout,
+    readout: { ...surveyReadout.readout, weakColors: ["var(--negative)"] },
+  });
+  const marker = (list: string) =>
+    `getComputedStyle(document.querySelector("ul.${list} li"), "::before").backgroundColor`;
+  const probe = `const swatch = (v) => { const i = document.createElement("i"); i.style.background = v; document.body.append(i); return getComputedStyle(i).backgroundColor; };
+    return JSON.stringify({ bad: ${marker("bad")}, good: ${marker("good")}, red: swatch("var(--negative)"), teal: swatch("var(--accent)") });`;
+  const seen = JSON.parse(probePage(html, probe, SLIDE));
+  expect(seen.bad).toBe(seen.red);
+  expect(seen.good).toBe(seen.teal);
+}, 60_000);
+
+test("the sample's weak spot carries its score's band", () => {
+  const weak = surveyReadout.scales.find((s) => s.mean.toFixed(1) === "2.9")!;
+  expect(surveyReadout.readout.weakColors).toEqual([bandColor(weak.mean, weak)]);
+});
+
+test("an undefined word keeps the default, and the largest risk is the top one", () => {
+  const html = composeSurveyReadout({
+    ...surveyReadout,
+    text: { eyebrow: undefined } as Partial<typeof READOUT_TEXT>,
+    risks: [
+      { label: "[SMALL]", n: 1 },
+      { label: "[BIG]", n: 5 },
+    ],
+  });
+  expect(html).toContain(READOUT_TEXT.eyebrow);
+  const at = html.indexOf("[BIG]");
+  expect(html.slice(at, at + 200)).toContain("rfill top");
+  expect(html.slice(html.indexOf("[SMALL]"), at)).not.toContain("rfill top");
 });
 
 /** The deck in Chrome at its slide size. */

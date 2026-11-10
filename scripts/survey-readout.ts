@@ -253,7 +253,9 @@ function slideShell(inner: string, kicker: string, page: number): string {
  * the catalog does. */
 export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) => string): string {
   const { counts, headline, scales, risks, noRisk, asked, liked, improve, readout: r } = d;
-  const t: ReadoutText = { ...READOUT_TEXT, ...d.text };
+  // A key the caller left undefined keeps today's word.
+  const own = Object.entries(d.text ?? {}).filter(([, v]) => v !== undefined);
+  const t: ReadoutText = { ...READOUT_TEXT, ...Object.fromEntries(own) };
   const a = {
     counts,
     headline,
@@ -340,6 +342,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
 
   // Bars run on the share of respondents, the figure printed beside them, so a full track is 100%.
   const respondents = Math.max(1, a.counts.completed, ...a.risks.map((x) => x.n));
+  const topRisk = Math.max(...a.risks.map((x) => x.n));
   const s4 = slideShell(
     `<h2>${esc(t.risks)}</h2>
      <div class="risks">
@@ -347,7 +350,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
          .map(
            (x) => `<div class="risk">
              <div class="rlabel">${esc(x.label)}</div>
-             <div class="rtrack"><div class="rfill${x.n === a.risks[0].n ? " top" : ""}" style="--share:${(x.n / respondents) * 100}%"></div></div>
+             <div class="rtrack"><div class="rfill${x.n === topRisk ? " top" : ""}" style="--share:${(x.n / respondents) * 100}%"></div></div>
              <div class="rn">${x.n}<span class="rpct">${Math.round((x.n / respondents) * 100)}%</span></div>
            </div>`,
          )

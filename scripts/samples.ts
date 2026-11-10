@@ -519,7 +519,8 @@ export const surveyReadout = {
       "The trainer answered our questions. (3.8)",
     ],
     weak: ["I feel confident using agents at work. (2.9)"],
-    weakColors: ["var(--color-teal)"],
+    // bandColor of 2.9 on 1-4.
+    weakColors: ["var(--deck-bar-step)"],
     flags: ["Top perceived risk: Review effort grows (5×)"],
   },
 };

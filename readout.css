@@ -311,7 +311,7 @@ h2 {
   gap: var(--deck-8);
   flex: 1;
 }
-/* Group labels in muted ink: teal and purple are score bands on this page. */
+/* Group labels in muted ink: the colours on this page are score bands. */
 .gtitle {
   font-size: var(--deck-text-caption);
   color: var(--muted);
@@ -482,12 +482,12 @@ h2 {
   line-height: var(--deck-leading-item);
   color: var(--muted);
 }
-/* Markers carry the scores page's colours: a strength clears the purple band by definition, a
-   weak spot takes its own band, and flags stay muted. */
+/* Markers carry the scores page's bands, as the key says: a strength clears the strong band by
+   definition, a weak spot takes its own band, set on its item as --mark, and flags stay hollow. */
 .readout ul.good {
-  --hw-marker-color: var(--result);
+  --hw-marker-color: var(--accent);
 }
-.readout ul.bad {
+.readout ul.bad li {
   --hw-marker-color: var(--mark);
 }
 /* Hollow, so a flag never reads as the slate band a weak spot can carry. */

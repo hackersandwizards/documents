@@ -665,7 +665,7 @@ ul {
 /* The fit pass (fitOnepager) gives page 1's blocks after the hero a top margin of --lift-gap and
    every block after the first one on page 2 one of --air-gap, each at the widest level that keeps the page
    breaks: free space goes between the blocks instead of under the last one. A margin under
-   --section collapses into it, so every level starts above it. */
+   --op-section collapses into it, so every level starts above it. */
 .air0 {
   --air-gap: var(--op-air-0);
 }
