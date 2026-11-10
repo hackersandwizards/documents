@@ -10,7 +10,6 @@ import {
   brandFile,
   compactStyles,
   cutFacesToPdf,
-  fallbackFaces,
   inlineCss,
   renderPdf,
   subsetFaces,
@@ -51,8 +50,6 @@ function baseCss(link: boolean, read?: Set<string>) {
   const documentCss = readFileSync(join(ROOT, "document.css"), "utf8");
   return [
     ...(link ? [] : [brandBase(read)]),
-    // Linked too: the brand files a page links carry no fallback faces.
-    fallbackFaces(read),
     readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
     // The brand's elements, which ONEPAGER_ELEMENTS puts on the page's blocks.
     inlineCss(brandFile("elements.flat.css"), read),

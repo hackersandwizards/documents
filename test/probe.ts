@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
+import { brandFile, inlineCss } from "../scripts/render-pdf";
 
 /** `html` rendered in Chrome, then `probe` (a script body run on load, after the page's own load
  * listeners) returns the string the test reads. `args` adds Chrome flags, such as a window size. */
@@ -49,3 +50,11 @@ export function fallbackFamilies(css: string): { named: string[]; defined: strin
   const faces = families(/@font-face\s*\{\s*font-family:([^;]+);/g);
   return { named, defined: named.filter((n) => faces.has(n)) };
 }
+
+/** A page linking brand's files by their export name (a `link` of `(file) => file`), each link
+ * replaced by the file with its imports inlined, as a browser reaches it in the installed package. */
+export const withLinkedBrand = (html: string) =>
+  html.replace(
+    /<link rel="stylesheet" href="([^"]+)" \/>/g,
+    (_, file: string) => `<style>${inlineCss(brandFile(file))}</style>`,
+  );

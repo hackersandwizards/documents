@@ -10,7 +10,7 @@ import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { assertBrandFonts, inlineImages, renderPdf } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
 import { onepager } from "../scripts/samples";
-import { fallbackFamilies, probePage } from "./probe";
+import { fallbackFamilies, probePage, withLinkedBrand } from "./probe";
 
 let composer: Awaited<ReturnType<typeof openComposer>>;
 const work = mkdtempSync(join(tmpdir(), "hw-onepager-test-"));
@@ -20,6 +20,15 @@ beforeAll(async () => {
 afterAll(async () => {
   await composer?.close();
   rmSync(work, { recursive: true, force: true });
+});
+
+describe("composeOnepager, linked", () => {
+  it("defines every fallback family its stacks name through the brand files it links", async () => {
+    const page = withLinkedBrand(await composeOnepager(composer, onepager, (file) => file));
+    const { named, defined } = fallbackFamilies(page);
+    expect(named.length).toBeGreaterThan(0);
+    expect(defined).toEqual(named);
+  });
 });
 
 describe("fitOnepager", () => {

@@ -33,7 +33,7 @@ import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { svgUri } from "../scripts/fill";
 import { rateCard, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
-import { fallbackFamilies } from "./probe";
+import { fallbackFamilies, withLinkedBrand } from "./probe";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -60,17 +60,8 @@ describe("documentCss", () => {
 
 describe("the fallback faces", () => {
   it("define every fallback family the font stacks name, in the base, the brand files and the readout", () => {
-    const linked = composeSurveyReadout(surveyReadout, (file) => file);
-    // The linked readout's stacks come from the linked tokens: the brand files define them.
-    const stacks = brandCss()
-      .match(/--font-(?:sans|mono|code)\s*:[^;]+;/g)!
-      .join("");
-    for (const css of [
-      documentCss(),
-      brandCss(),
-      composeSurveyReadout(surveyReadout),
-      `${stacks}${linked}`,
-    ]) {
+    const linked = withLinkedBrand(composeSurveyReadout(surveyReadout, (file) => file));
+    for (const css of [documentCss(), brandCss(), composeSurveyReadout(surveyReadout), linked]) {
       const { named, defined } = fallbackFamilies(css);
       // The control: the stacks name brand's three fallback families.
       expect(named).toEqual(["Inter Fallback", "Inter Fallback Roboto", "JetBrains Mono Fallback"]);

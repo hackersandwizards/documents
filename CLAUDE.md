@@ -54,8 +54,8 @@ decision or item ids, pointers to review notes and names go to the commit messag
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
   Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
   renumbered so one input prints the same bytes, the document base baked into
-  `<style data-hw-document>` beside `fallbackFaces` (brand's `fonts.css` faces on local fonts,
-  which the base, the onepager and the survey readout carry), `compactStyles`, which every standalone page passes (baked, onepager,
+  `<style data-hw-document>` (brand's fallback faces with it, which `print.css` imports, so the
+  peer range starts at brand v2.7.0), `compactStyles`, which every standalone page passes (baked, onepager,
   survey readout): its styles without CSS comments, which a reader of the page never needs, with the
   brand's `@layer` order once, first (`test/layers.test.ts`), without the
   rules (by class, id, element or attribute name) and custom properties its markup cannot use (`pruneStyles`, `scripts/prune.ts`), and without a
