@@ -460,6 +460,30 @@ describe("a Chrome or composer that cannot start", () => {
   }, 60_000);
 });
 
+describe("a Chrome that hangs", () => {
+  afterEach(() => {
+    delete process.env.CHROME_BINARY;
+  });
+
+  it("is killed when it ignores SIGTERM, and the render fails within its time", async () => {
+    // Answers nothing on its pipe and ignores SIGTERM, as a hung browser process does.
+    const stub = join(dir, "hung-chrome.sh");
+    writeFileSync(stub, "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 0.2; done\n", { mode: 0o755 });
+    writeFileSync(join(dir, "hung.html"), "<!doctype html><html><body>x</body></html>");
+    process.env.CHROME_BINARY = stub;
+    const started = performance.now();
+    const outcome = await Promise.race([
+      renderPdf(join(dir, "hung.html"), join(dir, "hung.pdf"), { timeoutMs: 1000 }).then(
+        () => "printed",
+        (e: Error) => e.message,
+      ),
+      new Promise((resolve) => setTimeout(resolve, 15_000, "still waiting")),
+    ]);
+    expect(outcome).toContain("within 1000 ms");
+    expect(performance.now() - started).toBeLessThan(10_000);
+  }, 30_000);
+});
+
 describe.skipIf(!chromeBinary())("renderPdf profile", () => {
   afterEach(() => {
     delete process.env.CHROME_BINARY;
@@ -797,6 +821,21 @@ describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
 });
 
 describe.skipIf(!chromeBinary())("the warm path", () => {
+  it("a page that times out leaves the kept Chrome's other prints running", async () => {
+    const never = `<script>(globalThis.hwLayout ??= []).push(new Promise(() => {}));</script>`;
+    const slow = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 2500))));</script>`;
+    writeFileSync(join(dir, "never.html"), `<!doctype html><html><body>x${never}</body></html>`);
+    writeFileSync(join(dir, "slow.html"), `<!doctype html><html><body>x${slow}</body></html>`);
+    // Chrome started first, so both prints run in the same kept one.
+    await renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), { warm: true });
+    const [hung, done] = await Promise.allSettled([
+      renderPdf(join(dir, "never.html"), join(dir, "never.pdf"), { warm: true, timeoutMs: 1000 }),
+      renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), { warm: true, timeoutMs: 20_000 }),
+    ]);
+    expect(hung.status).toBe("rejected");
+    expect(done).toEqual({ status: "fulfilled", value: undefined });
+  }, 60_000);
+
   it("composes the bytes a fresh run writes, after another type too, and prints what a fresh Chrome prints", async () => {
     const props = { kind: "Trainer Briefing", lang: "en", html: "<h1>Briefing</h1><p>Text</p>" };
     const once = await composeDocument("DocMarkdown", props);

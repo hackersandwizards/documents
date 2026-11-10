@@ -582,7 +582,7 @@ function kept<T>(
 /** A Chrome driven over its own debugging pipe (fd 3 in, fd 4 out), which no other process can
  * reach, unlike a debugging port, in its own temporary profile, so a render never runs inside, or
  * locks, the user's own Chrome profile. */
-function pipeChrome(chrome: string) {
+function pipeChrome(chrome: string, hung?: () => void) {
   const profile = mkdtempSync(join(tmpdir(), "hw-chrome-"));
   const child = spawn(chrome, [...chromeArgs(profile), "--remote-debugging-pipe", "about:blank"], {
     stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"],
@@ -595,8 +595,9 @@ function pipeChrome(chrome: string) {
   let gone = false;
   // A CDP result: each call below reads the fields its method returns.
   type Result = Record<string, string>;
-  const calls = new Map<number, { resolve(r: Result): void; reject(e: Error): void }>();
-  const loads = new Map<string, () => void>();
+  type Pending = { resolve(r: Result): void; reject(e: Error): void; sessionId?: string };
+  const calls = new Map<number, Pending>();
+  const loads = new Map<string, Omit<Pending, "sessionId">>();
   output?.setEncoding("utf8");
   output?.on("data", (chunk: string) => {
     buffer += chunk;
@@ -608,14 +609,17 @@ function pipeChrome(chrome: string) {
         calls.delete(message.id);
         if (message.error) call.reject(new Error(message.error.message));
         else call.resolve(message.result);
-      } else if (message.method === "Page.loadEventFired") loads.get(message.sessionId)?.();
+      } else if (message.method === "Page.loadEventFired")
+        loads.get(message.sessionId)?.resolve({});
     }
   });
   const exited = new Promise<void>((resolve) => {
     const fail = (error?: Error) => {
       gone = true;
-      for (const call of calls.values()) call.reject(error ?? new Error("Chrome exited"));
+      for (const call of [...calls.values(), ...loads.values()])
+        call.reject(error ?? new Error("Chrome exited"));
       calls.clear();
+      loads.clear();
       resolve();
     };
     child.on("exit", () => fail());
@@ -626,17 +630,23 @@ function pipeChrome(chrome: string) {
   const send = (method: string, params: object = {}, sessionId?: string): Promise<Result> =>
     new Promise((resolve, reject) => {
       if (gone) return reject(new Error("Chrome exited"));
-      calls.set(++id, { resolve, reject });
+      calls.set(++id, { resolve, reject, sessionId });
       input?.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
     });
-  const print = async (url: string, script?: string): Promise<Buffer> => {
+  // The page a print opened, so a timeout closes that page alone.
+  type Page = { targetId?: string; sessionId?: string };
+  const open = async (page: Page, url: string, script?: string): Promise<Buffer> => {
     const { targetId } = await send("Target.createTarget", { url: "about:blank" });
+    page.targetId = targetId;
     try {
       const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
+      page.sessionId = sessionId;
       await send("Page.enable", {}, sessionId);
       if (script)
         await send("Page.addScriptToEvaluateOnNewDocument", { source: script }, sessionId);
-      const loaded = new Promise<void>((resolve) => loads.set(sessionId, resolve));
+      const loaded = new Promise<Result>((resolve, reject) =>
+        loads.set(sessionId, { resolve, reject }),
+      );
       const { errorText } = await send("Page.navigate", { url }, sessionId);
       if (errorText) {
         loads.delete(sessionId);
@@ -675,6 +685,37 @@ function pipeChrome(chrome: string) {
       await send("Target.closeTarget", { targetId }).catch(() => {});
     }
   };
+  /** A timed-out print's page closed and its pending calls failed, the other pages left running;
+   * a Chrome that does not close it within STOP_MS is hung and stopped (`hung`, else killed). */
+  const abandon = async ({ targetId, sessionId }: Page, error: Error) => {
+    for (const [key, call] of calls)
+      if (sessionId !== undefined && call.sessionId === sessionId) {
+        calls.delete(key);
+        call.reject(error);
+      }
+    if (sessionId) loads.get(sessionId)?.reject(error);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const closed = targetId
+      ? await Promise.race([
+          send("Target.closeTarget", { targetId }).then(
+            () => true,
+            () => false,
+          ),
+          new Promise<boolean>((resolve) => (timer = setTimeout(resolve, STOP_MS, false))),
+        ])
+      : false;
+    clearTimeout(timer);
+    if (!closed) (hung ?? (() => child.kill()))();
+  };
+  const print = (url: string, timeoutMs: number, script?: string): Promise<Buffer> => {
+    const page: Page = {};
+    return printWithin(
+      open(page, url, script),
+      url,
+      timeoutMs,
+      (error) => void abandon(page, error),
+    );
+  };
   return { child, exited, print, cleanup: () => rmSync(profile, { recursive: true, force: true }) };
 }
 
@@ -682,20 +723,21 @@ async function printWithin(
   print: Promise<Buffer>,
   url: string,
   timeoutMs: number,
-  stop: () => void,
+  stop: (error: Error) => void,
 ): Promise<Buffer> {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  // The print's own rejection, once the timeout has answered, is no unhandled one.
+  print.catch(() => {});
   try {
     return await Promise.race([
       print,
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
-          stop();
-          reject(
-            new Error(
-              `Chrome did not print ${url} within ${timeoutMs} ms: Chrome hung, or a layout on globalThis.hwLayout never finished`,
-            ),
+          const error = new Error(
+            `Chrome did not print ${url} within ${timeoutMs} ms: Chrome hung, or a layout on globalThis.hwLayout never finished`,
           );
+          stop(error);
+          reject(error);
         }, timeoutMs);
       }),
     ]);
@@ -712,27 +754,28 @@ async function coldPrint(
 ): Promise<Buffer> {
   const browser = pipeChrome(chrome);
   try {
-    return await printWithin(browser.print(url, script), url, timeoutMs, () =>
-      browser.child.kill(),
-    );
+    return await browser.print(url, timeoutMs, script);
   } finally {
     browser.child.kill();
+    // A Chrome stuck on SIGTERM is killed outright, as the kept one is.
+    const force = setTimeout(() => browser.child.kill("SIGKILL"), STOP_MS);
     await browser.exited;
+    clearTimeout(force);
     browser.cleanup();
   }
 }
 
 function keptChrome(chrome: string) {
   const entry = kept(chrome, (stop) => {
-    const { child, print, cleanup } = pipeChrome(chrome);
-    return { child, api: { print, stop }, cleanup };
+    const { child, print, cleanup } = pipeChrome(chrome, stop);
+    return { child, api: { print }, cleanup };
   });
   return {
     async print(url: string, timeoutMs: number, script?: string): Promise<Buffer> {
       entry.busy(1);
       try {
-        // A hung Chrome is replaced on the next call.
-        return await printWithin(entry.api.print(url, script), url, timeoutMs, entry.api.stop);
+        // A hung Chrome is stopped and replaced on the next call.
+        return await entry.api.print(url, timeoutMs, script);
       } finally {
         entry.busy(-1);
       }

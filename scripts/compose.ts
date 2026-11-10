@@ -113,11 +113,22 @@ async function serve() {
   const lines = createInterface({ input: process.stdin });
   lines.on("close", () => process.exit(0));
   for await (const line of lines) {
-    const { id, name, props } = JSON.parse(line);
+    let id: unknown;
     let answer: object;
     try {
+      const request = JSON.parse(line);
+      id = request.id;
+      const { name, props } = request;
       if (!/^Doc\w+$/.test(name)) throw new Error(`Not a document component: ${name}`);
-      if (!composers.has(name)) composers.set(name, openComposer());
+      // A composer that failed to open is opened again on the next call, not kept failing.
+      if (!composers.has(name))
+        composers.set(
+          name,
+          openComposer().catch((error) => {
+            composers.delete(name);
+            throw error;
+          }),
+        );
       answer = { id, html: await composePage(await composers.get(name)!, name, props) };
     } catch (error) {
       answer = { id, error: (error as Error).stack ?? String(error) };

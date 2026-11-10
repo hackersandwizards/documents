@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -162,10 +162,34 @@ describe("scripts/compose.ts", () => {
   });
 
   it("rejects a name that is not a document component", () => {
-    expect(() =>
-      execFileSync("bun", [SCRIPT, "Header", "x.json", "y.html"], { stdio: "pipe" }),
-    ).toThrow();
+    // A props file that exists, so the run fails on the name alone.
+    writeFileSync(join(dir, "name.json"), "{}");
+    const run = spawnSync("bun", [SCRIPT, "Header", join(dir, "name.json"), join(dir, "y.html")], {
+      encoding: "utf8",
+    });
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("Usage");
   });
+
+  it("--serve answers a line it cannot read and a foreign name, and keeps serving", async () => {
+    const child = spawn("bun", [SCRIPT, "--serve"], { stdio: ["pipe", "ignore", "pipe", "pipe"] });
+    const answers: string[] = [];
+    child.stdio[3]!.on("data", (chunk: Buffer) =>
+      answers.push(...chunk.toString().split("\n").filter(Boolean)),
+    );
+    child.stdin!.write("not json\n");
+    child.stdin!.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
+    const until = Date.now() + 10_000;
+    while (answers.length < 2 && child.exitCode === null && Date.now() < until)
+      await new Promise((r) => setTimeout(r, 50));
+    child.stdin!.end();
+    const parsed = answers.map((a) => JSON.parse(a));
+    expect(parsed[0].error).toContain("JSON");
+    expect(parsed[1]).toMatchObject({
+      id: 2,
+      error: expect.stringContaining("Not a document component: Header"),
+    });
+  }, 20_000);
 });
 
 // openComposer's compressHTML, the catalog's: the line break after </a> stays a space.
