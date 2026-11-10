@@ -377,7 +377,7 @@ export async function renderHandoutPdf(
     // A chapter that runs on changes where it ends, so the one after it is judged on the next pass.
     let flow: number[] = [];
     for (let pass = 0; toc && pass < 6; pass++) {
-      const more = flowing(pdfPath, toc).filter((chapter) => !flow.includes(chapter));
+      const more = flowing(pdfPath, toc, flow).filter((chapter) => !flow.includes(chapter));
       const take = more.filter((chapter) => !more.includes(chapter - 1));
       if (!take.length) break;
       flow = [...flow, ...take].sort((a, b) => a - b);
@@ -438,26 +438,44 @@ function chapterPages(pdf: string, label: string): number[] | undefined {
   return pages.length && !pages.includes(undefined as never) ? pages : undefined;
 }
 
-/** The lowest text on `page` above the footer and the highest below the running header, in
- *  points, with the page height. */
-function extent(
-  pdf: string,
-  page: number,
-): { top: number; bottom: number; height: number } | undefined {
-  const box = spawnSync("pdftotext", ["-bbox", "-f", `${page}`, "-l", `${page}`, pdf, "-"], {
-    encoding: "utf8",
-  });
-  if (box.error || box.status !== 0) return undefined;
-  const height = Number(/<page width="[\d.]+" height="([\d.]+)"/.exec(box.stdout)?.[1]);
-  const words = [...box.stdout.matchAll(/yMin="([\d.]+)" xMax="[\d.]+" yMax="([\d.]+)"/g)]
-    .map((m) => [Number(m[1]), Number(m[2])] as const)
-    .filter(([min, max]) => min > 45 && max < height - 16 * (72 / 25.4));
-  if (!words.length) return undefined;
-  return {
-    top: Math.min(...words.map(([min]) => min)),
-    bottom: Math.max(...words.map(([, max]) => max)),
-    height,
-  };
+const MM = 72 / 25.4;
+/** A length brand's print or document tokens set in mm, in points: the handout's measures follow
+ *  brand rather than a copy of its values. */
+function brandPt(name: string): number {
+  for (const file of ["print.css", "document.css"]) {
+    const value = new RegExp(`${name}:\\s*([\\d.]+)mm;`).exec(
+      readFileSync(brandFile(file), "utf8"),
+    );
+    if (value) return Number(value[1]) * MM;
+  }
+  throw new Error(`brand's tokens set no ${name} in mm`);
+}
+
+/** Each page's lowest text above the footer and highest below the running header, in points,
+ *  with the page height, from one pdftotext run; a page without such text is missing. The running
+ *  header sits in the top margin, its text above 6 pt short of the margin's end. */
+function extents(pdf: string): Map<number, { top: number; bottom: number; height: number }> {
+  const found = new Map<number, { top: number; bottom: number; height: number }>();
+  const box = spawnSync("pdftotext", ["-bbox", pdf, "-"], { encoding: "utf8" });
+  if (box.error || box.status !== 0) return found;
+  const head = brandPt("--handout-margin-top") - 6;
+  const foot = brandPt("--print-margin-bottom");
+  box.stdout
+    .split("<page ")
+    .slice(1)
+    .forEach((page, i) => {
+      const height = Number(/^width="[\d.]+" height="([\d.]+)"/.exec(page)?.[1]);
+      const words = [...page.matchAll(/yMin="([\d.]+)" xMax="[\d.]+" yMax="([\d.]+)"/g)]
+        .map((m) => [Number(m[1]), Number(m[2])] as const)
+        .filter(([min, max]) => min > head && max < height - foot);
+      if (words.length)
+        found.set(i + 1, {
+          top: Math.min(...words.map(([min]) => min)),
+          bottom: Math.max(...words.map(([, max]) => max)),
+          height,
+        });
+    });
+  return found;
 }
 
 /** The 1-based chapters, the first and last aside, that run on under the chapter before rather
@@ -465,17 +483,19 @@ function extent(
  *  page. A one-page chapter runs on when it fits whole there, with the 12 mm gap, or when the one
  *  before ends in its top third; otherwise it keeps its page, since running on would split it.
  *  Readers preferred the top-third limit to none; at a half, chapters open low and run over. */
-function flowing(pdf: string, toc: number[]): number[] {
-  const mm = 72 / 25.4;
-  const gap = 12 * mm;
+function flowing(pdf: string, toc: number[], flow: number[]): number[] {
+  const gap = brandPt("--handout-flow-space");
+  const pages = extents(pdf);
   return toc.flatMap((start, i) => {
     if (i === 0 || i === toc.length - 1) return [];
-    const before = extent(pdf, start - 1);
-    const own = extent(pdf, start);
+    const before = pages.get(start - 1);
+    const own = pages.get(start);
     if (!before || !own) return [];
-    const single = toc[i + 1] === start + 1;
+    // A chapter ends on the page before the next one's start, or on that page where the next one
+    // already runs on under it.
+    const single = toc[i + 1]! - (flow.includes(i + 2) ? 0 : 1) === start;
     if (before.bottom < own.height * (single ? 1 / 3 : 1 / 2)) return [i + 1];
-    const free = own.height - 16 * mm - before.bottom;
+    const free = own.height - brandPt("--print-margin-bottom") - before.bottom;
     return single && own.bottom - own.top + gap <= free ? [i + 1] : [];
   });
 }
@@ -483,8 +503,7 @@ function flowing(pdf: string, toc: number[]): number[] {
 /** How many ruled lines fit under the text of the page before `last`, which the notes chapter
  *  fills alone, when at least half a page of them do (14); otherwise undefined. The notes then move
  *  up into that space, so the last chapter never ends above an empty page bottom. Points
- *  throughout: the bottom margin is 16 mm, the section gap and the chapter heading take 42 mm, a
- *  ruled line 8 mm. */
+ *  throughout: the section gap and the chapter heading take 42 mm. */
 function notesFit(pdf: string, last: number): number | undefined {
   const box = spawnSync(
     "pdftotext",
@@ -495,15 +514,14 @@ function notesFit(pdf: string, last: number): number | undefined {
   );
   if (box.error || box.status !== 0) return undefined;
   const height = Number(/<page width="[\d.]+" height="([\d.]+)"/.exec(box.stdout)?.[1]);
-  const mm = 72 / 25.4;
-  const bottom = height - 16 * mm;
+  const bottom = height - brandPt("--print-margin-bottom");
   const ys = [...box.stdout.matchAll(/yMax="([\d.]+)"/g)]
     .map((m) => Number(m[1]))
     .filter((y) => y < bottom);
   // A page without text gives no measure, and Math.max of nothing would fit endless lines.
   if (!ys.length) return undefined;
   const used = Math.max(...ys);
-  const lines = Math.floor((bottom - used - 42 * mm) / (8 * mm)) - 1;
+  const lines = Math.floor((bottom - used - 42 * MM) / brandPt("--handout-note-line")) - 1;
   return lines >= 14 ? lines : undefined;
 }
 

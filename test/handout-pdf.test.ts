@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 import { composePage, openComposer } from "../scripts/compose";
 import { documentCss, type HandoutPass, renderHandoutPdf } from "../scripts/render-pdf";
 import { handout } from "../scripts/samples";
@@ -113,8 +113,12 @@ test("a server that is not running is named in plain words, the way a bad status
 
 test("without pdftotext the first render stands, unnumbered, and the result says so", async () => {
   const path = process.env.PATH;
-  // Chrome is found by its absolute path; only poppler drops off the PATH.
-  process.env.PATH = "/usr/bin:/bin";
+  // Chrome is found by its absolute path; only the folders holding poppler drop off the PATH,
+  // wherever it is installed (/opt/homebrew/bin on a Mac, /usr/bin on Linux).
+  process.env.PATH = path!
+    .split(delimiter)
+    .filter((folder) => !existsSync(join(folder, "pdftotext")))
+    .join(delimiter);
   try {
     const pdf = join(dir, "plain.pdf");
     const result = await renderHandoutPdf(compose, pdf);
