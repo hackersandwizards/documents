@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -826,6 +827,35 @@ describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
       .map((_, i) => i)
       .filter((i) => page(`Label ${i}\n`) !== page(`Answer ${i} `));
     expect(stranded).toEqual([]);
+  }, 60_000);
+});
+
+describe.skipIf(!chromeBinary())("a body naming other resources", () => {
+  it("prints no local file it frames and calls no host out of the render", async () => {
+    writeFileSync(join(dir, "secret.txt"), "SECRET-LOCAL-FILE");
+    let requests = 0;
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => {
+        requests++;
+        return new Response("x");
+      },
+    });
+    try {
+      const url = `http://127.0.0.1:${server.port}`;
+      writeFileSync(
+        join(dir, "active.html"),
+        `<!doctype html><html><head><meta charset="utf-8"></head><body><p>Body</p><iframe src="secret.txt"></iframe><iframe src="${pathToFileURL(join(dir, "secret.txt")).href}"></iframe><img src="${url}/pixel.png"><script>fetch("${url}/beacon").catch(() => {});</script></body></html>`,
+      );
+      await renderPdf(join(dir, "active.html"), join(dir, "active.pdf"));
+      const text = execFileSync("pdftotext", [join(dir, "active.pdf"), "-"], { encoding: "utf8" });
+      expect(text).toContain("Body");
+      expect(text).not.toContain("SECRET-LOCAL-FILE");
+      expect(requests).toBe(0);
+    } finally {
+      await server.stop(true);
+    }
   }, 60_000);
 });
 

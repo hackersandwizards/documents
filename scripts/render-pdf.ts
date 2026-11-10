@@ -110,6 +110,10 @@ for (const img of document.images) {
 }
 `;
 const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
+/** The print copy's policy: a page draws from its own folder, the package's files and data URIs,
+ *  and runs its inline scripts, but frames nothing and reaches no host, so a body naming a local
+ *  file in a frame or a remote image prints neither. */
+const PRINT_POLICY = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' file: data:; img-src file: data: blob:; font-src file: data:; media-src file: data:">`;
 /** The same for a page served over HTTP, which the render cannot edit: run before the page's own
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
@@ -283,13 +287,21 @@ export async function renderPdf(
     return;
   }
   const html = inlineImages(readFileSync(htmlPath, "utf-8"), dirname(htmlPath));
-  const end = html.lastIndexOf("</body>");
   // Beside the input, so relative resources resolve; the stored HTML stays free of the script. A
   // name per call, since a render that finishes deletes its file while another may still load it.
   const printPath = join(dirname(htmlPath), `.${basename(htmlPath)}.${randomUUID()}.print.html`);
+  const head = /<head\b[^>]*>/i.exec(html);
+  const guarded = head
+    ? html.slice(0, head.index + head[0].length) +
+      PRINT_POLICY +
+      html.slice(head.index + head[0].length)
+    : PRINT_POLICY + html;
+  const close = guarded.lastIndexOf("</body>");
   writeFileSync(
     printPath,
-    end < 0 ? html + PRINT_SCRIPT : html.slice(0, end) + PRINT_SCRIPT + html.slice(end),
+    close < 0
+      ? guarded + PRINT_SCRIPT
+      : guarded.slice(0, close) + PRINT_SCRIPT + guarded.slice(close),
   );
   const url = pathToFileURL(printPath).href;
   try {
