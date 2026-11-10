@@ -6,6 +6,7 @@ import { delimiter, join, resolve } from "node:path";
 import { composePage, openComposer } from "../scripts/compose";
 import { documentCss, type HandoutPass, renderHandoutPdf } from "../scripts/render-pdf";
 import { handout } from "../scripts/samples";
+import { probePage } from "./probe";
 
 const ROOT = resolve(import.meta.dir, "..");
 const rules = readFileSync(join(ROOT, "handout.css"), "utf8").replace(/^@import [^;]+;\n/gm, "");
@@ -140,3 +141,55 @@ test("without pdftotext the first render stands, unnumbered, and the result says
     process.env.PATH = path;
   }
 }, 120_000);
+
+// A handout served at a URL keeps its images remote, and one can arrive after the faces: the
+// opening page is measured with it in place.
+test("a chapter's opening page is measured with its late image in place", async () => {
+  const image = join(dir, "tall.png");
+  execFileSync("sips", [
+    "-z",
+    "2400",
+    "600",
+    Bun.resolveSync("@hackersandwizards/brand/logos/lockup.png", ROOT),
+    "--out",
+    image,
+  ]);
+  // Its own process: probePage blocks this one while Chrome loads the page.
+  const server = Bun.spawn(
+    [
+      "bun",
+      "-e",
+      `const s = Bun.serve({ port: 0, hostname: "127.0.0.1", async fetch() { await Bun.sleep(1500); return new Response(Bun.file(${JSON.stringify(image)})); } }); console.log(s.port);`,
+    ],
+    { stdout: "pipe" },
+  );
+  try {
+    const port = (await server.stdout.getReader().read()).value!;
+    const html = await composePage(
+      composer,
+      "DocHandout",
+      {
+        title: "T",
+        chapters: [
+          {
+            title: "C",
+            html: `<p>first</p><p><img src="http://127.0.0.1:${new TextDecoder().decode(port).trim()}/t.png"></p><p>after</p>`,
+          },
+          { title: "D", html: "<p>x</p>" },
+        ],
+      },
+      (page) =>
+        page.replace(
+          "<style data-hw-document></style>",
+          () => `<style>${documentCss()}\n${rules}</style>`,
+        ),
+    );
+    const opening = probePage(
+      html,
+      `return [...document.querySelector("section.chapter").querySelectorAll(".opening")].map((b) => b.textContent.trim()).join("|");`,
+    );
+    expect(opening).toBe("Cfirst");
+  } finally {
+    server.kill();
+  }
+}, 60_000);

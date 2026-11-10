@@ -44,7 +44,7 @@ const DE = {
     "Direkter Draht zu anderen AI-Pilot-Teams",
     "Zugang zu Templates, Prompts und Konfigurationen",
   ],
-  /** With `community.seats`; without, `communityValuePerPerson`. */
+  /** With `community.seats` and `value`; without, `communityValuePerPerson`. */
   communityValue: "Regulärer Wert: {seats} Personen × {price} €/Jahr = {value} €/Jahr",
   communityValuePerPerson: "Regulärer Wert: {price} € pro Person und Jahr",
   sequence: "Ablauf",
@@ -289,7 +289,10 @@ const running = `@page {
         ))}
       </ul>
       <p class="value">
-        {fill(p.community.seats ? t.communityValue : t.communityValuePerPerson, p.community)}
+        {fill(
+          p.community.seats && p.community.value ? t.communityValue : t.communityValuePerPerson,
+          p.community,
+        )}
       </p>
     </div>
   )}

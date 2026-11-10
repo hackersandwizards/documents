@@ -33,9 +33,10 @@ const execFileAsync = promisify(execFile);
  * which holds the window's load, so the print waits for every redraw; work after load raced the
  * print (measured). An SVG's rasters decode asynchronously, so that work goes on
  * `globalThis.hwLayout`, which the print waits for; an SVG it cannot read prints as it is. A
- * document without a `<title>` takes its first heading's.
+ * document without a `<title>` takes its first heading's. It runs in a block, so a page script
+ * declaring one of its names stops neither.
  */
-const PRINT_JS = `
+const PRINT_JS = `{
 if (!document.title) document.title = document.querySelector("h1")?.textContent?.trim() ?? "";
 const redraw = (source, src, scale) => {
   if (!(scale > 0 && scale < 1)) return;
@@ -108,7 +109,7 @@ for (const img of document.images) {
   };
   if (img.complete) shrink(); else img.addEventListener("load", shrink, { once: true });
 }
-`;
+}`;
 const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
 /** The print copy's policy: a page draws from its own folder, the package's files and data URIs,
  *  and runs its inline scripts, but frames nothing and reaches no host, so a body naming a local

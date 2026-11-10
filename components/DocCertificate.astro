@@ -21,7 +21,7 @@ const DE = {
   topics: "Behandelte Themen",
   /** The signer's title; empty takes each signer's own `title`. */
   signerTitle: "Mitgründer, hackers&wizards",
-  qrAlt: "Certificate verification QR code",
+  qrAlt: "QR-Code zur Verifizierung des Zertifikats",
   cta: "Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen",
   scan: "Scannen: verifizieren & zu LinkedIn hinzufügen",
   linkedin: "Zum LinkedIn-Profil hinzufügen",
@@ -155,11 +155,14 @@ const topicClass = [
   <div class="footer">
     {p.credentialId && (
       <div class="verification">
-        {p.qrCodeUri && (
-          <a class="qr-link" href={p.verificationUrl}>
+        {p.qrCodeUri &&
+          (p.verificationUrl ? (
+            <a class="qr-link" href={p.verificationUrl}>
+              <img src={p.qrCodeUri} alt={t.qrAlt} class="qr-code" />
+            </a>
+          ) : (
             <img src={p.qrCodeUri} alt={t.qrAlt} class="qr-code" />
-          </a>
-        )}
+          ))}
         <div class="verification-text">
           <p class="footer-cta">
             {t.cta}
@@ -170,9 +173,11 @@ const topicClass = [
               {t.linkedin}
             </a>
           )}
-          <p class="footer-url">
-            <a href={p.verificationUrl}>{p.verificationUrl}</a>
-          </p>
+          {p.verificationUrl && (
+            <p class="footer-url">
+              <a href={p.verificationUrl}>{p.verificationUrl}</a>
+            </p>
+          )}
           <p class="footer-credential">{fill(t.credential, p)}</p>
         </div>
       </div>
@@ -327,8 +332,14 @@ const topicClass = [
     margin-top: var(--cert-tight);
   }
 
-  .topics {
+  /* The topics take the page's free height; without them, the body does, so the signatures and
+     footer still close the page. */
+  .topics,
+  .body-text:has(+ .signatures) {
     flex: 1 1 auto;
+  }
+
+  .topics {
     width: 100%;
     max-width: var(--cert-topics);
     margin-top: var(--cert-section);

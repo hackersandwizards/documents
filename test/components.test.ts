@@ -394,3 +394,74 @@ test("wordsFor takes a language's words, else the English ones, never an inherit
   for (const lang of ["fr", "__proto__", "constructor", undefined])
     expect(wordsFor(lang, table)).toBe("en");
 });
+
+test("DocCertificate prints its alt text in its language and links only a given address", async () => {
+  const de = await composer.render("DocCertificate", {
+    ...props.DocCertificate,
+    lang: "de",
+    credentialId: "HW-AE-DEV-260318-EXAMPLE0EXAMPLE0",
+    qrCodeUri: "data:image/png;base64,iVBORw0KGgo=",
+  });
+  expect(de).toContain('alt="QR-Code zur Verifizierung des Zertifikats"');
+  // Without verificationUrl, the QR code stands unlinked and no empty address line prints.
+  expect(de).not.toMatch(/<a class="qr-link"(?![^>]*href)/);
+  expect(de).not.toContain('class="footer-url"');
+  const linked = await composer.render("DocCertificate", {
+    ...props.DocCertificate,
+    credentialId: "HW-AE-DEV-260318-EXAMPLE0EXAMPLE0",
+    qrCodeUri: "data:image/png;base64,iVBORw0KGgo=",
+    verificationUrl: "https://example.com/v",
+  });
+  expect(linked).toMatch(/<a class="qr-link" href="https:\/\/example.com\/v"/);
+  expect(linked).toContain('class="footer-url"');
+});
+
+test("DocProposal prints the community's total only with its value", async () => {
+  const html = await composer.render("DocProposal", {
+    ...proposal,
+    community: { price: "XXX", seats: "12" },
+  });
+  expect(html).toContain("Regulärer Wert: XXX € pro Person und Jahr");
+  expect(html).not.toContain("=  €");
+});
+
+test("DocHandout prints its placeholder for an empty company or date", async () => {
+  const html = await composer.render("DocHandout", { ...props.DocHandout, company: "", date: P });
+  expect(html).toContain(HANDOUT_TEXT.en.noCompany);
+  const dated = await composer.render("DocHandout", { ...props.DocHandout, company: P, date: "" });
+  expect(dated).toContain(HANDOUT_TEXT.en.noDate);
+});
+
+test("DocAgreement prints no heading over an empty list, and takes no empty party list", async () => {
+  const html = await composer.render("DocAgreement", {
+    ...props.DocAgreement,
+    facts: [],
+    preamble: [],
+  });
+  expect(html).not.toContain("<h2>Eckdaten");
+  expect(html).not.toMatch(/<h2>Präambel|<h2>Vorbemerkung/);
+  expect(html).not.toMatch(/<h2>[^<]*<\/h2>\s*<\/div>/);
+  await expect(
+    composer.render("DocAgreement", { ...props.DocAgreement, parties: [] }),
+  ).rejects.toThrow("either parties or letter");
+});
+
+// The handout's layout script runs beside a page script of the consumer's.
+test("DocHandout keeps a closing run of notes in order beside its block, beside any page script", async () => {
+  const html = await composer.render("DocHandout", {
+    ...props.DocHandout,
+    notes: "3",
+    chapters: [
+      {
+        title: P,
+        html: '<p>block</p><aside class="margin-note">one</aside><aside class="margin-note">two</aside><h2>next</h2><div class="note-lines"></div>',
+      },
+    ],
+  });
+  const page = `<!doctype html><html><head><script>const options = 1; const flow = 2; const shared = 3;</script></head><body>${html}</body></html>`;
+  const order = probePage(
+    page,
+    `return [...document.querySelectorAll(".doc-prose :is(h1, h2, p, aside)")].map((el) => el.textContent.trim()).join("|") + "#" + document.querySelectorAll(".note-lines span").length;`,
+  );
+  expect(order).toBe(`${P}|one|two|block|next#3`);
+});

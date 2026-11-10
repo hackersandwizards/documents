@@ -73,7 +73,8 @@ interface Props {
   labels?: Partial<typeof DE>;
 }
 const p = Astro.props;
-if (!p.parties === !p.letter) throw new Error("DocAgreement: give either parties or letter");
+if (!p.parties?.length === !p.letter)
+  throw new Error("DocAgreement: give either parties or letter");
 const t = { ...wordsFor(p.lang, { de: DE, en: EN }), ...p.labels };
 const kind = p.kind ?? t.kind;
 const running = `@page {
@@ -92,7 +93,7 @@ const running = `@page {
   meta={[p.number && fill(t.number, p), fill(t.date, p)].filter((line): line is string => !!line)}
 />
 <DocTitle eyebrow={p.eyebrow} title={p.heading} subtitle={p.subtitle} />
-{p.parties && (
+{!!p.parties?.length && (
   <div class="section">
     <span class="label">{t.between}</span>
     <div class="grid-2">
@@ -115,7 +116,7 @@ const running = `@page {
     />
   </DocLead>
 )}
-{p.facts && (
+{!!p.facts?.length && (
   <div class="section">
     <h2>{t.facts}</h2>
     <dl>
@@ -128,7 +129,7 @@ const running = `@page {
     </dl>
   </div>
 )}
-{p.preamble && (
+{!!p.preamble?.length && (
   <div class="section">
     <h2>{t.preamble}</h2>
     {p.preamble.map((text) => (

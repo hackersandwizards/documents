@@ -589,10 +589,11 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     writeFileSync(join(dir, "mark.png"), logo);
     copyFileSync(brand("lockup.svg"), join(dir, "lockup.svg"));
     // The data URI, the file beside the page at its own proportions, and brand's lockup, whose
-    // wizard is a 512 px PNG inside the SVG, as a data URI and as a file beside the page.
+    // wizard is a 512 px PNG inside the SVG, as a data URI and as a file beside the page. The
+    // page's own script declares the print script's names, which runs beside it all the same.
     writeFileSync(
       join(dir, "doc.html"),
-      `<!doctype html><html lang="en"><body><h1>One</h1><img src="data:image/png;base64,${logo.toString("base64")}" style="width:108px;height:20px"><img src="mark.png" style="height:20px"><img src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:40px"><img src="lockup.svg" style="height:20px"><h2>Two</h2></body></html>`,
+      `<!doctype html><html lang="en"><body><script>const redraw = 1, keep = 2, svgText = 3;</script><h1>One</h1><img src="data:image/png;base64,${logo.toString("base64")}" style="width:108px;height:20px"><img src="mark.png" style="height:20px"><img src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:40px"><img src="lockup.svg" style="height:20px"><h2>Two</h2></body></html>`,
     );
     pdf = join(dir, `doc-${warm}.pdf`);
     await renderPdf(join(dir, "doc.html"), pdf, { warm });

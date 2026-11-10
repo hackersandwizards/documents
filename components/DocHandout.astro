@@ -82,9 +82,9 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
       {(company || date) && (
         <DocRecipient
           label={t.recipient}
-          company={company ?? t.noCompany}
+          company={company || t.noCompany}
           lines={[]}
-          contact={{ label: t.date, name: date ?? t.noDate }}
+          contact={{ label: t.date, name: date || t.noDate }}
         />
       )}
       <div class="toc">
@@ -112,115 +112,125 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
 </DocElements>
 
 <script is:inline data-notes={notes} data-flow={flow}>
-  const options = document.currentScript.dataset;
-  const shared = options.notes;
-  document.querySelectorAll(".note-lines").forEach((el) => {
-    const lines = Number(shared || el.dataset.lines || 28);
-    el.append(...Array.from({ length: lines }, () => document.createElement("span")));
-    if (shared) el.closest("section.chapter").classList.add("flow");
-  });
-  const flow = (options.flow ?? "").split(",");
-  document.querySelectorAll("section.chapter").forEach((section, i) => {
-    if (flow.includes(String(i + 1))) section.classList.add("flow");
-  });
-  // A note closing a section floats beside nothing and would sit alone under the block it
-  // follows, so it moves up beside that block. A code block clears notes, so it stays put.
-  document.querySelectorAll(".doc-prose > .margin-note").forEach((note) => {
-    const prev = note.previousElementSibling;
-    const next = note.nextElementSibling;
-    if ((!next || next.matches("h1, h2, h3")) && prev && !prev.matches("h1, h2, h3, pre"))
-      prev.before(note);
-  });
-  // The handout is read on screen, where a link is clicked rather than typed. A link whose
-  // text is its own address shows it without the scheme, breakable after a slash or dot.
-  document.querySelectorAll('section a[href^="http"]').forEach((link) => {
-    const bare = (url) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-    if (bare(link.textContent.trim()) !== bare(link.href)) return;
-    link.innerHTML = bare(link.textContent.trim())
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/([/._?#=]+)/g, "$1<wbr>");
-  });
-  // A sentence leading into a list stays on the page with it.
-  document.querySelectorAll(".doc-prose > p + :is(ul, ol)").forEach((list) => {
-    const group = document.createElement("div");
-    group.className = "keep";
-    list.previousElementSibling.before(group);
-    group.append(list.previousElementSibling, list);
-  });
-  // So does a sentence ending in a colon that introduces a quoted example, and examples
-  // introduced one after another stay on one page, so a pair can be compared.
-  document.querySelectorAll(".doc-prose > p + blockquote").forEach((quote) => {
-    const lead = quote.previousElementSibling;
-    if (!lead.textContent.trim().endsWith(":")) return;
-    const prior = lead.previousElementSibling;
-    const group = prior?.matches(".example") ? prior : document.createElement("div");
-    if (group !== prior) {
-      group.className = "keep example";
-      lead.before(group);
-    }
-    group.append(lead, quote);
-  });
-  // Chrome strands a heading at a page foot when the block after it cannot break, whatever
-  // break-after says. So each heading goes into one unbreakable group with what it
-  // introduces: margin notes, then the next block, and a lead-in sentence's table or code.
-  document.querySelectorAll("section :is(h1, h2, h3)").forEach((heading) => {
-    const group = document.createElement("div");
-    group.className = "keep";
-    heading.before(group);
-    group.append(heading);
-    let next = group.nextElementSibling;
-    while (next?.matches(".margin-note")) next = (group.append(next), group.nextElementSibling);
-    if (!next || next.matches("h1, h2, h3")) return;
-    group.append(next);
-    const after = group.nextElementSibling;
-    if (next.matches("p") && after?.matches("table, pre, .astro-code")) group.append(after);
-  });
-  // A chapter opening also takes its first section's group, so a chapter title never ends a
-  // page with only its lead-in under it.
-  document.querySelectorAll(".doc-prose > .keep:first-child").forEach((opening) => {
-    const first = opening.nextElementSibling;
-    if (first?.matches(".keep")) opening.append(first);
-  });
-  // A chapter's opening page carries no running head (handout.css, `@page opening`). Chrome has no
-  // selector for a chapter's first page (`@page name:first`, measured in Chrome, matches only the
-  // document's first page), and a page takes its name from its first block, so every block on the
-  // opening page is named `opening`: the change of name after the last one forces the break that
-  // falls there anyway. Which blocks fit is measured by laying the chapter out in columns of the
-  // page's content box, Chrome's own fragmentation: the first block that starts in the second
-  // column, or runs into it, opens the rest. A chapter whose whole text fits before a chapter that
-  // runs on under it is left alone, since the change of name would force that one onto a page.
-  // Measured once the faces are in: measured at parse time, a chapter's text set in the fallback
-  // face fitted one block more than the print.
-  (globalThis.hwLayout ??= []).push(
-    document.fonts.ready.then(() => {
-      const sections = [...document.querySelectorAll("section.chapter")];
-      const body = document.body.style.width;
-      document.body.style.width = "210mm";
-      const named = sections.map((section, i) => {
-        if (section.classList.contains("flow")) return [];
-        const blocks = [...section.querySelector(".doc-prose").children];
-        const width = section.getBoundingClientRect().width;
-        section.style.cssText = `column-width:${width}px;column-gap:0;column-fill:auto;height:var(--page-content-height)`;
-        const edge = section.getBoundingClientRect().left + width + 0.5;
-        const rest = blocks.findIndex((block) => block.getBoundingClientRect().right > edge);
-        section.style.cssText = "";
-        if (rest < 0 && sections[i + 1]?.classList.contains("flow")) return [];
-        return rest < 0 ? blocks : blocks.slice(0, rest);
-      });
-      document.body.style.width = body;
-      named.flat().forEach((block) => block.classList.add("opening"));
-      // The page break after the opening page is forced now, and a forced break keeps the margins
-      // after it, which the natural break truncated: the next block loses them, down the chain of
-      // margins that collapse with its own, or its page starts lower (16.5 pt, measured).
-      for (const opening of named.filter((blocks) => blocks.length)) {
-        for (let el = opening.at(-1).nextElementSibling; el; el = el.firstElementChild) {
-          el.style.marginTop = "0";
-          const style = getComputedStyle(el);
-          if (parseFloat(style.paddingTop) || parseFloat(style.borderTopWidth)) break;
-          if (style.display !== "block" || style.float !== "none") break;
-        }
+  // In a block, so a page script declaring one of its names stops neither.
+  {
+    const options = document.currentScript.dataset;
+    const shared = options.notes;
+    document.querySelectorAll(".note-lines").forEach((el) => {
+      const lines = Number(shared || el.dataset.lines || 28);
+      el.append(...Array.from({ length: lines }, () => document.createElement("span")));
+      if (shared) el.closest("section.chapter").classList.add("flow");
+    });
+    const flow = (options.flow ?? "").split(",");
+    document.querySelectorAll("section.chapter").forEach((section, i) => {
+      if (flow.includes(String(i + 1))) section.classList.add("flow");
+    });
+    // Notes closing a section float beside nothing and would sit alone under the block they
+    // follow, so they move up beside that block, in their order. A code block clears notes, so
+    // they stay put.
+    document.querySelectorAll(".doc-prose > .margin-note").forEach((note) => {
+      const next = note.nextElementSibling;
+      if (next && !next.matches("h1, h2, h3")) return;
+      const run = [note];
+      let prev = note.previousElementSibling;
+      while (prev?.matches(".margin-note")) prev = (run.unshift(prev), prev.previousElementSibling);
+      if (prev && !prev.matches("h1, h2, h3, pre")) prev.before(...run);
+    });
+    // The handout is read on screen, where a link is clicked rather than typed. A link whose
+    // text is its own address shows it without the scheme, breakable after a slash or dot.
+    document.querySelectorAll('section a[href^="http"]').forEach((link) => {
+      const bare = (url) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+      if (bare(link.textContent.trim()) !== bare(link.href)) return;
+      link.innerHTML = bare(link.textContent.trim())
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/([/._?#=]+)/g, "$1<wbr>");
+    });
+    // A sentence leading into a list stays on the page with it.
+    document.querySelectorAll(".doc-prose > p + :is(ul, ol)").forEach((list) => {
+      const group = document.createElement("div");
+      group.className = "keep";
+      list.previousElementSibling.before(group);
+      group.append(list.previousElementSibling, list);
+    });
+    // So does a sentence ending in a colon that introduces a quoted example, and examples
+    // introduced one after another stay on one page, so a pair can be compared.
+    document.querySelectorAll(".doc-prose > p + blockquote").forEach((quote) => {
+      const lead = quote.previousElementSibling;
+      if (!lead.textContent.trim().endsWith(":")) return;
+      const prior = lead.previousElementSibling;
+      const group = prior?.matches(".example") ? prior : document.createElement("div");
+      if (group !== prior) {
+        group.className = "keep example";
+        lead.before(group);
       }
-    }),
-  );
+      group.append(lead, quote);
+    });
+    // Chrome strands a heading at a page foot when the block after it cannot break, whatever
+    // break-after says. So each heading goes into one unbreakable group with what it
+    // introduces: margin notes, then the next block, and a lead-in sentence's table or code.
+    document.querySelectorAll("section :is(h1, h2, h3)").forEach((heading) => {
+      const group = document.createElement("div");
+      group.className = "keep";
+      heading.before(group);
+      group.append(heading);
+      let next = group.nextElementSibling;
+      while (next?.matches(".margin-note")) next = (group.append(next), group.nextElementSibling);
+      if (!next || next.matches("h1, h2, h3")) return;
+      group.append(next);
+      const after = group.nextElementSibling;
+      if (next.matches("p") && after?.matches("table, pre, .astro-code")) group.append(after);
+    });
+    // A chapter opening also takes its first section's group, so a chapter title never ends a
+    // page with only its lead-in under it.
+    document.querySelectorAll(".doc-prose > .keep:first-child").forEach((opening) => {
+      const first = opening.nextElementSibling;
+      if (first?.matches(".keep")) opening.append(first);
+    });
+    // A chapter's opening page carries no running head (handout.css, `@page opening`). Chrome has no
+    // selector for a chapter's first page (`@page name:first`, measured in Chrome, matches only the
+    // document's first page), and a page takes its name from its first block, so every block on the
+    // opening page is named `opening`: the change of name after the last one forces the break that
+    // falls there anyway. Which blocks fit is measured by laying the chapter out in columns of the
+    // page's content box, Chrome's own fragmentation: the first block that starts in the second
+    // column, or runs into it, opens the rest. A chapter whose whole text fits before a chapter that
+    // runs on under it is left alone, since the change of name would force that one onto a page.
+    // Measured once the faces and images are in: measured at parse time, a chapter's text set in
+    // the fallback face fitted one block more than the print, and an image still loading counts
+    // as no height.
+    const loaded = new Promise((done) =>
+      document.readyState === "complete" ? done() : addEventListener("load", done, { once: true }),
+    );
+    (globalThis.hwLayout ??= []).push(
+      Promise.all([document.fonts.ready, loaded]).then(() => {
+        const sections = [...document.querySelectorAll("section.chapter")];
+        const body = document.body.style.width;
+        document.body.style.width = "210mm";
+        const named = sections.map((section, i) => {
+          if (section.classList.contains("flow")) return [];
+          const blocks = [...section.querySelector(".doc-prose").children];
+          const width = section.getBoundingClientRect().width;
+          section.style.cssText = `column-width:${width}px;column-gap:0;column-fill:auto;height:var(--page-content-height)`;
+          const edge = section.getBoundingClientRect().left + width + 0.5;
+          const rest = blocks.findIndex((block) => block.getBoundingClientRect().right > edge);
+          section.style.cssText = "";
+          if (rest < 0 && sections[i + 1]?.classList.contains("flow")) return [];
+          return rest < 0 ? blocks : blocks.slice(0, rest);
+        });
+        document.body.style.width = body;
+        named.flat().forEach((block) => block.classList.add("opening"));
+        // The page break after the opening page is forced now, and a forced break keeps the margins
+        // after it, which the natural break truncated: the next block loses them, down the chain of
+        // margins that collapse with its own, or its page starts lower (16.5 pt, measured).
+        for (const opening of named.filter((blocks) => blocks.length)) {
+          for (let el = opening.at(-1).nextElementSibling; el; el = el.firstElementChild) {
+            el.style.marginTop = "0";
+            const style = getComputedStyle(el);
+            if (parseFloat(style.paddingTop) || parseFloat(style.borderTopWidth)) break;
+            if (style.display !== "block" || style.float !== "none") break;
+          }
+        }
+      }),
+    );
+  }
 </script>
