@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { decodeHTMLAttribute } from "entities";
 
 const USAGE = `Usage: bun run documents-styles <file.html | directory>...
 
@@ -87,6 +88,16 @@ export function rawInlineStyles(text: string): string[] {
 const BRAND_HREF =
   /^(?![a-z][\w+.-]*:|[\\/]{2})(?:[^?#]*\/)?@hackersandwizards\/brand\/(?![^?#]*\.\.)/i;
 
+/** Whether a link's address is one of the brand's files, read as the browser reads it: entities
+ *  decoded, trimmed, and percent-escapes decoded, so %2e%2e is the `..` it climbs out with. */
+function brandHref(raw: string): boolean {
+  try {
+    return BRAND_HREF.test(decodeURIComponent(decodeHTMLAttribute(raw).trim()));
+  } catch {
+    return false;
+  }
+}
+
 /** What in a rendered document the engine did not write, one line per finding. */
 export function foreignStyles(html: string): string[] {
   const found: string[] = [];
@@ -103,14 +114,16 @@ export function foreignStyles(html: string): string[] {
     .on("link", {
       element(el) {
         const rel = (el.getAttribute("rel") ?? "").toLowerCase().split(/\s+/);
-        if (rel.includes("stylesheet") && !BRAND_HREF.test(el.getAttribute("href") ?? ""))
+        if (rel.includes("stylesheet") && !brandHref(el.getAttribute("href") ?? ""))
           found.push(`a linked stylesheet: ${openTag(el)}`);
       },
     })
     .on("*", {
       element(el) {
-        for (const [name, style] of el.attributes) {
+        for (const [name, raw] of el.attributes) {
           if (name !== "style") continue;
+          // Decoded as the browser reads it: &#59 is the ";" that ends a custom property.
+          const style = decodeHTMLAttribute(raw);
           const set = style
             .split(";")
             .map((d) => d.split(":")[0].trim())
@@ -131,7 +144,8 @@ export function styleAttributes(html: string): string[] {
   new HTMLRewriter()
     .on("*", {
       element(el) {
-        for (const [name, style] of el.attributes) if (name === "style") styles.push(style);
+        for (const [name, style] of el.attributes)
+          if (name === "style") styles.push(decodeHTMLAttribute(style));
       },
     })
     .transform(html);

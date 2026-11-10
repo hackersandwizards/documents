@@ -249,6 +249,13 @@ describe("bakeDocumentCss", () => {
     expect(baked).toContain("<style data-hw-components>.own{color:red}</style>");
   });
 
+  it("bakes a marker written with a value or beside another attribute", () => {
+    for (const open of ['<style data-hw-document="">', '<style id="base" data-hw-document>'])
+      expect(bakeDocumentCss(doc.replace("<style data-hw-document>", open))).toContain(
+        ".doc-header",
+      );
+  });
+
   it("re-bakes to the same bytes, so a re-render touches no stored file", () => {
     const once = bakeDocumentCss(doc);
     expect(bakeDocumentCss(once)).toBe(once);

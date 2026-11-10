@@ -45,6 +45,11 @@ describe("foreignStyles", () => {
       '<link rel="stylesheet" href="https://any.host/@hackersandwizards/brand/x.css">',
       '<link rel="stylesheet" href="//any.host/@hackersandwizards/brand/x.css">',
       '<link rel="stylesheet" href="../@hackersandwizards/brand/../../own.css">',
+      // The browser trims the address and decodes %2e as a dot; a numeric reference without its
+      // semicolon still ends the custom property.
+      '<link rel="stylesheet" href=" https://any.host/@hackersandwizards/brand/x.css">',
+      '<link rel="stylesheet" href="../@hackersandwizards/brand/%2e%2e/%2e%2e/own.css">',
+      '<p style="--band:x&#59color:red"></p>',
     ])
       expect(foreignStyles(html)).toHaveLength(1);
     expect(

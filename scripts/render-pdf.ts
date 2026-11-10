@@ -1210,7 +1210,9 @@ function unsetProperties(html: string): string[] {
   return [...names(/var\(\s*(--[\w-]+)\s*\)/g)].filter((name) => !defined.has(name));
 }
 
-const DOCUMENT_STYLE = /<style data-hw-document>[\s\S]*?<\/style>/;
+// The marker however it is written: with an empty value, or beside another attribute.
+const DOCUMENT_STYLE =
+  /<style\b[^>]*?\sdata-hw-document(?:\s*=\s*(?:""|''))?(?=[\s>/])[^>]*>[\s\S]*?<\/style>/i;
 
 /**
  * Fills a document's `<style data-hw-document>` with the current base, maps its elements onto the
