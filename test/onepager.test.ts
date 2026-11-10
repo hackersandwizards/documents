@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { encodeNonAsciiHTML } from "entities";
 import { openComposer } from "../scripts/compose";
-import { composeOnepager, fitOnepager } from "../scripts/onepager";
+import { composeOnepager, fitOnepager, page2Block } from "../scripts/onepager";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { assertBrandFonts, inlineImages, renderPdf } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
@@ -145,4 +145,23 @@ describe("onepagerBrandFiles", () => {
       execFileSync("bun", ["test", "./test/onepager-trace.ts"], { cwd: ROOT, timeout: 55_000 }),
     ).not.toThrow();
   }, 60_000);
+});
+
+// The block choice on letters alone, each case one the PDF text can mislead it into.
+describe("page2Block", () => {
+  const card = "faktenformatzweitageremotegruppezwoelfpersonen";
+  const intro = "einleitungmitgenugbuchstabenfuerseite";
+  const page1 = `${intro}${card}`;
+  it("skips a short block on page 1 holding page 2's first line", () => {
+    expect(page2Block([intro, "format", card, "formatundablauf"], page1, "format")).toBe(3);
+  });
+  it("takes a short opener whose word page 1 prints, past a later short block that page 1 prints too", () => {
+    expect(page2Block([intro, card, "format", "lang", "zwei"], page1, "format")).toBe(2);
+  });
+  it("skips the long block page 1 ends on, though it holds the line", () => {
+    expect(page2Block([intro, card, "formatundablauf"], page1, "format")).toBe(2);
+  });
+  it("finds none without a line", () => {
+    expect(page2Block([intro, card], page1, "")).toBe(-1);
+  });
 });

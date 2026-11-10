@@ -221,6 +221,21 @@ const letters = (text: string) =>
  * and only where it ends in `;`, as copy writes it. */
 const flatBlock = (html: string) => letters(decodeHTMLStrict(html.replace(/<[^>]*>/g, " ")));
 
+// A block shorter than this may print its letters on page 1 inside another block, such as a
+// one-word note whose word a card's label holds, so it never marks how far page 1 reaches.
+const PAGE1_BLOCK = 20;
+
+/** The index of the block that opens page 2, -1 where none is found: the first block holding
+ * page 2's first line after the last block of at least PAGE1_BLOCK letters printed whole on page 1.
+ * All three take `letters`. A block before that one may hold the same words, in a card whose
+ * columns pdftotext reads out of order or in a short block; a short block after it may print its
+ * letters on page 1 elsewhere. Copy repeating a long block on both pages finds none. */
+export function page2Block(blocks: string[], page1: string, line: string): number {
+  if (!line) return -1;
+  const last = blocks.findLastIndex((b) => b.length >= PAGE1_BLOCK && page1.includes(b));
+  return blocks.findIndex((b, i) => i > last && b.includes(line));
+}
+
 const pdfPages = (pdf: string) =>
   Number(execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/^Pages:\s+(\d+)/m)?.[1]);
 const pdfPageText = (pdf: string, page: number) =>
@@ -285,17 +300,9 @@ export async function fitOnepager(
           .split("\n")
           .find((l) => l.trim().length > 3) ?? "",
       );
-      // Page 2 opens on the first block holding its first line that no later block follows on
-      // page 1: a block on page 1 may hold the same words, in a short block or in a card whose
-      // columns pdftotext reads out of order, but blocks after it stand on page 1 too.
       const page1Text = pdfPageText(pdf, 1);
-      const page1 = letters(page1Text);
-      const blocks = topLevelBlocks(page.html).map(flatBlock);
-      const index = blocks.findIndex(
-        (block, i) =>
-          block.includes(line) && !blocks.slice(i + 1).some((b) => b && page1.includes(b)),
-      );
-      if (!line || index < 0)
+      const index = page2Block(topLevelBlocks(page.html).map(flatBlock), letters(page1Text), line);
+      if (index < 0)
         throw new Error(`fitOnepager: no block of "${page.title}" holds page 2's first line`);
       // The header is .page's first child, the first block its second.
       fit = { ...fit, page2Start: index + 2 };
