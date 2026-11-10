@@ -57,6 +57,10 @@ type Present = {
 // a reader opens a `<details>`, the rest from renderPdf's print script on each image it redraws.
 const SET_LATER = new Set(["open", "style", "width", "src", "srcset", "data-print-scaled"]);
 
+// A class or id name after its sign: CSS takes any character past ASCII as a name character.
+const NAMED = (sign: "." | "#") =>
+  new RegExp(`[${sign}](-?[_a-zA-Z\\u{80}-\\u{10ffff}][\\w\\u{80}-\\u{10ffff}-]*)`, "gu");
+
 // An attribute test, its quoted value skipped over, and the attribute's name.
 const ATTRIBUTE = /^\[(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\]"'])*\]?/;
 const ATTRIBUTE_NAME = /^\[\s*([\w-]+)\s*(?:[~|^$*]?=|\])/;
@@ -93,9 +97,8 @@ function canMatch(selector: string, page: Present): boolean {
     } else bare += c;
   }
   bare = bare.replace(/::?[\w-]+/g, "");
-  for (const [, cls] of bare.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g))
-    if (!page.classes.has(cls!)) return false;
-  for (const [, id] of bare.matchAll(/#(-?[_a-zA-Z][\w-]*)/g)) if (!page.ids.has(id!)) return false;
+  for (const [, cls] of bare.matchAll(NAMED("."))) if (!page.classes.has(cls!)) return false;
+  for (const [, id] of bare.matchAll(NAMED("#"))) if (!page.ids.has(id!)) return false;
   for (const [, tag] of bare.matchAll(/(?:^|[\s>+~])([a-zA-Z][\w-]*)/g))
     if (!page.tags.has(tag!.toLowerCase())) return false;
   return true;
@@ -149,12 +152,12 @@ export const editStyles = (html: string, edit: (css: string) => string) =>
  * A page whose style elements keep only what its markup can use: each rule needing a class, id,
  * element or attribute the page carries nowhere goes, then each custom property the page declares and never
  * reads (in a `var()`, a style query or a style attribute), until none is left to drop. On a page
- * holding a script the styles stay whole, since the script may add a class or read a property.
+ * holding a script or an event handler the styles stay whole, since either may add a class or read
+ * a property. The CSS holds no comments: compactStyles strips them first.
  * The document base, brand's elements and every component's styles were about 87 KB of each
  * onepager, most of them for blocks it never holds (measured).
  */
 export function pruneStyles(html: string): string {
-  if (/<script\b/i.test(html)) return html;
   // The elements the parser adds where the markup leaves them out.
   const page: Present = {
     classes: new Set(),
@@ -162,12 +165,24 @@ export function pruneStyles(html: string): string {
     tags: new Set(["html", "head", "body", "tbody"]),
     attributes: new Set(),
   };
+  let runs = false;
   // Read as the browser parses it: any quoting, spacing or case.
   new HTMLRewriter()
     .on("*", {
       element(el) {
-        page.tags.add(el.tagName.toLowerCase());
-        for (const [name] of el.attributes) page.attributes.add(name.toLowerCase());
+        const tag = el.tagName.toLowerCase();
+        page.tags.add(tag);
+        // A script block runs unless its type names data; an event handler runs too.
+        const type = el.getAttribute("type")?.trim().toLowerCase();
+        if (
+          tag === "script" &&
+          (!type || /^(module|(text|application)\/(java|ecma)script)$/.test(type))
+        )
+          runs = true;
+        for (const [name] of el.attributes) {
+          page.attributes.add(name.toLowerCase());
+          if (/^on/i.test(name)) runs = true;
+        }
         for (const name of (el.getAttribute("class") ?? "").split(/\s+/).filter(Boolean))
           page.classes.add(name);
         const id = el.getAttribute("id");
@@ -175,6 +190,9 @@ export function pruneStyles(html: string): string {
       },
     })
     .transform(html);
+  if (runs) return html;
+  if (page.tags.has("td") || page.tags.has("th")) page.tags.add("tr");
+  if (page.tags.has("col")) page.tags.add("colgroup");
   // The inlined data, most of the page, set aside while the styles are walked and scanned.
   const data: string[] = [];
   let out = html.replace(/;base64,[\w+/=]+/g, (d) => `;base64,@hw${data.push(d) - 1}@`);

@@ -60,8 +60,25 @@ describe("pruneStyles", () => {
     expect(styles(pruneStyles(page(css, "<table><tr><td>1</td></tr></table>")))).toBe(css);
   });
 
-  it("leaves a page holding a script whole, since the script may add a class", () => {
+  it("leaves a page holding a script or an event handler whole, since either may add a class", () => {
     const html = page(".gone{color:red}", "<p>x</p><script>1</script>");
     expect(pruneStyles(html)).toBe(html);
+    const handler = page(".gone{color:red}", `<p onclick="this.className='gone'">x</p>`);
+    expect(pruneStyles(handler)).toBe(handler);
+  });
+
+  it("prunes beside a data block, which runs nothing", () => {
+    const html = page(".gone{color:red}", '<p>x</p><script type="application/json">{}</script>');
+    expect(styles(pruneStyles(html))).toBe("");
+  });
+
+  it("keeps a rule on a class or id beyond ASCII, and on a row or column group the parser adds", () => {
+    const css = ".größe{color:red}#maß{color:red}tr{color:red}colgroup{color:red}";
+    expect(
+      styles(
+        pruneStyles(page(css, '<p class="größe" id="maß">x</p><table><col><td>1</td></table>')),
+      ),
+    ).toBe(css);
+    expect(styles(pruneStyles(page(".größer{color:red}", '<p class="größe">x</p>')))).toBe("");
   });
 });

@@ -892,7 +892,7 @@ const escaped = (match: string, hex: string) => {
  * data URIs aside. A character a script builds from computed values is not seen: its face is
  * dropped and the PDF prints a fallback, which assertBrandFonts fails. */
 function printableCodePoints(html: string): Set<number> {
-  const tag = /<html\b[^>]*\blang="([\w-]+)"/i.exec(html)?.[1] ?? "en";
+  const tag = /<html\b[^>]*?\slang\s*=\s*["']?([\w-]+)/i.exec(html)?.[1] ?? "en";
   // An invalid tag such as de_DE, on which toLocaleUpperCase throws, cases as English.
   const lang = (() => {
     try {
@@ -908,7 +908,9 @@ function printableCodePoints(html: string): Set<number> {
     ),
   )
     .replace(/\\([\da-f]{1,6})\s?/gi, escaped)
-    .replace(/\\u\{?([\da-f]{4,6})\}?/gi, escaped);
+    .replace(/\\u(?:\{([\da-f]{1,6})\}|([\da-f]{4}))/gi, (match, braced?: string, four?: string) =>
+      escaped(match, (braced ?? four)!),
+    );
   const points = new Set<number>();
   for (const c of new Set(text))
     for (const form of [c, c.toLocaleUpperCase(lang), c.toLocaleLowerCase(lang)])
@@ -1219,7 +1221,8 @@ function unsetProperties(html: string): string[] {
   const sheets = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(([, css]) => css);
   const css = [...sheets, ...styleAttributes(html)].join("\n");
   const names = (pattern: RegExp) => new Set([...css.matchAll(pattern)].map(([, n]) => n!));
-  const defined = names(/(--[\w-]+)\s*:/g);
+  // A declaration's name opens its block or follows a `;`, never a selector such as `.card--x:hover`.
+  const defined = names(/(?:^|[{;\s])(--[\w-]+)\s*:/g);
   return [...names(/var\(\s*(--[\w-]+)\s*\)/g)].filter((name) => !defined.has(name));
 }
 

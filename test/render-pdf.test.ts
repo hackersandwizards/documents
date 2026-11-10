@@ -97,6 +97,23 @@ describe("compactStyles", () => {
       "U+0100",
     );
     expect(compactStyles(page("<p>i</p>"))).not.toContain("U+0100");
+    expect(compactStyles(page("<p>i</p>").replace("<html>", "<html lang='tr'>"))).toContain(
+      "U+0100",
+    );
+    // A JS escape takes four digits, or one to six in braces.
+    expect(compactStyles(page('<script>document.title = "\\u0142a";</script>'))).toContain(
+      "U+0100",
+    );
+    expect(compactStyles(page('<script>document.title = "\\u{142}";</script>'))).toContain(
+      "U+0100",
+    );
+    expect(compactStyles(page('<script>document.title = "\\u142a";</script>'))).not.toContain(
+      "U+0100",
+    );
+    // A data attribute names no language.
+    expect(
+      compactStyles(page("<p>i</p>").replace("<html>", '<html data-lang="tr">')),
+    ).not.toContain("U+0100");
   });
 
   it("leaves text and selectors alone: a face in the body, an escape past U+10FFFF, a comment between selectors", () => {
@@ -295,6 +312,12 @@ describe("bakeDocumentCss", () => {
       '<body><code>&lt;div style="--a: var(--shown)"&gt;</code>',
     );
     expect(() => bakeDocumentCss(shown)).not.toThrow();
+  });
+
+  it("takes no selector for a custom property's definition", () => {
+    expect(() =>
+      bakeDocumentCss(withComponents(".card--retired:hover{color:var(--retired)}")),
+    ).toThrow(/--retired/);
   });
 
   it("passes HTML without the marker through unchanged", () => {
