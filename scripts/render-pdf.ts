@@ -9,7 +9,7 @@ import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { inflateSync } from "node:zlib";
 import { chromeArgs, chromeBinaryAsync, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
-import { decodeHTML } from "entities";
+import { decodeHTML, decodeHTMLAttribute } from "entities";
 import { compress, decompress } from "woff2-encoder";
 import { withElements } from "./elements";
 import { HANDOUT_TEXT } from "./handout";
@@ -137,9 +137,11 @@ const IMAGE_TYPES: Record<string, string> = {
   webp: "image/webp",
   svg: "image/svg+xml",
 };
-const IMAGE_SRC = new RegExp(
-  `(<img\\b[^>]*?\\ssrc=)(["'])([^"':/#?][^"':#?]*?\\.(${Object.keys(IMAGE_TYPES).join("|")}))\\2`,
-  "gi",
+/** A src naming a file: no scheme, no absolute path, a known image type; its query and fragment
+ * aside, which a file:// load ignores. */
+const IMAGE_FILE = new RegExp(
+  `^([^:/#?][^:#?]*?\\.(${Object.keys(IMAGE_TYPES).join("|")}))(?:[?#][^:]*)?$`,
+  "i",
 );
 /** A file Git LFS has not fetched holds this pointer instead of the image. */
 const LFS_POINTER = Buffer.from("version https://git-lfs.github.com/spec/v1\n");
@@ -160,12 +162,15 @@ const dataUri = (ext: string, bytes: Buffer) =>
  * it is, so the page shows its alt text. */
 export function inlineImages(html: string, dir: string, options: InlineImagesOptions = {}): string {
   const root = options.within === undefined ? undefined : realpathSync(options.within);
-  return html.replace(IMAGE_SRC, (tag, start: string, quote: string, src: string, ext: string) => {
+  /** The data URI for one src, or undefined to leave the tag as it is. */
+  const inline = (src: string): string | undefined => {
+    const [, name = "", ext = ""] = IMAGE_FILE.exec(src) ?? [];
+    if (!name) return undefined;
     let file: string;
     try {
-      file = decodeURIComponent(src);
+      file = decodeURIComponent(name);
     } catch {
-      return tag;
+      return undefined;
     }
     let uri = packageImages.get(file);
     const pkg = PACKAGE_SRC.exec(file)?.[1];
@@ -179,30 +184,46 @@ export function inlineImages(html: string, dir: string, options: InlineImagesOpt
         cause = error;
       }
       if (uri === undefined) {
-        if (options.keepMissing) return tag;
+        if (options.keepMissing) return undefined;
         throw new Error(
           `inlineImages: ${pkg} exports no image ${src}${cause ? "" : ", only its Git LFS pointer"}`,
           { cause },
         );
       }
       packageImages.set(file, uri);
-    } else if (uri === undefined) {
-      const path = join(dir, file);
-      let bytes: Buffer;
-      try {
-        if (root !== undefined) {
-          const inside = relative(root, realpathSync(path));
-          if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) return tag;
-        }
-        bytes = readFileSync(path);
-      } catch {
-        return tag;
-      }
-      uri = dataUri(ext, bytes);
-      if (uri === undefined) return tag;
+      return uri;
     }
-    return `${start}${quote}${uri}${quote}`;
-  });
+    if (uri !== undefined) return uri;
+    const path = join(dir, file);
+    try {
+      if (root !== undefined) {
+        const inside = relative(root, realpathSync(path));
+        if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside))
+          return undefined;
+      }
+      return dataUri(ext, readFileSync(path));
+    } catch {
+      return undefined;
+    }
+  };
+  // Read as the browser parses the page: any quoting or spacing, a `>` inside an attribute, a
+  // tag only inside a comment or as text left alone.
+  let failure: unknown;
+  const out = new HTMLRewriter()
+    .on("img[src]", {
+      element(el) {
+        if (failure !== undefined) return;
+        try {
+          const uri = inline(decodeHTMLAttribute(el.getAttribute("src")!.trim()));
+          if (uri !== undefined) el.setAttribute("src", uri);
+        } catch (error) {
+          failure = error;
+        }
+      },
+    })
+    .transform(html);
+  if (failure !== undefined) throw failure;
+  return out;
 }
 
 /** The print settings. Chrome tags the PDF without being asked; the outline needs the flag. */

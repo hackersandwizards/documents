@@ -350,9 +350,27 @@ describe("inlineImages", () => {
       `<img alt='x' src='a%20b.jpg'><img src="./a b.jpg"><img src="@hackersandwizards/brand/logos/wordmark.svg">`,
       page,
     );
-    expect(html).toContain(`src='data:image/jpeg;base64,${btoa("jpeg")}'`);
-    expect(html).toContain(`src="data:image/jpeg;base64,${btoa("jpeg")}"`);
+    expect(html.split(`src="data:image/jpeg;base64,${btoa("jpeg")}"`).length).toBe(3);
     expect(html).toContain('src="data:image/svg+xml');
+  });
+
+  it("reads an img tag as the browser does: a > in an earlier attribute, spaces, no quotes, a query", () => {
+    const jpeg = `data:image/jpeg;base64,${btoa("jpeg")}`;
+    for (const tag of [
+      `<img alt="a > b" src="a%20b.jpg">`,
+      `<img src = "a%20b.jpg">`,
+      `<img src=a%20b.jpg>`,
+      `<img src="a%20b.jpg?v=2#x">`,
+      `<IMG SRC="a%20b.jpg">`,
+    ])
+      expect(inlineImages(tag, page)).toContain(jpeg);
+    // A package path behind such an attribute still fails the print rather than lose the image.
+    expect(() =>
+      inlineImages(`<img alt="a > b" src="@hackersandwizards/brand/logos/none.svg">`, page),
+    ).toThrow("brand exports no image");
+    // Text that only looks like a tag is no image.
+    const text = `<p>&lt;img src="a%20b.jpg"&gt;</p><!-- <img src="a%20b.jpg"> -->`;
+    expect(inlineImages(text, page)).toBe(text);
   });
 
   it("keeps a missing file, and with within, a file that resolves outside it", () => {
