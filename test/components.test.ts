@@ -8,6 +8,7 @@ import { withElements } from "../scripts/elements";
 import { cssString, wordsFor } from "../scripts/fill";
 import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
+import { probePage } from "./probe";
 
 const ROOT = resolve(import.meta.dir, "..");
 const components = readdirSync(join(ROOT, "components"))
@@ -297,6 +298,16 @@ test("a regional tag prints its language's words", async () => {
   const english = await composer.render("DocProposal", { ...proposal, lang: "en-GB" });
   expect(english).not.toContain("Woran ihr es messt");
 });
+
+// A running head's text reaches a raw <style> as a CSS string: Chrome reads back each character,
+// a newline from a YAML block scalar, a control character, a quote, a backslash and </style> too.
+test("cssString writes a string CSS reads back as written", () => {
+  const texts = ["Angebot 2026-014\n", "a\u0001b", 'Zitat "x"', "C:\\pfad", "</style>", "Plain"];
+  const probe = `const decode = (s) => s.slice(1, -1).replace(/\\\\([0-9a-f]{1,6}) ?|\\\\(.)/gi, (_, hex, c) => hex ? String.fromCodePoint(parseInt(hex, 16)) : c);
+    return JSON.stringify(${JSON.stringify(texts.map(cssString))}.map((css) => { const sheet = new CSSStyleSheet(); sheet.replaceSync("p { content: " + css + "; }"); return decode(sheet.cssRules[0].style.content); }));`;
+  const seen = probePage("<!doctype html><html><body></body></html>", probe);
+  expect(JSON.parse(decodeHTML(seen))).toEqual(texts);
+}, 30_000);
 
 // A consumer reads the handout's words from HANDOUT_TEXT, so these are the words it prints.
 test.each(["de", "en"] as const)("DocHandout %s prints HANDOUT_TEXT's words", async (lang) => {

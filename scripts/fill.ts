@@ -4,8 +4,13 @@ export const fill = (text: string, values: object = {}) =>
     String((values as Record<string, unknown>)[key] ?? ""),
   );
 
-/** `text` as a CSS string for a raw `<style>`: `<` escaped, so a caller's `</style>` cannot end the element. */
-export const cssString = (text: string) => JSON.stringify(text).replace(/</g, "\\3C ");
+/** `text` as a CSS string for a raw `<style>`: a quote and a backslash escaped, a control character
+ *  as CSS's hex escape (a JSON escape such as `\n` reads as the letter), and `<` too, so a caller's
+ *  `</style>` cannot end the element. */
+export const cssString = (text: string) =>
+  `"${text.replace(/["\\]|[<\p{Cc}]/gu, (c) =>
+    c === '"' || c === "\\" ? `\\${c}` : `\\${c.charCodeAt(0).toString(16).toUpperCase()} `,
+  )}"`;
 
 /** `lang` as a page's `lang` attribute: a language tag such as `de` or `en-GB`, else an error, so
  *  a tag such as `de_DE` never reaches a document. */
