@@ -18,8 +18,8 @@
   --tint: var(--color-bg);
   --accent: var(--color-teal);
   --accent-text: var(--color-teal-dark);
-  /* Card tint (Card.astro surface "tint"): print takes the teal border and brand's 7% teal wash so
-     both survive 70% zoom. */
+  /* The tint panels (brand-elements.json, tint-panel): brand's 7% teal wash under a teal line,
+     which holds at 70% zoom and in print. */
   --accent-soft: var(--color-teal-soft);
   --accent-line: var(--color-teal);
   --result: var(--color-purple);

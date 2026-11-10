@@ -106,7 +106,7 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
 <style is:inline data-hw-page set:html={running} />
 <DocHeader kind={t.kind} legal meta={[p.created]} />
 <DocTitle eyebrow={p.periodLabel} title={t.title} />
-<dl class="meta">
+<dl class="meta" data-hw-exception="tint-panel">
   {fields.map(([label, value]) => (
     <div>
       <dt class="label">{label}</dt>

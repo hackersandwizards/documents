@@ -279,7 +279,7 @@ const running = `@page {
     </DocCard>
   ))}
   {p.community && (
-    <div class="included wide">
+    <div class="included wide" data-hw-exception="tint-panel">
       <h3>{t.community}</h3>
       {p.community.meta && <p class="meta">{p.community.meta}</p>}
       <ul>
@@ -314,7 +314,7 @@ const running = `@page {
 </DocCallout>
 
 <DocSectionHead title={t.terms} />
-<div class="terms">
+<div class="terms" data-hw-exception="tint-panel">
   {p.terms.map((term) => (
     <div class="term">
       <h3>{term.title}</h3>
