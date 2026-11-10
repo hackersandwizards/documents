@@ -47,10 +47,6 @@
     },
     "facts": "The onepager's facts box: one card in two surfaces, the decision row on a teal band over the details on white, the band reaching the card's edge. brand's card has one surface and its padding all round.",
     "pricing-note": "The line under the onepager's price cards: a sentence in the small role, muted, in the text flow. A note in name only; the brand's callout is a box.",
-    "tint-panel": {
-      "reason": "The proposal's community and terms panels and the timesheet's head panel: brand's tint card with a teal line instead of its teal-light one, which fades at 70 % zoom and on an office printer. brand's tint card takes no line setting.",
-      "files": ["components/DocProposal.astro", "components/DocLeistungsnachweis.astro"]
-    },
     "doc-rate-card": {
       "reason": "The rate card is a document type, the personal rate sheet, named after the paper rather than brand's card element. Its panels are DocCard, which renders hw-card.",
       "files": ["components/DocRateCard.astro"]

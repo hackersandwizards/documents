@@ -66,11 +66,13 @@ let brandFiles: string[] | undefined;
 
 /** Every brand file a render of the standalone onepager (composeOnepager without `link`, and so
  * fitOnepager) reads, as absolute paths, sorted: those baseCss reads, the faces among them, and
- * the lockup DocHeader inlines. A consumer hashes this list to tell whether a brand raise changes
+ * the lockup, the imprint and the company's name DocHeader reads. A consumer hashes this list to tell whether a brand raise changes
  * its onepagers. Read once a process, as the brand base is. */
 export function onepagerBrandFiles(): string[] {
   if (brandFiles) return [...brandFiles];
-  const read = new Set([brandFile("logos/lockup-screen.svg")]);
+  const read = new Set(
+    ["logos/lockup-screen.svg", "imprint.json", "verbal.json"].map((file) => brandFile(file)),
+  );
   baseCss(false, read);
   return [...(brandFiles = [...read].sort())];
 }

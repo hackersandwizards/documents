@@ -4,6 +4,8 @@
 // The lockup is the brand package's screen cut, which brand gives a header up to 40 px tall on screen
 // or in print, at half the full lockup's bytes; inlined as a data URI, so it renders in any app.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup-screen.svg?raw";
+import imprint from "@hackersandwizards/brand/imprint.json";
+import verbal from "@hackersandwizards/brand/verbal.json";
 import { svgUri, wordsFor } from "../scripts/fill";
 
 interface Props {
@@ -22,16 +24,23 @@ interface Props {
   lang?: "de" | "en";
 }
 const { kind, legal = false, meta = [], lang = "de" } = Astro.props;
-const imprint = wordsFor(lang, {
+const { street, postcode, city, country, seat, court, register, vatId, managingDirectors } =
+  imprint;
+// "Sitz und Registergericht" names one city for both, which holds while the court sits at the seat.
+if (court !== `Amtsgericht ${seat}`)
+  throw new Error(`DocHeader: the imprint's court (${court}) is not at its seat (${seat})`);
+const address = `${verbal.name.legal}, ${street}, ${postcode} ${city}`;
+const directors = managingDirectors.join(", ");
+const imprintLines = wordsFor(lang, {
   de: [
-    "hackers&wizards GmbH, Osterstraße 95, 20259 Hamburg",
-    "Sitz und Registergericht Hamburg, HRB 198840, USt-IdNr. DE463065921",
-    "Geschäftsführer: Benedikt Stemmildt, Stefan Munz",
+    address,
+    `Sitz und Registergericht ${seat}, ${register}, USt-IdNr. ${vatId}`,
+    `Geschäftsführer: ${directors}`,
   ],
   en: [
-    "hackers&wizards GmbH, Osterstraße 95, 20259 Hamburg, Germany",
-    "Registered office and court Hamburg, HRB 198840, VAT ID DE463065921",
-    "Managing Directors: Benedikt Stemmildt, Stefan Munz",
+    `${address}, ${country.en}`,
+    `Registered office and court ${seat}, ${register}, VAT ID ${vatId}`,
+    `Managing Directors: ${directors}`,
   ],
 });
 const lockup = svgUri(lockupSvg);
@@ -45,7 +54,7 @@ const lockup = svgUri(lockupSvg);
     </div>
     {legal && (
       <div class="company-meta">
-        {imprint.map((line, i) => (
+        {imprintLines.map((line, i) => (
           <>
             {i > 0 && <br />}
             {line}

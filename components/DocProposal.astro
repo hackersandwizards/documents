@@ -279,7 +279,7 @@ const running = `@page {
     </DocCard>
   ))}
   {p.community && (
-    <div class="included wide" data-hw-exception="tint-panel">
+    <div class="included wide tint-panel">
       <h3>{t.community}</h3>
       {p.community.meta && <p class="meta">{p.community.meta}</p>}
       <ul>
@@ -314,7 +314,7 @@ const running = `@page {
 </DocCallout>
 
 <DocSectionHead title={t.terms} />
-<div class="terms" data-hw-exception="tint-panel">
+<div class="terms tint-panel">
   {p.terms.map((term) => (
     <div class="term">
       <h3>{term.title}</h3>
@@ -377,10 +377,6 @@ const running = `@page {
 
   .included {
     grid-column: 1 / -1;
-    padding: var(--card-pad);
-    border: var(--rule) solid var(--accent-line);
-    border-radius: var(--radius);
-    background: var(--accent-soft);
     break-inside: avoid;
   }
 
@@ -412,10 +408,6 @@ const running = `@page {
 
   .terms {
     margin: var(--block-margin);
-    padding: var(--card-pad);
-    border: var(--rule) solid var(--accent-line);
-    border-radius: var(--radius);
-    background: var(--accent-soft);
     columns: 2;
     column-gap: var(--terms-column-gap);
     font: var(--role-small);

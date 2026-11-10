@@ -4,7 +4,11 @@
 // script below; what still runs over prints a second page, which the renderer refuses. Names stay
 // in Inter: only Inter carries latin-ext (Ł, ř), at 400 and 600.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
+import imprint from "@hackersandwizards/brand/imprint.json";
+import verbal from "@hackersandwizards/brand/verbal.json";
 import { fill, svgUri, wordsFor } from "../scripts/fill";
+
+const issuer = `${verbal.name.legal} · ${imprint.street}, ${imprint.postcode} ${imprint.city}`;
 
 // The certificate's own words, German and English; `labels` replaces any of them, `{name}` marks a
 // value filled in.
@@ -25,7 +29,7 @@ const DE = {
   scan: "Scannen: verifizieren & zu LinkedIn hinzufügen",
   linkedin: "Zum LinkedIn-Profil hinzufügen",
   credential: "Credential ID: {credentialId}",
-  issuedBy: "Ausgestellt von hackers&wizards GmbH · Osterstraße 95, 20259 Hamburg ·",
+  issuedBy: `Ausgestellt von ${issuer} ·`,
   site: "hackersandwizards.dev",
   siteUrl: "https://hackersandwizards.dev",
 };
@@ -44,7 +48,7 @@ const EN: typeof DE = {
   scan: "Scan to verify & add to LinkedIn",
   linkedin: "Add to LinkedIn profile",
   credential: "Credential ID: {credentialId}",
-  issuedBy: "Issued by hackers&wizards GmbH · Osterstraße 95, 20259 Hamburg ·",
+  issuedBy: `Issued by ${issuer} ·`,
   site: "hackersandwizards.dev",
   siteUrl: "https://hackersandwizards.dev",
 };

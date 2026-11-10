@@ -57,8 +57,8 @@ decision or item ids, pointers to review notes and names go to the commit messag
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
   Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
   renumbered so one input prints the same bytes, the document base baked into
-  `<style data-hw-document>` (brand's fallback faces with it, which `print.css` imports, so the
-  peer range starts at brand v2.7.0), `compactStyles`, which every standalone page passes (baked, onepager,
+  `<style data-hw-document>` (brand's fallback faces with it, which `print.css` imports),
+  `compactStyles`, which every standalone page passes (baked, onepager,
   survey readout): its styles without CSS comments, which a reader of the page never needs, with the
   brand's `@layer` order once, first (`test/layers.test.ts`), without the
   rules (by class, id, element or attribute name) and custom properties its markup cannot use (`pruneStyles`, `scripts/prune.ts`; a page
@@ -128,7 +128,8 @@ through. Renaming a command, changing its arguments or moving an exported file b
 consumers: the release commit names it and every consumer follows in the same pass. Astro, Vite, brand,
 testimonials (whose marks a page names by package path) and scaffolding (its `./chrome`, which
 `render-pdf.ts` imports at run time, so a consumer installs it beside its runtime dependencies) are
-peer dependencies, brand, testimonials and scaffolding optional in
+peer dependencies, brand from v2.11.0 (the imprint DocHeader and the certificate read from its
+`imprint.json`, and the tint panels' teal line on paper), brand, testimonials and scaffolding optional in
 `peerDependenciesMeta` so Bun never looks them up on the npm registry; the runtime dependencies are `entities`, which `fitOnepager` decodes copy with, and `subset-font`
 (HarfBuzz) with `woff2-encoder`, which `subsetFaces` cuts and re-encodes the faces with; `keywords: ["astro-component"]` makes Astro compile the components from
 `node_modules`.

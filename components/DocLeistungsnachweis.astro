@@ -106,7 +106,7 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
 <style is:inline data-hw-page set:html={running} />
 <DocHeader kind={t.kind} legal meta={[p.created]} />
 <DocTitle eyebrow={p.periodLabel} title={t.title} />
-<dl class="meta" data-hw-exception="tint-panel">
+<dl class="meta tint-panel">
   {fields.map(([label, value]) => (
     <div>
       <dt class="label">{label}</dt>
@@ -183,10 +183,6 @@ const hoursText = p.lumpSumQuote ? "" : fill(t.confirmationHours, p);
     grid-template-columns: repeat(3, 1fr);
     gap: var(--meta-gap);
     margin: 0 0 var(--meta-space-after);
-    padding: var(--card-pad);
-    border: var(--rule) solid var(--accent-line);
-    border-radius: var(--radius);
-    background: var(--accent-soft);
     font: var(--role-small);
     break-inside: avoid;
   }
