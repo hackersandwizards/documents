@@ -31,9 +31,9 @@ import {
 import { decompress } from "woff2-encoder";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { svgUri } from "../scripts/fill";
-import { rateCard, surveyReadout } from "../scripts/samples";
+import { preparation, rateCard, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
-import { fallbackFamilies, withLinkedBrand } from "./probe";
+import { fallbackFamilies, probePage, withLinkedBrand } from "./probe";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -817,6 +817,22 @@ describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
       .map((_, i) => i)
       .filter((i) => page(`Label ${i}\n`) !== page(`Answer ${i} `));
     expect(stranded).toEqual([]);
+  }, 60_000);
+});
+
+describe.skipIf(!chromeBinary())("the preparation's code", () => {
+  it("wraps a command wider than its card rather than widen the page", async () => {
+    const long =
+      "bunx some-long-command --with-a-flag=value --and-another=/a/long/path/to/a/file/that/goes/on.txt";
+    const steps = preparation.steps.map((step, i) =>
+      i === 0 ? { ...step, html: step.html.replace("choco install nodejs-lts git", long) } : step,
+    );
+    expect(steps[0]!.html).toContain(long);
+    const html = await composeDocument("DocPreparation", { ...preparation, steps });
+    const width = probePage(html, `return String(document.documentElement.scrollWidth);`, [
+      "--window-size=794,1123",
+    ]);
+    expect(width).toBe("794");
   }, 60_000);
 });
 

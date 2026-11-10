@@ -75,6 +75,13 @@ pre.astro-code .line {
   white-space: nowrap;
 }
 
+/* A margin note is too narrow for that: code longer than the note breaks where it must rather
+   than run off the paper. */
+.margin-note code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* Chrome tags a heading that a page break moves with a second, empty fragment on the page before,
    and the PDF bookmark then repeats its title. Containing its paint keeps the heading in one
    fragment. */

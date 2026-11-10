@@ -9,7 +9,9 @@
    small role, whose face every body text loads. From page 2 the header's gradient strip returns
    as a rail across the two top boxes, so a later page still reads as h&w's. */
 @page {
+  /* Empty content generates the box, so the rail draws on a page whose type names no running head. */
   @top-left {
+    content: "";
     width: 30%;
     padding-left: var(--side);
     font: var(--role-small);
@@ -17,6 +19,7 @@
     background: var(--gradient-strip) left top / calc(100% / 0.3) var(--rail) no-repeat;
   }
   @top-right {
+    content: "";
     width: 70%;
     padding-right: var(--side);
     font: var(--role-small);
@@ -316,6 +319,12 @@ tr.subtotal td {
 
 /* Teal marks money; readers preferred it to a purple figure. Teal on the tint 4.69:1, the rule on
    white 5.54:1. */
+/* The row carries the role too, so the figure's --figure-scale (1.2em) is 1.2 times the row's text,
+   not of the text around the table. */
+tr.total {
+  font: var(--role-h4);
+}
+
 tr.total td {
   padding-top: var(--total-pad-top);
   padding-bottom: var(--space-cell);

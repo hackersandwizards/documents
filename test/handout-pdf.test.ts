@@ -30,7 +30,12 @@ const props = {
   chapters: [
     { ...first!, html: first!.html.repeat(4) },
     second!,
-    { ...second!, title: "Rules, Again", html: `<p>Chapter 1 set up the loop.</p>${second!.html}` },
+    {
+      ...second!,
+      title: "Rules, Again",
+      // A path longer than a margin note is wide.
+      html: `<aside class="margin-note">See <code>/Users/participant/projects/beispielprojekt/.claude/settings.local.json</code>.</aside><p>Chapter 1 set up the loop.</p>${second!.html}`,
+    },
     notes!,
   ],
 };
@@ -64,6 +69,13 @@ test("the contents numbers each chapter with the page it opens on, from composed
   const { starts, listed } = read(pdf);
   expect(starts.length).toBe(props.chapters.length);
   expect(listed).toEqual(starts);
+  // Every word stays on the paper, a long path in a margin note too.
+  const box = execFileSync("pdftotext", ["-bbox", pdf, "-"], { encoding: "utf8" });
+  const width = Number(/<page width="([\d.]+)"/.exec(box)![1]);
+  const off = [...box.matchAll(/xMax="([\d.]+)" yMax="[\d.]+">([^<]*)</g)].filter(
+    ([, x]) => Number(x) > width,
+  );
+  expect(off.map(([, , word]) => word)).toEqual([]);
 }, 120_000);
 
 // German, so the eyebrow's word the first fetch reads is the page's own, not the English default.

@@ -67,8 +67,9 @@ const { lang = "de", kind, meta, eyebrow, heading, note, steps, closing } = Astr
     white-space: nowrap;
   }
 
+  /* A command wider than its card wraps, as the base's pre does, rather than widen the page. */
   .preparation :global(pre code) {
-    white-space: pre;
+    white-space: pre-wrap;
     font-size: var(--step-code-size);
   }
 

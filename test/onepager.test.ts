@@ -96,6 +96,23 @@ describe("fitOnepager, page 2's first line", () => {
   }, 120_000);
 });
 
+describe.skipIf(!chromeBinary())("the tight fit", () => {
+  it("tightens the key row and leaves the detail rows unpadded", async () => {
+    const pads = await Promise.all(
+      [{}, { tight: true }].map(async (fit) =>
+        probePage(
+          await composeOnepager(composer, { ...onepager, fit }),
+          `const pad = (s) => { const d = document.querySelector(s); return getComputedStyle(d).paddingTop + " " + getComputedStyle(d).paddingBottom; };
+           return pad(".facts dl.details > div") + " | " + pad(".facts dl.key-row > div");`,
+        ),
+      ),
+    );
+    const [loose, tight] = pads.map((p) => p.split(" | "));
+    expect(tight![0]).toBe(loose![0]);
+    expect(tight![1]).not.toBe(loose![1]);
+  }, 60_000);
+});
+
 describe.skipIf(!chromeBinary())("the client row", () => {
   it("sets a mark at its --mark-scale share of the 17 px row", async () => {
     const mark = (style: string) =>

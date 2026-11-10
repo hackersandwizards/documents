@@ -110,6 +110,11 @@ const span = columns.length - 1;
     color: var(--muted);
   }
 
+  /* The shorthand above resets the figure column's tabular figures. */
+  .foot td.num {
+    font-variant-numeric: tabular-nums;
+  }
+
   .sums td {
     background: var(--accent-soft);
   }

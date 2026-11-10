@@ -710,7 +710,7 @@ ul {
 .tight .hero {
   padding: var(--op-hero-pad-tight);
 }
-.tight .facts dl > div {
+.tight .facts dl:not(.details) > div {
   padding: var(--op-3) 0 var(--op-4);
 }
 .tight .deliverable-banner li {

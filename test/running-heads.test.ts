@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { composePage, openComposer } from "../scripts/compose";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { documentCss, renderPdf } from "../scripts/render-pdf";
-import { handout, proposalDe, rateCard } from "../scripts/samples";
+import { handout, leistungsnachweisMonth, proposalDe, rateCard } from "../scripts/samples";
 
 // The running header holds the document's title on one line. The longest title on record is the
 // trainer hub's AE-DEV-TTT product (73 characters). Measured in Chrome:
@@ -152,4 +152,37 @@ test.skipIf(!chromeBinary()).each([false, true])(
     expect(heads.slice(2, -1)).toEqual(heads.slice(2, -1).map(() => 1));
   },
   120_000,
+);
+
+// From page 2 the header's strip returns as a rail across the top boxes, also on a type that names
+// no running head, such as a timesheet over two pages.
+test.skipIf(!chromeBinary())(
+  "a timesheet over two pages carries the rail on page 2",
+  async () => {
+    const rows = Array.from({ length: 4 }, () => leistungsnachweisMonth.rows).flat();
+    const pdf = await render("DocLeistungsnachweis", { ...leistungsnachweisMonth, rows });
+    /** The colour of the topmost pixel row at the middle of `page`, at 72 dpi. */
+    const top = (page: number) => {
+      const ppm = execFileSync("pdftoppm", [
+        "-f",
+        `${page}`,
+        "-l",
+        `${page}`,
+        "-r",
+        "72",
+        "-x",
+        "297",
+        "-y",
+        "0",
+        "-W",
+        "1",
+        "-H",
+        "1",
+        pdf,
+      ]);
+      return [...ppm.subarray(ppm.length - 3)];
+    };
+    expect(top(2)).not.toEqual([255, 255, 255]);
+  },
+  60_000,
 );

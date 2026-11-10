@@ -20,6 +20,12 @@ const { label, span, figures, note } = Astro.props;
 </tr>
 
 <style>
+  /* The row carries the role too, so the figure's --figure-scale (1.2em) is 1.2 times the row's
+     text, not of the text around the table. */
+  tr {
+    font: var(--role-h4);
+  }
+
   td {
     padding-top: var(--total-pad-top);
     padding-bottom: var(--space-cell);
