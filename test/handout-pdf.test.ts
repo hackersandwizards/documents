@@ -192,7 +192,7 @@ test("a chapter's opening page is measured with its late image in place", async 
     [
       "bun",
       "-e",
-      `const s = Bun.serve({ port: 0, hostname: "127.0.0.1", async fetch() { await Bun.sleep(1500); return new Response(Bun.file(${JSON.stringify(image)})); } }); console.log(s.port);`,
+      `const s = Bun.serve({ port: 0, hostname: "127.0.0.1", async fetch() { await Bun.sleep(2500); return new Response(Bun.file(${JSON.stringify(image)})); } }); console.log(s.port);`,
     ],
     { stdout: "pipe" },
   );

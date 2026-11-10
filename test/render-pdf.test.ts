@@ -698,7 +698,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       await expect(
         renderPdf(`http://127.0.0.1:${silent.port}/x`, join(dir, `silent-${warm}.pdf`), {
           warm,
-          timeoutMs: 1500,
+          timeoutMs: 1000,
         }),
       ).rejects.toThrow();
       await Bun.sleep(200);
