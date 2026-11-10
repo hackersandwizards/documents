@@ -71,6 +71,31 @@ describe("fitOnepager", () => {
   }, 60_000);
 });
 
+describe("fitOnepager, page 2's first line", () => {
+  // The PDF prints a label in capitals, ß as SS, and an inline tag before punctuation without the
+  // space a tag-stripped block holds: the block is still found.
+  it("finds the block through capitals, ß and an inline tag", async () => {
+    const html = onepager.html.replace(
+      "<h3>Gut zu wissen</h3>",
+      "<h3><em>Maßnahmen</em>: gut zu wissen</h3>",
+    );
+    expect(html).toContain("Maßnahmen");
+    const fit = await fitOnepager(composer, { ...onepager, html }, "unused", work);
+    const plain = await fitOnepager(composer, onepager, "unused", work);
+    expect(fit.pages).toBe(2);
+    expect(fit.fit.page2Start).toBe(plain.fit.page2Start);
+    // A commented-out block is no block of the page.
+    const commented = `<!-- <section><p>Entwurf</p></section> -->${onepager.html}`;
+    const kept = await fitOnepager(composer, { ...onepager, html: commented }, "unused", work);
+    expect(kept.fit.page2Start).toBe(plain.fit.page2Start);
+    // An element left open would shift the count: refused, not balanced on the wrong block.
+    const open = onepager.html.replace("</h3>", "</h3><ul><li>offen</ul>");
+    await expect(
+      fitOnepager(composer, { ...onepager, html: open }, "unused", work),
+    ).rejects.toThrow(/leaves an element open/);
+  }, 120_000);
+});
+
 describe.skipIf(!chromeBinary())("the client row", () => {
   it("sets a mark at its --mark-scale share of the 17 px row", async () => {
     const mark = (style: string) =>

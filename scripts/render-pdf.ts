@@ -1110,6 +1110,9 @@ export async function cutFacesToPdf(html: string, pdf: string): Promise<string> 
   // A Type 3 face carries no name to match: the page stays as it is.
   if (bytes.includes("/Subtype /Type3")) return html;
   const printed = printedCharacters(bytes);
+  // No font found means fonts written in a form this reader does not know, not a page without
+  // text: nothing is cut.
+  if (printed.size === 0) return html;
   const faces = await Promise.all(
     [...new Set([...html.matchAll(FACES)].map(([, data]) => data!))].map(async (data) => {
       // Not through `decoded`, which holds the brand's faces: these are this page's cuts.
@@ -1276,11 +1279,12 @@ function keptComposer(cwd: string) {
  */
 export function assertBrandFonts(pdfPath: string): void {
   const result = spawnSync("pdffonts", [pdfPath], { encoding: "utf8" });
-  if (result.error || result.status !== 0) {
+  if (result.error)
     throw new Error(
       `pdffonts (poppler) is required to check ${pdfPath}; without it no font is checked`,
     );
-  }
+  if (result.status !== 0)
+    throw new Error(`pdffonts could not read ${pdfPath}: ${result.stderr.trim()}`);
   const fonts = result.stdout.split("\n").slice(2).filter(Boolean);
   if (fonts.length === 0) throw new Error(`${pdfPath} embeds no font`);
   const foreign = fonts.filter((line) => !/Inter|JetBrains|AppleColorEmoji/.test(line));

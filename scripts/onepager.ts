@@ -217,27 +217,38 @@ const ONEPAGER_ELEMENTS: Edit[] = [
 
 const VOID = /^(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
 
-/** The top-level elements of an HTML fragment, each as its text. */
+/** The top-level elements of an HTML fragment, each as its text, comments left out. Markup that
+ * leaves an element open (an unclosed `<li>` or `<p>`) throws: its count would not be the page's. */
 function topLevelBlocks(html: string): string[] {
   const blocks: string[] = [];
   let depth = 0;
   let start = 0;
-  for (const m of html.matchAll(/<(\/?)([a-z][\w-]*)[^>]*?(\/?)>/gi)) {
+  const markup = html.replace(/<!--[\s\S]*?-->/g, "");
+  for (const m of markup.matchAll(/<(\/?)([a-z][\w-]*)[^>]*?(\/?)>/gi)) {
     const [tag, closing, name, selfClosing] = m;
     if (closing) {
-      if (--depth === 0) blocks.push(html.slice(start, m.index! + tag.length));
+      if (--depth === 0) blocks.push(markup.slice(start, m.index! + tag.length));
     } else if (!selfClosing && !VOID.test(name)) {
       if (depth++ === 0) start = m.index!;
     } else if (depth === 0) blocks.push(tag);
   }
+  if (depth !== 0) throw new Error("fitOnepager: the copy leaves an element open; close every tag");
   return blocks;
 }
 
 /** A page's extracted text as its words, lower case, on single spaces. */
 const flatText = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
-/** A block's markup as the words its PDF text shows: tags dropped, every entity decoded once,
+/** Text as its letters and digits alone, case and ß folded: what a block's markup and its PDF text
+ * share whatever spaces a tag leaves, or capitals and SS a label prints. */
+const letters = (text: string) =>
+  text
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/ß/g, "ss")
+    .replace(/[^\p{L}\p{N}]/gu, "");
+/** A block's markup as the letters its PDF text shows: tags dropped, every entity decoded once,
  * and only where it ends in `;`, as copy writes it. */
-const flatBlock = (html: string) => flatText(decodeHTMLStrict(html.replace(/<[^>]*>/g, " ")));
+const flatBlock = (html: string) => letters(decodeHTMLStrict(html.replace(/<[^>]*>/g, " ")));
 
 const pdfPages = (pdf: string) =>
   Number(execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/^Pages:\s+(\d+)/m)?.[1]);
@@ -298,12 +309,17 @@ export async function fitOnepager(
     let { pages, pdf } = await render(fit);
     if (pages > 2) ({ pages, pdf } = await render((fit = { tight: true })));
     if (pages === 2) {
-      const line = flatText(
+      const line = letters(
         pdfPageText(pdf, 2)
           .split("\n")
           .find((l) => l.trim().length > 3) ?? "",
       );
-      const index = topLevelBlocks(page.html).findIndex((block) => flatBlock(block).includes(line));
+      // Page 2 opens on the first block holding its first line that page 1 does not hold whole: an
+      // earlier block may hold the same words.
+      const page1 = letters(pdfPageText(pdf, 1));
+      const index = topLevelBlocks(page.html)
+        .map(flatBlock)
+        .findIndex((block) => block.includes(line) && !page1.includes(block));
       if (!line || index < 0)
         throw new Error(`fitOnepager: no block of "${page.title}" holds page 2's first line`);
       // The header is .page's first child, the first block its second.

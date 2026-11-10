@@ -227,6 +227,15 @@ describe.skipIf(!chromeBinary())("cutFacesToPdf", () => {
       ]),
     );
     expect(await cutFacesToPdf(html, array)).toBe(cut);
+    // A PDF whose fonts it cannot find (another writer's dictionaries) leaves every face whole,
+    // never reads as one that printed no face.
+    const unread = join(dir, "faces-unread.pdf");
+    writeFileSync(
+      unread,
+      readFileSync(pdf, "latin1").replaceAll("/Subtype /Type0", "/Subtype /TypeX"),
+      "latin1",
+    );
+    expect(await cutFacesToPdf(html, unread)).toBe(html);
   }, 60_000);
 });
 
@@ -723,6 +732,10 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(() => assertBrandFonts(pdf)).toThrow(/non-brand face/);
     const branded = await print("branded", documentCss());
     expect(() => assertBrandFonts(branded)).not.toThrow();
+    // A file pdffonts cannot read says so, rather than that poppler is missing.
+    const broken = join(dir, "broken.pdf");
+    writeFileSync(broken, "no pdf");
+    expect(() => assertBrandFonts(broken)).toThrow(/could not read/);
   }, 60_000);
 
   it("fails on a system fallback face", async () => {

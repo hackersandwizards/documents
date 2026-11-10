@@ -452,7 +452,7 @@ export const onepager = {
   </ul>
 </div>
 <div class="testimonial">
-  <p>„Ein erfundenes Zitat, ein bis zwei Sätze lang, wie es eine Teilnehmerin nach dem Training sagen könnte.“</p>
+  <p>„Ein erfundenes Zitat, ein bis zwei Sätze lang, wie’s eine Teilnehmerin nach dem Training sagen könnte.“</p>
   <cite>Mara Beispiel, Engineering Lead, Musterwerk AG</cite>
 </div>
 <div class="references">
