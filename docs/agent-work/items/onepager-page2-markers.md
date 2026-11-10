@@ -2,6 +2,7 @@
 kind: work
 status: open
 priority: 3
+order: 2100
 owner: Claude
 area: software-engineering
 evidence: not established
