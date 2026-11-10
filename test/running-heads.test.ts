@@ -140,8 +140,8 @@ test.skipIf(!chromeBinary()).each([false, true])(
   async (warm) => {
     const late = (html: string) => {
       const held = html.replace(
-        "document.fonts.ready.then(() => {",
-        "document.fonts.ready.then(() => new Promise((r) => setTimeout(r, 1000))).then(() => {",
+        "Promise.all([document.fonts.ready, loaded]).then(() => {",
+        "Promise.all([document.fonts.ready, loaded]).then(() => new Promise((r) => setTimeout(r, 1000))).then(() => {",
       );
       expect(held).not.toBe(html);
       return held;

@@ -65,6 +65,9 @@ describe("pruneStyles", () => {
     expect(pruneStyles(html)).toBe(html);
     const handler = page(".gone{color:red}", `<p onclick="this.className='gone'">x</p>`);
     expect(pruneStyles(handler)).toBe(handler);
+    // Any type but a data block's may run: the browser knows more script types than a list here.
+    const legacy = page(".gone{color:red}", '<script type="application/x-javascript">1</script>');
+    expect(pruneStyles(legacy)).toBe(legacy);
   });
 
   it("prunes beside a data block, which runs nothing", () => {

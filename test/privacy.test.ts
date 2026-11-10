@@ -89,13 +89,16 @@ test("a deny term hits a file name, any case, an entity, a slug and a line break
         "ECHT, nicht echt",
         "Echt",
         "echt-2026 echt_logo 2026",
+        "MUELLERBAU",
       ].join("\n"),
     );
     const lines = (terms: string[]) => scanText(dir, terms).map((f) => f.line);
     expect(lines(["Echtfirma"])).toEqual([1]);
     expect(lines(["E&C"])).toEqual([2]);
     expect(lines(["Echte Firma"])).toEqual([3, 4]);
-    expect(lines(["Müllerbau"])).toEqual([6, 7]);
+    expect(lines(["Müllerbau"])).toEqual([6, 7, 11]);
+    // An umlaut in capitals is spelled out in capitals.
+    expect(lines(["MÜLLERBAU"])).toEqual([6, 11]);
     // An all-capitals term is an acronym: in text in capitals, in any case only in a slug.
     expect(lines(["ECHT"])).toEqual([8, 10, 10]);
   } finally {

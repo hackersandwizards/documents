@@ -287,7 +287,8 @@ export async function fitOnepager(
       );
       // Page 2 opens on the first block holding its first line that page 1 does not hold whole: an
       // earlier block may hold the same words.
-      const page1 = letters(pdfPageText(pdf, 1));
+      const page1Text = pdfPageText(pdf, 1);
+      const page1 = letters(page1Text);
       const index = topLevelBlocks(page.html)
         .map(flatBlock)
         .findIndex((block) => block.includes(line) && !page1.includes(block));
@@ -295,7 +296,7 @@ export async function fitOnepager(
         throw new Error(`fitOnepager: no block of "${page.title}" holds page 2's first line`);
       // The header is .page's first child, the first block its second.
       fit = { ...fit, page2Start: index + 2 };
-      const first = flatText(pdfPageText(pdf, 1));
+      const first = flatText(page1Text);
       for (const kind of ["lift", "air"] as const) {
         const base = fit;
         for (const level of LEVELS) await files({ ...base, [kind]: level });

@@ -674,6 +674,41 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(existsSync(out)).toBe(false);
   }, 60_000);
 
+  it("keeps a page without a head in standards mode", async () => {
+    const page = join(dir, `headless-${warm}.html`);
+    writeFileSync(
+      page,
+      `<!doctype html><html lang="en"><body><script>document.title = document.compatMode;</script>x</body></html>`,
+    );
+    const out = join(dir, `headless-${warm}.pdf`);
+    await renderPdf(page, out, { warm });
+    expect(execFileSync("pdfinfo", [out], { encoding: "utf8" })).toMatch(/^Title:\s+CSS1Compat$/m);
+  }, 60_000);
+
+  it("times out a page whose server never answers, and leaves no rejection unhandled", async () => {
+    const unhandled: unknown[] = [];
+    const note = (reason: unknown) => unhandled.push(reason);
+    process.on("unhandledRejection", note);
+    const silent = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => new Promise<Response>(() => {}),
+    });
+    try {
+      await expect(
+        renderPdf(`http://127.0.0.1:${silent.port}/x`, join(dir, `silent-${warm}.pdf`), {
+          warm,
+          timeoutMs: 1500,
+        }),
+      ).rejects.toThrow();
+      await Bun.sleep(200);
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", note);
+      await silent.stop(true);
+    }
+  }, 60_000);
+
   it("fails, and writes no PDF, when the URL cannot be reached or answers an error", async () => {
     const out = join(dir, `url-${warm}.pdf`);
     const closed = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response() });
@@ -923,8 +958,9 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
     const slow = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 2500))));</script>`;
     writeFileSync(join(dir, "never.html"), `<!doctype html><html><body>x${never}</body></html>`);
     writeFileSync(join(dir, "slow.html"), `<!doctype html><html><body>x${slow}</body></html>`);
+    writeFileSync(join(dir, "start.html"), `<!doctype html><html><body>x</body></html>`);
     // Chrome started first, so both prints run in the same kept one.
-    await renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), { warm: true });
+    await renderPdf(join(dir, "start.html"), join(dir, "start.pdf"), { warm: true });
     const [hung, done] = await Promise.allSettled([
       renderPdf(join(dir, "never.html"), join(dir, "never.pdf"), { warm: true, timeoutMs: 1000 }),
       renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), { warm: true, timeoutMs: 20_000 }),

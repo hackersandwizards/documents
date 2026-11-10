@@ -309,12 +309,13 @@ export async function renderPdf(
   // Beside the input, so relative resources resolve; the stored HTML stays free of the script. A
   // name per call, since a render that finishes deletes its file while another may still load it.
   const printPath = join(dirname(htmlPath), `.${basename(htmlPath)}.${randomUUID()}.print.html`);
-  const head = /<head\b[^>]*>/i.exec(html);
-  const guarded = head
-    ? html.slice(0, head.index + head[0].length) +
-      PRINT_POLICY +
-      html.slice(head.index + head[0].length)
-    : PRINT_POLICY + html;
+  // The policy opens the head; on a page without one it follows the html tag or the doctype, since
+  // anything ahead of the doctype switches Chrome into quirks mode.
+  const at = [/<head\b[^>]*>/i, /<html\b[^>]*>/i, /<!doctype\b[^>]*>/i]
+    .map((tag) => tag.exec(html))
+    .find(Boolean);
+  const end = at ? at.index + at[0].length : 0;
+  const guarded = html.slice(0, end) + PRINT_POLICY + html.slice(end);
   const close = guarded.lastIndexOf("</body>");
   writeFileSync(
     printPath,
@@ -474,12 +475,18 @@ function chapterPages(pdf: string, label: string): number[] | undefined {
 const MM = 72 / 25.4;
 /** A length brand's print or document tokens set in mm, in points: the handout's measures follow
  *  brand rather than a copy of its values. */
+const brandPts = new Map<string, number>();
 function brandPt(name: string): number {
+  const known = brandPts.get(name);
+  if (known !== undefined) return known;
   for (const file of ["print.css", "document.css"]) {
     const value = new RegExp(`${name}:\\s*([\\d.]+)mm;`).exec(
       readFileSync(brandFile(file), "utf8"),
     );
-    if (value) return Number(value[1]) * MM;
+    if (value) {
+      brandPts.set(name, Number(value[1]) * MM);
+      return Number(value[1]) * MM;
+    }
   }
   throw new Error(`brand's tokens set no ${name} in mm`);
 }
@@ -513,7 +520,7 @@ function extents(pdf: string): Map<number, { top: number; bottom: number; height
 
 /** The 1-based chapters, the first and last aside, that run on under the chapter before rather
  *  than open a page. A longer chapter runs on when the one before ends in the top half of its last
- *  page. A one-page chapter runs on when it fits whole there, with the 12 mm gap, or when the one
+ *  page. A one-page chapter runs on when it fits whole there, with the flow gap, or when the one
  *  before ends in its top third; otherwise it keeps its page, since running on would split it.
  *  Readers preferred the top-third limit to none; at a half, chapters open low and run over. */
 function flowing(pdf: string, toc: number[], flow: number[]): number[] {
@@ -538,23 +545,11 @@ function flowing(pdf: string, toc: number[], flow: number[]): number[] {
  *  up into that space, so the last chapter never ends above an empty page bottom. Points
  *  throughout: the section gap and the chapter heading take 42 mm. */
 function notesFit(pdf: string, last: number): number | undefined {
-  const box = spawnSync(
-    "pdftotext",
-    ["-bbox", "-f", `${last - 1}`, "-l", `${last - 1}`, pdf, "-"],
-    {
-      encoding: "utf8",
-    },
-  );
-  if (box.error || box.status !== 0) return undefined;
-  const height = Number(/<page width="[\d.]+" height="([\d.]+)"/.exec(box.stdout)?.[1]);
-  const bottom = height - brandPt("--print-margin-bottom");
-  const ys = [...box.stdout.matchAll(/yMax="([\d.]+)"/g)]
-    .map((m) => Number(m[1]))
-    .filter((y) => y < bottom);
-  // A page without text gives no measure, and Math.max of nothing would fit endless lines.
-  if (!ys.length) return undefined;
-  const used = Math.max(...ys);
-  const lines = Math.floor((bottom - used - 42 * MM) / brandPt("--handout-note-line")) - 1;
+  // A page without text gives no measure, and none would fit endless lines.
+  const page = extents(pdf).get(last - 1);
+  if (!page) return undefined;
+  const bottom = page.height - brandPt("--print-margin-bottom");
+  const lines = Math.floor((bottom - page.bottom - 42 * MM) / brandPt("--handout-note-line")) - 1;
   return lines >= 14 ? lines : undefined;
 }
 
@@ -700,6 +695,8 @@ function pipeChrome(chrome: string, hung?: () => void) {
       const loaded = new Promise<Result>((resolve, reject) =>
         loads.set(sessionId, { resolve, reject }),
       );
+      // A navigate that fails first never reaches `await loaded`, which then rejects unawaited.
+      loaded.catch(() => {});
       const { errorText } = await send("Page.navigate", { url }, sessionId);
       if (errorText) {
         loads.delete(sessionId);

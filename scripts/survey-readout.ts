@@ -247,6 +247,8 @@ function slideShell(inner: string, kicker: string, page: number): string {
  * the catalog does. */
 export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) => string): string {
   const { counts, headline, scales, risks, noRisk, asked, liked, improve, readout: r } = d;
+  if (r.weakColors.length !== r.weak.length)
+    throw new Error("composeSurveyReadout: readout.weakColors needs one colour per weak spot");
   // A key the caller left undefined keeps today's word.
   const own = Object.entries(d.text ?? {}).filter(([, v]) => v !== undefined);
   const t: ReadoutText = { ...READOUT_TEXT, ...Object.fromEntries(own) };

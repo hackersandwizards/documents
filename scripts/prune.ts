@@ -58,8 +58,9 @@ type Present = {
 const SET_LATER = new Set(["open", "style", "width", "src", "srcset", "data-print-scaled"]);
 
 // A class or id name after its sign: CSS takes any character past ASCII as a name character.
-const NAMED = (sign: "." | "#") =>
-  new RegExp(`[${sign}](-?[_a-zA-Z\\u{80}-\\u{10ffff}][\\w\\u{80}-\\u{10ffff}-]*)`, "gu");
+const NAME = "(-?[_a-zA-Z\\u{80}-\\u{10ffff}][\\w\\u{80}-\\u{10ffff}-]*)";
+const CLASS_NAME = new RegExp(`\\.${NAME}`, "gu");
+const ID_NAME = new RegExp(`#${NAME}`, "gu");
 
 // An attribute test, its quoted value skipped over, and the attribute's name.
 const ATTRIBUTE = /^\[(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\]"'])*\]?/;
@@ -97,8 +98,8 @@ function canMatch(selector: string, page: Present): boolean {
     } else bare += c;
   }
   bare = bare.replace(/::?[\w-]+/g, "");
-  for (const [, cls] of bare.matchAll(NAMED("."))) if (!page.classes.has(cls!)) return false;
-  for (const [, id] of bare.matchAll(NAMED("#"))) if (!page.ids.has(id!)) return false;
+  for (const [, cls] of bare.matchAll(CLASS_NAME)) if (!page.classes.has(cls!)) return false;
+  for (const [, id] of bare.matchAll(ID_NAME)) if (!page.ids.has(id!)) return false;
   for (const [, tag] of bare.matchAll(/(?:^|[\s>+~])([a-zA-Z][\w-]*)/g))
     if (!page.tags.has(tag!.toLowerCase())) return false;
   return true;
@@ -172,13 +173,9 @@ export function pruneStyles(html: string): string {
       element(el) {
         const tag = el.tagName.toLowerCase();
         page.tags.add(tag);
-        // A script block runs unless its type names data; an event handler runs too.
-        const type = el.getAttribute("type")?.trim().toLowerCase();
-        if (
-          tag === "script" &&
-          (!type || /^(module|(text|application)\/(java|ecma)script)$/.test(type))
-        )
-          runs = true;
+        // A script block counts as running unless its type names JSON data, the one data block
+        // the engine's pages carry; an event handler runs too.
+        if (tag === "script" && !/json/i.test(el.getAttribute("type") ?? "")) runs = true;
         for (const [name] of el.attributes) {
           page.attributes.add(name.toLowerCase());
           if (/^on/i.test(name)) runs = true;

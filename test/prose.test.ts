@@ -31,6 +31,9 @@ test("the body is read as the browser reads it", () => {
     `<td class-x="y" class="a num">1</td>`,
   );
   expect(proseHtml(`<td style="text-align : right">1</td>`)).toBe(`<td class="num">1</td>`);
+  expect(proseHtml(`<td style="text-align: center !important">1</td>`)).toBe(
+    `<td class="center">1</td>`,
+  );
   expect(proseHtml(`<td style="vertical-text-align:right">1</td>`)).toBe(`<td>1</td>`);
   expect(proseHtml(`<!-- <style> --><style-guide>x</style-guide>`)).toBe(
     `<!-- <style> --><style-guide>x</style-guide>`,

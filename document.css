@@ -317,14 +317,14 @@ tr.subtotal td {
   font-weight: var(--weight-semibold);
 }
 
-/* Teal marks money; readers preferred it to a purple figure. Teal on the tint 4.69:1, the rule on
-   white 5.54:1. */
 /* The row carries the role too, so the figure's --figure-scale (1.2em) is 1.2 times the row's text,
    not of the text around the table. */
 tr.total {
   font: var(--role-h4);
 }
 
+/* Teal marks money; readers preferred it to a purple figure. Teal on the tint 4.69:1, the rule on
+   white 5.54:1. */
 tr.total td {
   padding-top: var(--total-pad-top);
   padding-bottom: var(--space-cell);

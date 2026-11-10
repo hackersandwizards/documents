@@ -113,7 +113,9 @@ function denyPatterns(term: string): { inPath: RegExp; inText: RegExp[] } {
     .map((ch) => {
       if (/\s/.test(ch)) return "(?:\\s|&nbsp;|&#160;|[-_.])*";
       if (ch === "&") return "(?:&|&amp;|&#0*38;|&#x0*26;)";
-      const spelled = SPELLED[ch.toLowerCase()];
+      const lower = SPELLED[ch.toLowerCase()];
+      // A capital is spelled in capitals, which the case-sensitive acronym pattern needs.
+      const spelled = lower && ch !== ch.toLowerCase() ? lower.toUpperCase() : lower;
       return spelled ? `(?:${ch}|${spelled})` : ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     })
     .join("");

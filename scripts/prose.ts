@@ -25,9 +25,10 @@ export function proseHtml(html: string): string {
           .split(";")
           .map((declaration) => declaration.split(":").map((part) => part.trim().toLowerCase()))
           .find(([property]) => property === "text-align")?.[1];
-        if (align !== "right" && align !== "center") return;
+        const value = align?.replace(/!\s*important$/, "").trim();
+        if (value !== "right" && value !== "center") return;
         const own = el.getAttribute("class");
-        const cls = align === "right" ? "num" : "center";
+        const cls = value === "right" ? "num" : "center";
         el.setAttribute("class", own ? `${own} ${cls}` : cls);
       },
     })

@@ -53,6 +53,15 @@ test("a bar takes the band of its printed mean", () => {
   expect(html).toContain("from 2.69");
 });
 
+test("a weak spot without its colour is refused, not printed without a marker", () => {
+  expect(() =>
+    composeSurveyReadout({
+      ...surveyReadout,
+      readout: { ...surveyReadout.readout, weak: ["A (2.1)", "B (2.4)"], weakColors: ["red"] },
+    }),
+  ).toThrow("one colour per weak spot");
+});
+
 // The readout's markers follow its key, "the score's band on page 3": a weak spot's square takes the
 // colour its caller passes, a strength's the strong band, never the default teal or another colour.
 test("a weak spot's marker takes its band, a strength's the strong band", () => {
