@@ -90,7 +90,7 @@ const BRAND_HREF =
 
 /** Whether a link's address is one of the brand's files, read as the browser reads it: entities
  *  decoded, trimmed, and percent-escapes decoded, so %2e%2e is the `..` it climbs out with. */
-function brandHref(raw: string): boolean {
+function linksBrandFile(raw: string): boolean {
   try {
     return BRAND_HREF.test(decodeURIComponent(decodeHTMLAttribute(raw).trim()));
   } catch {
@@ -114,7 +114,7 @@ export function foreignStyles(html: string): string[] {
     .on("link", {
       element(el) {
         const rel = (el.getAttribute("rel") ?? "").toLowerCase().split(/\s+/);
-        if (rel.includes("stylesheet") && !brandHref(el.getAttribute("href") ?? ""))
+        if (rel.includes("stylesheet") && !linksBrandFile(el.getAttribute("href") ?? ""))
           found.push(`a linked stylesheet: ${openTag(el)}`);
       },
     })
