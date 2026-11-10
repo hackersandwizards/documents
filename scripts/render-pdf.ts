@@ -336,7 +336,8 @@ export type HandoutResult = {
  * read-back picks the chapters that run on under the one before (`flow`) and whether the notes
  * share the last page (`notes`). `source` is a URL serving the handout, which gets the pass as the
  * query `toc`, `flow` and `notes`, or a function composing the handout's HTML for a pass, which
- * passes it to DocHandout as props. The eyebrow's word comes from the first pass's page, the
+ * passes it to DocHandout as props; an image that HTML names by a relative path is read from the
+ * current folder. The eyebrow's word comes from the first pass's page, the
  * `--chapter-label` DocHandout writes for its language and `labels.chapter`; a URL is fetched once
  * more for it. Without poppler the first render stands: the contents unnumbered and every chapter
  * opening a page.
@@ -380,7 +381,8 @@ export async function renderHandoutPdf(
     const file = join(dir!, "handout.html");
     const html = await source(pass);
     label ??= chapterLabelOf(html);
-    writeFileSync(file, html);
+    // The page is written to a temp folder, so its relative images are read from here first.
+    writeFileSync(file, inlineImages(html, process.cwd()));
     return renderPdf(file, pdfPath, options);
   };
   const pagesOf = () => chapterPages(pdfPath, label!.trim());

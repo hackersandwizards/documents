@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { composePage, openComposer } from "../scripts/compose";
@@ -77,6 +77,39 @@ test("the contents numbers each chapter with the page it opens on, from composed
     ([, x]) => Number(x) > width,
   );
   expect(off.map(([, , word]) => word)).toEqual([]);
+}, 120_000);
+
+// A composed page has no folder of its own: an image it names by a relative path is read from the
+// current folder.
+test("a composed handout prints an image named relative to the current folder", async () => {
+  const here = process.cwd();
+  const folder = mkdtempSync(join(dir, "caller-"));
+  copyFileSync(
+    Bun.resolveSync("@hackersandwizards/brand/logos/lockup.png", ROOT),
+    join(folder, "fig.png"),
+  );
+  process.chdir(folder);
+  // The widest image the PDF holds for a chapter naming `src`: a file it cannot read prints as
+  // Chrome's broken-image icon, 14 px wide, beside the header's 112 px logo.
+  const widest = async (src: string) => {
+    const pdf = join(dir, "figure.pdf");
+    await renderHandoutPdf(
+      (pass) =>
+        compose(pass, {
+          chapters: [{ title: "C", html: `<p>x</p><p><img src="${src}" alt="fig"></p>` }],
+        }),
+      pdf,
+    );
+    const list = execFileSync("pdfimages", ["-list", pdf], { encoding: "utf8" });
+    const rows = list.split("\n").filter((row) => /\simage\s/.test(row));
+    return Math.max(...rows.map((row) => Number(row.trim().split(/\s+/)[3])));
+  };
+  try {
+    expect(await widest("none.png")).toBe(112);
+    expect(await widest("fig.png")).toBeGreaterThan(1000);
+  } finally {
+    process.chdir(here);
+  }
 }, 120_000);
 
 // German, so the eyebrow's word the first fetch reads is the page's own, not the English default.
