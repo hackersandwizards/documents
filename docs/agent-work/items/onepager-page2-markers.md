@@ -3,7 +3,7 @@ kind: work
 status: open
 priority: 3
 owner: Claude
-area: documents
+area: software-engineering
 evidence: not established
 ---
 

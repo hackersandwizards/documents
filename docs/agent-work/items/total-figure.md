@@ -3,7 +3,7 @@ kind: decision
 status: assumed
 priority: 3
 owner: Benedikt
-area: documents
+area: software-engineering
 recommended: b
 assumption: The total figure in price tables and timesheets prints at brand's 1.2 times its row (17.6 px), as v1.26.0 ships it.
 options:
