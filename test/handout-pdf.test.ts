@@ -6,7 +6,7 @@ import { delimiter, join, resolve } from "node:path";
 import { composePage, openComposer } from "../scripts/compose";
 import { documentCss, type HandoutPass, renderHandoutPdf } from "../scripts/render-pdf";
 import { handout } from "../scripts/samples";
-import { probePage } from "./probe";
+import { probePage, rejection } from "./probe";
 
 const ROOT = resolve(import.meta.dir, "..");
 const rules = readFileSync(join(ROOT, "handout.css"), "utf8").replace(/^@import [^;]+;\n/gm, "");
@@ -154,7 +154,7 @@ test("a server that is not running is named in plain words, the way a bad status
   server.stop(true);
   const pdf = join(dir, "refused.pdf");
   const plain = `${url} refused the connection: is its server running?`;
-  await expect(renderHandoutPdf(url, pdf)).rejects.toThrow(`renderHandoutPdf: ${plain}`);
+  expect(await rejection(renderHandoutPdf(url, pdf))).toContain(`renderHandoutPdf: ${plain}`);
 }, 60_000);
 
 test("without pdftotext the first render stands, unnumbered, and the result says so", async () => {

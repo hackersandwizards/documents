@@ -10,7 +10,7 @@ import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { assertBrandFonts, inlineImages, renderPdf } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
 import { onepager } from "../scripts/samples";
-import { fallbackFamilies, probePage, withLinkedBrand } from "./probe";
+import { fallbackFamilies, probePage, rejection, withLinkedBrand } from "./probe";
 
 let composer: Awaited<ReturnType<typeof openComposer>>;
 const work = mkdtempSync(join(tmpdir(), "hw-onepager-test-"));
@@ -99,9 +99,9 @@ describe("fitOnepager, page 2's first line", () => {
     expect(kept.fit.page2Start).toBe(plain.fit.page2Start);
     // An element left open would shift the count: refused, not balanced on the wrong block.
     const open = onepager.html.replace("</h3>", "</h3><ul><li>offen</ul>");
-    await expect(
-      fitOnepager(composer, { ...onepager, html: open }, "unused", work),
-    ).rejects.toThrow(/leaves an element open/);
+    expect(
+      await rejection(fitOnepager(composer, { ...onepager, html: open }, "unused", work)),
+    ).toMatch(/leaves an element open/);
   }, 120_000);
 });
 

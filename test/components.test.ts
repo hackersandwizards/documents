@@ -9,7 +9,7 @@ import { cssString, wordsFor } from "../scripts/fill";
 import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
 import { foreignStyles } from "../scripts/styles";
-import { probePage } from "./probe";
+import { probePage, rejection } from "./probe";
 
 const ROOT = resolve(import.meta.dir, "..");
 const components = readdirSync(join(ROOT, "components"))
@@ -209,12 +209,14 @@ test.each(["de", "en"])("DocProposal %s prints its terms from props only", async
   for (const term of ["[VAT-LABEL]", "[COMMUNITY-META]", "[ORDER-TERM]"])
     expect(html).toContain(term);
   expect(html).not.toMatch(/19.?%|kostenlos|Lifetime|Unterschrift|signature/);
-  await expect(
-    composer.render("DocProposal", {
-      ...proposal,
-      price: { ...proposal.price, vatLabel: undefined },
-    }),
-  ).rejects.toThrow("vatLabel");
+  expect(
+    await rejection(
+      composer.render("DocProposal", {
+        ...proposal,
+        price: { ...proposal.price, vatLabel: undefined },
+      }),
+    ),
+  ).toContain("vatLabel");
 });
 
 // About us closes on brand's mission, read from its verbal.json; labels.aboutText is the control.
@@ -383,9 +385,9 @@ test("DocAgreement numbers its clauses and takes one form", async () => {
   expect(html).toContain("§ 1 A");
   expect(html).toContain("§ 2 B");
   const letter = { recipient: { label: P, company: P, lines: [P] }, greeting: [P] };
-  await expect(composer.render("DocAgreement", { ...props.DocAgreement, letter })).rejects.toThrow(
-    "either parties or letter",
-  );
+  expect(
+    await rejection(composer.render("DocAgreement", { ...props.DocAgreement, letter })),
+  ).toContain("either parties or letter");
 });
 
 test("wordsFor takes a language's words, else the English ones, never an inherited key", () => {
@@ -441,9 +443,9 @@ test("DocAgreement prints no heading over an empty list, and takes no empty part
   expect(html).not.toContain("<h2>Eckdaten");
   expect(html).not.toMatch(/<h2>Präambel|<h2>Vorbemerkung/);
   expect(html).not.toMatch(/<h2>[^<]*<\/h2>\s*<\/div>/);
-  await expect(
-    composer.render("DocAgreement", { ...props.DocAgreement, parties: [] }),
-  ).rejects.toThrow("either parties or letter");
+  expect(
+    await rejection(composer.render("DocAgreement", { ...props.DocAgreement, parties: [] })),
+  ).toContain("either parties or letter");
 });
 
 // The handout's layout script runs beside a page script of the consumer's.

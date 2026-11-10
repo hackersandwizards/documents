@@ -64,11 +64,12 @@ The git hooks check the staged files, the commit message and each push;
 
 ## Release
 
-A release raises `version` in `package.json`, commits, and tags `v<version>` to match
-(`git tag v<version> && git push origin main v<version>`); consumers then raise the tag in their
-dependency line. Every push is public at once, so before the commit the maintainer runs Company
-OS's privacy check with its real names over this checkout, from a Company OS
-checkout:
+A release raises `version` in `package.json`, commits and pushes `main` first
+(`git push origin main`). Only once that push has landed does it tag `v<version>` to match and push
+the tag (`git tag v<version> && git push origin v<version>`): a tag pushed with a rejected `main`
+points at a commit `main` never holds. Consumers then raise the tag in their dependency line.
+Every push is public at once, so before the commit the maintainer runs Company OS's privacy check
+with its real names over this checkout, from a Company OS checkout:
 `bun scripts/repo/documents-privacy.ts --package <this checkout>`. The full steps and the layout:
 [CLAUDE.md](CLAUDE.md).
 

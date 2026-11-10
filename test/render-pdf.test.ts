@@ -35,7 +35,7 @@ import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { svgUri } from "../scripts/fill";
 import { preparation, rateCard, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
-import { fallbackFamilies, probePage, withLinkedBrand } from "./probe";
+import { fallbackFamilies, probePage, rejection, withLinkedBrand } from "./probe";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -468,7 +468,7 @@ describe("renderPdf without output", () => {
     writeFileSync(join(dir, "stale.html"), "<!doctype html><html><body>x</body></html>");
     writeFileSync(join(dir, "stale.pdf"), "%PDF-1.7 stale");
     process.env.CHROME_BINARY = "/usr/bin/true";
-    await expect(renderPdf(join(dir, "stale.html"), join(dir, "stale.pdf"))).rejects.toThrow(
+    expect(await rejection(renderPdf(join(dir, "stale.html"), join(dir, "stale.pdf")))).toContain(
       "Chrome exited",
     );
     expect(existsSync(join(dir, "stale.pdf"))).toBe(false);
@@ -698,16 +698,16 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       `<!doctype html><html><body>x${pending}</body></html>`,
     );
     const out = join(dir, `pending-${warm}.pdf`);
-    await expect(
-      renderPdf(join(dir, "pending.html"), out, { warm, timeoutMs: 3000 }),
-    ).rejects.toThrow(/within 3000 ms.*hwLayout/);
+    expect(
+      await rejection(renderPdf(join(dir, "pending.html"), out, { warm, timeoutMs: 3000 })),
+    ).toMatch(/within 3000 ms.*hwLayout/);
     expect(existsSync(out)).toBe(false);
     const failing = `<script>(globalThis.hwLayout ??= []).push(Promise.reject(new Error("no fit")));</script>`;
     writeFileSync(
       join(dir, "failing.html"),
       `<!doctype html><html><body>x${failing}</body></html>`,
     );
-    await expect(renderPdf(join(dir, "failing.html"), out, { warm })).rejects.toThrow(/no fit/);
+    expect(await rejection(renderPdf(join(dir, "failing.html"), out, { warm }))).toMatch(/no fit/);
     expect(existsSync(out)).toBe(false);
   }, 60_000);
 
@@ -732,12 +732,14 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       fetch: () => new Promise<Response>(() => {}),
     });
     try {
-      await expect(
-        renderPdf(`http://127.0.0.1:${silent.port}/x`, join(dir, `silent-${warm}.pdf`), {
-          warm,
-          timeoutMs: 1000,
-        }),
-      ).rejects.toThrow();
+      expect(
+        await rejection(
+          renderPdf(`http://127.0.0.1:${silent.port}/x`, join(dir, `silent-${warm}.pdf`), {
+            warm,
+            timeoutMs: 1000,
+          }),
+        ),
+      ).toMatch(/within 1000 ms/);
       await Bun.sleep(200);
       expect(unhandled).toEqual([]);
     } finally {
@@ -751,7 +753,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     const closed = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response() });
     const port = closed.port;
     await closed.stop(true);
-    await expect(renderPdf(`http://127.0.0.1:${port}/x`, out, { warm })).rejects.toThrow(
+    expect(await rejection(renderPdf(`http://127.0.0.1:${port}/x`, out, { warm }))).toContain(
       "refused the connection: is its server running?",
     );
     const server = Bun.serve({
@@ -760,9 +762,9 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       fetch: () => new Response("<p>Internal error</p>", { status: 500 }),
     });
     try {
-      await expect(renderPdf(`http://127.0.0.1:${server.port}/x`, out, { warm })).rejects.toThrow(
-        /500/,
-      );
+      expect(
+        await rejection(renderPdf(`http://127.0.0.1:${server.port}/x`, out, { warm })),
+      ).toMatch(/500/);
     } finally {
       await server.stop(true);
     }
@@ -840,7 +842,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     // A PDF from an earlier render does not survive the failed one.
     const out = join(dir, `no-brand-image-${warm}.pdf`);
     writeFileSync(out, "earlier");
-    await expect(renderPdf(file, out, { warm })).rejects.toThrow(
+    expect(await rejection(renderPdf(file, out, { warm }))).toContain(
       "brand exports no image @hackersandwizards/brand/logos/none.svg",
     );
     expect(existsSync(out)).toBe(false);
