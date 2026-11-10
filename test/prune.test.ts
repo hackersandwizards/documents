@@ -6,7 +6,7 @@ const page = (css: string, body: string) =>
 const styles = (html: string) => /<style>([\s\S]*)<\/style>/.exec(html)![1];
 
 describe("pruneStyles", () => {
-  const body = '<main id="top"><p class="kept">x</p></main>';
+  const body = '<main id="top" data-Mode="on"><p class="kept">x</p></main>';
 
   it("drops each rule needing a class, id or element the markup carries nowhere", () => {
     const css = ".gone{color:red}#away{color:red}table td{color:red}.kept .gone{color:red}";
@@ -16,8 +16,18 @@ describe("pruneStyles", () => {
   it("control: keeps a rule one of whose selectors can match, whatever its pseudo-classes test", () => {
     const css =
       ".gone,.kept{color:red}#top>p{color:red}main :not(.gone){color:red}" +
-      'p:has(.gone)::before{content:"x"}[data-x] .kept:hover{color:red}html{color:red}';
+      'p:has(.gone)::before{content:"x"}[data-mode] .kept:hover{color:red}html{color:red}' +
+      ':where([data-gone], .kept){color:red}:not([data-gone]){color:red}[DATA-MODE="off"]{color:red}' +
+      '[open]{color:red}:is([data-gone=")"], .kept){color:red}[data-mode="[gone]"]{color:red}' +
+      "p[srcset]{color:red}";
     expect(styles(pruneStyles(page(css, body)))).toBe(css);
+  });
+
+  it("drops each rule testing an attribute no element carries, inside :is() and :where() too", () => {
+    const css =
+      '[data-gone]{color:red}.kept[data-gone="x"]{color:red}:where([data-gone] [data-mode]){color:red}' +
+      ":is(.gone, [data-gone]) .kept{color:red}";
+    expect(styles(pruneStyles(page(css, body)))).toBe("");
   });
 
   it("keeps an emptied @layer block, whose position orders the layers, and drops an emptied @media", () => {

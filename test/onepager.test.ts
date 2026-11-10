@@ -10,7 +10,7 @@ import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { assertBrandFonts, inlineImages, renderPdf } from "../scripts/render-pdf";
 import { ROOT } from "../scripts/root";
 import { onepager } from "../scripts/samples";
-import { probePage } from "./probe";
+import { fallbackFamilies, probePage } from "./probe";
 
 let composer: Awaited<ReturnType<typeof openComposer>>;
 const work = mkdtempSync(join(tmpdir(), "hw-onepager-test-"));
@@ -35,6 +35,10 @@ describe("fitOnepager", () => {
     expect(fit.pages).toBe(2);
     expect(fit.fit.page2Start).toBeGreaterThan(2);
     expect(fit.html).not.toContain("tokens/fonts/");
+    // Cutting the faces to the print keeps the fallback faces, which carry no data.
+    const { named, defined } = fallbackFamilies(fit.html);
+    expect(named.length).toBeGreaterThan(0);
+    expect(defined).toEqual(named);
     // brand's comments name internal decisions; the page leaves the engine without any.
     expect(fit.html).not.toMatch(/\/\*/);
     // Rendered from a folder holding no brand file: every face comes from the page itself.

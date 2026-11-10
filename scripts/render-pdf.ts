@@ -744,10 +744,10 @@ function keptChrome(chrome: string) {
  * The document base `document.css` as one stylesheet: each `@import` inlined (the brand files from
  * `@hackersandwizards/brand`, its `tokens.css` as its `:root` twin `tokens.root.css`), `@theme`
  * read as `:root`, and every face a data URI resolved beside the file that names it, so the HTML
- * it lands in renders anywhere.
+ * it lands in renders anywhere; then brand's fallback faces (fallbackFaces).
  */
 export function documentCss(): string {
-  const css = inlineCss(join(ROOT, "document.css"));
+  const css = `${inlineCss(join(ROOT, "document.css"))}\n${fallbackFaces()}`;
   // The HTML parser ends a style element at this text even inside a CSS comment.
   if (/<\/style/i.test(css)) throw new Error("document.css must not contain </style");
   return css;
@@ -765,7 +765,28 @@ export function brandCss(): string {
     "elements/strip.css",
   ]
     .map((f) => inlineCss(brandFile(f)))
+    .concat(fallbackFaces())
     .join("\n");
+}
+
+let fallback: string | undefined;
+
+/** brand's fallback faces, the `@font-face` rules of its `fonts.css` on local fonts alone, which
+ * `--font-sans` and `--font-mono` name after the web faces and print.css leaves out. Their size
+ * and metric overrides set a character no inlined face holds, or a page whose faces fail to load,
+ * close to the web face's widths: with the web faces removed, a text run's median width moved
+ * 0.2 to 0.6 % from the web face's with them and 1.6 to 3.5 % without (measured on a proposal, the
+ * onepager and the survey readout in Chrome on macOS, Arial and Courier New installed). Where the
+ * web faces load, Chrome never consults them and the PDF keeps its bytes. Its path goes into
+ * `read`. */
+export function fallbackFaces(read?: Set<string>): string {
+  const path = brandFile("fonts.css");
+  read?.add(path);
+  return (fallback ??= (
+    stripComments(readFileSync(path, "utf-8")).match(/@font-face\s*\{[^}]*\}/g) ?? []
+  )
+    .filter((face) => !face.includes("url("))
+    .join("\n"));
 }
 
 const BRAND = "@hackersandwizards/brand/";

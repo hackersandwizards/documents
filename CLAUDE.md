@@ -54,10 +54,11 @@ decision or item ids, pointers to review notes and names go to the commit messag
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
   Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
   renumbered so one input prints the same bytes, the document base baked into
-  `<style data-hw-document>`, `compactStyles`, which every standalone page passes (baked, onepager,
+  `<style data-hw-document>` beside `fallbackFaces` (brand's `fonts.css` faces on local fonts,
+  which the base, the onepager and the survey readout carry), `compactStyles`, which every standalone page passes (baked, onepager,
   survey readout): its styles without CSS comments, which a reader of the page never needs, with the
   brand's `@layer` order once, first (`test/layers.test.ts`), without the
-  rules and custom properties its markup cannot use (`pruneStyles`, `scripts/prune.ts`), and without a
+  rules (by class, id, element or attribute name) and custom properties its markup cannot use (`pruneStyles`, `scripts/prune.ts`), and without a
   face whose `unicode-range` none of its characters fall in, `subsetFaces`, which cuts each inlined face to
   the page's characters for a composed page and the onepager, its WOFF2 encoding, like `cutFacesToPdf`'s, on Bun Workers (`scripts/encode-face.ts`) and in-process where none can run (a consumer that bakes a stored page in place
   runs it after `bakeDocumentCss`), `cutFacesToPdf`, which cuts each face of a printed page to the

@@ -46,15 +46,52 @@ function splitTop(text: string, sep: string): string[] {
   return parts;
 }
 
-type Present = { classes: Set<string>; ids: Set<string>; tags: Set<string> };
+type Present = {
+  classes: Set<string>;
+  ids: Set<string>;
+  tags: Set<string>;
+  attributes: Set<string>;
+};
 
-/** Whether a selector can match the page: every class, id and element name it needs outside a
- * functional pseudo-class or an attribute test is one the markup carries. An escaped selector
- * counts as matching. */
+// Attributes an element gains on a page without a script of its own: `open` from the browser when
+// a reader opens a `<details>`, the rest from renderPdf's print script on each image it redraws.
+const SET_LATER = new Set(["open", "style", "width", "src", "srcset", "data-print-scaled"]);
+
+// An attribute test, its quoted value skipped over, and the attribute's name.
+const ATTRIBUTE = /^\[(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\]"'])*\]?/;
+const ATTRIBUTE_NAME = /^\[\s*([\w-]+)\s*(?:[~|^$*]?=|\])/;
+
+/** Whether a selector can match the page: every class, id, element name and attribute name it
+ * needs outside a functional pseudo-class is one the markup carries, and of an `:is()` or
+ * `:where()` list one selector can match. Another functional pseudo-class, such as `:not()` or
+ * `:has()`, needs nothing. An escaped selector counts as matching. */
 function canMatch(selector: string, page: Present): boolean {
   if (selector.includes("\\")) return true;
-  let bare = selector.replace(/\[[^\]]*\]/g, " ");
-  while (/\([^()]*\)/.test(bare)) bare = bare.replace(/\([^()]*\)/g, "");
+  let bare = "";
+  for (let i = 0; i < selector.length; i++) {
+    const c = selector[i]!;
+    if (c === "[") {
+      const test = ATTRIBUTE.exec(selector.slice(i))![0];
+      const name = ATTRIBUTE_NAME.exec(test)?.[1]?.toLowerCase();
+      if (name && !page.attributes.has(name) && !SET_LATER.has(name)) return false;
+      bare += " ";
+      i += test.length - 1;
+    } else if (c === "(") {
+      let depth = 1;
+      let j = i + 1;
+      for (; j < selector.length && depth > 0; j++) {
+        if (selector[j] === "[") j += ATTRIBUTE.exec(selector.slice(j))![0].length - 1;
+        else if (selector[j] === "(") depth++;
+        else if (selector[j] === ")") depth--;
+      }
+      if (
+        /:(is|where)$/i.test(bare) &&
+        !splitTop(selector.slice(i + 1, j - 1), ",").some((s) => canMatch(s.trim(), page))
+      )
+        return false;
+      i = j - 1;
+    } else bare += c;
+  }
   bare = bare.replace(/::?[\w-]+/g, "");
   for (const [, cls] of bare.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g))
     if (!page.classes.has(cls!)) return false;
@@ -109,8 +146,8 @@ export const editStyles = (html: string, edit: (css: string) => string) =>
   );
 
 /**
- * A page whose style elements keep only what its markup can use: each rule needing a class, id or
- * element the page carries nowhere goes, then each custom property the page declares and never
+ * A page whose style elements keep only what its markup can use: each rule needing a class, id,
+ * element or attribute the page carries nowhere goes, then each custom property the page declares and never
  * reads (in a `var()`, a style query or a style attribute), until none is left to drop. On a page
  * holding a script the styles stay whole, since the script may add a class or read a property.
  * The document base, brand's elements and every component's styles were about 87 KB of each
@@ -123,12 +160,14 @@ export function pruneStyles(html: string): string {
     classes: new Set(),
     ids: new Set(),
     tags: new Set(["html", "head", "body", "tbody"]),
+    attributes: new Set(),
   };
   // Read as the browser parses it: any quoting, spacing or case.
   new HTMLRewriter()
     .on("*", {
       element(el) {
         page.tags.add(el.tagName.toLowerCase());
+        for (const [name] of el.attributes) page.attributes.add(name.toLowerCase());
         for (const name of (el.getAttribute("class") ?? "").split(/\s+/).filter(Boolean))
           page.classes.add(name);
         const id = el.getAttribute("id");

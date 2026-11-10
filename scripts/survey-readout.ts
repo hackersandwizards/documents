@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fill, languageTag, svgUri } from "./fill";
-import { brandCss, brandFile, compactStyles } from "./render-pdf";
+import { brandCss, brandFile, compactStyles, fallbackFaces } from "./render-pdf";
 import { ROOT } from "./root";
 
 /** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
@@ -411,7 +411,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
 `
     : "";
   return compactStyles(
-    PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
+    PAGE.replace("__BRAND__", () => (brand ? fallbackFaces() : brandCss()))
       .replace("__STYLE__", () => STYLE)
       .replace("<style data-hw-readout>", () => `${links}<style data-hw-readout>`)
       .replace('lang="en"', () => `lang="${languageTag(t.lang)}"`)

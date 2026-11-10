@@ -35,3 +35,17 @@ export function probePage(html: string, probe: string, args: string[] = []): str
     rmSync(dir, { recursive: true, force: true });
   }
 }
+
+/** The fallback families (a name holding "Fallback") the font stacks in `css` name, and those of
+ * them an `@font-face` in `css` defines, each sorted. */
+export function fallbackFamilies(css: string): { named: string[]; defined: string[] } {
+  const families = (pattern: RegExp) =>
+    new Set(
+      [...css.matchAll(pattern)].flatMap(([, s]) =>
+        [...s!.matchAll(/"([^"]*Fallback[^"]*)"/g)].map(([, n]) => n!),
+      ),
+    );
+  const named = [...families(/--font-(?:sans|mono|code)\s*:([^;]+);/g)].sort();
+  const faces = families(/@font-face\s*\{\s*font-family:([^;]+);/g);
+  return { named, defined: named.filter((n) => faces.has(n)) };
+}
