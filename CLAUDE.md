@@ -164,7 +164,8 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
    OS's real names over this checkout: in os, `bun scripts/repo/documents-privacy.ts --package
 <this checkout>`. Every push is public at once, so its gate in os, which reads the pinned
    release, comes too late (a client name reached history that way in v0.1.14). Then commit and
-   push; once the push has landed, tag `v<version>` and push the tag.
+   push; once the push has landed, tag `v<version>` and push the tag: a tag pushed with a rejected
+   `main` points at a commit `main` never holds.
 2. In each consumer (os, trainer-hub), raise the tag in `package.json`, `bun install`, run its gate.
    A changed component changes rendered PDFs: render a real document of each changed type before
    and after and compare the pages.

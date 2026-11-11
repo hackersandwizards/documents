@@ -1,55 +1,72 @@
 # @hackersandwizards/documents
 
-The hackers&wizards document engine as one package: the document base, every document
-component, composing a component to standalone HTML and rendering it to PDF with headless Chrome.
-Company OS and the trainer hub install it and keep what fills their documents.
+The hackers&wizards document engine: it turns a quote, a timesheet, an agreement, a certificate
+or a training handout into a PDF in the company's design. The package holds the document base,
+every document component, composing a component to standalone HTML and rendering it to PDF with
+headless Chrome. Company OS and the trainer hub install it and keep what fills their documents.
+Slide decks come from [slides](https://github.com/hackersandwizards/slides).
 
-Maintainer: Benedikt Stemmildt. The repo is public, its history included, so nothing goes in that
-may not be public.
+| You want                                   | Go to                                                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| to see every document type and component   | the [catalog](https://hackersandwizards.github.io/documents/), with invented data, each type also as a whole page |
+| documents in your repository               | [Install](#install) and [Use](#use)                                                                               |
+| to change a component or the document base | [Work on the package](#work-on-the-package)                                                                       |
+| to release a change                        | [Releasing a change](CLAUDE.md#releasing-a-change) in CLAUDE.md                                                   |
+| someone to ask                             | the maintainer, Benedikt Stemmildt                                                                                |
 
-The catalog shows every document type and component with invented data, and each type as a whole
-page at `/documents/types/<type>/index.html`. It is published at
-https://hackersandwizards.github.io/documents/ on every push to `main`; `bun run build`
-writes it to `dist/`, never committed.
+## Install
 
-## Use it in another repo
+Add it pinned to the newest tag
+(`git ls-remote --tags https://github.com/hackersandwizards/documents.git` lists them); the
+install needs no GitHub login:
 
-Add the dependency in exactly this form, pinned to the newest tag
-(`git ls-remote --tags https://github.com/hackersandwizards/documents.git` lists them), next to
-`@hackersandwizards/brand`, whose tokens, faces and logos the documents use. Both repos are public:
-Bun fetches the `git+https://` form through GitHub's tarball API without a GitHub login.
-
-```json
-"@hackersandwizards/documents": "git+https://github.com/hackersandwizards/documents.git#v<version>"
+```sh
+bun add "git+https://github.com/hackersandwizards/documents.git#v<version>"
 ```
 
-| Import or command                                         | What                                                                                                                                                       |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@hackersandwizards/documents/tokens.css`                 | the document tokens: every value a role on the brand's tokens                                                                                              |
-| `@hackersandwizards/documents/document.css`               | the print base                                                                                                                                             |
-| `@hackersandwizards/documents/onepager.css`               | the onepager's own stylesheet                                                                                                                              |
-| `@hackersandwizards/documents/handout.css`                | the handout's print stylesheet                                                                                                                             |
-| `@hackersandwizards/documents/components/<Doc*.astro>`    | a document component                                                                                                                                       |
-| `@hackersandwizards/documents/render-pdf`                 | `renderPdf` (an HTML file or URL), `renderHandoutPdf`, `bakeDocumentCss`, `composeDocument`, `assertBrandFonts`, `inlineImages`, `subsetFaces`, `brandCss` |
-| `@hackersandwizards/documents/compose`                    | `openComposer`, `composePage`, `escapeHtml`                                                                                                                |
-| `@hackersandwizards/documents/onepager`                   | `composeOnepager`, `fitOnepager`: the onepager and its two-page fit                                                                                        |
-| `@hackersandwizards/documents/survey-readout`             | `composeSurveyReadout`: the attendee-feedback readout deck; `bandColor`, `scalePosition`, `STRENGTH_AT`: its score bands                                   |
-| `@hackersandwizards/documents/handout`                    | `HANDOUT_TEXT`: the handout's own words per language                                                                                                       |
-| `bun run documents-compose <Doc> <props.json> <out.html>` | one component with its props as standalone HTML                                                                                                            |
-| `bun run documents-privacy [--deny <terms.txt>]`          | fails on private data in the package, and on each term of the file                                                                                         |
-| `bun run documents-styles <file or dir>...`               | fails on a style in a document HTML file that the engine did not draw                                                                                      |
+Pin beside it, each `@hackersandwizards` package from its Git tag in the form above:
 
-Astro, Vite, `@hackersandwizards/brand`, `@hackersandwizards/testimonials` and
-`@hackersandwizards/scaffolding` are peer dependencies: the consumer's own copies compile the
-components, a page names a testimonial's mark by its package path, and `./render-pdf` imports
-scaffolding's `./chrome` at run time, so a consumer installs scaffolding beside its runtime
-dependencies. Brand, testimonials and scaffolding are optional peers, so Bun never looks them up
-on the npm registry: pin each from its Git tag. `documents-privacy` reads the company's name and
-address from brand's `verbal.json` and `imprint.json`, so it too needs brand installed.
+- Astro (`^7.4.4`) and Vite (`^8.3.5`), which compile the components
+- `@hackersandwizards/brand` v2.17.0 or newer, whose tokens, faces and logos the documents use
+- `@hackersandwizards/testimonials`, whose marks a page names by package path
+- `@hackersandwizards/scaffolding` among your runtime dependencies: `./render-pdf` imports its `./chrome` at run time
 
-The TypeScript exports run under Bun only: they parse HTML with Bun's `HTMLRewriter`, which Node
-lacks, so `inlineImages` and every composer and render throw `HTMLRewriter is not defined` under
-Node (a Node test runner such as vitest included). Call them from a Bun process.
+**Bun only.** The TypeScript exports parse HTML with Bun's `HTMLRewriter`, so under Node,
+vitest included, they throw `HTMLRewriter is not defined`. Call them from a Bun process, and
+test their callers with `bun test`.
+
+## Use
+
+Compose a component with its props, then print the page to PDF. Run it from your Astro project's
+root: `composeDocument` compiles the component with that project's Astro.
+
+```ts
+import { composeDocument, renderPdf } from "@hackersandwizards/documents/render-pdf";
+
+const html = await composeDocument("DocMarkdown", { kind: "Briefing", html: "<h1>Hi</h1>" });
+await Bun.write("briefing.html", html);
+await renderPdf("briefing.html", "briefing.pdf");
+```
+
+The imports, each under `@hackersandwizards/documents/`:
+
+- `render-pdf`: `renderPdf` (an HTML file or URL), `composeDocument`, `renderHandoutPdf`, `bakeDocumentCss`, `assertBrandFonts`, `inlineImages`, `subsetFaces`, `brandCss`
+- `document.css`: the print base; `tokens.css`: the document tokens, every value a role on the brand's tokens
+- `components/<Doc*.astro>`: a document component, rendered in your own Astro route
+- `compose`: `openComposer`, `composePage`, `escapeHtml`
+- `onepager`: `composeOnepager`, `fitOnepager`, the onepager and its two-page fit; `onepager.css`: its own stylesheet
+- `survey-readout`: `composeSurveyReadout`, the attendee-feedback readout deck; `bandColor`, `scalePosition`, `STRENGTH_AT`, its score bands
+- `handout` and `handout.css`: `HANDOUT_TEXT`, the handout's words per language, and its print stylesheet
+
+Every export and what it does: [CLAUDE.md](CLAUDE.md#layout).
+
+## Commands
+
+Run each with `bun run <name>`; `--help` prints its usage.
+
+- `documents-compose` writes one component with its props as standalone HTML
+- `documents-privacy` fails on private data in the package, and on each term of a deny file
+- `documents-styles` fails on a style in a document HTML file that the engine did not draw
 
 ## Work on the package
 
@@ -57,26 +74,15 @@ Requirements: Bun 1.3 or newer, poppler (`brew install poppler`) for the font an
 and `gitleaks` (`brew install gitleaks`) for the commit hook. Rendering starts Chrome for Testing
 and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 
-```sh
-git clone https://github.com/hackersandwizards/documents.git && cd documents
-bun install      # also points the git hooks at .githooks/
-bun run dev      # the catalog at http://127.0.0.1:4330/
-bun run check    # scaffolding's gate with the catalog build, then this repository's steps (CLAUDE.md, Commands)
-```
+- `bun install` installs and points the git hooks at `.githooks/`, which [.githooks/README.md](.githooks/README.md) lists
+- `bun run dev` serves the catalog at `http://127.0.0.1:4330/`
+- `bun run check` runs the gate: scaffolding's steps with the catalog build, then this repository's
+- `bun run build` writes the catalog to `dist/`, never committed; Pages publishes it on every push to `main`
 
-The git hooks check the staged files, the commit message and each push;
-[.githooks/README.md](.githooks/README.md) lists them.
+A release is a tag `v<version>` matching `package.json`. Before its commit, Company OS's privacy
+check runs with the real names over this checkout; the tag follows once the push has landed. The
+steps: [Releasing a change](CLAUDE.md#releasing-a-change); the rest of the rules: [CLAUDE.md](CLAUDE.md).
 
-## Release
-
-A release raises `version` in `package.json`, commits and pushes `main` first
-(`git push origin main`). Only once that push has landed does it tag `v<version>` to match and push
-the tag (`git tag v<version> && git push origin v<version>`): a tag pushed with a rejected `main`
-points at a commit `main` never holds. Consumers then raise the tag in their dependency line.
-Every push is public at once, so before the commit the maintainer runs Company OS's privacy check
-with its real names over this checkout, from a Company OS checkout:
-`bun scripts/repo/documents-privacy.ts --package <this checkout>`. The full steps and the layout:
-[CLAUDE.md](CLAUDE.md).
-
-Security issues: [SECURITY.md](SECURITY.md). Licence: PolyForm Strict 1.0.0, see
+The repo is public, its history included, so nothing goes in that
+may not be public. Security issues: [SECURITY.md](SECURITY.md). Licence: PolyForm Strict 1.0.0, see
 [LICENSE](LICENSE).
