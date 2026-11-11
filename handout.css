@@ -209,6 +209,7 @@ section h3 {
   display: flex;
   align-items: baseline;
   gap: var(--handout-toc-gap);
+  margin: 0;
   padding: var(--handout-toc-pad);
   counter-increment: entry;
   break-inside: avoid;

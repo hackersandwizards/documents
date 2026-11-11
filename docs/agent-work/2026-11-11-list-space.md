@@ -1,8 +1,10 @@
 # The space under a list in a table cell, and where an item's 1 pt goes, 11.11.2026
 
-Nothing shipped. Neither change scored ahead of today's lists outside the noise of a blind panel,
-so the engine stays at v1.28.1. This report holds the readings and the scores. It follows up the
-two points left open in [the timesheet baseline report](2026-11-11-timesheet-list-baseline.md).
+c shipped in v1.29.0, as a top margin on `li + li` (see [Shipped](#shipped-in-v1290)). The panel
+itself scored no variant ahead of today's lists outside its noise, and its own rule shipped
+nothing; the blind-review skill gives such a tie to the variant with fewer exceptions, which is c.
+This report holds the readings and the scores. It follows up the two points left open in
+[the timesheet baseline report](2026-11-11-timesheet-list-baseline.md).
 
 ## Variants
 
@@ -111,3 +113,48 @@ another body row follows, not a total. The sample has a single row, so it shows 
 alone.
 
 Review: medium, because the change would reach every client document while one rule was in question.
+
+## Shipped in v1.29.0
+
+`document.css` drops the items' 1 pt above and below and the v1.28.1 rule for a list first in a
+cell; `li + li` takes a top margin of 2 pt, today's gap. The onepager takes that rule beside
+`ul li`.
+
+**Margin, not padding.** The panel scored c with the 2 pt as padding. As padding, the second and
+third columns of the proposal's three-column list of what is included start 2.66 px below the
+first, since every item but the first carries it. A margin falls away at a column break, so all
+three start level. On every other list of every type page both forms measure the same: list
+height, space above and below, the gaps between items. The panel's three crops hold no
+multi-column list, so its scores stand for the margin form.
+
+**Lists with their own spacing.** A margin also reaches lists whose component pads its items
+itself. The timeline (DocSteps' and the base's own `.timeline`) and the handout's contents set
+`margin: 0` and stay as they were, and so does the onepager's client row. The certificate's compact topic list moves to the same form, 0.6 mm
+between items, and its tight fit takes that to 0.
+
+**What changes besides the edges.** In a loose Markdown list, where each item is a paragraph, the
+paragraph's 6 pt margin and the 2 pt between items now overlap instead of adding up: 6 pt between
+two items instead of 8 pt, text to text 11.31 px instead of 13.97. The last paragraph's margin now
+falls through the list's bottom too, so the text after a loose list follows as after a tight one
+(10.31 px from its last line instead of 19.64). Items around a nested list close up the same way
+(11.31 px instead of 15.30). No sample holds a loose or a nested list; these readings come from
+lists added to the type pages.
+
+**PDF pages**, one per type, rendered before and after: no page count changed and every page kept
+its text. The end of the body text moved on these pages:
+
+| Type                                    | Page | Body text ends |
+| --------------------------------------- | ---- | -------------- |
+| proposal, without prices, signed, quote | 2    | 3.75 pt higher |
+| onepager (sample and its fit)           | 1    | 3.75 pt higher |
+| onepager (sample and its fit)           | 2    | 1.50 pt higher |
+| NDA                                     | 1    | 2.25 pt higher |
+| rate card                               | 1    | 2.25 pt higher |
+| Markdown document                       | 1    | 2.25 pt higher |
+| delivery briefing                       | 1    | 1.50 pt higher |
+| flat-fee timesheet                      | 1    | 0.75 pt higher |
+| trainer briefing                        | 1    | 0.75 pt higher |
+
+The certificate's words shift by up to 1.5 pt within its fixed page. The onepager's fit stays at page
+2 starting at block 8, lift 2, air 4. The handout, the order confirmation, the preparation, the
+month and training timesheets, the elements page and the survey readout print as before.

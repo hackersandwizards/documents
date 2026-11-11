@@ -27,8 +27,10 @@ const { steps } = Astro.props;
     list-style: none;
   }
 
+  /* A row's own padding spaces the timeline, not the base's margin between items. */
   li {
     display: grid;
+    margin: 0;
     background: none;
     grid-template-columns: var(--timeline-when) 1fr;
     gap: var(--space-grid);

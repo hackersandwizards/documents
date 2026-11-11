@@ -365,9 +365,8 @@ const topicClass = [
     max-width: var(--cert-topics-compact);
   }
 
-  .topics-compact li {
-    padding-top: var(--cert-topic-pad);
-    padding-bottom: var(--cert-topic-pad);
+  .topics-compact li + li {
+    margin-top: calc(2 * var(--cert-topic-pad));
   }
 
   .topics-columns {
@@ -475,9 +474,8 @@ const topicClass = [
   }
 
   /* The fit steps the script above takes, in its order. */
-  .fit-tight .topics li {
-    padding-top: 0;
-    padding-bottom: 0;
+  .fit-tight .topics li + li {
+    margin-top: 0;
   }
 
   .fit-columns .topics,

@@ -57,6 +57,7 @@ function baseCss(link: boolean, read?: Set<string>) {
     // tokens.css above, and the base's list indent, never a copy.
     brandText("marker.css", read),
     rule(documentCss, /^ul li \{[\s\S]*?^\}/m, "`ul li` rule holding the list indent"),
+    rule(documentCss, /^li \+ li \{[\s\S]*?^\}/m, "`li + li` rule spacing the items"),
     // The page number every document carries bottom right, the base's margin box.
     `@page onepager { ${rule(documentCss, /^ {2}@bottom-right \{[\s\S]*?^ {2}\}/m, "@bottom-right page number")} }`,
   ].join("\n");

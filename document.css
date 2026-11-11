@@ -267,7 +267,7 @@ ul {
 }
 
 ul li {
-  padding: var(--space-hair) 0 var(--space-hair) var(--list-indent);
+  padding: 0 0 0 var(--list-indent);
 }
 
 ol {
@@ -275,13 +275,11 @@ ol {
   padding-left: var(--ol-indent);
 }
 
-ol li {
-  padding: var(--space-hair) 0;
-}
-
-/* A list that is a table cell's first element sets its first line on the row's baseline. */
-:is(td, th) > :is(ul, ol):first-child > li:first-child {
-  padding-top: 0;
+/* Items are spaced only between each other: a list's first line sits where text would, in a table
+   cell too, and nothing pads its last. A margin, which a column break drops, so every column of a
+   multi-column list starts level. */
+li + li {
+  margin-top: calc(2 * var(--space-hair));
 }
 
 /* Rows stay whole; the table itself may break, or a long one leaves a near-empty page. */
@@ -461,6 +459,7 @@ tr.total td.num {
 
 .timeline li {
   display: grid;
+  margin: 0;
   background: none;
   grid-template-columns: var(--timeline-when) 1fr;
   gap: var(--space-grid);
