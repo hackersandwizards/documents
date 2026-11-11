@@ -6,15 +6,8 @@ import { decodeHTMLStrict } from "entities";
 import type { openComposer } from "./compose";
 import { ONEPAGER_ELEMENTS, withElements } from "./elements";
 import { escapeHtml, languageTag } from "./fill";
-import {
-  brandFile,
-  compactStyles,
-  cutFacesToPdf,
-  inlineCss,
-  renderPdf,
-  subsetFaces,
-} from "./render-pdf";
-import { ROOT, withoutImports } from "./root";
+import { compactStyles, cutFacesToPdf, inlineCss, renderPdf, subsetFaces } from "./render-pdf";
+import { brandFile, ROOT, withoutImports } from "./root";
 
 function rule(css: string, pattern: RegExp, what: string) {
   const found = css.match(pattern)?.[0];

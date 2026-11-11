@@ -23,7 +23,8 @@ const OWN_SPACING = ".timeline, .toc ol";
 const OFF_BASE = ".readout ul";
 const WRAP = "Ein Eintrag, der in seiner Zelle auf mehr als eine Zeile umbricht, ".repeat(3);
 
-/** Runs in the page: how far each list's first line sits off its reference, and the tables. */
+/** Runs in the page: how far each list's first line sits off its reference, and how many of the
+ * page's tables it measured. */
 function offsets(wrap: string) {
   const baseline = (cell: Element) => {
     const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT, {
@@ -53,13 +54,13 @@ function offsets(wrap: string) {
     const off = others.length ? Math.max(...others.map((b) => Math.abs(b!.y - list.y))) : NaN;
     readings.push({ label: `as shipped: ${row.textContent!.trim().slice(0, 30)}`, off });
   }
-  let tables = 0;
+  let measured = 0;
   for (const table of document.querySelectorAll("table")) {
     const row = [...table.querySelectorAll<HTMLTableRowElement>("tbody tr")].find(
       (r) => r.cells.length > 1 && !r.className && [...r.cells].every((c) => c.colSpan === 1),
     );
     if (!row) continue;
-    tables++;
+    measured++;
     const copy = (html: string) => {
       const r = row.cloneNode(true) as HTMLTableRowElement;
       r.cells[r.cells.length - 1]!.innerHTML = html;
@@ -76,7 +77,7 @@ function offsets(wrap: string) {
         off: Math.abs(baseline(copy(html))!.y - baseline(plain)!.y),
       });
   }
-  return { readings, tables };
+  return { readings, measured, tables: document.querySelectorAll("table").length };
 }
 
 /** Runs in the page: each list's space above its first item, below its last and between two, and
@@ -193,9 +194,10 @@ const spacingFaults = (lists: Awaited<ReturnType<typeof measureSpacing>>) =>
 test.each(TYPES_LISTED.map((t) => t.file))(
   "%s: a list in a table cell starts on its row's baseline",
   async (file) => {
-    const { readings, tables } = await measure(file);
-    // A page with a table measures it; a list with no cell in its size beside it reads NaN.
-    expect(readings.length).toBeGreaterThanOrEqual(2 * tables);
+    const { readings, measured, tables } = await measure(file);
+    // Every table measures a list in a plain body row; a list with no cell in its size beside it
+    // reads NaN.
+    expect(measured).toBe(tables);
     const off = readings.filter((r) => !(r.off <= TOLERANCE));
     expect(off.map((r) => `${r.label}: ${r.off.toFixed(2)} px`)).toEqual([]);
   },

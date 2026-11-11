@@ -3,8 +3,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { escapeHtml as esc, fill, languageTag, svgUri } from "./fill";
-import { brandCss, brandFile, compactStyles } from "./render-pdf";
-import { brandName, ROOT, withoutImports } from "./root";
+import { brandCss, compactStyles } from "./render-pdf";
+import { brandFile, brandName, ROOT, withoutImports } from "./root";
 
 /** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
 export interface ReadoutScale {
