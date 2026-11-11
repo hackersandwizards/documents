@@ -12,7 +12,7 @@ const out = mkdtempSync(join(REPO, "node_modules/.cache/bundled-"));
 afterAll(() => rmSync(out, { recursive: true, force: true }));
 
 const built = await Bun.build({
-  entrypoints: ["render-pdf", "survey-readout", "onepager", "compose"].map((m) =>
+  entrypoints: ["render-pdf", "survey-readout", "onepager", "compose", "handout"].map((m) =>
     join(REPO, `scripts/${m}.ts`),
   ),
   outdir: out,
@@ -160,5 +160,9 @@ describe("bundled into a consumer's chunk", () => {
 
   it("loads the survey readout, which reads its stylesheet on import", async () => {
     expect((await load("survey-readout")).composeSurveyReadout).toBeFunction();
+  });
+
+  it("loads the handout's words, which read the company's name from brand on import", async () => {
+    expect((await load("handout")).HANDOUT_TEXT.de.runningBrand).toBe("hackers&wizards");
   });
 });
