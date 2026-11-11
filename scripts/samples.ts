@@ -1,3 +1,7 @@
+import { brandImprint } from "./root";
+
+const imprint = brandImprint();
+
 export const rateCard = {
   personName: "Mara Beispiel",
   date: "02.11.2026",
@@ -469,7 +473,7 @@ export const onepager = {
       <a class="button" href="https://example.com/call">Gespräch buchen</a>
     </div>
   </div>
-  <p class="legal">hackers&amp;wizards GmbH · Osterstraße 95 · 20259 Hamburg · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
+  <p class="legal">hackers&amp;wizards GmbH · ${imprint.street} · ${imprint.postcode} ${imprint.city} · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
 </div>`,
 };
 
@@ -629,7 +633,11 @@ export const handout = {
 
 const hw = {
   company: "hackers&wizards GmbH",
-  lines: ["vertreten durch die Geschäftsführer", "Osterstraße 95", "20259 Hamburg"],
+  lines: [
+    "vertreten durch die Geschäftsführer",
+    imprint.street,
+    `${imprint.postcode} ${imprint.city}`,
+  ],
 };
 
 /** The contract form: a trainer's NDA for one client's training. */

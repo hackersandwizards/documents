@@ -24,8 +24,10 @@ import { compress, decompress } from "woff2-encoder";
 import { withElements } from "./elements";
 import { HANDOUT_TEXT } from "./handout";
 import { editStyles, pruneStyles } from "./prune";
-import { ROOT } from "./root";
+import { brandFile, ROOT } from "./root";
 import { foreignStyles, styleAttributes } from "./styles";
+
+export { brandFile };
 
 const execFileAsync = promisify(execFile);
 
@@ -919,9 +921,6 @@ const BRAND = "@hackersandwizards/brand/";
 // brand's tokens.css holds Tailwind's @theme forms (`static`, `--*: initial`), which a browser
 // skips: a page without Tailwind takes brand's generated :root twin.
 const BRAND_ROOT: Record<string, string> = { [`${BRAND}tokens.css`]: `${BRAND}tokens.root.css` };
-
-/** A file the brand package exports, such as `tokens.css`, as an absolute path. */
-export const brandFile = (file: string) => packageRequire.resolve(BRAND + file);
 
 /** CSS without comments, its strings untouched. The space after one goes only where a space,
  * brace or semicolon comes before it: elsewhere it may part two selectors. */

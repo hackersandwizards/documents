@@ -34,11 +34,14 @@ void mock.module("node:fs", () => ({
 void mock.module("node:fs/promises", () => ({ ...promises, default: promises }));
 
 test("onepagerBrandFiles lists exactly the brand files a traced render reads", async () => {
+  // The samples read brand's imprint at load: imported first and the trace cleared, only the
+  // render's own reads count.
+  const { onepager } = await import("../scripts/samples");
+  read.clear();
   const { openComposer } = await import("../scripts/compose");
   const { composeOnepager, onepagerBrandFiles } = await import("../scripts/onepager");
   const { brandFile } = await import("../scripts/render-pdf");
   const { ROOT } = await import("../scripts/root");
-  const { onepager } = await import("../scripts/samples");
   const composer = await openComposer(ROOT);
   try {
     await composeOnepager(composer, onepager);

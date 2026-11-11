@@ -2,11 +2,11 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { ROOT } from "./root";
+import { brandImprint, ROOT } from "./root";
 import * as samples from "./samples";
 
 const MAIL_DOMAINS = /^(hackersandwizards\.dev|example\.(com|org|net|de))$/i;
-const STREETS = new Set(["Osterstraße 95", "Beispielweg 12", "Example Road 12"]);
+const STREETS = new Set([brandImprint().street, "Beispielweg 12", "Example Road 12"]);
 // Every word a person or client in the samples' props may carry: invented, our own company, or a
 // salutation's opener.
 const INVENTED = new Set(
