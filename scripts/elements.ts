@@ -1,4 +1,4 @@
-export type Edit = [selector: string, cls?: string, attrs?: Record<string, string>];
+type Edit = [selector: string, cls?: string, attrs?: Record<string, string>];
 
 /** DocCard and DocHeader's tag, which the onepager shares with the document base. */
 const CARD_AND_TAG: Edit[] = [

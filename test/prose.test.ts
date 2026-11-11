@@ -3,6 +3,8 @@ import { proseHtml } from "../scripts/prose";
 
 test("every style attribute goes, duplicates, any quoting and a '>' in a value included", () => {
   expect(proseHtml(`<p style="color:red" style="color:blue">x</p>`)).toBe("<p>x</p>");
+  const many = Array.from({ length: 101 }, (_, i) => `style="--x:${i}"`).join(" ");
+  expect(proseHtml(`<p ${many}>x</p>`)).toBe("<p>x</p>");
   expect(proseHtml(`<p style = 'color:red' title="a>b" style=color:blue>x</p>`)).toBe(
     `<p title="a>b">x</p>`,
   );

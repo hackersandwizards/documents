@@ -1,4 +1,4 @@
-// The type pages (pages/types/<file>.astro or .html.ts) in the order the catalog lists them.
+// The type pages (pages/types/<file>.astro or <file>/index.html.ts) in the order the catalog lists them.
 export const TYPES: { file: string; title: string }[] = [
   { file: "angebot", title: "Quote (German)" },
   { file: "quote", title: "Quote (English)" },

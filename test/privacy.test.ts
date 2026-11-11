@@ -106,6 +106,21 @@ test("a deny term hits a file name, any case, an entity, a slug and a line break
   }
 });
 
+test("a checkout's built type pages are scanned, though git ignores them", () => {
+  const dir = mkdtempSync(join(tmpdir(), "hw-privacy-built-"));
+  try {
+    expect(Bun.spawnSync(["git", "init", "-q", dir]).exitCode).toBe(0);
+    writeFileSync(join(dir, ".gitignore"), "dist/\n");
+    mkdirSync(join(dir, "dist", "types", "x"), { recursive: true });
+    writeFileSync(join(dir, "dist", "types", "x", "index.html"), "<p>Echtfirma</p>");
+    expect(scanText(dir, ["Echtfirma"])).toEqual([
+      { file: "dist/types/x/index.html", line: 1, what: 'the term "Echtfirma"' },
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("an empty deny list fails rather than passes", () => {
   const empty = join(planted, "empty.txt");
   writeFileSync(empty, "\n");
@@ -134,7 +149,10 @@ test("a person in the samples outside the invented names fails", () => {
         signatures: [{ party: "Echtfirma GmbH", name: "Anna Echt" }],
         counterparty: "Echtfirma",
         salutation: "Hallo Anna,",
-        letter: { recipient: { lines: ["Anna Echt", "Beispielweg 12"] } },
+        letter: {
+          recipient: { lines: ["Anna Echt", "Beispielweg 12"] },
+          greeting: ["Hallo Anna,", "danke für deine Zusage."],
+        },
       },
       certificate: { title: "Certificate Agentic Engineering Training: Anna Echt" },
     }),
@@ -144,6 +162,7 @@ test("a person in the samples outside the invented names fails", () => {
     "agreement.counterparty: Echtfirma",
     "agreement.salutation: Anna",
     "agreement.letter.recipient.lines[0]: Anna Echt",
+    "agreement.letter.greeting[0]: Anna",
     "certificate.title: Anna Echt",
   ]);
 });

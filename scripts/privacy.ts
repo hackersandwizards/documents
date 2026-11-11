@@ -19,11 +19,12 @@ const INVENTED = new Set([
 ]);
 const PERSON_KEYS =
   /^(personName|recipientName|recipientFirstName|attendeeName|attendeeCompany|employee|contact|company|client|clientShort|shortName|customerName|counterparty|party|salutation)$/;
-// A key holding a name only at a place: a signer's name, an address's first line, a certificate
-// title's attendee after its colon.
+// A key holding a name only at a place: a signer's name, an address's first line, a letter's
+// greeting, a certificate title's attendee after its colon.
 const personAt = (path: string, key: string) =>
   (key === "name" && /\b(signers|signatures)\[/.test(path)) ||
   /\.(client|recipient)\.lines\[0\]$/.test(path) ||
+  /\.letter\.greeting\[0\]$/.test(path) ||
   /^certificate\w*\.title$/.test(path);
 
 const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boolean }[] = [

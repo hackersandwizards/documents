@@ -18,8 +18,9 @@ export function proseHtml(html: string): string {
       element(el) {
         const style = el.getAttribute("style");
         if (style === null) return;
-        // The browser reads the first of duplicate attributes; every one goes.
-        for (let i = 0; i < 100 && el.hasAttribute("style"); i++) el.removeAttribute("style");
+        // The browser reads the first of duplicate attributes, and removeAttribute takes one a
+        // call: once per style the element lists.
+        for (const [name] of [...el.attributes]) if (name === "style") el.removeAttribute("style");
         if (!/^t[hd]$/.test(el.tagName)) return;
         const align = style
           .split(";")

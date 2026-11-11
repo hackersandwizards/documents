@@ -1,10 +1,10 @@
 ---
-import { composeSurveyReadout, type SurveyReadout } from "../scripts/survey-readout";
-
-const html = composeSurveyReadout(Astro.props as SurveyReadout);
+// The readout's type page, which links the brand files: a srcdoc frame cannot resolve a relative
+// link, so it would inline every face.
+const src = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/types/survey-readout/index.html`;
 ---
 
-<iframe srcdoc={html} title="Survey Readout"></iframe>
+<iframe src={src} title="Survey Readout"></iframe>
 
 <style>
   iframe {

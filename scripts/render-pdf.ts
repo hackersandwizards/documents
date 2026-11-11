@@ -376,14 +376,11 @@ export type HandoutResult = {
 export async function renderHandoutPdf(
   source: string | ((pass: HandoutPass) => Promise<string>),
   pdfPath: string,
-  options: RenderOptions & {
-    /** @deprecated The word is read from the page; a given one replaces that read. */
-    chapterLabel?: string;
-  } = {},
+  options: RenderOptions = {},
 ): Promise<HandoutResult> {
   const dir = typeof source === "string" ? undefined : mkdtempSync(join(tmpdir(), "hw-handout-"));
   let renders = 0;
-  let label = options.chapterLabel;
+  let label: string | undefined;
   const render = async (pass: HandoutPass) => {
     renders++;
     if (typeof source === "string") {

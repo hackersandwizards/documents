@@ -113,8 +113,7 @@
 }
 
 :root {
-  /* The lockup keeps the wordmark's letter size: the wordmark is 952 of the lockup's 1489 units. */
-  --deck-corner-lockup: calc(var(--deck-corner-wordmark) * 1489 / 952);
+  --deck-corner-lockup: var(--slide-corner-lockup);
   /* Bar colours, the slide engine's rule: teal is the data hue, a bar that is
      context takes the ink at the ladder's 40 % on the page, a step between takes teal at 70 %. */
   --deck-bar-step: color-mix(in srgb, var(--color-teal) 70%, var(--color-bg));

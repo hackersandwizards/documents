@@ -13,7 +13,7 @@ to do instead: compose the document from an engine type, or add the missing type
 the engine.`;
 
 /** The attribute each style element the engine writes carries; any other style element is foreign. */
-export const ENGINE_STYLES = [
+const ENGINE_STYLES = [
   "data-hw-document",
   "data-hw-components",
   "data-hw-page",
@@ -23,7 +23,7 @@ export const ENGINE_STYLES = [
 ] as const;
 
 /** The custom properties a component sets inline from its props, for its own CSS to read. */
-export const DATA_PROPERTIES = [
+const DATA_PROPERTIES = [
   "--col-width",
   "--share",
   "--count",

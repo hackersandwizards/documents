@@ -41,10 +41,10 @@ decision or item ids, pointers to review notes and names go to the commit messag
   heads and every element a type or a Markdown body uses. A component owns its block's scoped
   style; the base keeps a class a component took over until no stored document uses it, and
   `test/document-css.test.ts` lists every class it still styles. `test/tokens.test.ts` fails on a
-  length or colour written anywhere but `tokens.css`, and on an inline style setting anything but a
+  length or colour written in a stylesheet or a component's style element but `tokens.css`, and on an inline style setting anything but a
   custom property.
 - `components/`: one component per document type or building block; a type composes only
-  components, and every type starts with `DocHeader`. `DocAgreement` is every agreement signed by
+  components, and every type but the certificate, which draws its own strip, starts with `DocHeader`. `DocAgreement` is every agreement signed by
   hand (contract, NDA, framework agreement, order confirmation) in its contract or letter form; a
   proposal the client signs takes `DocProposal`'s `signatures`. A component imports only this
   repo's files and the brand package's exported files (`@hackersandwizards/brand/logos/...`), never
