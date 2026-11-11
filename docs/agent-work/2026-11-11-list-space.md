@@ -22,21 +22,26 @@ list in the same cell.
 
 | Page                                                                 | Plain text | a     | b     | c     | d     |
 | -------------------------------------------------------------------- | ---------- | ----- | ----- | ----- | ----- |
-| timesheets (month, training, flat fee)                               | 3.25       | 12.58 | 3.25  | 11.25 | 3.25  |
+| timesheets (month, training)                                         | 3.25       | 12.58 | 3.25  | 11.25 | 3.25  |
+| flat-fee timesheet                                                   | 3.75       | 12.58 | 3.25  | 11.25 | 3.25  |
 | quote without prices, delivery briefing, Markdown document, elements | 9.16       | 18.48 | 9.16  | 17.16 | 9.16  |
 | handout                                                              | 10.14      | 19.47 | 10.14 | 18.14 | 10.14 |
 | flat-fee timesheet, its own row                                      | 3.75       | 13.08 | 3.75  | 11.75 | 3.75  |
 
-In a, the list adds 9.33 px (7 pt: 6 pt margin, 1 pt padding) on every page. The earlier report
-read 10.33 against 0.76 px from another reference point. The 0.24 px between the two differences
-is not explained. Every list still starts on its row's baseline in every variant.
+In a, the list adds 9.33 px (7 pt: 6 pt margin, 1 pt padding) wherever plain text and list share
+the reference. On the flat-fee timesheet the copied list ends 0.5 px closer to the cell's bottom
+than the copied plain text and than the page's own list row, so there it adds 8.83 px, and in b and
+d it sits 0.5 px tighter than plain text. That 0.5 px is not explained. The earlier report read
+10.33 against 0.76 px from another reference point; the 0.24 px between its difference and 9.33 is
+not explained either. In every variant each copied list starts where plain text in its cell does.
 
 **Lists outside tables.** In c and d, a list after a paragraph sits 11.31 px below it. That is the
 gap between two paragraphs (a: 12.64). After a heading the gap goes from 9.33 to 8 px. The gap
 between items stays at 5.97 px. Lists with their own item spacing do not change: DocSteps' timeline
 and the handout's contents. The certificate's topics list is 2.66 px shorter.
 
-**PDF pages.** One PDF per type, rendered from each build. No type changed its page count under
+**PDF pages.** One PDF per type, rendered from each build; the survey readout, which does not sit
+on the document base, was not rendered. No type changed its page count under
 any variant, and every page kept the same text, so no page break moved. In b, only the flat-fee
 timesheet and the elements page change at all. In c and d, every type with a list in the base's
 style changes by 1 to 3 px per list. That is every type except the handout, the order confirmation,
@@ -51,6 +56,37 @@ label in a shuffled order. Three personas (a controller who signs off timesheets
 designer, an engineering lead receiving quotes) on Claude Opus 5.5 at medium effort and Codex
 gpt-6.1-sol at high effort, two runs each. A variant's score is the mean of its three views'
 overall scores (1 to 10). Noise is the mean change between a reviewer's two runs.
+
+Criteria, fixed before any score: balance (the list sits evenly in its row or box, neither
+top-heavy nor bottom-heavy), room (breathing room, not cramped), calm (an even, consistent spacing
+rhythm), grouping (the list reads as part of what introduces it and apart from what follows), and
+overall (which you would rather receive). The designer's first run got this prompt:
+
+> You are an editorial designer who sets business print documents (reports, contracts, invoices)
+> and judges spacing and typographic rhythm for a living.
+>
+> You are shown crops of A4 business documents (German text) from the same consultancy. Medium: an
+> A4 PDF read on a laptop at about 100-125 % zoom and also printed. Display size: each image shows
+> the full 210 mm page width at double pixel density (1588 px = 210 mm), cropped vertically. Within
+> each group the images show the same content set in different ways; judge only how they look.
+> Open each image with the Read tool (where images are attached, they come in the order listed
+> here, groups in this order too):
+>
+> - A quote: two service cards, each with a bullet list: /tmp/dls/panel/cards-j.png,
+>   /tmp/dls/panel/cards-v.png
+> - An NDA: a clause whose paragraph introduces a bullet list, then the next clause:
+>   /tmp/dls/panel/clause-f.png, /tmp/dls/panel/clause-s.png
+> - A timesheet: the table row listing the activities, with the total row below:
+>   /tmp/dls/panel/row-q.png, /tmp/dls/panel/row-m.png, /tmp/dls/panel/row-h.png
+>
+> Score every image from 1 to 10 on each criterion: 1. balance: the list sits evenly in its row or
+> box, neither top-heavy nor bottom-heavy 2. room: breathing room, not cramped 3. calm: visual calm,
+> an even and consistent spacing rhythm 4. grouping: the list reads as part of what introduces it
+> and apart from what follows 5. overall: which you would rather receive
+>
+> For each image and each criterion below 10, say in a few words what keeps it there. Compare
+> images only within their group. End your answer with one JSON line, nothing after it: (the score
+> object, one entry per label)
 
 | Model  | Noise | Run | a    | b            | c            | d            |
 | ------ | ----- | --- | ---- | ------------ | ------------ | ------------ |
@@ -73,3 +109,5 @@ total.
 A variant that might beat a has not been built: it would close the gap under a list only where
 another body row follows, not a total. The sample has a single row, so it shows the total case
 alone.
+
+Review: medium, because the change would reach every client document while one rule was in question.
