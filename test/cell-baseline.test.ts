@@ -146,7 +146,7 @@ async function load(file: string, css: string) {
     if (css) await page.addStyleTag({ content: css });
     await page.evaluate(async () => {
       await document.fonts.ready;
-      await (globalThis as { hwLayout?: Promise<unknown> }).hwLayout;
+      await Promise.all((globalThis as { hwLayout?: Promise<unknown>[] }).hwLayout ?? []);
     });
     return page;
   } catch (error) {
@@ -202,7 +202,6 @@ test.each(TYPES_LISTED.map((t) => t.file))(
   60_000,
 );
 
-// The control: with the first item's hair back, the timesheet's list and every copied list fail.
 test("the timesheet's lists with the item's top padding back fail", async () => {
   const { readings } = await measure(
     "leistungsnachweis-pauschal",

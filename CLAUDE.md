@@ -50,8 +50,9 @@ decision or item ids, pointers to review notes and names go to the commit messag
   repo's files and the brand package's exported files (`@hackersandwizards/brand/logos/...`), never
   an app path. `DocElements` maps the brand's elements over what it wraps, so a component a
   consumer renders in its own Astro route (the hub's handout, through `DocHandout`) matches a composed page.
-  A component whose script lays the page out after load puts that work's promise on
-  `globalThis.hwLayout`, which `renderPdf` waits for before it prints.
+  A component whose script lays the page out after load pushes that work's promise onto
+  the array `globalThis.hwLayout` (`(globalThis.hwLayout ??= []).push(...)`), all of which
+  `renderPdf` waits for before it prints.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
   directory; the command composes one component from a props JSON, and `--serve` composes on
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
