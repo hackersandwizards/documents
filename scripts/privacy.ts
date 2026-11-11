@@ -2,18 +2,20 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { brandImprint, ROOT } from "./root";
+import { brandCompany, ROOT } from "./root";
 import * as samples from "./samples";
 
 const MAIL_DOMAINS = /^(hackersandwizards\.dev|example\.(com|org|net|de))$/i;
-const STREETS = new Set([brandImprint().street, "Beispielweg 12", "Example Road 12"]);
+const company = brandCompany();
+const STREETS = new Set([company.street, "Beispielweg 12", "Example Road 12"]);
 // Every word a person or client in the samples' props may carry: invented, our own company, or a
 // salutation's opener.
-const INVENTED = new Set(
-  "Mara Beispiel Jonas Probst Erika Max Mustermann Musterwerk AG Ltd GmbH hackers&wizards Partner Hallo Dear".split(
+const INVENTED = new Set([
+  ..."Mara Beispiel Jonas Probst Erika Max Mustermann Musterwerk AG Ltd Partner Hallo Dear".split(
     " ",
   ),
-);
+  ...company.legal.split(" "),
+]);
 const PERSON_KEYS =
   /^(personName|recipientName|recipientFirstName|attendeeName|attendeeCompany|employee|contact|company|client|clientShort|shortName|customerName|counterparty|party|salutation)$/;
 // A key holding a name only at a place: a signer's name, an address's first line, a certificate

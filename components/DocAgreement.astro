@@ -5,6 +5,7 @@
 // greeting beside the recipient's card. Both follow with the facts, the preamble, the clauses
 // numbered "§ n" and the signature block. A clause body is Markdown HTML, so it carries lists and
 // tables; the engine sets it like any Markdown body.
+import verbal from "@hackersandwizards/brand/verbal.json";
 import DocHeader from "./DocHeader.astro";
 import DocLead from "./DocLead.astro";
 import DocProse from "./DocProse.astro";
@@ -25,7 +26,7 @@ const DE = {
   clause: "§ {n} {title}",
   placeDate: "Ort, Datum",
   signature: "Unterschrift: {name}",
-  runningBrand: "hackers&wizards GmbH",
+  runningBrand: verbal.name.legal,
 };
 const EN: typeof DE = {
   kind: "Agreement",
@@ -37,7 +38,7 @@ const EN: typeof DE = {
   clause: "§ {n} {title}",
   placeDate: "Place, date",
   signature: "Signature: {name}",
-  runningBrand: "hackers&wizards GmbH",
+  runningBrand: verbal.name.legal,
 };
 
 interface Party {

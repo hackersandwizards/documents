@@ -1,6 +1,6 @@
-import { brandImprint } from "./root";
+import { brandCompany } from "./root";
 
-const imprint = brandImprint();
+const company = brandCompany();
 
 export const rateCard = {
   personName: "Mara Beispiel",
@@ -29,7 +29,7 @@ export const rateCard = {
     },
   ],
   terms: [
-    "Vertragspartner ist die hackers&wizards GmbH.",
+    `Vertragspartner ist die ${company.legal}.`,
     "Alle Preise verstehen sich zzgl. der gesetzlichen Umsatzsteuer (derzeit 19\u00a0%).",
     "Reisekosten werden vom Auftraggeber getragen und müssen vorab von ihm freigegeben werden.",
     "Die Abrechnung erfolgt im 15-Minuten-Takt. Für angefangene 15 Minuten wird jeweils ein Viertel des Stundensatzes berechnet.",
@@ -83,7 +83,7 @@ export const leistungsnachweisTraining = {
   client: "Musterwerk AG",
   project: "Agentic Engineering Training",
   team: "Team Plattform (12 Teilnehmende)",
-  employee: "Jonas Probst (hackers&wizards Partner)",
+  employee: `Jonas Probst (${company.name} Partner)`,
   period: "02.11.2026 – 13.11.2026",
   references: ["Angebot AG-10002-2026", "Rechnung Nr. RE-2026-0002"],
   rows: [
@@ -330,7 +330,7 @@ export const proposalDeSigned = {
   orderTerm: undefined,
   signatures: [
     { label: "Auftraggeber", party: "Musterwerk AG", name: "Jonas Probst" },
-    { label: "Auftragnehmer", party: "hackers&wizards GmbH", name: "Mara Beispiel" },
+    { label: "Auftragnehmer", party: company.legal, name: "Mara Beispiel" },
   ],
 };
 
@@ -340,15 +340,15 @@ export const certificate = {
   title: "Certificate Agentic Engineering Training: Mara Beispiel",
   attendeeName: "Mara Beispiel",
   attendeeCompany: "Musterwerk AG",
-  trainingTitle: "hackers&wizards Training (2 Days)",
+  trainingTitle: `${company.name} Training (2 Days)`,
   trainingSubtitle: "Agentic Engineering",
   date: "12–13 November 2026",
   remote: true,
   durationHours: "16",
   topics: ["Specification with agents", "Tests first", "Review loops", "Rules files"],
   signers: [
-    { name: "Erika Mustermann", title: "Co-Founder, hackers&wizards", image: "" },
-    { name: "Max Mustermann", title: "Co-Founder, hackers&wizards", image: "" },
+    { name: "Erika Mustermann", title: `Co-Founder, ${company.name}`, image: "" },
+    { name: "Max Mustermann", title: `Co-Founder, ${company.name}`, image: "" },
   ],
   credentialId: "HW-AE-261113-EXAMPLE0EXAMPLE0",
   verificationUrl: "https://certificates.hackersandwizards.dev/c/HW-AE-261113-EXAMPLE0EXAMPLE0",
@@ -362,7 +362,7 @@ export const certificateDe = {
   ...certificate,
   lang: "de" as const,
   title: "Zertifikat Agentic Engineering Training: Mara Beispiel",
-  trainingTitle: "hackers&wizards Training (2 Tage)",
+  trainingTitle: `${company.name} Training (2 Tage)`,
   date: "12.–13. November 2026",
   topics: ["Spezifikation mit Agenten", "Tests zuerst", "Review-Schleifen", "Regeldateien"],
 };
@@ -473,7 +473,7 @@ export const onepager = {
       <a class="button" href="https://example.com/call">Gespräch buchen</a>
     </div>
   </div>
-  <p class="legal">hackers&amp;wizards GmbH · ${imprint.street} · ${imprint.postcode} ${imprint.city} · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
+  <p class="legal">${company.legal.replace("&", "&amp;")} · ${company.street} · ${company.postcode} ${company.city} · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
 </div>`,
 };
 
@@ -632,11 +632,11 @@ export const handout = {
 };
 
 const hw = {
-  company: "hackers&wizards GmbH",
+  company: company.legal,
   lines: [
     "vertreten durch die Geschäftsführer",
-    imprint.street,
-    `${imprint.postcode} ${imprint.city}`,
+    company.street,
+    `${company.postcode} ${company.city}`,
   ],
 };
 
@@ -658,7 +658,7 @@ export const agreementNda = {
     },
   ],
   preamble: [
-    "hackers&wizards führt für die Musterwerk AG ein Training durch, das der Auftragnehmer als Trainer mitgestaltet. Dabei erhält er Einblick in Informationen der Musterwerk AG und von hackers&wizards. Diese Vereinbarung regelt, wie er sie schützt.",
+    `${company.name} führt für die Musterwerk AG ein Training durch, das der Auftragnehmer als Trainer mitgestaltet. Dabei erhält er Einblick in Informationen der Musterwerk AG und von ${company.name}. Diese Vereinbarung regelt, wie er sie schützt.`,
   ],
   clauses: [
     {
@@ -685,7 +685,7 @@ export const agreementNda = {
   signatures: [
     {
       label: "Auftraggeber",
-      party: "hackers&wizards GmbH",
+      party: company.legal,
       name: "Mara Beispiel",
     },
     { label: "Auftragnehmer", party: "Erika Mustermann", name: "Erika Mustermann" },
@@ -721,8 +721,6 @@ export const agreementOrder = {
     { term: "Zahlungsziel", value: "14 Tage nach Rechnungsstellung" },
     { term: "Grundlage", value: "Angebot AG-10001-2026 vom 20.10.2026" },
   ],
-  signatures: [
-    { label: "Für hackers&wizards", party: "hackers&wizards GmbH", name: "Mara Beispiel" },
-  ],
+  signatures: [{ label: `Für ${company.name}`, party: company.legal, name: "Mara Beispiel" }],
   counterparty: "Musterwerk",
 };

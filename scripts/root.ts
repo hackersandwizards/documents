@@ -13,13 +13,16 @@ export const ROOT = join(
 export const brandFile = (file: string) =>
   createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
 
-/** The office address in brand's `imprint.json`, read through node:fs rather than imported: Bun's
- * loader reads an import past node:fs, where onepager-trace.ts cannot see it. A field brand drops
- * or renames fails here rather than printing "undefined". */
-export function brandImprint(): { street: string; postcode: string; city: string } {
-  const imprint = JSON.parse(readFileSync(brandFile("imprint.json"), "utf8"));
-  for (const field of ["street", "postcode", "city"])
-    if (typeof imprint[field] !== "string")
-      throw new Error(`brand's imprint.json holds no ${field}`);
-  return imprint;
+/** The company's name and legal name from brand's `verbal.json` and its office address from `imprint.json`,
+ * read through node:fs rather than imported: Bun's loader reads an import past node:fs, where
+ * onepager-trace.ts cannot see it. A field brand drops or renames fails here rather than printing
+ * "undefined". */
+export function brandCompany(): Record<"name" | "legal" | "street" | "postcode" | "city", string> {
+  const read = (file: string) => JSON.parse(readFileSync(brandFile(file), "utf8"));
+  const { company: name, legal } = read("verbal.json").name ?? {};
+  const company = { name, legal, ...read("imprint.json") };
+  for (const field of ["name", "legal", "street", "postcode", "city"])
+    if (typeof company[field] !== "string")
+      throw new Error(`brand's company facts hold no ${field}`);
+  return company;
 }
