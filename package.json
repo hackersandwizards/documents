@@ -1,6 +1,6 @@
 {
   "name": "@hackersandwizards/documents",
-  "version": "1.29.0",
+  "version": "1.30.0",
   "private": true,
   "description": "The hackers&wizards document engine: the document base, the document components, composing a component to standalone HTML and rendering it to PDF with headless Chrome.",
   "keywords": [
@@ -71,7 +71,7 @@
     "fix": "bun --bun eslint --cache --concurrency=auto . --fix && bun --bun prettier --write ."
   },
   "peerDependencies": {
-    "@hackersandwizards/brand": ">=2.11.0",
+    "@hackersandwizards/brand": ">=2.17.0",
     "@hackersandwizards/scaffolding": "*",
     "@hackersandwizards/testimonials": "*",
     "astro": "^7.4.4",
@@ -94,7 +94,7 @@
   "devDependencies": {
     "@astrojs/check": "0.9.12",
     "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.27.2",
-    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v2.15.0",
+    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v2.18.0",
     "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v5.17.2",
     "@types/bun": "1.4.4",
     "@typescript/native": "npm:typescript@7.0.2",

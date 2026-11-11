@@ -128,9 +128,10 @@ through. Renaming a command, changing its arguments or moving an exported file b
 consumers: the release commit names it and every consumer follows in the same pass. Astro, Vite, brand,
 testimonials (whose marks a page names by package path) and scaffolding (its `./chrome`, which
 `render-pdf.ts` imports at run time, so a consumer installs it beside its runtime dependencies) are
-peer dependencies, brand from v2.11.0 (the imprint DocHeader, the certificate, the samples and the
+peer dependencies, brand from v2.17.0 (the imprint DocHeader, the certificate, the samples and the
 privacy check read from its `imprint.json` and `verbal.json`, so `documents-privacy` needs brand
-installed, and the tint panels' teal line on paper), brand, testimonials and scaffolding optional in
+installed, the tint panels' teal line on paper, and the readout's corner lockup,
+`--deck-corner-lockup`), brand, testimonials and scaffolding optional in
 `peerDependenciesMeta` so Bun never looks them up on the npm registry; the runtime dependencies are `entities`, which `fitOnepager` decodes copy with, and `subset-font`
 (HarfBuzz) with `woff2-encoder`, which `subsetFaces` cuts and re-encodes the faces with; `keywords: ["astro-component"]` makes Astro compile the components from
 `node_modules`.

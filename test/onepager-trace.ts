@@ -49,9 +49,15 @@ test("onepagerBrandFiles lists exactly the brand files a traced render reads", a
     await composer.close();
   }
   const brand = `${dirname(brandFile("package.json"))}/`;
-  // Resolving a brand file reads brand's package.json; the page carries none of it.
+  // Resolving a brand file reads brand's package.json, and vitefu's dependency crawl the
+  // package.json of each dependency Bun nests under brand; the page carries none of them.
   const traced = [...read]
-    .filter((path) => path.startsWith(brand) && path !== `${brand}package.json`)
+    .filter(
+      (path) =>
+        path.startsWith(brand) &&
+        path !== `${brand}package.json` &&
+        !/^node_modules\/(@[^/]+\/)?[^/]+\/package\.json$/.test(path.slice(brand.length)),
+    )
     .sort();
   // The control: the trace sees Vite's read of DocHeader's lockup and the engine's of a face.
   expect(traced.some((path) => path.endsWith("logos/lockup-screen.svg"))).toBe(true);
