@@ -36,7 +36,7 @@
   ],
   "exceptions": {
     "total-band": {
-      "reason": "The total row on the teal band: a 12 % tint under the strong rule, every amount in teal at 1.2 times the size. Total bands stay per system; the gate does not measure the table inside.",
+      "reason": "The total row on the teal band: a 7 % tint under the strong rule, every amount in teal at 1.2 times the size. Total bands stay per system; the gate does not measure the table inside.",
       "files": ["components/DocTotalRow.astro"]
     },
     "section-label": "The section head at h4 size, mono 600 in capitals behind a teal square, the group heading of the website's training list. A section band rather than a label, and section bands stay per system.",

@@ -1,8 +1,10 @@
+import { brandName } from "./root";
+
 /** Every word DocHandout prints itself, per language. Its `labels` replaces any of them but `kind`,
  *  which its `kind` prop replaces; a consumer reads `kind` here for the page's `<title>`. */
 const en = {
   /** The running header's left box. */
-  runningBrand: "hackers&wizards",
+  runningBrand: brandName().name,
   /** The document kind in the header tag. */
   kind: "Training Handout",
   recipient: "For",

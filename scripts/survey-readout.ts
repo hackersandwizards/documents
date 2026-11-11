@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { escapeHtml as esc, fill, languageTag, svgUri } from "./fill";
 import { brandCss, brandFile, compactStyles } from "./render-pdf";
-import { brandCompany, ROOT, withoutImports } from "./root";
+import { brandName, ROOT, withoutImports } from "./root";
 
 /** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
 export interface ReadoutScale {
@@ -394,8 +394,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
   const slides = [s1, s2, s3, s4, s5, s6, s7].join("\n");
   const logo = (file: string) => svgUri(readFileSync(brandFile(`logos/${file}`), "utf8"));
   const lockup = logo("lockup.svg");
-  const alt = esc(brandCompany().name);
-  const wordmark = `<img class="wordmark" src="${logo("wordmark.svg")}" alt="${alt}" />`;
+  const wordmark = `<img class="wordmark" src="${logo("wordmark.svg")}" alt="${ALT}" />`;
   const links = brand
     ? `<link rel="icon" href="${brand("logos/favicon.ico")}" sizes="32x32" />
 <link rel="icon" href="${brand("logos/favicon.svg")}" type="image/svg+xml" />
@@ -418,7 +417,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
       .replace("__TITLE__", () => esc(fill(t.documentTitle, { customer: customerName })))
       .replace("__SLIDES__", () =>
         slides
-          .replace("<!--LOCKUP-->", () => `<img class="lockup" src="${lockup}" alt="${alt}" />`)
+          .replace("<!--LOCKUP-->", () => `<img class="lockup" src="${lockup}" alt="${ALT}" />`)
           .replaceAll("<!--WORDMARK-->", () => wordmark),
       ),
   );
@@ -445,6 +444,9 @@ function distScale(t: ReadoutText, s: ReadoutScale): string {
     })
     .join("")}</div>`;
 }
+
+/** The lockup's and the wordmark's alt text. */
+const ALT = esc(brandName().name);
 
 /** The deck's stylesheet: the document tokens (the brand files apart, which brandCss inlines) and
  * readout.css. */

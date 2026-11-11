@@ -44,7 +44,8 @@ Astro, Vite, `@hackersandwizards/brand`, `@hackersandwizards/testimonials` and
 components, a page names a testimonial's mark by its package path, and `./render-pdf` imports
 scaffolding's `./chrome` at run time, so a consumer installs scaffolding beside its runtime
 dependencies. Brand, testimonials and scaffolding are optional peers, so Bun never looks them up
-on the npm registry: pin each from its Git tag.
+on the npm registry: pin each from its Git tag. `documents-privacy` reads the company's name and
+address from brand's `verbal.json` and `imprint.json`, so it too needs brand installed.
 
 The TypeScript exports run under Bun only: they parse HTML with Bun's `HTMLRewriter`, which Node
 lacks, so `inlineImages` and every composer and render throw `HTMLRewriter is not defined` under

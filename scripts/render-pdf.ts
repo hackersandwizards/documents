@@ -24,7 +24,7 @@ import { compress, decompress } from "woff2-encoder";
 import { withElements } from "./elements";
 import { HANDOUT_TEXT } from "./handout";
 import { editStyles, pruneStyles } from "./prune";
-import { brandFile, ROOT } from "./root";
+import { brandFile, ROOT, stripComments } from "./root";
 import { foreignStyles, styleAttributes } from "./styles";
 
 export { brandFile };
@@ -120,8 +120,9 @@ for (const img of document.images) {
 }
 }`;
 const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
-/** The print copy's policy: a page draws on local files and data URIs, and runs its inline scripts, but frames nothing and reaches no host, so a body naming a local
- *  file in a frame or a remote image prints neither. */
+/** The print copy's policy: a page draws on local files and data URIs and runs its inline scripts,
+ *  but frames nothing and reaches no host, so a body naming a local file in a frame or a remote
+ *  image prints neither. */
 const PRINT_POLICY = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' file: data:; img-src file: data: blob:; font-src file: data:; media-src file: data:">`;
 /** The same for a page served over HTTP, which the render cannot edit: run before the page's own
  * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
@@ -917,14 +918,6 @@ const BRAND = "@hackersandwizards/brand/";
 // brand's tokens.css holds Tailwind's @theme forms (`static`, `--*: initial`), which a browser
 // skips: a page without Tailwind takes brand's generated :root twin.
 const BRAND_ROOT: Record<string, string> = { [`${BRAND}tokens.css`]: `${BRAND}tokens.root.css` };
-
-/** CSS without comments, its strings untouched. The space after one goes only where a space,
- * brace or semicolon comes before it: elsewhere it may part two selectors. */
-const stripComments = (css: string) =>
-  css.replace(
-    /("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')|(^|[\s{};])\/\*[\s\S]*?\*\/\s*|\/\*[\s\S]*?\*\//g,
-    (_, string?: string, before?: string) => string ?? before ?? "",
-  );
 
 /** A stylesheet with its `@import`s inlined and its comments dropped, as documentCss and brandCss
  * export it (compactStyles strips the pages these never reach). Each file it reads, the faces

@@ -474,7 +474,7 @@ export const onepager = {
       <a class="button" href="https://example.com/call">Gespräch buchen</a>
     </div>
   </div>
-  <p class="legal">${escapeHtml(company.legal)} · ${company.street} · ${company.postcode} ${company.city} · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
+  <p class="legal">${escapeHtml(`${company.legal} · ${company.street} · ${company.postcode} ${company.city}`)} · <a href="https://hackersandwizards.dev">hackersandwizards.dev</a></p>
 </div>`,
 };
 

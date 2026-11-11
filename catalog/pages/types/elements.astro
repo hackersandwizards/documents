@@ -6,6 +6,8 @@ import DocPriceTable from "../../../components/DocPriceTable.astro";
 import { version } from "@hackersandwizards/brand/package.json";
 import elements from "../../../brand-elements.json";
 import catalogs from "@hackersandwizards/brand/catalogs.json";
+import verbal from "@hackersandwizards/brand/verbal.json";
+import { escapeHtml } from "../../../scripts/fill";
 
 const { portal, anchors } = catalogs.find((c) => c.name === "Brand")!;
 const TILES: [string, string, string][] = [
@@ -22,7 +24,7 @@ const TILES: [string, string, string][] = [
   [
     "card",
     "Card, accented",
-    '<div class="card"><h4>Über hackers&amp;wizards</h4></div><div class="card accent"><h4>Erstellt für Musterwerk AG</h4></div>',
+    `<div class="card"><h4>Über ${escapeHtml(verbal.name.company)}</h4></div><div class="card accent"><h4>Erstellt für Musterwerk AG</h4></div>`,
   ],
   [
     "callout",
