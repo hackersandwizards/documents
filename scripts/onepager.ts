@@ -44,8 +44,9 @@ let inlinedBrand: string | undefined;
 const brandBase = (read?: Set<string>) =>
   read ? brandBaseOf(read) : (inlinedBrand ??= brandBaseOf());
 
-/** The stylesheet ahead of the components' styles; the brand files inlined unless `link`. Each
- * brand file it reads goes into `read`. */
+/** The stylesheet ahead of the components' styles: the brand's tokens, faces and document scale
+ * inlined unless `link`, its elements and list marker always. Each brand file it reads goes into
+ * `read`. */
 function baseCss(link: boolean, read?: Set<string>) {
   const documentCss = readFileSync(join(ROOT, "document.css"), "utf8");
   return [

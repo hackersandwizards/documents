@@ -14,9 +14,9 @@ interface Props {
   /** Sets the imprint under the lockup, for a business letter h&w issues as the GmbH to a named
    * recipient. § 35a Abs. 1 GmbHG asks for legal form, seat, register court and number and every
    * managing director; the address and the VAT ID are what a buyer's purchase order needs. Each
-   * fact appears once: "Sitz und Registergericht Hamburg" names the city for both. Three lines in
-   * place of five and a mail address. The imprint sits under the lockup rather than in the page-1
-   * footer, which would need an exception in the margin boxes. */
+   * fact appears once: "Sitz und Registergericht Hamburg" names the city for both. The imprint
+   * sits under the lockup rather than in the page-1 footer, which would need an exception in the
+   * margin boxes. */
   legal?: boolean;
   /** Lines under the tag, such as the date and the validity; a line with `href` links there. */
   meta?: (string | { text: string; href: string })[];
@@ -97,7 +97,6 @@ const lockup = svgUri(lockupSvg);
     background: var(--tint) padding-box;
   }
 
-  /* brand's strip (hw-strip) across the header's full bleed. */
   .strip {
     position: absolute;
     inset: 0 calc(-1 * var(--side)) auto;
@@ -105,7 +104,7 @@ const lockup = svgUri(lockupSvg);
 
   /* The lockup at the print logo's height, the header row's mark, which sets its wordmark at 952 of
      the lockup's 1489 units, 1.25 times the print wordmark: at the print wordmark's own height the
-     letters were hard to read at 80% zoom. The imprint lines sit under it. */
+     letters were hard to read at 80% zoom. */
   .brand {
     --lockup-height: var(--logo);
     display: block;

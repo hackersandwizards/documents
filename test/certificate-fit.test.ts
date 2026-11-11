@@ -156,7 +156,6 @@ async function printCertificate(props: Record<string, unknown>) {
   const page = join(dir, "certificate.html");
   const pdf = join(dir, "certificate.pdf");
   writeFileSync(page, html(false));
-  // renderPdf, which waits for the fit (globalThis.hwLayout) before it prints.
   await renderPdf(page, pdf);
   const pages = Number(
     execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/Pages:\s+(\d+)/)![1],

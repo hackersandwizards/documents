@@ -1,5 +1,3 @@
-/* The brand elements' settings: cards and callouts at the card padding, pills at the chip's, as in
-   the document base. */
 .onepager {
   --side: var(--op-side);
   --hw-card-pad: var(--card-pad);
@@ -241,6 +239,8 @@ ul {
   padding-bottom: var(--op-4);
 }
 
+/* The lead role here and the small role on every other fact keep the decision row the only large
+   text in the box. */
 .facts .key-row dd {
   font: var(--role-lead);
   font-weight: var(--weight-semibold);
@@ -283,7 +283,6 @@ ul {
   padding-bottom: var(--op-6);
 }
 
-/* The small role keeps the decision row the only large text in the box. */
 .facts dl.details {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--op-7) var(--op-14);

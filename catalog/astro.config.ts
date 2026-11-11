@@ -8,7 +8,6 @@ import { brandPath, linkedFiles } from "./brand";
 import { TYPES } from "./types";
 
 const BASE = "/documents";
-// Each story group's former German name: a page published under it forwards.
 const FORMER_GROUPS: Record<string, string> = { Types: "Typen", Components: "Komponenten" };
 
 export default defineConfig({
@@ -44,7 +43,6 @@ export default defineConfig({
       groupOrder: ["Types", "Components"],
       storyScale: "dense",
       htmlClass: ["hw-focus-ring"],
-      // Every story is an Astro component: no story module reaches the browser bundle.
       serverOnly: true,
       copy: [
         ...linkedFiles(),
@@ -53,8 +51,6 @@ export default defineConfig({
       ],
     }),
     {
-      // Each story page under a group's former name, at the site's root and under /catalog/,
-      // forwards to its page now.
       name: "former-group-paths",
       hooks: {
         "astro:build:done": ({ dir }) => {
@@ -99,7 +95,6 @@ export default defineConfig({
               (_, css: string) =>
                 `<style data-hw-components>${readFileSync(new URL(css, dir), "utf8")}</style>`,
             );
-            // A link left would open from disk without the components' styles.
             if (html.includes(`${BASE}/_astro/`))
               throw new Error(`type-page-styles: ${pathname} still links ${BASE}/_astro/`);
             writeFileSync(file, html.replaceAll("<style>", "<style data-hw-components>"));

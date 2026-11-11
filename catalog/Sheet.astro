@@ -12,7 +12,6 @@ import onepagerCss from "../onepager.css?raw";
 interface Props {
   /** A4 pages the frame shows. */
   pages?: number;
-  /** The document's stylesheet: the base, the handout's or the onepager's. */
   sheet?: "document" | "handout" | "onepager";
 }
 const { pages = 1, sheet = "document" } = Astro.props;

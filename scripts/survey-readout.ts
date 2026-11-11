@@ -328,7 +328,6 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
           .join("")}</div>`,
     )
     .join("");
-  // Rows mix 1-4 and 1-5 scales, so the key lists the ranges present rather than a fixed one.
   const s3 = slideShell(
     `<h2>${esc(t.scores)}</h2>${a.scales.length ? scoreLegend(t, a.scales, a.headline) : ""}
      <div class="scols">${groupsHtml || `<div class="caption">${esc(t.noDimension)}</div>`}</div>`,
@@ -374,7 +373,6 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
     items.length
       ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${esc(colors[k] ?? "")}"` : ""}>${esc(i)}</li>`).join("")}</ul>`
       : '<div class="caption">—</div>';
-  // The markers' key: without it, a reader cannot tell the band colours or the hollow flag.
   const bands = BANDS.map(
     ([, col], i) =>
       `<span class="lkey"><i style="--band:${col}"></i>${esc(t.bands[i] ?? "")}</span>`,

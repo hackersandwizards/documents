@@ -9,9 +9,7 @@ import handoutCss from "../../../handout.css?raw";
 interface Props {
   title?: string;
   lang?: string;
-  /** The handout prints on handout.css, the document base plus its own layout. */
   sheet?: "document" | "handout";
-  /** Rules after the base, for a page that is no document of its own, such as the elements page. */
   css?: string;
 }
 const { title, lang = "de", sheet = "document", css = "" } = Astro.props;

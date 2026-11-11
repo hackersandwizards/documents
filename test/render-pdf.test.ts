@@ -810,7 +810,6 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(sizes[3]).toEqual([60, 60]);
   });
 
-  // The file beside the page, and the file brand exports named by its package path.
   it.each(["mark.svg", "@hackersandwizards/brand/logos/wordmark.svg"])(
     "prints a vector SVG, src %p, as paths, not as an image",
     async (src) => {
@@ -1042,7 +1041,6 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
     expect(child.exitCode).toBe(0);
     expect(performance.now() - started).toBeLessThan(20_000);
     expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
-    // No process outlives the caller that started it: each child it had is gone.
     const children = (await new Response(child.stdout).text()).trim().split(/\s+/).map(Number);
     expect(children.length).toBeGreaterThanOrEqual(2);
     const alive = children.filter((pid) => {

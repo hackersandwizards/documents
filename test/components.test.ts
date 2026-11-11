@@ -267,8 +267,6 @@ test.each([
   30_000,
 );
 
-// Every word a component prints itself is a prop with today's text as its default: a reverse-charge
-// offer sets the acceptance's total line, an English timesheet every label.
 test.each([
   ["DocProposal", proposal, "totalValue", "netto zzgl. USt."],
   ["DocRateCard", props.DocRateCard, "terms", "Konditionen"],
@@ -328,7 +326,6 @@ test.each(["de", "en"] as const)("DocHandout %s prints HANDOUT_TEXT's words", as
   for (const word of Object.values(printed)) expect(html).toContain(word);
   // The lockup's alt text names the brand too: the running head's word is read in its margin box.
   expect(html).toContain(`@top-left { content: ${cssString(runningBrand)};`);
-  // Company and date are both given, so neither placeholder prints.
   for (const placeholder of [noCompany, noDate]) expect(html).not.toContain(placeholder);
 });
 
@@ -355,7 +352,6 @@ test("DocLeistungsnachweis notes take no callout", async () => {
   expect(out).not.toContain("hw-callout");
 });
 
-// A running head's text lands in a raw <style>: a caller's `</style>` must stay inside it.
 test.each([
   ["DocProposal", { ...proposal, clientShort: "</style><b>x" }],
   [
@@ -372,8 +368,6 @@ test.each([
   expect(html).not.toContain("</style><b>x");
 });
 
-// An agreement is a contract with parties or a letter with a recipient, never both; its clauses
-// number themselves.
 test("DocAgreement numbers its clauses and takes one form", async () => {
   const two = {
     ...props.DocAgreement,

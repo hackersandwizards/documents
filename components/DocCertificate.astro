@@ -1,8 +1,7 @@
 ---
 // The training certificate: a fixed one-page layout on the document base, no page margin, counter,
-// body padding or paragraph spacing. Content too long for the page takes the fit steps of the
-// script below; what still runs over prints a second page, which the renderer refuses. Names stay
-// in Inter: only Inter carries latin-ext (Ł, ř), at 400 and 600.
+// body padding or paragraph spacing. Names stay in Inter: only Inter carries latin-ext (Ł, ř), at
+// 400 and 600.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
 import imprint from "@hackersandwizards/brand/imprint.json";
 import verbal from "@hackersandwizards/brand/verbal.json";
@@ -473,7 +472,6 @@ const topicClass = [
     text-decoration: none;
   }
 
-  /* The fit steps the script above takes, in its order. */
   .fit-tight .topics li + li {
     margin-top: 0;
   }

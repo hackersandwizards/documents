@@ -138,7 +138,6 @@ body {
   color: var(--muted);
 }
 
-/* No filled CTA shape: readers took it for a button, which a title is not. */
 .doc-tag {
   margin-bottom: var(--space-tag);
 }
@@ -388,7 +387,6 @@ tr.total td.num {
   display: grid;
   grid-template-columns: 1.45fr 0.8fr;
   gap: var(--space-lead);
-  /* Room below the title and lead, which sat cramped on the greeting. */
   margin: var(--lead-margin);
 }
 

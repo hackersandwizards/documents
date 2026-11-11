@@ -22,8 +22,6 @@ body {
   );
 }
 
-/* The text runs the full page width: paper has no sidebar, and a gutter kept free for notes
-   stood empty on every page without one. */
 :root {
   --type-body-size: var(--handout-body-size);
   --type-small-size: var(--handout-small-size);

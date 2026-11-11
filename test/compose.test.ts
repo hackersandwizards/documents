@@ -114,7 +114,6 @@ describe("scripts/compose.ts", () => {
     expect(de).not.toContain("Teilnahmezertifikat");
     expect(de).toContain("Scannen: verifizieren &amp; zu LinkedIn hinzufügen");
     expect(de).toContain("Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen");
-    // The German sample carries German data, not the English sample's title, topics and date.
     const deSample = compose(certificateDe);
     expect(deSample).toContain("Training (2 Tage)");
     expect(deSample).toContain("Spezifikation mit Agenten");
@@ -137,7 +136,6 @@ describe("scripts/compose.ts", () => {
     const html = readFileSync(join(dir, "md.html"), "utf8");
     expect(html).toMatch(/<span class="doc-tag[^"]*"[^>]*>A &amp; B<\/span>/);
     expect(html).toContain("Sitz und Registergericht Hamburg, HRB 198840");
-    // DocMarkdown prints no `css` prop and no body style attribute; pandoc's alignment is a class.
     expect(html).not.toContain(".x { color: red; }");
     expect(html).not.toContain("color: red");
     expect(html).toContain('<td class="num">1</td>');

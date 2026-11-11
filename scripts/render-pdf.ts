@@ -124,8 +124,9 @@ const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
  *  but frames nothing and reaches no host, so a body naming a local file in a frame or a remote
  *  image prints neither. */
 const PRINT_POLICY = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' file: data:; img-src file: data: blob:; font-src file: data:; media-src file: data:">`;
-/** The same for a page served over HTTP, which the render cannot edit: run before the page's own
- * scripts, it waits for the parsed document, whose images then hold the window's load as above. */
+/** The print script for a page served over HTTP, which the render cannot edit and so prints
+ * without PRINT_POLICY: run before the page's own scripts, it waits for the parsed document,
+ * whose images then hold the window's load as PRINT_JS describes. */
 const PRINT_ON_NEW_DOCUMENT = `document.addEventListener("DOMContentLoaded", () => {${PRINT_JS}}, { once: true });`;
 
 /** How `inlineImages` takes a page: `within`, the folder a file beside the page must resolve into,

@@ -10,7 +10,6 @@ const CARD_AND_TAG: Edit[] = [
 // In order: a later entry's attribute wins where two match one element.
 export const ELEMENT_MAP: Edit[] = [
   ...CARD_AND_TAG,
-  // The proposal's community and terms panels and the timesheet's head panel.
   [".tint-panel", "hw-card", { "data-variant": "tint" }],
   [".callout, .note", "hw-callout"],
   [".outcome", undefined, { "data-hue": "purple" }],

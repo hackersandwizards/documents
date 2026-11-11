@@ -583,7 +583,8 @@ export const deliveryBriefingHtml = `<h1>Delivery Briefing: Musterwerk Training<
 <h2>Open items</h2>
 <table><thead><tr><th>Item</th><th>Owner</th></tr></thead><tbody><tr><td>Licences for every attendee</td><td>Client</td></tr><tr><td>Room with a projector</td><td>Client</td></tr></tbody></table>`;
 
-/** A trainer briefing as the deal page's button builds it: English, the date under the tag. */
+/** A trainer briefing's body as the deal page's button builds it, in English; its date goes under
+ * the tag as DocMarkdown's `meta`. */
 export const trainerBriefingHtml = `<span class="eyebrow">Trainer Briefing</span>
 <h1>Musterwerk AG</h1>
 <h2>Hard Facts</h2>

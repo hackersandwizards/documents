@@ -64,7 +64,6 @@ test("every text rule hits a planted case", () => {
 test("a deny term hits as a whole word only", () => {
   const hits = scanText(ROOT, ["Musterwerk"]);
   expect(hits.length).toBeGreaterThan(0);
-  // A prefix of a word is no hit.
   expect(scanText(ROOT, ["Muster" + "w"])).toEqual([]);
 });
 

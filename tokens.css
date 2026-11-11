@@ -18,7 +18,6 @@
   --tint: var(--color-bg);
   --accent: var(--color-teal);
   --accent-text: var(--color-teal-dark);
-  /* brand's 7% teal wash. */
   --accent-soft: var(--color-teal-soft);
   /* The onepager bands' line: teal, which holds at 70% zoom and in print. */
   --accent-line: var(--color-teal);

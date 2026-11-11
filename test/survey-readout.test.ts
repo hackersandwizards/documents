@@ -32,7 +32,6 @@ test("a text.lang that is no language tag is refused", () => {
   expect(() => composeSurveyReadout({ ...surveyReadout, text })).toThrow(/not "en_GB"/);
 });
 
-// A scale whose group the deck's words do not list still reaches the scores slide.
 test("a scale in a group outside text.groups is shown, not dropped", () => {
   const html = composeSurveyReadout({
     ...surveyReadout,
@@ -42,8 +41,6 @@ test("a scale in a group outside text.groups is shown, not dropped", () => {
   expect(html).toContain("[OWN-GROUP-ROW]");
 });
 
-// A 1-4 mean of 2.66 printed "2.7" but took the band below "from 2.69": the
-// bar is coloured by the printed one-decimal mean, and the legend keeps its exact thresholds.
 test("a bar takes the band of its printed mean", () => {
   const row = { ...surveyReadout.scales[0], title: "[ROUNDED-ROW]", start: 1, end: 4, mean: 2.66 };
   const html = composeSurveyReadout({ ...surveyReadout, scales: [row] });
@@ -63,7 +60,7 @@ test("a weak spot without its colour is refused, not printed without a marker", 
 });
 
 // The readout's markers follow its key, "the score's band on page 3": a weak spot's square takes the
-// colour its caller passes, a strength's the strong band, never the default teal or another colour.
+// colour its caller passes, never the default teal, and a strength's the strong band.
 test("a weak spot's marker takes its band, a strength's the strong band", () => {
   const html = composeSurveyReadout({
     ...surveyReadout,
@@ -138,7 +135,7 @@ test("a count fits over its bar on a five- and an eleven-point scale", () => {
 }, 60_000);
 
 // Submissions an attendee left unfinished score nothing, so the deck says so rather than printing a
-// bare "total" beside the completed count; and every word it prints itself is replaceable.
+// bare "total" beside the completed count.
 test("the deck names unfinished submissions and takes its words from `text`", () => {
   const html = composeSurveyReadout(surveyReadout);
   expect(html).toContain("1 unfinished, not scored");
