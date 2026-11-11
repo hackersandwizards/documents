@@ -42,7 +42,7 @@ const productEngineering = [
   "Human accountability and ownership when delegating to agents",
   "Applying agentic workflows in day-to-day engineering",
 ];
-// The ledger's longest list: twelve topics of 46 to 103 characters, a title and its detail each.
+// The ledger's longest list: twelve topics of up to 103 characters.
 const longTopics = [
   "Agentic systems at work: models, tools, the feedback loop between them and why it matters",
   "Context economics: context windows, token costs and subagents as protection for parallel work",

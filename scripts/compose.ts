@@ -22,7 +22,7 @@ export { escapeHtml };
 /** Astro's compiler for the document components: `render` returns a component's markup
  * (slots as HTML strings), `styles` the scoped styles of every component rendered so far. */
 export async function openComposer(root = process.cwd()) {
-  // Astro's compiler without the project's astro.config.mjs: its integrations have no part in a
+  // Astro's compiler without the project's Astro config: its integrations have no part in a
   // document, and a cache of its own leaves a running dev server's untouched.
   const config = await getViteConfig(
     {

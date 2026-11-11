@@ -13,7 +13,6 @@ test("each engine class takes its brand element and variant, once", () => {
   expect(withElements(out)).toBe(out);
 });
 
-// brand-elements measures every type page; the survey readout's slides are an exception it lists.
 test("brand-elements measures every type page but the survey readout's", () => {
   const measured = TYPES.filter((t) => t.file !== "survey-readout").map(
     (t) => `dist/types/${t.file}/index.html`,

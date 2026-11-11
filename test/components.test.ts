@@ -289,7 +289,7 @@ test("DocProposal with an empty signatures list keeps its acceptance block", asy
   expect(html).not.toContain('class="signatures');
 });
 
-// languageTag lets a regional tag through to the page, so the words follow its language.
+// languageTag lets a regional tag through to the page, so wordsFor takes the words of its language.
 test("a regional tag prints its language's words", async () => {
   const handout = await composer.render("DocHandout", { ...props.DocHandout, lang: "de-AT" });
   expect(handout).toContain(HANDOUT_TEXT.de.contents);

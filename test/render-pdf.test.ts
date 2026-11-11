@@ -679,7 +679,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
   }, 60_000);
 
   it("prints only once the page's layout on globalThis.hwLayout has finished", async () => {
-    // The layout ends a second after load, well past the load that Chrome's --print-to-pdf waited for.
+    // The layout ends a second after load, so a print at load would read "Pending".
     const late = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 1000))));</script>`;
     writeFileSync(
       join(dir, "late.html"),

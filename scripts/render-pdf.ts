@@ -120,8 +120,7 @@ for (const img of document.images) {
 }
 }`;
 const PRINT_SCRIPT = `<script>${PRINT_JS}</script>`;
-/** The print copy's policy: a page draws from its own folder, the package's files and data URIs,
- *  and runs its inline scripts, but frames nothing and reaches no host, so a body naming a local
+/** The print copy's policy: a page draws on local files and data URIs, and runs its inline scripts, but frames nothing and reaches no host, so a body naming a local
  *  file in a frame or a remote image prints neither. */
 const PRINT_POLICY = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' file: data:; img-src file: data: blob:; font-src file: data:; media-src file: data:">`;
 /** The same for a page served over HTTP, which the render cannot edit: run before the page's own
@@ -1326,8 +1325,8 @@ export function bakeDocumentCss(html: string): string {
     DOCUMENT_STYLE,
     () => `<style data-hw-document>\n${css}\n</style>`,
   );
-  // Read before compactStyles prunes: a property defined under a rule the page cannot use still
-  // counts as defined, as it did before pruning.
+  // Read before compactStyles prunes, so pruning changes no verdict: a property defined under a
+  // rule the page cannot use still counts as defined.
   const unset = unsetProperties(editStyles(full, stripComments));
   if (unset.length > 0)
     throw new Error(

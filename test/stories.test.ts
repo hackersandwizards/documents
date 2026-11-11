@@ -37,7 +37,7 @@ test("every component appears on a type page, and every type page is listed", ()
       /components\/(Doc\w+)\.astro"/g,
     ))
       shown(c, covered);
-  // The onepager page composes DocOnepager through composeOnepager, which renders DocCard.
+  // The onepager page composes DocOnepager through composeOnepager, so it names no component path.
   shown("DocOnepager", covered);
   expect(components.filter((c) => !covered.has(c))).toEqual([]);
   const listed = new Set(

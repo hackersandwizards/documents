@@ -323,7 +323,7 @@ tr.total {
   font: var(--role-h4);
 }
 
-/* Teal marks money; readers preferred it to a purple figure. Teal on the tint 4.69:1, the rule on
+/* Teal marks money; readers preferred it to a purple figure. Teal on the band 5.03:1, the rule on
    white 5.54:1. */
 tr.total td {
   padding-top: var(--total-pad-top);
@@ -492,7 +492,7 @@ tr.total td.num {
   margin-bottom: var(--space-heading);
 }
 
-/* The outcome heading's purple is 4.9:1 on the tint, above the 4.5:1 AA floor. */
+/* The outcome heading's purple is 4.65:1 on its callout's purple tint, above the 4.5:1 AA floor. */
 .outcome > h3 {
   color: var(--result);
 }

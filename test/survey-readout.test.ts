@@ -42,7 +42,7 @@ test("a scale in a group outside text.groups is shown, not dropped", () => {
   expect(html).toContain("[OWN-GROUP-ROW]");
 });
 
-// A 1-4 mean of 2.66 printed "2,7" but took the band below "from 2.69": the
+// A 1-4 mean of 2.66 printed "2.7" but took the band below "from 2.69": the
 // bar is coloured by the printed one-decimal mean, and the legend keeps its exact thresholds.
 test("a bar takes the band of its printed mean", () => {
   const row = { ...surveyReadout.scales[0], title: "[ROUNDED-ROW]", start: 1, end: 4, mean: 2.66 };

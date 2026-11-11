@@ -145,7 +145,6 @@ ul {
   margin-bottom: var(--op-section);
 }
 
-/* No tint behind the hero's text. */
 .hero {
   background: var(--night);
   color: var(--night-ink);
