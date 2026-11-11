@@ -279,6 +279,11 @@ ol li {
   padding: var(--space-hair) 0;
 }
 
+/* A list that is a table cell's first element sets its first line on the row's baseline. */
+:is(td, th) > :is(ul, ol):first-child > li:first-child {
+  padding-top: 0;
+}
+
 /* Rows stay whole; the table itself may break, or a long one leaves a near-empty page. */
 table {
   width: 100%;
