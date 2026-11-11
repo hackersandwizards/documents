@@ -70,7 +70,7 @@ Run each with `bun run <name>`; `--help` prints its usage.
 
 ## Work on the package
 
-Requirements: Bun 1.3 or newer, poppler (`brew install poppler`) for the font and handout checks,
+Requirements: Bun 1.4 or newer, as the gate's `admin-check` needs, poppler (`brew install poppler`) for the font and handout checks,
 and `gitleaks` (`brew install gitleaks`) for the commit hook. Rendering starts Chrome for Testing
 and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 
