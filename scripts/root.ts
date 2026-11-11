@@ -9,6 +9,10 @@ export const ROOT = join(
   "..",
 );
 
+/** One of the engine's stylesheets without its `@import` lines, whose brand files a page inlines or
+ * links on its own. */
+export const withoutImports = (css: string) => css.replace(/^@import [^;]+;\n/gm, "");
+
 /** A file the brand package exports, such as `tokens.css`, as an absolute path. */
 export const brandFile = (file: string) =>
   createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
@@ -20,7 +24,7 @@ export const brandFile = (file: string) =>
 export function brandCompany(): Record<"name" | "legal" | "street" | "postcode" | "city", string> {
   const read = (file: string) => JSON.parse(readFileSync(brandFile(file), "utf8"));
   const { company: name, legal } = read("verbal.json").name ?? {};
-  const company = { name, legal, ...read("imprint.json") };
+  const company = { ...read("imprint.json"), name, legal };
   for (const field of ["name", "legal", "street", "postcode", "city"])
     if (typeof company[field] !== "string")
       throw new Error(`brand's company facts hold no ${field}`);

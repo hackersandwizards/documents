@@ -14,7 +14,7 @@ import {
   renderPdf,
   subsetFaces,
 } from "./render-pdf";
-import { ROOT } from "./root";
+import { ROOT, withoutImports } from "./root";
 
 function rule(css: string, pattern: RegExp, what: string) {
   const found = css.match(pattern)?.[0];
@@ -50,7 +50,7 @@ function baseCss(link: boolean, read?: Set<string>) {
   const documentCss = readFileSync(join(ROOT, "document.css"), "utf8");
   return [
     ...(link ? [] : [brandBase(read)]),
-    readFileSync(join(ROOT, "tokens.css"), "utf8").replace(/^@import [^;]+;\n/gm, ""),
+    withoutImports(readFileSync(join(ROOT, "tokens.css"), "utf8")),
     // The brand's elements, which ONEPAGER_ELEMENTS puts on the page's blocks.
     inlineCss(brandFile("elements.flat.css"), read),
     // Every h&w document draws the identical list marker: the brand's rule, switched on in
@@ -287,7 +287,7 @@ export async function fitOnepager(
     const key = JSON.stringify(fit);
     let pages = rendered.get(key);
     if (!pages) {
-      // In the kept Chrome: a fit renders up to a dozen times, and a fresh Chrome per render
+      // In the kept Chrome: a fit renders up to 13 times, and a fresh Chrome per render
       // cost about 0.4 s each. One retry: a fresh-Chrome render sometimes exited non-zero on macOS,
       // and whether a kept one still does is not measured.
       pages = renderPdf(html, pdf, { warm: true })

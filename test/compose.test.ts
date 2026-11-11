@@ -108,7 +108,7 @@ describe("scripts/compose.ts", () => {
         `<p class="footer-credential"[^>]*>Credential ID: ${certificate.credentialId}</p>`,
       ),
     );
-    expect(en).toMatch(/<img src="data:image\/svg\+xml,%3Csvg [^"]+" alt="hackers&wizards"/);
+    expect(en).toMatch(/<img src="data:image\/svg\+xml,%3Csvg [^"]+" alt="hackers&amp;wizards"/);
     const de = compose({ ...certificate, lang: "de" });
     expect(de).toContain("Abschlusszertifikat");
     expect(de).not.toContain("Teilnahmezertifikat");
@@ -137,7 +137,7 @@ describe("scripts/compose.ts", () => {
     const html = readFileSync(join(dir, "md.html"), "utf8");
     expect(html).toMatch(/<span class="doc-tag[^"]*"[^>]*>A &amp; B<\/span>/);
     expect(html).toContain("Sitz und Registergericht Hamburg, HRB 198840");
-    // The former css door is gone, a body's style attribute too; pandoc's alignment is a class.
+    // DocMarkdown prints no `css` prop and no body style attribute; pandoc's alignment is a class.
     expect(html).not.toContain(".x { color: red; }");
     expect(html).not.toContain("color: red");
     expect(html).toContain('<td class="num">1</td>');

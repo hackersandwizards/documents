@@ -14,6 +14,7 @@ const INVENTED = new Set([
   ..."Mara Beispiel Jonas Probst Erika Max Mustermann Musterwerk AG Ltd Partner Hallo Dear".split(
     " ",
   ),
+  ...company.name.split(" "),
   ...company.legal.split(" "),
 ]);
 const PERSON_KEYS =
@@ -70,7 +71,7 @@ export interface Finding {
 }
 
 function files(root: string, entry: string): string[] {
-  // The catalog's dev server caches its dependencies under catalog/: not ours.
+  // Installed dependencies and Astro's cache are not the package's own files.
   if (/(^|\/)(node_modules|\.astro)$/.test(entry)) return [];
   const path = join(root, entry);
   let stat;

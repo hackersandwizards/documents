@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { composePage, openComposer } from "../scripts/compose";
+import { withoutImports } from "../scripts/root";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { documentCss, renderPdf } from "../scripts/render-pdf";
 import { handout, leistungsnachweisMonth, proposalDe, rateCard } from "../scripts/samples";
@@ -17,7 +18,7 @@ const longest = "Agentic Engineering for Developers and QA, Train-the-Trainer (A
 const tooLong = `${longest}, Extended Edition`;
 
 const ROOT = resolve(import.meta.dir, "..");
-const rules = readFileSync(join(ROOT, "handout.css"), "utf8").replace(/^@import [^;]+;\n/gm, "");
+const rules = withoutImports(readFileSync(join(ROOT, "handout.css"), "utf8"));
 let composer: Awaited<ReturnType<typeof openComposer>>;
 let dir: string;
 beforeAll(async () => {

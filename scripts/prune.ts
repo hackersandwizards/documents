@@ -55,7 +55,7 @@ type Present = {
 
 // Attributes an element gains on a page without a script of its own: `open` from the browser when
 // a reader opens a `<details>`, the rest from renderPdf's print script on each image it redraws.
-const SET_LATER = new Set(["open", "style", "width", "src", "srcset", "data-print-scaled"]);
+const SET_LATER = new Set(["open", "style", "src", "srcset", "data-print-scaled"]);
 
 // A class or id name after its sign: CSS takes any character past ASCII as a name character.
 const NAME = "(-?[_a-zA-Z\\u{80}-\\u{10ffff}][\\w\\u{80}-\\u{10ffff}-]*)";
@@ -173,8 +173,7 @@ export function pruneStyles(html: string): string {
       element(el) {
         const tag = el.tagName.toLowerCase();
         page.tags.add(tag);
-        // A script block counts as running unless its type names JSON data, the one data block
-        // the engine's pages carry; an event handler runs too.
+        // A script block counts as running unless its type names JSON data; an event handler runs too.
         if (tag === "script" && !/json/i.test(el.getAttribute("type") ?? "")) runs = true;
         for (const [name] of el.attributes) {
           page.attributes.add(name.toLowerCase());

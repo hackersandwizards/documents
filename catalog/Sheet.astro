@@ -3,6 +3,7 @@
 // stylesheets are inlined, since an import would load them on the dashboard too.
 import config from "virtual:astrobook/global-config.mjs";
 import { ELEMENT_MAP, ONEPAGER_ELEMENTS, withElements } from "../scripts/elements";
+import { withoutImports } from "../scripts/root";
 import tokensCss from "../tokens.css?raw";
 import documentCss from "../document.css?raw";
 import handoutCss from "../handout.css?raw";
@@ -23,8 +24,7 @@ const src = path.replace(`${trim(config.dashboardBase)}/`, `${trim(config.storyB
 // Astrobook's layout styles body by class, so the document's body rules, its stylesheets' and its
 // components' page styles alike, move to the sheet's div.
 const bodyToSheet = (css: string) => css.replace(/^(\s*)body(?=\s*\{)/gm, "$1.sheet");
-const sheetCss = (css: string) =>
-  bodyToSheet(css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^@import [^;]+;\n/gm, ""));
+const sheetCss = (css: string) => bodyToSheet(withoutImports(css.replace(/\/\*[\s\S]*?\*\//g, "")));
 const css = [
   sheetCss(tokensCss),
   ...(sheet === "onepager" ? [sheetCss(onepagerCss)] : [sheetCss(documentCss)]),

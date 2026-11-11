@@ -1,6 +1,7 @@
 ---
 import DocElements from "../../../components/DocElements.astro";
 import { brandHref } from "../../brand";
+import { withoutImports } from "../../../scripts/root";
 import tokensCss from "../../../tokens.css?raw";
 import documentCss from "../../../document.css?raw";
 import handoutCss from "../../../handout.css?raw";
@@ -14,8 +15,7 @@ interface Props {
   css?: string;
 }
 const { title, lang = "de", sheet = "document", css = "" } = Astro.props;
-const local = (file: string) =>
-  file.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^@import [^;]+;\n/gm, "");
+const local = (file: string) => withoutImports(file.replace(/\/\*[\s\S]*?\*\//g, ""));
 const base = `
 ${local(tokensCss)}${local(documentCss)}${sheet === "handout" ? local(handoutCss) : ""}${css}
 @media screen {

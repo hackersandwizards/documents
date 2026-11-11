@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { escapeHtml as esc, fill, languageTag, svgUri } from "./fill";
 import { brandCss, brandFile, compactStyles } from "./render-pdf";
-import { ROOT } from "./root";
+import { brandCompany, ROOT, withoutImports } from "./root";
 
 /** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
 export interface ReadoutScale {
@@ -394,9 +394,8 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
   const slides = [s1, s2, s3, s4, s5, s6, s7].join("\n");
   const logo = (file: string) => svgUri(readFileSync(brandFile(`logos/${file}`), "utf8"));
   const lockup = logo("lockup.svg");
-  const wordmark = `<img class="wordmark" src="${logo("wordmark.svg")}" alt="hackers&amp;wizards" />`;
-  // Replacer functions, since a replacement string reads $& and $$ out of attendee quotes. The
-  // logo markers are HTML comments, which esc never lets attendee text carry.
+  const alt = esc(brandCompany().name);
+  const wordmark = `<img class="wordmark" src="${logo("wordmark.svg")}" alt="${alt}" />`;
   const links = brand
     ? `<link rel="icon" href="${brand("logos/favicon.ico")}" sizes="32x32" />
 <link rel="icon" href="${brand("logos/favicon.svg")}" type="image/svg+xml" />
@@ -409,6 +408,8 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
 <link rel="stylesheet" href="${brand("elements/strip.css")}" />
 `
     : "";
+  // Replacer functions, since a replacement string reads $& and $$ out of attendee quotes. The
+  // logo markers are HTML comments, which esc never lets attendee text carry.
   return compactStyles(
     PAGE.replace("__BRAND__", () => (brand ? "" : brandCss()))
       .replace("__STYLE__", () => STYLE)
@@ -417,10 +418,7 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
       .replace("__TITLE__", () => esc(fill(t.documentTitle, { customer: customerName })))
       .replace("__SLIDES__", () =>
         slides
-          .replace(
-            "<!--LOCKUP-->",
-            () => `<img class="lockup" src="${lockup}" alt="hackers&amp;wizards" />`,
-          )
+          .replace("<!--LOCKUP-->", () => `<img class="lockup" src="${lockup}" alt="${alt}" />`)
           .replaceAll("<!--WORDMARK-->", () => wordmark),
       ),
   );
@@ -451,7 +449,7 @@ function distScale(t: ReadoutText, s: ReadoutScale): string {
 /** The deck's stylesheet: the document tokens (the brand files apart, which brandCss inlines) and
  * readout.css. */
 const STYLE = ["tokens.css", "readout.css"]
-  .map((f) => readFileSync(join(ROOT, f), "utf8").replace(/^@import [^;]+;\n/gm, ""))
+  .map((f) => withoutImports(readFileSync(join(ROOT, f), "utf8")))
   .join("\n");
 
 const PAGE = `<!doctype html>
