@@ -599,7 +599,8 @@ describe.skipIf(!chromeBinary())("renderPdf profile", () => {
 describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
   it("installs Chrome without blocking the process and retries an install that failed", async () => {
     // A child process, since this file's module already holds the real Chrome. Its `bunx` stands
-    // in for @puppeteer/browsers: it fails while the flag file exists, then prints a Chrome.
+    // in for @puppeteer/browsers: it fails while the flag file exists, then installs a
+    // Chrome into the folder its `--path` names, $5, and prints its path.
     const bin = join(dir, "install-bin");
     mkdirSync(bin);
     const flag = join(dir, "install-fails");
@@ -610,7 +611,7 @@ describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
     });
     writeFileSync(
       join(bin, "bunx"),
-      `#!/bin/sh\necho "$1" > "${flag}.pkg"\nsleep 0.5\n[ -e "${flag}" ] && exit 1\necho "${chrome}"\n`,
+      `#!/bin/sh\necho "$1" > "${flag}.pkg"\nsleep 0.5\n[ -e "${flag}" ] && exit 1\nmkdir -p "$5/chrome/test-1"\ncp "${chrome}" "$5/chrome/test-1/chrome"\necho "$5/chrome/test-1/chrome"\n`,
       { mode: 0o755 },
     );
     writeFileSync(join(dir, "install.html"), "<!doctype html><html><body>x</body></html>");
