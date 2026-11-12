@@ -146,12 +146,14 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
   repository's steps from `scaffolding.check` in `package.json`: the tests (every component renders
   standalone, compose, the render and font checks, the certificate fit in Chrome, the base's class
   list, the type pages, the markers `brand-markers` leaves out: step numbers and squares outside a
-  list), `brand-markers` on every type page holding a `<ul>` (`check:markers`), the privacy check
+  list), the privacy check
   (`check:privacy`), the brand colour scan (`brand-colours.json` holds the exceptions) beside
   `brand-copies` and `brand-retired` over `dist/` (`check:retired`), and `brand-elements`. The
   tests read `dist/`, so they run after the build, not among the shared steps. No hook runs the
   gate: `.githooks/pre-commit` runs `bun run check:staged` (scaffolding's `check-staged`).
   `bun install` points `core.hooksPath` at `.githooks/`.
+- `bun run check:markers`, by hand after a brand raise and after a change to how lists are styled,
+  outside the gate: `brand-markers` on every type page holding a `<ul>` in `dist/`.
 - `bun run dev` (or `bun run catalog`): serve the catalog at `http://127.0.0.1:4330/`, the type
   pages at `/types/<type>/index.html`. Dev serves at the root; the build keeps the Pages base
   `/documents` and writes the type pages to `dist/types/`.
