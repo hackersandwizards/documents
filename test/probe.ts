@@ -58,3 +58,8 @@ export const withLinkedBrand = (html: string) =>
     /<link rel="stylesheet" href="([^"]+)" \/>/g,
     (_, file: string) => `<style>${inlineCss(brandFile(file))}</style>`,
   );
+
+/** `ms` stretched by the load the gate measured: `SCAFFOLDING_TEST_TIMEOUT_MS` is 5000 on an idle
+ * machine and grows with load, and a test's own limit grows with it. */
+export const limit = (ms: number) =>
+  (ms * Number(process.env.SCAFFOLDING_TEST_TIMEOUT_MS || 5000)) / 5000;

@@ -33,42 +33,46 @@ void mock.module("node:fs", () => ({
 }));
 void mock.module("node:fs/promises", () => ({ ...promises, default: promises }));
 
-test("onepagerBrandFiles lists exactly the brand files a traced render reads", async () => {
-  // The samples read brand's imprint at load: imported first and the trace cleared, only the
-  // render's own reads count.
-  const { onepager } = await import("../scripts/samples");
-  read.clear();
-  const { openComposer } = await import("../scripts/compose");
-  const { composeOnepager, onepagerBrandFiles } = await import("../scripts/onepager");
-  const { brandFile } = await import("../scripts/render-pdf");
-  const { ROOT } = await import("../scripts/root");
-  const composer = await openComposer(ROOT);
-  try {
-    await composeOnepager(composer, onepager);
-  } finally {
-    await composer.close();
-  }
-  const brand = `${dirname(brandFile("package.json"))}/`;
-  // Resolving a brand file reads brand's package.json, and vitefu's dependency crawl the
-  // package.json of each dependency Bun nests under brand; the page carries none of them.
-  const traced = [...read]
-    .filter(
-      (path) =>
-        path.startsWith(brand) &&
-        path !== `${brand}package.json` &&
-        !/^node_modules\/(@[^/]+\/)?[^/]+\/package\.json$/.test(path.slice(brand.length)),
-    )
-    .sort();
-  // The control: the trace sees Vite's read of DocHeader's lockup and the engine's of a face.
-  expect(traced.some((path) => path.endsWith("logos/lockup-screen.svg"))).toBe(true);
-  expect(traced.some((path) => path.endsWith(".woff2"))).toBe(true);
-  expect(onepagerBrandFiles()).toEqual(traced);
-  // Bun's own loader reads an imported module without node:fs: no script imports a brand module.
-  // The control: the pattern finds the import Vite reads in DocHeader.
-  const imports = /(from|import\()\s*["']@hackersandwizards\/brand/;
-  expect(fs.readFileSync(join(ROOT, "components", "DocHeader.astro"), "utf8")).toMatch(imports);
-  const scripts = join(ROOT, "scripts");
-  for (const file of fs.readdirSync(scripts, { recursive: true, encoding: "utf8" }))
-    if (file.endsWith(".ts"))
-      expect(fs.readFileSync(join(scripts, file), "utf8")).not.toMatch(imports);
-}, 60_000);
+test(
+  "onepagerBrandFiles lists exactly the brand files a traced render reads",
+  async () => {
+    // The samples read brand's imprint at load: imported first and the trace cleared, only the
+    // render's own reads count.
+    const { onepager } = await import("../scripts/samples");
+    read.clear();
+    const { openComposer } = await import("../scripts/compose");
+    const { composeOnepager, onepagerBrandFiles } = await import("../scripts/onepager");
+    const { brandFile } = await import("../scripts/render-pdf");
+    const { ROOT } = await import("../scripts/root");
+    const composer = await openComposer(ROOT);
+    try {
+      await composeOnepager(composer, onepager);
+    } finally {
+      await composer.close();
+    }
+    const brand = `${dirname(brandFile("package.json"))}/`;
+    // Resolving a brand file reads brand's package.json, and vitefu's dependency crawl the
+    // package.json of each dependency Bun nests under brand; the page carries none of them.
+    const traced = [...read]
+      .filter(
+        (path) =>
+          path.startsWith(brand) &&
+          path !== `${brand}package.json` &&
+          !/^node_modules\/(@[^/]+\/)?[^/]+\/package\.json$/.test(path.slice(brand.length)),
+      )
+      .sort();
+    // The control: the trace sees Vite's read of DocHeader's lockup and the engine's of a face.
+    expect(traced.some((path) => path.endsWith("logos/lockup-screen.svg"))).toBe(true);
+    expect(traced.some((path) => path.endsWith(".woff2"))).toBe(true);
+    expect(onepagerBrandFiles()).toEqual(traced);
+    // Bun's own loader reads an imported module without node:fs: no script imports a brand module.
+    // The control: the pattern finds the import Vite reads in DocHeader.
+    const imports = /(from|import\()\s*["']@hackersandwizards\/brand/;
+    expect(fs.readFileSync(join(ROOT, "components", "DocHeader.astro"), "utf8")).toMatch(imports);
+    const scripts = join(ROOT, "scripts");
+    for (const file of fs.readdirSync(scripts, { recursive: true, encoding: "utf8" }))
+      if (file.endsWith(".ts"))
+        expect(fs.readFileSync(join(scripts, file), "utf8")).not.toMatch(imports);
+  },
+  (60_000 * Number(process.env.SCAFFOLDING_TEST_TIMEOUT_MS || 5000)) / 5000,
+);

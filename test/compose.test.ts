@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "bun:test";
+import { limit } from "./probe";
 import {
   certificate,
   certificateDe,
@@ -84,43 +85,47 @@ describe("scripts/compose.ts", () => {
     expect(html).not.toContain("Summe netto");
   });
 
-  it("composes the certificate's wording, verification footer and escaped roster text", () => {
-    const compose = (props: object) => {
-      writeFileSync(join(dir, "c.json"), JSON.stringify(props));
-      execFileSync("bun", [SCRIPT, "DocCertificate", join(dir, "c.json"), join(dir, "c.html")]);
-      return readFileSync(join(dir, "c.html"), "utf8");
-    };
-    const en = compose({
-      ...certificate,
-      attendeeName: "Łukasz Wiśniewski-Grzybowski",
-      attendeeCompany: "Q<b>&</b>A",
-    });
-    expect(en).toContain("Certificate of Completion");
-    expect(en).not.toContain("Certificate of Attendance");
-    // A long name breaks only between its words.
-    expect(en).toMatch(/<span[^>]*>Łukasz<\/span>\s+<span[^>]*>Wiśniewski-Grzybowski<\/span>/);
-    expect(en).toContain("Q&lt;b&gt;&amp;&lt;/b&gt;A");
-    expect(en).toContain(`src="${certificate.qrCodeUri}"`);
-    expect(en).toContain("Scan to verify &amp; add to LinkedIn");
-    expect(en).toContain("Add to LinkedIn profile");
-    expect(en).toMatch(
-      new RegExp(
-        `<p class="footer-credential"[^>]*>Credential ID: ${certificate.credentialId}</p>`,
-      ),
-    );
-    expect(en).toMatch(/<img src="data:image\/svg\+xml,%3Csvg [^"]+" alt="hackers&amp;wizards"/);
-    const de = compose({ ...certificate, lang: "de" });
-    expect(de).toContain("Abschlusszertifikat");
-    expect(de).not.toContain("Teilnahmezertifikat");
-    expect(de).toContain("Scannen: verifizieren &amp; zu LinkedIn hinzufügen");
-    expect(de).toContain("Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen");
-    const deSample = compose(certificateDe);
-    expect(deSample).toContain("Training (2 Tage)");
-    expect(deSample).toContain("Spezifikation mit Agenten");
-    expect(deSample).toContain("12.–13. November 2026");
-    for (const english of ["Days", "Specification", "Rules files", "12–13 November"])
-      expect(deSample).not.toContain(english);
-  }, 20_000);
+  it(
+    "composes the certificate's wording, verification footer and escaped roster text",
+    () => {
+      const compose = (props: object) => {
+        writeFileSync(join(dir, "c.json"), JSON.stringify(props));
+        execFileSync("bun", [SCRIPT, "DocCertificate", join(dir, "c.json"), join(dir, "c.html")]);
+        return readFileSync(join(dir, "c.html"), "utf8");
+      };
+      const en = compose({
+        ...certificate,
+        attendeeName: "Łukasz Wiśniewski-Grzybowski",
+        attendeeCompany: "Q<b>&</b>A",
+      });
+      expect(en).toContain("Certificate of Completion");
+      expect(en).not.toContain("Certificate of Attendance");
+      // A long name breaks only between its words.
+      expect(en).toMatch(/<span[^>]*>Łukasz<\/span>\s+<span[^>]*>Wiśniewski-Grzybowski<\/span>/);
+      expect(en).toContain("Q&lt;b&gt;&amp;&lt;/b&gt;A");
+      expect(en).toContain(`src="${certificate.qrCodeUri}"`);
+      expect(en).toContain("Scan to verify &amp; add to LinkedIn");
+      expect(en).toContain("Add to LinkedIn profile");
+      expect(en).toMatch(
+        new RegExp(
+          `<p class="footer-credential"[^>]*>Credential ID: ${certificate.credentialId}</p>`,
+        ),
+      );
+      expect(en).toMatch(/<img src="data:image\/svg\+xml,%3Csvg [^"]+" alt="hackers&amp;wizards"/);
+      const de = compose({ ...certificate, lang: "de" });
+      expect(de).toContain("Abschlusszertifikat");
+      expect(de).not.toContain("Teilnahmezertifikat");
+      expect(de).toContain("Scannen: verifizieren &amp; zu LinkedIn hinzufügen");
+      expect(de).toContain("Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen");
+      const deSample = compose(certificateDe);
+      expect(deSample).toContain("Training (2 Tage)");
+      expect(deSample).toContain("Spezifikation mit Agenten");
+      expect(deSample).toContain("12.–13. November 2026");
+      for (const english of ["Days", "Specification", "Rules files", "12–13 November"])
+        expect(deSample).not.toContain(english);
+    },
+    limit(20_000),
+  );
 
   it("composes a Markdown document: escaped kind, the imprint, no style of the body's", () => {
     writeFileSync(
@@ -169,25 +174,31 @@ describe("scripts/compose.ts", () => {
     expect(run.stderr).toContain("Usage");
   });
 
-  it("--serve answers a line it cannot read and a foreign name, and keeps serving", async () => {
-    const child = spawn("bun", [SCRIPT, "--serve"], { stdio: ["pipe", "ignore", "pipe", "pipe"] });
-    const answers: string[] = [];
-    child.stdio[3]!.on("data", (chunk: Buffer) =>
-      answers.push(...chunk.toString().split("\n").filter(Boolean)),
-    );
-    child.stdin!.write("not json\n");
-    child.stdin!.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
-    const until = Date.now() + 10_000;
-    while (answers.length < 2 && child.exitCode === null && Date.now() < until)
-      await new Promise((r) => setTimeout(r, 50));
-    child.stdin!.end();
-    const parsed = answers.map((a) => JSON.parse(a));
-    expect(parsed[0].error).toContain("JSON");
-    expect(parsed[1]).toMatchObject({
-      id: 2,
-      error: expect.stringContaining("Not a document component: Header"),
-    });
-  }, 20_000);
+  it(
+    "--serve answers a line it cannot read and a foreign name, and keeps serving",
+    async () => {
+      const child = spawn("bun", [SCRIPT, "--serve"], {
+        stdio: ["pipe", "ignore", "pipe", "pipe"],
+      });
+      const answers: string[] = [];
+      child.stdio[3]!.on("data", (chunk: Buffer) =>
+        answers.push(...chunk.toString().split("\n").filter(Boolean)),
+      );
+      child.stdin!.write("not json\n");
+      child.stdin!.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
+      const until = Date.now() + 10_000;
+      while (answers.length < 2 && child.exitCode === null && Date.now() < until)
+        await new Promise((r) => setTimeout(r, 50));
+      child.stdin!.end();
+      const parsed = answers.map((a) => JSON.parse(a));
+      expect(parsed[0].error).toContain("JSON");
+      expect(parsed[1]).toMatchObject({
+        id: 2,
+        error: expect.stringContaining("Not a document component: Header"),
+      });
+    },
+    limit(20_000),
+  );
 });
 
 // openComposer's compressHTML, the catalog's: the line break after </a> stays a space.

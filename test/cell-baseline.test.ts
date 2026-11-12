@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import { limit } from "./probe";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
@@ -201,24 +202,28 @@ test.each(TYPES_LISTED.map((t) => t.file))(
     const off = readings.filter((r) => !(r.off <= TOLERANCE));
     expect(off.map((r) => `${r.label}: ${r.off.toFixed(2)} px`)).toEqual([]);
   },
-  60_000,
+  limit(60_000),
 );
 
-test("the timesheet's lists with the item's top padding back fail", async () => {
-  const { readings } = await measure(
-    "leistungsnachweis-pauschal",
-    "td li:first-child { padding-top: var(--space-hair) !important }",
-  );
-  expect(readings.filter((r) => r.label.startsWith("as shipped")).length).toBeGreaterThan(0);
-  for (const r of readings) expect(r.off).toBeGreaterThan(TOLERANCE);
-}, 60_000);
+test(
+  "the timesheet's lists with the item's top padding back fail",
+  async () => {
+    const { readings } = await measure(
+      "leistungsnachweis-pauschal",
+      "td li:first-child { padding-top: var(--space-hair) !important }",
+    );
+    expect(readings.filter((r) => r.label.startsWith("as shipped")).length).toBeGreaterThan(0);
+    for (const r of readings) expect(r.off).toBeGreaterThan(TOLERANCE);
+  },
+  limit(60_000),
+);
 
 test.each(TYPES_LISTED.map((t) => t.file))(
   "%s: a list's items are spaced only between each other",
   async (file) => {
     expect(spacingFaults(await measureSpacing(file))).toEqual([]);
   },
-  60_000,
+  limit(60_000),
 );
 
 // The controls: the items' hairs above and below, the 2pt between items as padding, which starts a
@@ -247,5 +252,5 @@ test.each([
     expect(spacingFaults(lists)).toEqual([]);
     expect(spacingFaults(await measureSpacing(file, css)).length).toBeGreaterThan(0);
   },
-  60_000,
+  limit(60_000),
 );

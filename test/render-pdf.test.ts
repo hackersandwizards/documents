@@ -36,7 +36,7 @@ import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { svgUri } from "../scripts/fill";
 import { preparation, rateCard, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
-import { fallbackFamilies, probePage, withLinkedBrand } from "./probe";
+import { fallbackFamilies, probePage, withLinkedBrand, limit } from "./probe";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -172,14 +172,18 @@ describe("subsetFaces", () => {
   const faces = (html: string) =>
     [...html.matchAll(/data:font\/woff2;base64,([\w+/=]+)/g)].map(([, data]) => data!);
 
-  it("cuts each face of a composed document, and a re-bake cut again writes the same bytes", async () => {
-    const html = await composeDocument("DocRateCard", rateCard);
-    const whole = faces(bakeDocumentCss(html));
-    const cut = faces(html);
-    expect(cut.length).toBe(whole.length);
-    expect(cut.join("").length).toBeLessThan(0.75 * whole.join("").length);
-    expect(await subsetFaces(bakeDocumentCss(html))).toBe(html);
-  }, 60_000);
+  it(
+    "cuts each face of a composed document, and a re-bake cut again writes the same bytes",
+    async () => {
+      const html = await composeDocument("DocRateCard", rateCard);
+      const whole = faces(bakeDocumentCss(html));
+      const cut = faces(html);
+      expect(cut.length).toBe(whole.length);
+      expect(cut.join("").length).toBeLessThan(0.75 * whole.join("").length);
+      expect(await subsetFaces(bakeDocumentCss(html))).toBe(html);
+    },
+    limit(60_000),
+  );
 
   it("keeps the overlap flags of the glyphs it keeps; control: the brand face carries them", async () => {
     const page = `<html><head><style>${documentCss()}</style></head><body>Agenten</body></html>`;
@@ -221,42 +225,46 @@ describe.skipIf(!chromeBinary())("cutFacesToPdf", () => {
     return Buffer.concat([...parts, pdf.subarray(at)]);
   };
 
-  it("reads a ToUnicode map stored uncompressed or with its filter in an array as a compressed one", async () => {
-    const html = await composeDocument("DocRateCard", rateCard);
-    const file = join(dir, "faces.html");
-    const pdf = join(dir, "faces.pdf");
-    writeFileSync(file, html);
-    await renderPdf(file, pdf);
-    const cut = await cutFacesToPdf(html, pdf);
-    expect(cut).not.toBe(html);
-    const plain = join(dir, "faces-plain.pdf");
-    writeFileSync(
-      plain,
-      withMaps(readFileSync(pdf), (dict, map) => [
-        dict.replace(/\/Filter\s*\/FlateDecode/, ""),
-        inflateSync(map),
-      ]),
-    );
-    expect(await cutFacesToPdf(html, plain)).toBe(cut);
-    const array = join(dir, "faces-array.pdf");
-    writeFileSync(
-      array,
-      withMaps(readFileSync(pdf), (dict, map) => [
-        dict.replace(/\/Filter\s*\/FlateDecode/, "/Filter [/FlateDecode]"),
-        map,
-      ]),
-    );
-    expect(await cutFacesToPdf(html, array)).toBe(cut);
-    // A PDF whose fonts it cannot find (another writer's dictionaries) leaves every face whole,
-    // never reads as one that printed no face.
-    const unread = join(dir, "faces-unread.pdf");
-    writeFileSync(
-      unread,
-      readFileSync(pdf, "latin1").replaceAll("/Subtype /Type0", "/Subtype /TypeX"),
-      "latin1",
-    );
-    expect(await cutFacesToPdf(html, unread)).toBe(html);
-  }, 60_000);
+  it(
+    "reads a ToUnicode map stored uncompressed or with its filter in an array as a compressed one",
+    async () => {
+      const html = await composeDocument("DocRateCard", rateCard);
+      const file = join(dir, "faces.html");
+      const pdf = join(dir, "faces.pdf");
+      writeFileSync(file, html);
+      await renderPdf(file, pdf);
+      const cut = await cutFacesToPdf(html, pdf);
+      expect(cut).not.toBe(html);
+      const plain = join(dir, "faces-plain.pdf");
+      writeFileSync(
+        plain,
+        withMaps(readFileSync(pdf), (dict, map) => [
+          dict.replace(/\/Filter\s*\/FlateDecode/, ""),
+          inflateSync(map),
+        ]),
+      );
+      expect(await cutFacesToPdf(html, plain)).toBe(cut);
+      const array = join(dir, "faces-array.pdf");
+      writeFileSync(
+        array,
+        withMaps(readFileSync(pdf), (dict, map) => [
+          dict.replace(/\/Filter\s*\/FlateDecode/, "/Filter [/FlateDecode]"),
+          map,
+        ]),
+      );
+      expect(await cutFacesToPdf(html, array)).toBe(cut);
+      // A PDF whose fonts it cannot find (another writer's dictionaries) leaves every face whole,
+      // never reads as one that printed no face.
+      const unread = join(dir, "faces-unread.pdf");
+      writeFileSync(
+        unread,
+        readFileSync(pdf, "latin1").replaceAll("/Subtype /Type0", "/Subtype /TypeX"),
+        "latin1",
+      );
+      expect(await cutFacesToPdf(html, unread)).toBe(html);
+    },
+    limit(60_000),
+  );
 });
 
 describe("bakeDocumentCss", () => {
@@ -477,12 +485,14 @@ describe("renderPdf without output", () => {
 });
 
 describe("a Chrome or composer that cannot start", () => {
-  it("rejects, removes the profile, and lets the next call start afresh", async () => {
-    // A child process: a spawn error without a listener ends the process. Its own TMPDIR shows
-    // whether a profile is left behind.
-    const tmp = mkdtempSync(join(dir, "nostart-"));
-    writeFileSync(join(dir, "nostart.html"), "<!doctype html><html><body>x</body></html>");
-    const script = `
+  it(
+    "rejects, removes the profile, and lets the next call start afresh",
+    async () => {
+      // A child process: a spawn error without a listener ends the process. Its own TMPDIR shows
+      // whether a profile is left behind.
+      const tmp = mkdtempSync(join(dir, "nostart-"));
+      writeFileSync(join(dir, "nostart.html"), "<!doctype html><html><body>x</body></html>");
+      const script = `
       import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
       const outcome = (p) => p.then(() => "ok", (e) => e.message);
       process.env.CHROME_BINARY = "/nonexistent/chrome";
@@ -495,56 +505,62 @@ describe("a Chrome or composer that cannot start", () => {
       process.env.PATH = path;
       composer.push(await compose());
       console.log(JSON.stringify({ chrome, composer }));`;
-    const child = Bun.spawn([process.execPath, "-e", script], {
-      env: { ...process.env, TMPDIR: tmp },
-      stderr: "inherit",
-    });
-    const out = await new Response(child.stdout).text();
-    await child.exited;
-    expect(child.exitCode).toBe(0);
-    const { chrome, composer } = JSON.parse(out);
-    // The second warm call fails on its own spawn, not on the dead Chrome the first one kept.
-    for (const message of chrome) expect(message).toContain("ENOENT");
-    expect(composer[0]).toStartWith("Composing DocMarkdown failed");
-    expect(composer[1]).toBe("ok");
-    expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
-  }, 60_000);
+      const child = Bun.spawn([process.execPath, "-e", script], {
+        env: { ...process.env, TMPDIR: tmp },
+        stderr: "inherit",
+      });
+      const out = await new Response(child.stdout).text();
+      await child.exited;
+      expect(child.exitCode).toBe(0);
+      const { chrome, composer } = JSON.parse(out);
+      // The second warm call fails on its own spawn, not on the dead Chrome the first one kept.
+      for (const message of chrome) expect(message).toContain("ENOENT");
+      expect(composer[0]).toStartWith("Composing DocMarkdown failed");
+      expect(composer[1]).toBe("ok");
+      expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
+    },
+    limit(60_000),
+  );
 });
 
 describe("a profile left behind", () => {
-  it("is removed at the next start once an hour old and no running Chrome holds it", async () => {
-    const tmp = mkdtempSync(join(dir, "left-"));
-    const old = new Date(Date.now() - 2 * 3_600_000);
-    const gone = Bun.spawnSync(["true"]).pid;
-    const locks: Record<string, string | undefined> = {
-      "hw-chrome-stale": undefined,
-      "hw-chrome-crashed": `${hostname()}-${gone}`,
-      "hw-chrome-held": `${hostname()}-${process.pid}`,
-      "hw-chrome-elsewhere": "other-host-1",
-    };
-    for (const [name, lock] of Object.entries(locks)) {
-      mkdirSync(join(tmp, name));
-      if (lock) symlinkSync(lock, join(tmp, name, "SingletonLock"));
-      utimesSync(join(tmp, name), old, old);
-    }
-    mkdirSync(join(tmp, "hw-chrome-new"));
-    writeFileSync(join(dir, "left.html"), "<!doctype html><html><body>x</body></html>");
-    // A process of its own, so the sweep has not run yet in it.
-    const script = `
+  it(
+    "is removed at the next start once an hour old and no running Chrome holds it",
+    async () => {
+      const tmp = mkdtempSync(join(dir, "left-"));
+      const old = new Date(Date.now() - 2 * 3_600_000);
+      const gone = Bun.spawnSync(["true"]).pid;
+      const locks: Record<string, string | undefined> = {
+        "hw-chrome-stale": undefined,
+        "hw-chrome-crashed": `${hostname()}-${gone}`,
+        "hw-chrome-held": `${hostname()}-${process.pid}`,
+        "hw-chrome-elsewhere": "other-host-1",
+      };
+      for (const [name, lock] of Object.entries(locks)) {
+        mkdirSync(join(tmp, name));
+        if (lock) symlinkSync(lock, join(tmp, name, "SingletonLock"));
+        utimesSync(join(tmp, name), old, old);
+      }
+      mkdirSync(join(tmp, "hw-chrome-new"));
+      writeFileSync(join(dir, "left.html"), "<!doctype html><html><body>x</body></html>");
+      // A process of its own, so the sweep has not run yet in it.
+      const script = `
       import { renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
       process.env.CHROME_BINARY = "/nonexistent/chrome";
       await renderPdf(${JSON.stringify(join(dir, "left.html"))}, ${JSON.stringify(join(dir, "left.pdf"))}).catch(() => {});`;
-    const child = Bun.spawn([process.execPath, "-e", script], {
-      env: { ...process.env, TMPDIR: tmp },
-      stderr: "inherit",
-    });
-    await child.exited;
-    expect(readdirSync(tmp).sort()).toEqual([
-      "hw-chrome-elsewhere",
-      "hw-chrome-held",
-      "hw-chrome-new",
-    ]);
-  }, 60_000);
+      const child = Bun.spawn([process.execPath, "-e", script], {
+        env: { ...process.env, TMPDIR: tmp },
+        stderr: "inherit",
+      });
+      await child.exited;
+      expect(readdirSync(tmp).sort()).toEqual([
+        "hw-chrome-elsewhere",
+        "hw-chrome-held",
+        "hw-chrome-new",
+      ]);
+    },
+    limit(60_000),
+  );
 });
 
 describe("a Chrome that hangs", () => {
@@ -552,23 +568,29 @@ describe("a Chrome that hangs", () => {
     delete process.env.CHROME_BINARY;
   });
 
-  it("is killed when it ignores SIGTERM, and the render fails within its time", async () => {
-    // Answers nothing on its pipe and ignores SIGTERM, as a hung browser process does.
-    const stub = join(dir, "hung-chrome.sh");
-    writeFileSync(stub, "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 0.2; done\n", { mode: 0o755 });
-    writeFileSync(join(dir, "hung.html"), "<!doctype html><html><body>x</body></html>");
-    process.env.CHROME_BINARY = stub;
-    const started = performance.now();
-    const outcome = await Promise.race([
-      renderPdf(join(dir, "hung.html"), join(dir, "hung.pdf"), { timeoutMs: 1000 }).then(
-        () => "printed",
-        (e: Error) => e.message,
-      ),
-      new Promise((resolve) => setTimeout(resolve, 15_000, "still waiting")),
-    ]);
-    expect(outcome).toContain("within 1000 ms");
-    expect(performance.now() - started).toBeLessThan(10_000);
-  }, 30_000);
+  it(
+    "is killed when it ignores SIGTERM, and the render fails within its time",
+    async () => {
+      // Answers nothing on its pipe and ignores SIGTERM, as a hung browser process does.
+      const stub = join(dir, "hung-chrome.sh");
+      writeFileSync(stub, "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 0.2; done\n", {
+        mode: 0o755,
+      });
+      writeFileSync(join(dir, "hung.html"), "<!doctype html><html><body>x</body></html>");
+      process.env.CHROME_BINARY = stub;
+      const started = performance.now();
+      const outcome = await Promise.race([
+        renderPdf(join(dir, "hung.html"), join(dir, "hung.pdf"), { timeoutMs: 1000 }).then(
+          () => "printed",
+          (e: Error) => e.message,
+        ),
+        new Promise((resolve) => setTimeout(resolve, 15_000, "still waiting")),
+      ]);
+      expect(outcome).toContain("within 1000 ms");
+      expect(performance.now() - started).toBeLessThan(10_000);
+    },
+    limit(30_000),
+  );
 });
 
 describe.skipIf(!chromeBinary())("renderPdf profile", () => {
@@ -677,112 +699,140 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     );
     pdf = join(dir, `doc-${warm}.pdf`);
     await renderPdf(join(dir, "doc.html"), pdf, { warm });
-  }, 60_000);
+  }, limit(60_000));
 
-  it("prints only once the page's layout on globalThis.hwLayout has finished", async () => {
-    // The layout ends a second after load, so a print at load would read "Pending".
-    const late = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 1000))));</script>`;
-    writeFileSync(
-      join(dir, "late.html"),
-      `<!doctype html><html><body>Pending${late}</body></html>`,
-    );
-    await renderPdf(join(dir, "late.html"), join(dir, `late-${warm}.pdf`), { warm });
-    const text = execFileSync("pdftotext", [join(dir, `late-${warm}.pdf`), "-"], {
-      encoding: "utf8",
-    });
-    expect(text.trim()).toBe("Laid out");
-  }, 60_000);
+  it(
+    "prints only once the page's layout on globalThis.hwLayout has finished",
+    async () => {
+      // The layout ends a second after load, so a print at load would read "Pending".
+      const late = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 1000))));</script>`;
+      writeFileSync(
+        join(dir, "late.html"),
+        `<!doctype html><html><body>Pending${late}</body></html>`,
+      );
+      await renderPdf(join(dir, "late.html"), join(dir, `late-${warm}.pdf`), { warm });
+      const text = execFileSync("pdftotext", [join(dir, `late-${warm}.pdf`), "-"], {
+        encoding: "utf8",
+      });
+      expect(text.trim()).toBe("Laid out");
+    },
+    limit(60_000),
+  );
 
-  it("fails, and writes no PDF, when the layout never finishes or fails", async () => {
-    const pending = `<script>(globalThis.hwLayout ??= []).push(new Promise(() => {}));</script>`;
-    writeFileSync(
-      join(dir, "pending.html"),
-      `<!doctype html><html><body>x${pending}</body></html>`,
-    );
-    const out = join(dir, `pending-${warm}.pdf`);
-    expect(
-      await rejection(renderPdf(join(dir, "pending.html"), out, { warm, timeoutMs: 3000 })),
-    ).toMatch(/within 3000 ms.*hwLayout/);
-    expect(existsSync(out)).toBe(false);
-    const failing = `<script>(globalThis.hwLayout ??= []).push(Promise.reject(new Error("no fit")));</script>`;
-    writeFileSync(
-      join(dir, "failing.html"),
-      `<!doctype html><html><body>x${failing}</body></html>`,
-    );
-    expect(await rejection(renderPdf(join(dir, "failing.html"), out, { warm }))).toMatch(/no fit/);
-    expect(existsSync(out)).toBe(false);
-  }, 60_000);
-
-  it("keeps a page without a head in standards mode", async () => {
-    const page = join(dir, `headless-${warm}.html`);
-    writeFileSync(
-      page,
-      `<!doctype html><html lang="en"><body><script>document.title = document.compatMode;</script>x</body></html>`,
-    );
-    const out = join(dir, `headless-${warm}.pdf`);
-    await renderPdf(page, out, { warm });
-    expect(execFileSync("pdfinfo", [out], { encoding: "utf8" })).toMatch(/^Title:\s+CSS1Compat$/m);
-  }, 60_000);
-
-  it("times out a page whose server never answers, and leaves no rejection unhandled", async () => {
-    const unhandled: unknown[] = [];
-    const note = (reason: unknown) => unhandled.push(reason);
-    process.on("unhandledRejection", note);
-    const silent = Bun.serve({
-      port: 0,
-      hostname: "127.0.0.1",
-      fetch: () => new Promise<Response>(() => {}),
-    });
-    try {
+  it(
+    "fails, and writes no PDF, when the layout never finishes or fails",
+    async () => {
+      const pending = `<script>(globalThis.hwLayout ??= []).push(new Promise(() => {}));</script>`;
+      writeFileSync(
+        join(dir, "pending.html"),
+        `<!doctype html><html><body>x${pending}</body></html>`,
+      );
+      const out = join(dir, `pending-${warm}.pdf`);
       expect(
-        await rejection(
-          renderPdf(`http://127.0.0.1:${silent.port}/x`, join(dir, `silent-${warm}.pdf`), {
-            warm,
-            timeoutMs: 1000,
-          }),
-        ),
-      ).toMatch(/within 1000 ms/);
-      await Bun.sleep(200);
-      expect(unhandled).toEqual([]);
-    } finally {
-      process.off("unhandledRejection", note);
-      await silent.stop(true);
-    }
-  }, 60_000);
+        await rejection(renderPdf(join(dir, "pending.html"), out, { warm, timeoutMs: 3000 })),
+      ).toMatch(/within 3000 ms.*hwLayout/);
+      expect(existsSync(out)).toBe(false);
+      const failing = `<script>(globalThis.hwLayout ??= []).push(Promise.reject(new Error("no fit")));</script>`;
+      writeFileSync(
+        join(dir, "failing.html"),
+        `<!doctype html><html><body>x${failing}</body></html>`,
+      );
+      expect(await rejection(renderPdf(join(dir, "failing.html"), out, { warm }))).toMatch(
+        /no fit/,
+      );
+      expect(existsSync(out)).toBe(false);
+    },
+    limit(60_000),
+  );
 
-  it("fails, and writes no PDF, when the URL cannot be reached or answers an error", async () => {
-    const out = join(dir, `url-${warm}.pdf`);
-    const closed = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response() });
-    const port = closed.port;
-    await closed.stop(true);
-    expect(await rejection(renderPdf(`http://127.0.0.1:${port}/x`, out, { warm }))).toContain(
-      "refused the connection: is its server running?",
-    );
-    const server = Bun.serve({
-      port: 0,
-      hostname: "127.0.0.1",
-      fetch: () => new Response("<p>Internal error</p>", { status: 500 }),
-    });
-    try {
-      expect(
-        await rejection(renderPdf(`http://127.0.0.1:${server.port}/x`, out, { warm })),
-      ).toMatch(/500/);
-    } finally {
-      await server.stop(true);
-    }
-    expect(existsSync(out)).toBe(false);
-  }, 60_000);
+  it(
+    "keeps a page without a head in standards mode",
+    async () => {
+      const page = join(dir, `headless-${warm}.html`);
+      writeFileSync(
+        page,
+        `<!doctype html><html lang="en"><body><script>document.title = document.compatMode;</script>x</body></html>`,
+      );
+      const out = join(dir, `headless-${warm}.pdf`);
+      await renderPdf(page, out, { warm });
+      expect(execFileSync("pdfinfo", [out], { encoding: "utf8" })).toMatch(
+        /^Title:\s+CSS1Compat$/m,
+      );
+    },
+    limit(60_000),
+  );
 
-  it("writes the same bytes for the same input, with no render date and the file intact", async () => {
-    // Chrome stamps the time to the second, so the second render lands in a later one.
-    await Bun.sleep(1100);
-    const again = join(dir, `doc-again-${warm}.pdf`);
-    await renderPdf(join(dir, "doc.html"), again, { warm });
-    expect(readFileSync(again).equals(readFileSync(pdf))).toBe(true);
-    const info = spawnSync("pdfinfo", [pdf], { encoding: "utf8" });
-    expect(info.stderr).toBe("");
-    expect(info.stdout).not.toMatch(/^(CreationDate|ModDate):/m);
-  }, 60_000);
+  it(
+    "times out a page whose server never answers, and leaves no rejection unhandled",
+    async () => {
+      const unhandled: unknown[] = [];
+      const note = (reason: unknown) => unhandled.push(reason);
+      process.on("unhandledRejection", note);
+      const silent = Bun.serve({
+        port: 0,
+        hostname: "127.0.0.1",
+        fetch: () => new Promise<Response>(() => {}),
+      });
+      try {
+        expect(
+          await rejection(
+            renderPdf(`http://127.0.0.1:${silent.port}/x`, join(dir, `silent-${warm}.pdf`), {
+              warm,
+              timeoutMs: 1000,
+            }),
+          ),
+        ).toMatch(/within 1000 ms/);
+        await Bun.sleep(200);
+        expect(unhandled).toEqual([]);
+      } finally {
+        process.off("unhandledRejection", note);
+        await silent.stop(true);
+      }
+    },
+    limit(60_000),
+  );
+
+  it(
+    "fails, and writes no PDF, when the URL cannot be reached or answers an error",
+    async () => {
+      const out = join(dir, `url-${warm}.pdf`);
+      const closed = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response() });
+      const port = closed.port;
+      await closed.stop(true);
+      expect(await rejection(renderPdf(`http://127.0.0.1:${port}/x`, out, { warm }))).toContain(
+        "refused the connection: is its server running?",
+      );
+      const server = Bun.serve({
+        port: 0,
+        hostname: "127.0.0.1",
+        fetch: () => new Response("<p>Internal error</p>", { status: 500 }),
+      });
+      try {
+        expect(
+          await rejection(renderPdf(`http://127.0.0.1:${server.port}/x`, out, { warm })),
+        ).toMatch(/500/);
+      } finally {
+        await server.stop(true);
+      }
+      expect(existsSync(out)).toBe(false);
+    },
+    limit(60_000),
+  );
+
+  it(
+    "writes the same bytes for the same input, with no render date and the file intact",
+    async () => {
+      // Chrome stamps the time to the second, so the second render lands in a later one.
+      await Bun.sleep(1100);
+      const again = join(dir, `doc-again-${warm}.pdf`);
+      await renderPdf(join(dir, "doc.html"), again, { warm });
+      expect(readFileSync(again).equals(readFileSync(pdf))).toBe(true);
+      const info = spawnSync("pdfinfo", [pdf], { encoding: "utf8" });
+      expect(info.stderr).toBe("");
+      expect(info.stdout).not.toMatch(/^(CreationDate|ModDate):/m);
+    },
+    limit(60_000),
+  );
 
   it("tags the PDF, so a screen reader reads its structure", () => {
     expect(pdfinfo()).toMatch(/^Tagged:\s+yes$/m);
@@ -831,7 +881,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       const pixels = pgm.subarray(pgm.toString("latin1").split("\n", 3).join("\n").length + 1);
       expect(pixels.some((value) => value < 200)).toBe(true);
     },
-    60_000,
+    limit(60_000),
   );
 
   it("fails on an image src brand does not export", async () => {
@@ -849,209 +899,262 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     expect(existsSync(out)).toBe(false);
   });
 
-  it("prints an SVG data URI it cannot read as it is", async () => {
-    const file = join(dir, "bad-svg.html");
-    writeFileSync(
-      file,
-      `<!doctype html><html lang="en"><body><p>Kept</p><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='100%' height='10'/%3E%3C/svg%3E" style="height:10px"></body></html>`,
-    );
-    const out = join(dir, `bad-svg-${warm}.pdf`);
-    await renderPdf(file, out, { warm });
-    expect(execFileSync("pdftotext", [out, "-"], { encoding: "utf8" })).toContain("Kept");
-  }, 60_000);
-
-  it("keeps every image in the box it was laid out in", async () => {
-    // A word after each image sits where it sits beside the same images left unredrawn, which
-    // data-print-scaled marks as done.
-    const after = async (name: string, attr: string) => {
+  it(
+    "prints an SVG data URI it cannot read as it is",
+    async () => {
+      const file = join(dir, "bad-svg.html");
       writeFileSync(
-        join(dir, `${name}.html`),
-        `<!doctype html><html lang="en"><body><p><img ${attr} src="mark.png" style="height:13px">Alpha <img ${attr} src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:17px">Beta</p></body></html>`,
+        file,
+        `<!doctype html><html lang="en"><body><p>Kept</p><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='100%' height='10'/%3E%3C/svg%3E" style="height:10px"></body></html>`,
       );
-      const out = join(dir, `${name}-${warm}.pdf`);
-      await renderPdf(join(dir, `${name}.html`), out, { warm });
-      return execFileSync("pdftotext", ["-bbox", out, "-"], { encoding: "utf8" })
-        .match(/<word xMin="[\d.]+"[^>]*>(Alpha|Beta)</g)
-        ?.join();
-    };
-    const redrawn = await after("boxes", "");
-    expect(redrawn).toContain("Beta");
-    expect(redrawn).toBe(await after("boxes-kept", "data-print-scaled"));
-  }, 60_000);
+      const out = join(dir, `bad-svg-${warm}.pdf`);
+      await renderPdf(file, out, { warm });
+      expect(execFileSync("pdftotext", [out, "-"], { encoding: "utf8" })).toContain("Kept");
+    },
+    limit(60_000),
+  );
 
-  it("passes a document on the base's static faces and fails one on the browser default", async () => {
-    expect(() => assertBrandFonts(pdf)).toThrow(/non-brand face/);
-    const branded = await print("branded", documentCss());
-    expect(() => assertBrandFonts(branded)).not.toThrow();
-    // A file pdffonts cannot read says so, rather than that poppler is missing.
-    const broken = join(dir, "broken.pdf");
-    writeFileSync(broken, "no pdf");
-    expect(() => assertBrandFonts(broken)).toThrow(/could not read/);
-  }, 60_000);
+  it(
+    "keeps every image in the box it was laid out in",
+    async () => {
+      // A word after each image sits where it sits beside the same images left unredrawn, which
+      // data-print-scaled marks as done.
+      const after = async (name: string, attr: string) => {
+        writeFileSync(
+          join(dir, `${name}.html`),
+          `<!doctype html><html lang="en"><body><p><img ${attr} src="mark.png" style="height:13px">Alpha <img ${attr} src="${svgUri(readFileSync(brand("lockup.svg"), "utf8"))}" style="height:17px">Beta</p></body></html>`,
+        );
+        const out = join(dir, `${name}-${warm}.pdf`);
+        await renderPdf(join(dir, `${name}.html`), out, { warm });
+        return execFileSync("pdftotext", ["-bbox", out, "-"], { encoding: "utf8" })
+          .match(/<word xMin="[\d.]+"[^>]*>(Alpha|Beta)</g)
+          ?.join();
+      };
+      const redrawn = await after("boxes", "");
+      expect(redrawn).toContain("Beta");
+      expect(redrawn).toBe(await after("boxes-kept", "data-print-scaled"));
+    },
+    limit(60_000),
+  );
 
-  it("fails on a system fallback face", async () => {
-    const helvetica = await print("helvetica", "body { font-family: Helvetica; }");
-    expect(() => assertBrandFonts(helvetica)).toThrow(/non-brand face/);
-  }, 60_000);
+  it(
+    "passes a document on the base's static faces and fails one on the browser default",
+    async () => {
+      expect(() => assertBrandFonts(pdf)).toThrow(/non-brand face/);
+      const branded = await print("branded", documentCss());
+      expect(() => assertBrandFonts(branded)).not.toThrow();
+      // A file pdffonts cannot read says so, rather than that poppler is missing.
+      const broken = join(dir, "broken.pdf");
+      writeFileSync(broken, "no pdf");
+      expect(() => assertBrandFonts(broken)).toThrow(/could not read/);
+    },
+    limit(60_000),
+  );
 
-  it("fails on a variable brand face, which prints as Type 3", async () => {
-    const font = createRequire(import.meta.url).resolve(
-      "@hackersandwizards/brand/fonts/inter-latin-wght-normal.woff2",
-    );
-    const variable = await print(
-      "variable",
-      `@font-face { font-family: Inter; src: url(data:font/woff2;base64,${readFileSync(font).toString("base64")}); } body { font-family: Inter; }`,
-    );
-    expect(() => assertBrandFonts(variable)).toThrow(/Type 3/);
-  }, 60_000);
+  it(
+    "fails on a system fallback face",
+    async () => {
+      const helvetica = await print("helvetica", "body { font-family: Helvetica; }");
+      expect(() => assertBrandFonts(helvetica)).toThrow(/non-brand face/);
+    },
+    limit(60_000),
+  );
+
+  it(
+    "fails on a variable brand face, which prints as Type 3",
+    async () => {
+      const font = createRequire(import.meta.url).resolve(
+        "@hackersandwizards/brand/fonts/inter-latin-wght-normal.woff2",
+      );
+      const variable = await print(
+        "variable",
+        `@font-face { font-family: Inter; src: url(data:font/woff2;base64,${readFileSync(font).toString("base64")}); } body { font-family: Inter; }`,
+      );
+      expect(() => assertBrandFonts(variable)).toThrow(/Type 3/);
+    },
+    limit(60_000),
+  );
 });
 
 describe.skipIf(!chromeBinary())("the quote, a page with a table", () => {
   // Chrome names each table header cell by a DOM node id that differed between cold renders: 3
   // variants in 20 renders of this page (measured), so one pair could still match.
-  it("writes the same bytes in every render, cold or warm, its header cells numbered from 1", async () => {
-    const quote = join(import.meta.dir, "..", "dist/types/quote/index.html");
-    const pdfs: Buffer[] = [];
-    for (let i = 0; i < 7; i++) {
-      const out = join(dir, `quote-${i}.pdf`);
-      await renderPdf(quote, out, { warm: i === 6 });
-      pdfs.push(readFileSync(out));
-    }
-    expect(pdfs[0].toString("latin1")).toContain("/ID (node00000001)");
-    expect(pdfs.findIndex((pdf) => !pdf.equals(pdfs[0]))).toBe(-1);
-  }, 60_000);
+  it(
+    "writes the same bytes in every render, cold or warm, its header cells numbered from 1",
+    async () => {
+      const quote = join(import.meta.dir, "..", "dist/types/quote/index.html");
+      const pdfs: Buffer[] = [];
+      for (let i = 0; i < 7; i++) {
+        const out = join(dir, `quote-${i}.pdf`);
+        await renderPdf(quote, out, { warm: i === 6 });
+        pdfs.push(readFileSync(out));
+      }
+      expect(pdfs[0].toString("latin1")).toContain("/ID (node00000001)");
+      expect(pdfs.findIndex((pdf) => !pdf.equals(pdfs[0]))).toBe(-1);
+    },
+    limit(60_000),
+  );
 });
 
 // A briefing writes each question as a bold paragraph over its answer. Sections of varied length
 // put such a label at many heights on the page, so some reach a page foot: none ends a page alone.
 describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
-  it("stays on the page with the text under it", async () => {
-    const sections = Array.from({ length: 48 }, (_, i) => {
-      const filler = "<p>An invented line of filler.</p>".repeat(i % 6);
-      return `<p><strong>Label ${i}</strong></p><p>Answer ${i} runs over two lines of the page measure, long enough to wrap once at the body size of the base.</p>${filler}`;
-    });
-    const html = bakeDocumentCss(
-      await composeDocument("DocMarkdown", { kind: "Delivery Briefing", html: sections.join("") }),
-    );
-    writeFileSync(join(dir, "labels.html"), html);
-    await renderPdf(join(dir, "labels.html"), join(dir, "labels.pdf"));
-    const pages = execFileSync("pdftotext", [join(dir, "labels.pdf"), "-"], {
-      encoding: "utf8",
-    }).split("\f");
-    expect(pages.length).toBeGreaterThan(3);
-    const page = (text: string) => pages.findIndex((p) => p.includes(text));
-    const stranded = sections
-      .map((_, i) => i)
-      .filter((i) => page(`Label ${i}\n`) !== page(`Answer ${i} `));
-    expect(stranded).toEqual([]);
-  }, 60_000);
+  it(
+    "stays on the page with the text under it",
+    async () => {
+      const sections = Array.from({ length: 48 }, (_, i) => {
+        const filler = "<p>An invented line of filler.</p>".repeat(i % 6);
+        return `<p><strong>Label ${i}</strong></p><p>Answer ${i} runs over two lines of the page measure, long enough to wrap once at the body size of the base.</p>${filler}`;
+      });
+      const html = bakeDocumentCss(
+        await composeDocument("DocMarkdown", {
+          kind: "Delivery Briefing",
+          html: sections.join(""),
+        }),
+      );
+      writeFileSync(join(dir, "labels.html"), html);
+      await renderPdf(join(dir, "labels.html"), join(dir, "labels.pdf"));
+      const pages = execFileSync("pdftotext", [join(dir, "labels.pdf"), "-"], {
+        encoding: "utf8",
+      }).split("\f");
+      expect(pages.length).toBeGreaterThan(3);
+      const page = (text: string) => pages.findIndex((p) => p.includes(text));
+      const stranded = sections
+        .map((_, i) => i)
+        .filter((i) => page(`Label ${i}\n`) !== page(`Answer ${i} `));
+      expect(stranded).toEqual([]);
+    },
+    limit(60_000),
+  );
 });
 
 describe.skipIf(!chromeBinary())("a body naming other resources", () => {
-  it("prints no local file it frames and calls no host out of the render", async () => {
-    writeFileSync(join(dir, "secret.txt"), "SECRET-LOCAL-FILE");
-    let requests = 0;
-    const server = Bun.serve({
-      port: 0,
-      hostname: "127.0.0.1",
-      fetch: () => {
-        requests++;
-        return new Response("x");
-      },
-    });
-    try {
-      const url = `http://127.0.0.1:${server.port}`;
-      writeFileSync(
-        join(dir, "active.html"),
-        `<!doctype html><html><head><meta charset="utf-8"></head><body><p>Body</p><iframe src="secret.txt"></iframe><iframe src="${pathToFileURL(join(dir, "secret.txt")).href}"></iframe><img src="${url}/pixel.png"><script>fetch("${url}/beacon").catch(() => {});</script></body></html>`,
-      );
-      await renderPdf(join(dir, "active.html"), join(dir, "active.pdf"));
-      const text = execFileSync("pdftotext", [join(dir, "active.pdf"), "-"], { encoding: "utf8" });
-      expect(text).toContain("Body");
-      expect(text).not.toContain("SECRET-LOCAL-FILE");
-      expect(requests).toBe(0);
-    } finally {
-      await server.stop(true);
-    }
-  }, 60_000);
+  it(
+    "prints no local file it frames and calls no host out of the render",
+    async () => {
+      writeFileSync(join(dir, "secret.txt"), "SECRET-LOCAL-FILE");
+      let requests = 0;
+      const server = Bun.serve({
+        port: 0,
+        hostname: "127.0.0.1",
+        fetch: () => {
+          requests++;
+          return new Response("x");
+        },
+      });
+      try {
+        const url = `http://127.0.0.1:${server.port}`;
+        writeFileSync(
+          join(dir, "active.html"),
+          `<!doctype html><html><head><meta charset="utf-8"></head><body><p>Body</p><iframe src="secret.txt"></iframe><iframe src="${pathToFileURL(join(dir, "secret.txt")).href}"></iframe><img src="${url}/pixel.png"><script>fetch("${url}/beacon").catch(() => {});</script></body></html>`,
+        );
+        await renderPdf(join(dir, "active.html"), join(dir, "active.pdf"));
+        const text = execFileSync("pdftotext", [join(dir, "active.pdf"), "-"], {
+          encoding: "utf8",
+        });
+        expect(text).toContain("Body");
+        expect(text).not.toContain("SECRET-LOCAL-FILE");
+        expect(requests).toBe(0);
+      } finally {
+        await server.stop(true);
+      }
+    },
+    limit(60_000),
+  );
 });
 
 describe.skipIf(!chromeBinary())("the preparation's code", () => {
-  it("wraps a command wider than its card rather than widen the page", async () => {
-    const long =
-      "bunx some-long-command --with-a-flag=value --and-another=/a/long/path/to/a/file/that/goes/on.txt";
-    const steps = preparation.steps.map((step, i) =>
-      i === 0 ? { ...step, html: step.html.replace("choco install nodejs-lts git", long) } : step,
-    );
-    expect(steps[0]!.html).toContain(long);
-    const html = await composeDocument("DocPreparation", { ...preparation, steps });
-    const width = probePage(html, `return String(document.documentElement.scrollWidth);`, [
-      "--window-size=794,1123",
-    ]);
-    expect(width).toBe("794");
-  }, 60_000);
+  it(
+    "wraps a command wider than its card rather than widen the page",
+    async () => {
+      const long =
+        "bunx some-long-command --with-a-flag=value --and-another=/a/long/path/to/a/file/that/goes/on.txt";
+      const steps = preparation.steps.map((step, i) =>
+        i === 0 ? { ...step, html: step.html.replace("choco install nodejs-lts git", long) } : step,
+      );
+      expect(steps[0]!.html).toContain(long);
+      const html = await composeDocument("DocPreparation", { ...preparation, steps });
+      const width = probePage(html, `return String(document.documentElement.scrollWidth);`, [
+        "--window-size=794,1123",
+      ]);
+      expect(width).toBe("794");
+    },
+    limit(60_000),
+  );
 });
 
 describe.skipIf(!chromeBinary())("the warm path", () => {
-  it("a page that times out leaves the kept Chrome's other prints running", async () => {
-    const never = `<script>(globalThis.hwLayout ??= []).push(new Promise(() => {}));</script>`;
-    const slow = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 2500))));</script>`;
-    writeFileSync(join(dir, "never.html"), `<!doctype html><html><body>x${never}</body></html>`);
-    writeFileSync(join(dir, "slow.html"), `<!doctype html><html><body>x${slow}</body></html>`);
-    writeFileSync(join(dir, "start.html"), `<!doctype html><html><body>x</body></html>`);
-    // Chrome started first, so both prints run in the same kept one.
-    await renderPdf(join(dir, "start.html"), join(dir, "start.pdf"), { warm: true });
-    const [hung, done] = await Promise.allSettled([
-      renderPdf(join(dir, "never.html"), join(dir, "never.pdf"), { warm: true, timeoutMs: 1000 }),
-      renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), { warm: true, timeoutMs: 20_000 }),
-    ]);
-    expect(hung.status).toBe("rejected");
-    expect(done).toEqual({ status: "fulfilled", value: undefined });
-  }, 60_000);
+  it(
+    "a page that times out leaves the kept Chrome's other prints running",
+    async () => {
+      const never = `<script>(globalThis.hwLayout ??= []).push(new Promise(() => {}));</script>`;
+      const slow = `<script>(globalThis.hwLayout ??= []).push(new Promise((done) => addEventListener("load", () => setTimeout(() => { document.body.textContent = "Laid out"; done(); }, 2500))));</script>`;
+      writeFileSync(join(dir, "never.html"), `<!doctype html><html><body>x${never}</body></html>`);
+      writeFileSync(join(dir, "slow.html"), `<!doctype html><html><body>x${slow}</body></html>`);
+      writeFileSync(join(dir, "start.html"), `<!doctype html><html><body>x</body></html>`);
+      // Chrome started first, so both prints run in the same kept one.
+      await renderPdf(join(dir, "start.html"), join(dir, "start.pdf"), { warm: true });
+      const [hung, done] = await Promise.allSettled([
+        renderPdf(join(dir, "never.html"), join(dir, "never.pdf"), { warm: true, timeoutMs: 1000 }),
+        renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), { warm: true, timeoutMs: 20_000 }),
+      ]);
+      expect(hung.status).toBe("rejected");
+      expect(done).toEqual({ status: "fulfilled", value: undefined });
+    },
+    limit(60_000),
+  );
 
-  it("composes the bytes a fresh run writes, after another type too, and prints what a fresh Chrome prints", async () => {
-    const props = { kind: "Trainer Briefing", lang: "en", html: "<h1>Briefing</h1><p>Text</p>" };
-    const once = await composeDocument("DocMarkdown", props);
-    await composeDocument("DocRateCard", rateCard, process.cwd(), { warm: true });
-    const warm = await composeDocument("DocMarkdown", props, process.cwd(), { warm: true });
-    expect(warm).toBe(once);
-    writeFileSync(join(dir, "warm.html"), once);
-    await renderPdf(join(dir, "warm.html"), join(dir, "warm-cli.pdf"));
-    await renderPdf(join(dir, "warm.html"), join(dir, "warm-kept.pdf"), { warm: true });
-    expect(
-      readFileSync(join(dir, "warm-kept.pdf")).equals(readFileSync(join(dir, "warm-cli.pdf"))),
-    ).toBe(true);
-  }, 60_000);
+  it(
+    "composes the bytes a fresh run writes, after another type too, and prints what a fresh Chrome prints",
+    async () => {
+      const props = { kind: "Trainer Briefing", lang: "en", html: "<h1>Briefing</h1><p>Text</p>" };
+      const once = await composeDocument("DocMarkdown", props);
+      await composeDocument("DocRateCard", rateCard, process.cwd(), { warm: true });
+      const warm = await composeDocument("DocMarkdown", props, process.cwd(), { warm: true });
+      expect(warm).toBe(once);
+      writeFileSync(join(dir, "warm.html"), once);
+      await renderPdf(join(dir, "warm.html"), join(dir, "warm-cli.pdf"));
+      await renderPdf(join(dir, "warm.html"), join(dir, "warm-kept.pdf"), { warm: true });
+      expect(
+        readFileSync(join(dir, "warm-kept.pdf")).equals(readFileSync(join(dir, "warm-cli.pdf"))),
+      ).toBe(true);
+    },
+    limit(60_000),
+  );
 
-  it("lets the caller exit once its calls are done, Chrome and the composer with it", async () => {
-    // Its own TMPDIR shows whether the kept Chrome's profile outlives it.
-    const tmp = mkdtempSync(join(dir, "exit-"));
-    const script = `
+  it(
+    "lets the caller exit once its calls are done, Chrome and the composer with it",
+    async () => {
+      // Its own TMPDIR shows whether the kept Chrome's profile outlives it.
+      const tmp = mkdtempSync(join(dir, "exit-"));
+      const script = `
       import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
       await composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true });
       await renderPdf(${JSON.stringify(join(dir, "doc.html"))}, ${JSON.stringify(join(dir, "exit.pdf"))}, { warm: true });
       // The kept Chrome and composer, still running here; the test looks for them once this exits.
       const { spawnSync } = await import("node:child_process");
       console.log(spawnSync("pgrep", ["-P", String(process.pid)], { encoding: "utf8" }).stdout.trim());`;
-    const started = performance.now();
-    const child = Bun.spawn([process.execPath, "-e", script], {
-      env: { ...process.env, TMPDIR: tmp },
-      stderr: "inherit",
-    });
-    await child.exited;
-    expect(child.exitCode).toBe(0);
-    expect(performance.now() - started).toBeLessThan(20_000);
-    expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
-    const children = (await new Response(child.stdout).text()).trim().split(/\s+/).map(Number);
-    expect(children.length).toBeGreaterThanOrEqual(2);
-    const alive = children.filter((pid) => {
-      try {
-        process.kill(pid, 0);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-    expect(alive).toEqual([]);
-  }, 60_000);
+      const started = performance.now();
+      const child = Bun.spawn([process.execPath, "-e", script], {
+        env: { ...process.env, TMPDIR: tmp },
+        stderr: "inherit",
+      });
+      await child.exited;
+      expect(child.exitCode).toBe(0);
+      expect(performance.now() - started).toBeLessThan(20_000);
+      expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
+      const children = (await new Response(child.stdout).text()).trim().split(/\s+/).map(Number);
+      expect(children.length).toBeGreaterThanOrEqual(2);
+      const alive = children.filter((pid) => {
+        try {
+          process.kill(pid, 0);
+          return true;
+        } catch {
+          return false;
+        }
+      });
+      expect(alive).toEqual([]);
+    },
+    limit(60_000),
+  );
 });

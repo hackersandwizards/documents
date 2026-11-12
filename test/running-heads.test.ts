@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import { limit } from "./probe";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -95,7 +96,7 @@ test.skipIf(!chromeBinary())(
     expect(await headerLines(longest)).toBe(1);
     expect(await headerLines(tooLong)).toBeGreaterThan(1);
   },
-  120_000,
+  limit(120_000),
 );
 
 // Page 1 carries the document header, so its running head would print clipped at the paper's top
@@ -106,7 +107,7 @@ test.skipIf(!chromeBinary())(
     expect(headerLinesPerPage(await render("DocProposal", proposalDe)).slice(0, 2)).toEqual([0, 1]);
     expect(headerLinesPerPage(await render("DocRateCard", rateCard))[0]).toBe(0);
   },
-  120_000,
+  limit(120_000),
 );
 
 // A chapter's opening page shows its title and no running head; its later pages show the head, and
@@ -130,7 +131,7 @@ test.skipIf(!chromeBinary())(
     expect(heads.at(-1)).toBe(0);
     expect(heads.length).toBeGreaterThan(4);
   },
-  120_000,
+  limit(120_000),
 );
 
 // The opening pages are named once the faces are in, which can come after the page's load: a render
@@ -152,7 +153,7 @@ test.skipIf(!chromeBinary()).each([false, true])(
     expect(heads.at(-1)).toBe(0);
     expect(heads.slice(2, -1)).toEqual(heads.slice(2, -1).map(() => 1));
   },
-  120_000,
+  limit(120_000),
 );
 
 // From page 2 the header's strip returns as a rail across the top boxes, also on a type that names
@@ -185,5 +186,5 @@ test.skipIf(!chromeBinary())(
     };
     expect(top(2)).not.toEqual([255, 255, 255]);
   },
-  60_000,
+  limit(60_000),
 );

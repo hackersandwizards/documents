@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
 import { composePage, openComposer } from "../scripts/compose";
 import { renderPdf } from "../scripts/render-pdf";
-import { probePage } from "./probe";
+import { probePage, limit } from "./probe";
 
 // DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
 // fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
@@ -182,22 +182,30 @@ test.each(Object.keys(fits))(
     expect(pages).toBe(1);
     expect(overPt).toBeLessThanOrEqual(0.5);
   },
-  60_000,
+  limit(60_000),
 );
 
-test("content no fit holds prints a second page rather than clipping", async () => {
-  expect((await printCertificate(overflowing)).pages).toBe(2);
-}, 60_000);
+test(
+  "content no fit holds prints a second page rather than clipping",
+  async () => {
+    expect((await printCertificate(overflowing)).pages).toBe(2);
+  },
+  limit(60_000),
+);
 
 // Without topics, nothing else grows: the signatures and footer still close the page.
-test("a certificate without topics keeps its footer at the page foot", async () => {
-  const html = await composePage(composer, "DocCertificate", certificate({ topics: [] }));
-  const gap = probePage(
-    html,
-    `const cert = document.querySelector(".certificate");
+test(
+  "a certificate without topics keeps its footer at the page foot",
+  async () => {
+    const html = await composePage(composer, "DocCertificate", certificate({ topics: [] }));
+    const gap = probePage(
+      html,
+      `const cert = document.querySelector(".certificate");
     const foot = cert.getBoundingClientRect().bottom - parseFloat(getComputedStyle(cert).paddingBottom);
     return String(Math.round(foot - document.querySelector(".footer").getBoundingClientRect().bottom));`,
-    ["--window-size=794,1123"],
-  );
-  expect(gap).toBe("0");
-}, 60_000);
+      ["--window-size=794,1123"],
+    );
+    expect(gap).toBe("0");
+  },
+  limit(60_000),
+);

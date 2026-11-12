@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import { limit } from "./probe";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
@@ -204,7 +205,7 @@ test.each(pages)(
     if (listSquares)
       expect(await Bun.file(join(TYPES, file, "index.html")).text()).toContain("<ul");
   },
-  60_000,
+  limit(60_000),
 );
 
 // The controls: each kind of marker measured here, moved by a pixel, must fail.
@@ -219,11 +220,15 @@ test.each([
     expect(moved.length).toBeGreaterThan(0);
     for (const m of moved) expect(Math.abs(m.offset)).toBeGreaterThan(tolerance(m.label));
   },
-  60_000,
+  limit(60_000),
 );
 
 // The control for the page guard: a square on the handout's <ol> items, a page with no <ul>, counts.
-test("a square on a list item is counted on a page without a <ul>", async () => {
-  const css = `.toc li::before { content: ""; display: inline-block; width: 6px; height: 6px }`;
-  expect((await measure("handout", css)).listSquares).toBeGreaterThan(0);
-}, 60_000);
+test(
+  "a square on a list item is counted on a page without a <ul>",
+  async () => {
+    const css = `.toc li::before { content: ""; display: inline-block; width: 6px; height: 6px }`;
+    expect((await measure("handout", css)).listSquares).toBeGreaterThan(0);
+  },
+  limit(60_000),
+);
