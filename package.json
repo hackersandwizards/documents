@@ -133,5 +133,8 @@
     "entities": "9.0.0",
     "subset-font": "2.9.0",
     "woff2-encoder": "2.0.0"
+  },
+  "admin": {
+    "label": "Document engine"
   }
 }
