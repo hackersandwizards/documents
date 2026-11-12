@@ -141,8 +141,8 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
 
 - `bun run check`: `scaffolding check`, the gate from `@hackersandwizards/scaffolding`: format,
   lint, stylelint (`stylelint.config.js`), typecheck (`tsc`, then `astro check` over the components,
-  the catalog and the scripts, `scaffolding.typecheck`), structure, coupling, unique function names,
-  the confidential-terms and history checks, the catalog build and `admin-check` side by side, then this
+  the catalog and the scripts, `scaffolding.typecheck`), structure, coupling,
+  the confidential-terms check, the catalog build and `admin-check` side by side, then this
   repository's steps from `scaffolding.check` in `package.json`: the tests (every component renders
   standalone, compose, the render and font checks, the certificate fit in Chrome, the base's class
   list, the type pages, the markers `brand-markers` leaves out: step numbers and squares outside a
