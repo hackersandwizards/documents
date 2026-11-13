@@ -57,7 +57,10 @@ test("every text rule hits a planted case", () => {
   const lines = Array.from({ length: 32 }, (_, i) => i + 1);
   expect(scanText(planted).map((f) => f.line)).toEqual(lines);
   // An SSH remote is no mailbox.
-  writeFileSync(join(planted, "scripts", "leak.ts"), 'insteadOf="git' + '@github.com:"');
+  writeFileSync(
+    join(planted, "scripts", "leak.ts"),
+    ['insteadOf="git' + '@github.com:"', "`VALUE=git" + "@github.com:`"].join("\n"),
+  );
   expect(scanText(planted)).toEqual([]);
 });
 

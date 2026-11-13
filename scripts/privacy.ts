@@ -36,9 +36,9 @@ const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boole
   },
   {
     what: "a mail address outside the example domains and ours",
-    // Not before a colon and a path or quote: git@host:org/repo is an SSH remote, no mailbox.
+    // Not before a colon and a path, quote or backtick: git@host:org/repo is an SSH remote.
     pattern:
-      /[\p{L}\p{N}_.+-]+@((?:[\p{L}\p{N}_-]+\.)+\p{L}{2,})(?![\p{L}\p{N}_.-]*:[\p{L}\p{N}_"'/~])/giu,
+      /[\p{L}\p{N}_.+-]+@((?:[\p{L}\p{N}_-]+\.)+\p{L}{2,})(?![\p{L}\p{N}_.-]*:[\p{L}\p{N}_"'`/~])/giu,
     allowed: (m) => MAIL_DOMAINS.test(m.split("@")[1]),
   },
   {
