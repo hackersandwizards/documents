@@ -6,7 +6,7 @@
 | --------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `pre-commit`    | every commit                                                | `bun run check:staged`: scaffolding's `check-staged`, below                                                     |
 | `commit-msg`    | every commit                                                | `check-confidential` on the message                                                                             |
-| `pre-push`      | every push                                                  | `check-confidential prepush`: refuses commits purged from history                                               |
+| `pre-push`      | every push                                                  | `check-confidential prepush`: refuses commits purged from history; then `bun run check --changed` over each pushed branch's range |
 | `post-merge`    | a merge that changed `bun.lock` or `package.json`           | `install`: `bun install --frozen-lockfile` under `check-lock.ts`, the skeleton's copy beside it, silent; a held lock or a failure is named on stderr |
 | `post-checkout` | a branch checkout that changed `bun.lock` or `package.json`, and a new worktree | the same `install`                                                                                                 |
 

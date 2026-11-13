@@ -27,7 +27,7 @@ a real name the rules cannot see fails there; those names never enter this repo,
 list fails. A comment in a
 shipped file says what the code does and why, never its history: scores, review rounds, dates,
 decision or item ids, pointers to review notes and names go to the commit message or
-`docs/agent-work/` (the gate's `history` step).
+`docs/agent-work/`.
 
 ## Layout
 
@@ -141,16 +141,19 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
 
 - `bun run check`: `scaffolding check`, the gate from `@hackersandwizards/scaffolding`: format,
   lint, stylelint (`stylelint.config.js`), typecheck (`tsc`, then `astro check` over the components,
-  the catalog and the scripts, `scaffolding.typecheck`), structure, coupling,
-  the confidential-terms check, the catalog build and `admin-check` side by side, then this
-  repository's steps from `scaffolding.check` in `package.json`: the tests (every component renders
+  the catalog and the scripts, `scaffolding.typecheck`), structure, coupling, spaces,
+  the confidential-terms check, licenses, the catalog build and `admin-check` side by side, then
+  this repository's steps from `scaffolding.check` in `package.json`: the tests (every component renders
   standalone, compose, the render and font checks, the certificate fit in Chrome, the base's class
   list, the type pages, the markers `brand-markers` leaves out: step numbers and squares outside a
   list), the privacy check
   (`check:privacy`), the brand colour scan (`brand-colours.json` holds the exceptions) beside
   `brand-copies` and `brand-retired` over `dist/` (`check:retired`), and `brand-elements`. The
-  tests read `dist/`, so they run after the build, not among the shared steps. No hook runs the
-  gate: `.githooks/pre-commit` runs `bun run check:staged` (scaffolding's `check-staged`).
+  tests read `dist/`, so they run after the build, not among the shared steps.
+  `.githooks/pre-commit` runs `bun run check:staged` (scaffolding's `check-staged`), and
+  `.githooks/pre-push` runs `bun run check --changed` over each pushed range: the quick steps,
+  and the whole gate for any path but `.claude/` rule and skill prose, since `scaffolding.changed`
+  maps none here.
   `bun install` points `core.hooksPath` at `.githooks/`.
 - `bun run check:markers`, by hand after a brand raise and after a change to how lists are styled,
   outside the gate: `brand-markers` on every type page holding a `<ul>` in `dist/`.
