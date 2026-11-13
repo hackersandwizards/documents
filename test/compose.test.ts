@@ -186,7 +186,7 @@ describe("scripts/compose.ts", () => {
       );
       child.stdin!.write("not json\n");
       child.stdin!.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
-      const until = Date.now() + 10_000;
+      const until = Date.now() + limit(10_000);
       while (answers.length < 2 && child.exitCode === null && Date.now() < until)
         await new Promise((r) => setTimeout(r, 50));
       child.stdin!.end();

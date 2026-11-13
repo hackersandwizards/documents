@@ -1096,7 +1096,10 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
       await renderPdf(join(dir, "start.html"), join(dir, "start.pdf"), { warm: true });
       const [hung, done] = await Promise.allSettled([
         renderPdf(join(dir, "never.html"), join(dir, "never.pdf"), { warm: true, timeoutMs: 1000 }),
-        renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), { warm: true, timeoutMs: 20_000 }),
+        renderPdf(join(dir, "slow.html"), join(dir, "slow.pdf"), {
+          warm: true,
+          timeoutMs: limit(20_000),
+        }),
       ]);
       expect(hung.status).toBe("rejected");
       expect(done).toEqual({ status: "fulfilled", value: undefined });
