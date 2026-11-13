@@ -3,14 +3,14 @@ kind: work
 status: open
 priority: 3
 order: 2100
-owner: Ada
+owner: Poppy
 area: software-engineering
-evidence: not established
+evidence: "scripts/onepager.ts at v1.30.3 still holds page2Block and PAGE1_BLOCK (read 13.11.)"
 ---
 
 # Find the onepager's page-2 block from the layout, not from matching text
 
-Ada briefs a documents session to replace `page2Block` in `scripts/onepager.ts` with a probe render marking each block.
+Replace `page2Block` in `scripts/onepager.ts` with a probe render that marks each block.
 
 `fitOnepager` reads which block opens page 2 by matching page 2's first line against each block's
 letters in pdftotext's output. Every rule on text alone has cases it cannot tell apart, and a wrong
