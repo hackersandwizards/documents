@@ -130,12 +130,16 @@ section h3 {
 
 /* A margin note sits at the right edge, level with the paragraph it precedes, and the text wraps
    beside it, so the width it takes exists only where a note does. A note below an earlier,
-   longer one starts under it rather than on top of it. */
+   longer one starts under it rather than on top of it. The space under a note keeps the next
+   note off it, but text wraps around only its first half: a line starting further below runs at
+   full width, and one starting nearer still keeps clear of the note's rule. Without that, a line
+   starting a fraction of a pixel inside the space wrapped short under a note that had ended. */
 .margin-note {
   float: right;
   clear: right;
   width: var(--handout-note-width);
   margin: 0 0 var(--handout-note-space) var(--handout-note-gap);
+  shape-outside: inset(0 0 calc(var(--handout-note-space) / 2)) margin-box;
   padding-left: var(--handout-note-pad);
   border-left: var(--handout-note-rule) solid var(--result);
   font: var(--role-small);

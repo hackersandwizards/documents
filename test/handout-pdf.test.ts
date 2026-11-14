@@ -252,3 +252,49 @@ test(
   },
   limit(60_000),
 );
+
+// The note is moved down until an item starts a quarter, then three quarters, of the space under
+// the note below the note's end: in the upper half its first line wraps beside the note, in the
+// lower half it runs at full width.
+test(
+  "a line starting in the lower half of the space under a margin note runs at full width",
+  async () => {
+    const item = "Each turn the agent sees the files it opened and the commands it ran.";
+    const html = await composePage(
+      composer,
+      "DocHandout",
+      {
+        title: "T",
+        chapters: [
+          {
+            title: "C",
+            html: `<h2>Notes</h2><aside class="margin-note">One line.</aside><ul><li>One</li><li>Two</li><li>Three</li><li id="probed">${item}</li></ul>`,
+          },
+        ],
+      },
+      (page) =>
+        page.replace(
+          "<style data-hw-document></style>",
+          () => `<style>${documentCss()}\n${rules}</style>`,
+        ),
+    );
+    const seen = probePage(
+      html,
+      `const note = document.querySelector(".margin-note");
+      const item = document.getElementById("probed");
+      const space = parseFloat(getComputedStyle(note).marginBottom);
+      const edge = () => note.getBoundingClientRect().left - parseFloat(getComputedStyle(note).marginLeft);
+      const fullWidth = (below) => {
+        note.style.marginTop = "0px";
+        const end = note.getBoundingClientRect().bottom;
+        note.style.marginTop = item.getBoundingClientRect().top - below - end + "px";
+        const range = document.createRange();
+        range.selectNodeContents(item);
+        return range.getClientRects()[0].right > edge();
+      };
+      return JSON.stringify([fullWidth(space / 4), fullWidth((3 * space) / 4)]);`,
+    );
+    expect(JSON.parse(seen)).toEqual([false, true]);
+  },
+  limit(60_000),
+);
