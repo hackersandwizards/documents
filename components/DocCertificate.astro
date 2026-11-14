@@ -4,10 +4,10 @@
 // 400 and 600.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup.svg?raw";
 import imprint from "@hackersandwizards/brand/imprint.json";
-import verbal from "@hackersandwizards/brand/verbal.json";
+import { name } from "@hackersandwizards/brand/verbal.json";
 import { fill, svgUri, wordsFor } from "../scripts/fill";
 
-const issuer = `${verbal.name.legal} · ${imprint.street}, ${imprint.postcode} ${imprint.city}`;
+const issuer = `${name.legal} · ${imprint.street}, ${imprint.postcode} ${imprint.city}`;
 
 // The certificate's own words, German and English; `labels` replaces any of them, `{name}` marks a
 // value filled in.
@@ -22,7 +22,7 @@ const DE = {
   duration: ", {durationHours} Stunden",
   topics: "Behandelte Themen",
   /** The signer's title; empty takes each signer's own `title`. */
-  signerTitle: `Mitgründer, ${verbal.name.company}`,
+  signerTitle: `Mitgründer, ${name.company}`,
   qrAlt: "QR-Code zur Verifizierung des Zertifikats",
   cta: "Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen",
   scan: "Scannen: verifizieren & zu LinkedIn hinzufügen",
@@ -107,7 +107,7 @@ const topicClass = [
 <div class="certificate">
   <div class="strip hw-strip" aria-hidden="true"></div>
   <div class="header">
-    <img src={lockup} alt={verbal.name.company} class="logo" />
+    <img src={lockup} alt={name.company} class="logo" />
   </div>
   <div class="title">
     <h1>{t.heading}</h1>

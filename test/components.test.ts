@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import verbal from "@hackersandwizards/brand/verbal.json";
+import { mission } from "@hackersandwizards/brand/verbal.json";
 import { decodeHTML } from "entities";
 import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -224,8 +224,8 @@ test.each(["de", "en"])("DocProposal %s prints its terms from props only", async
 test.each(["de", "en"] as const)("DocProposal %s prints brand's mission", async (lang) => {
   const text = async (props: object) =>
     decodeHTML(await composer.render("DocProposal", { ...proposal, lang, ...props }));
-  expect(await text({})).toContain(verbal.mission[lang]);
-  expect(await text({ labels: { aboutText: [P] } })).not.toContain(verbal.mission[lang]);
+  expect(await text({})).toContain(mission[lang]);
+  expect(await text({ labels: { aboutText: [P] } })).not.toContain(mission[lang]);
 });
 
 test("styles() returns each scoped style once, however often it is called", async () => {

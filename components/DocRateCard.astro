@@ -1,7 +1,7 @@
 ---
 // The personal rate card, composed from the document components. The rates and the terms are props:
 // this package is public, so no rate or term of ours is written here.
-import verbal from "@hackersandwizards/brand/verbal.json";
+import { name } from "@hackersandwizards/brand/verbal.json";
 import DocCard from "./DocCard.astro";
 import DocClosing from "./DocClosing.astro";
 import DocHeader from "./DocHeader.astro";
@@ -24,7 +24,7 @@ const TEXT = {
   scope: "Leistungsspektrum",
   terms: "Konditionen",
   /** The running header, left and right. */
-  runningBrand: verbal.name.legal,
+  runningBrand: name.legal,
   runningTitle: "Honorarsätze {personName}",
 };
 

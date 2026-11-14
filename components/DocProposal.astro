@@ -16,7 +16,7 @@ import DocSignatures from "./DocSignatures.astro";
 import DocSteps from "./DocSteps.astro";
 import DocTitle from "./DocTitle.astro";
 import { cssString, fill, wordsFor } from "../scripts/fill";
-import verbal from "@hackersandwizards/brand/verbal.json";
+import { mission, name } from "@hackersandwizards/brand/verbal.json";
 
 // The proposal's own words, German and English; `labels` replaces any of them, `{name}` marks a
 // value filled in.
@@ -31,13 +31,13 @@ const DE = {
   columns: ["Leistung", "Basis", "Preis", "Betrag"],
   subtotal: "Summe netto",
   gross: "Gesamtbetrag brutto",
-  about: `Über ${verbal.name.company}`,
+  about: `Über ${name.company}`,
   aboutText: [
-    `${verbal.name.company} ist ein Team von Praktikern mit über 20 Jahren Erfahrung. Wir entwickeln Software und betreiben Produktionssysteme.`,
-    `Geführt von Stefan und Benedikt, unterstützt von einem Netzwerk erfahrener Praktiker, mit denen sie seit Jahren zusammenarbeiten und denen sie vertrauen. ${verbal.mission.de}`,
+    `${name.company} ist ein Team von Praktikern mit über 20 Jahren Erfahrung. Wir entwickeln Software und betreiben Produktionssysteme.`,
+    `Geführt von Stefan und Benedikt, unterstützt von einem Netzwerk erfahrener Praktiker, mit denen sie seit Jahren zusammenarbeiten und denen sie vertrauen. ${mission.de}`,
   ],
   scope: "Leistungsumfang",
-  community: `Inklusive: ${verbal.name.company} Community`,
+  community: `Inklusive: ${name.company} Community`,
   communityItems: [
     "Wöchentliche Best Practice Sessions und Erfahrungsaustausch",
     "Direkter Draht zu anderen AI-Pilot-Teams",
@@ -61,7 +61,7 @@ const DE = {
   reply: "Passt das so? Dann antworte einfach auf diese Mail mit deiner Zusage{by}.",
   replyBy: " bis zum {validUntil}",
   /** The running header, left and right. */
-  runningBrand: verbal.name.legal,
+  runningBrand: name.legal,
   runningTitle: "{kind} {number}",
   /** The captions under the signature lines; `{name}` marks the signer. */
   placeDate: "Ort, Datum",
@@ -78,13 +78,13 @@ const EN: typeof DE = {
   columns: ["Item", "Basis", "Rate", "Amount"],
   subtotal: "Net total",
   gross: "Total incl. VAT",
-  about: `About ${verbal.name.company}`,
+  about: `About ${name.company}`,
   aboutText: [
-    `${verbal.name.company} is a team of practitioners with 20+ years of experience. We build and operate production systems.`,
-    `Led by Stefan and Benedikt, supported by a network of experienced practitioners whom they have worked with and trusted for years. ${verbal.mission.en}`,
+    `${name.company} is a team of practitioners with 20+ years of experience. We build and operate production systems.`,
+    `Led by Stefan and Benedikt, supported by a network of experienced practitioners whom they have worked with and trusted for years. ${mission.en}`,
   ],
   scope: "Scope",
-  community: `Included: ${verbal.name.company} Community`,
+  community: `Included: ${name.company} Community`,
   communityItems: [
     "Weekly curated best practices and experience exchange",
     "Direct access to other AI pilot teams",
@@ -104,7 +104,7 @@ const EN: typeof DE = {
   valid: "Valid until",
   reply: "Does this work for you? Then simply reply to this email with your go-ahead{by}.",
   replyBy: " by {validUntil}",
-  runningBrand: verbal.name.legal,
+  runningBrand: name.legal,
   runningTitle: "{kind} {number}",
   placeDate: "Place, date",
   signature: "Signature: {name}",

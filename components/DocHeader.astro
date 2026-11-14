@@ -5,7 +5,7 @@
 // or in print, at half the full lockup's bytes; inlined as a data URI, so it renders in any app.
 import lockupSvg from "@hackersandwizards/brand/logos/lockup-screen.svg?raw";
 import imprint from "@hackersandwizards/brand/imprint.json";
-import verbal from "@hackersandwizards/brand/verbal.json";
+import { name } from "@hackersandwizards/brand/verbal.json";
 import { svgUri, wordsFor } from "../scripts/fill";
 
 interface Props {
@@ -29,7 +29,7 @@ const { street, postcode, city, country, seat, court, register, vatId, managingD
 // "Sitz und Registergericht" names one city for both, which holds while the court sits at the seat.
 if (court !== `Amtsgericht ${seat}`)
   throw new Error(`DocHeader: the imprint's court (${court}) is not at its seat (${seat})`);
-const address = `${verbal.name.legal}, ${street}, ${postcode} ${city}`;
+const address = `${name.legal}, ${street}, ${postcode} ${city}`;
 const directors = managingDirectors.join(", ");
 const imprintLines = wordsFor(lang, {
   de: [
@@ -50,7 +50,7 @@ const lockup = svgUri(lockupSvg);
   <div class="strip hw-strip" aria-hidden="true"></div>
   <div class="brand">
     <div class="brand-name">
-      <img src={lockup} alt={verbal.name.company} />
+      <img src={lockup} alt={name.company} />
     </div>
     {legal && (
       <div class="company-meta">
