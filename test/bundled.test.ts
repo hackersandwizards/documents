@@ -2,6 +2,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it, spyOn } from "bun:test";
+import manifest from "../package.json";
+import type * as renderPdf from "../scripts/render-pdf";
+import { isRecord } from "../scripts/root";
 
 // A consumer's server build (Astro's, for Company OS) bundles these modules into chunks of its own:
 // Node strips no types under node_modules, so the package cannot stay external. The engine must
@@ -19,17 +22,37 @@ const built = await Bun.build({
   target: "node",
   packages: "external",
 });
-const load = (m: string) => import(join(out, `${m}.js`));
+async function loadBundle(file: string): Promise<Record<string, unknown>> {
+  const module: unknown = await import(join(out, file));
+  if (!isRecord(module)) throw new Error(`Expected a bundled module: ${file}`);
+  return module;
+}
+
+type RenderBundle = Pick<typeof renderPdf, "composeDocument" | "documentCss" | "subsetFaces">;
+
+function isRenderBundle(module: Record<string, unknown>): module is RenderBundle {
+  return (
+    typeof module.composeDocument === "function" &&
+    typeof module.documentCss === "function" &&
+    typeof module.subsetFaces === "function"
+  );
+}
+
+async function loadRenderBundle(query = ""): Promise<RenderBundle> {
+  const module = await loadBundle(`render-pdf.js${query}`);
+  if (!isRenderBundle(module)) throw new Error("Expected render-pdf exports in the bundle");
+  return module;
+}
 
 describe("bundled into a consumer's chunk", () => {
   it("builds", () => expect(built.success).toBe(true));
 
   it("reads the document base", async () => {
-    expect((await load("render-pdf")).documentCss()).toContain("@page");
+    expect((await loadRenderBundle()).documentCss()).toContain("@page");
   });
 
   it("composes a document", async () => {
-    const { composeDocument } = await load("render-pdf");
+    const { composeDocument } = await loadRenderBundle();
     const html = await composeDocument(
       "DocMarkdown",
       { title: "T", html: "<h1>Bundled</h1>" },
@@ -54,7 +77,7 @@ describe("bundled into a consumer's chunk", () => {
       };
       const warn = spyOn(console, "warn");
       try {
-        const { documentCss, subsetFaces } = await load("render-pdf");
+        const { documentCss, subsetFaces } = await loadRenderBundle();
         await subsetFaces(page(documentCss(), "Ö"));
         expect(warn).not.toHaveBeenCalled();
       } finally {
@@ -64,9 +87,7 @@ describe("bundled into a consumer's chunk", () => {
       expect(started.length).toBeGreaterThan(1);
       expect(new Set(started)).toEqual(new Set([join(REPO, "scripts/encode-face.ts")]));
       // Missing from an installed package, the Worker fails and the faces encode in-process, slowly.
-      expect((await Bun.file(join(REPO, "package.json")).json()).files).toContain(
-        "scripts/encode-face.ts",
-      );
+      expect(manifest.files).toContain("scripts/encode-face.ts");
     },
   );
 
@@ -104,16 +125,14 @@ describe("bundled into a consumer's chunk", () => {
   it.skipIf(availableParallelism() < 2).each(failures)(
     "writes the same page in-process where a Worker %s",
     async (name, Failing) => {
-      const { documentCss, subsetFaces } = await load("render-pdf");
+      const { documentCss, subsetFaces } = await loadRenderBundle();
       const html = page(documentCss(), "Ä");
       const threaded = await subsetFaces(html);
       globalThis.Worker = Failing;
       const warn = spyOn(console, "warn").mockImplementation(() => {});
       try {
         // A second instance of the module: the first has its Workers.
-        const { subsetFaces: inProcess } = await import(
-          join(out, `render-pdf.js?${name.replace(/ /g, "-")}`)
-        );
+        const { subsetFaces: inProcess } = await loadRenderBundle(`?${name.replace(/ /g, "-")}`);
         expect(await inProcess(html)).toBe(threaded);
         expect(warn).toHaveBeenCalledTimes(1);
       } finally {
@@ -126,10 +145,10 @@ describe("bundled into a consumer's chunk", () => {
   it("answers null for bytes the encoder refuses", async () => {
     const worker = new Worker(join(REPO, "scripts/encode-face.ts"));
     const answer = await new Promise((resolve) => {
-      worker.onmessage = ({ data }) => resolve(data);
+      worker.onmessage = ({ data }: MessageEvent<unknown>) => resolve(data);
       worker.postMessage(new Uint8Array([1, 2, 3]));
     });
-    await worker.terminate();
+    worker.terminate();
     expect(answer).toBeNull();
   });
 
@@ -138,7 +157,7 @@ describe("bundled into a consumer's chunk", () => {
     async () => {
       const refusing = join(out, "refusing-worker.js");
       writeFileSync(refusing, "self.onmessage = () => postMessage(null);");
-      const { documentCss, subsetFaces } = await load("render-pdf");
+      const { documentCss, subsetFaces } = await loadRenderBundle();
       const html = page(documentCss(), "Ü");
       const threaded = await subsetFaces(html);
       globalThis.Worker = class extends Thread {
@@ -148,7 +167,7 @@ describe("bundled into a consumer's chunk", () => {
       };
       const warn = spyOn(console, "warn");
       try {
-        const { subsetFaces: refused } = await import(join(out, "render-pdf.js?refusing"));
+        const { subsetFaces: refused } = await loadRenderBundle("?refusing");
         expect(await refused(html)).toBe(threaded);
         expect(warn).not.toHaveBeenCalled();
       } finally {
@@ -159,10 +178,13 @@ describe("bundled into a consumer's chunk", () => {
   );
 
   it("loads the survey readout, which reads its stylesheet on import", async () => {
-    expect((await load("survey-readout")).composeSurveyReadout).toBeFunction();
+    expect((await loadBundle("survey-readout.js")).composeSurveyReadout).toBeFunction();
   });
 
   it("loads the handout's words, which read the company's name from brand on import", async () => {
-    expect((await load("handout")).HANDOUT_TEXT.de.runningBrand).toBe("hackers&wizards");
+    const { HANDOUT_TEXT } = await loadBundle("handout.js");
+    if (!isRecord(HANDOUT_TEXT) || !isRecord(HANDOUT_TEXT.de))
+      throw new Error("Expected German handout text in the bundle");
+    expect(HANDOUT_TEXT.de.runningBrand).toBe("hackers&wizards");
   });
 });

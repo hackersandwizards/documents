@@ -14,7 +14,7 @@ import {
   rateCard,
 } from "../scripts/samples";
 import { openComposer } from "../scripts/compose";
-import { ROOT } from "../scripts/root";
+import { isRecord, ROOT } from "../scripts/root";
 import { foreignStyles } from "../scripts/styles";
 
 const SCRIPT = resolve(import.meta.dir, "../scripts/compose.ts");
@@ -190,12 +190,12 @@ describe("scripts/compose.ts", () => {
       while (answers.length < 2 && child.exitCode === null && Date.now() < until)
         await new Promise((r) => setTimeout(r, 50));
       child.stdin!.end();
-      const parsed = answers.map((a) => JSON.parse(a));
-      expect(parsed[0].error).toContain("JSON");
-      expect(parsed[1]).toMatchObject({
-        id: 2,
-        error: expect.stringContaining("Not a document component: Header"),
-      });
+      const [first, second] = answers.map((line): unknown => JSON.parse(line));
+      if (!isRecord(first) || !isRecord(second)) throw new Error("Expected composer responses");
+      expect(first.error).toContain("JSON");
+      expect(second.id).toBe(2);
+      if (typeof second.error !== "string") throw new Error("Expected a composer error string");
+      expect(second.error).toContain("Not a document component: Header");
     },
     limit(20_000),
   );

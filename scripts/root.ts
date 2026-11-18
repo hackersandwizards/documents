@@ -28,7 +28,16 @@ export const brandFile = (file: string) =>
 // brand's JSON files are read through node:fs rather than imported: Bun's loader reads an import
 // past node:fs, where onepager-trace.ts cannot see it. A field brand drops or renames fails here
 // rather than printing "undefined".
-const brandJson = (file: string) => JSON.parse(readFileSync(brandFile(file), "utf8"));
+function brandJson(file: string): Record<string, unknown> {
+  const data: unknown = JSON.parse(readFileSync(brandFile(file), "utf8"));
+  if (!isRecord(data)) throw new Error(`Expected an object in brand's ${file}`);
+  return data;
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function checked<K extends string>(facts: Record<K, unknown>): Record<K, string> {
   for (const [field, value] of Object.entries(facts))
     if (typeof value !== "string") throw new Error(`brand's company facts hold no ${field}`);
@@ -37,7 +46,8 @@ function checked<K extends string>(facts: Record<K, unknown>): Record<K, string>
 
 /** The company's name and legal name, from brand's `verbal.json`. */
 export function brandName(): Record<"name" | "legal", string> {
-  const { company, legal } = brandJson("verbal.json").name ?? {};
+  const { name } = brandJson("verbal.json");
+  const { company, legal } = isRecord(name) ? name : {};
   return checked({ name: company, legal });
 }
 

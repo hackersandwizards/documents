@@ -156,7 +156,7 @@ test(
       expect(starts.length).toBe(props.chapters.length);
       expect(listed).toEqual(starts);
     } finally {
-      server.stop(true);
+      await server.stop(true);
     }
   },
   limit(120_000),
@@ -167,7 +167,7 @@ test(
   async () => {
     const server = Bun.serve({ port: 0, fetch: () => new Response(null) });
     const url = `http://127.0.0.1:${server.port}/print`;
-    server.stop(true);
+    await server.stop(true);
     const pdf = join(dir, "refused.pdf");
     const plain = `${url} refused the connection: is its server running?`;
     expect(await rejection(renderHandoutPdf(url, pdf))).toContain(`renderHandoutPdf: ${plain}`);

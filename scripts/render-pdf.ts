@@ -24,7 +24,7 @@ import { compress, decompress } from "woff2-encoder";
 import { withElements } from "./elements";
 import { HANDOUT_TEXT } from "./handout";
 import { editStyles, pruneStyles } from "./prune";
-import { brandFile, ROOT, stripComments } from "./root";
+import { brandFile, isRecord, ROOT, stripComments } from "./root";
 import { foreignStyles, styleAttributes } from "./styles";
 
 export { brandFile };
@@ -693,8 +693,7 @@ function pipeChrome(chrome: string, hung?: () => void) {
   let id = 0;
   let buffer = "";
   let gone = false;
-  // A CDP result: each call below reads the fields its method returns.
-  type Result = Record<string, string>;
+  type Result = Record<string, unknown>;
   type Pending = { resolve(r: Result): void; reject(e: Error): void; sessionId?: string };
   const calls = new Map<number, Pending>();
   const loads = new Map<string, Omit<Pending, "sessionId">>();
@@ -704,14 +703,18 @@ function pipeChrome(chrome: string, hung?: () => void) {
     // The buffer holds no end before this chunk, so a large PDF's chunks are scanned once each.
     if (!chunk.includes("\0")) return;
     for (let end = buffer.indexOf("\0"); end >= 0; end = buffer.indexOf("\0")) {
-      const message = JSON.parse(buffer.slice(0, end));
+      const message: unknown = JSON.parse(buffer.slice(0, end));
       buffer = buffer.slice(end + 1);
-      const call = calls.get(message.id);
-      if (call) {
+      if (!isRecord(message)) throw new Error("Expected a Chrome protocol message");
+      if (typeof message.id === "number") {
+        const call = calls.get(message.id);
+        if (!call) continue;
         calls.delete(message.id);
-        if (message.error) call.reject(new Error(message.error.message));
-        else call.resolve(message.result);
-      } else if (message.method === "Page.loadEventFired")
+        if (isRecord(message.error) && typeof message.error.message === "string")
+          call.reject(new Error(message.error.message));
+        else if (!message.error && isRecord(message.result)) call.resolve(message.result);
+        else call.reject(new Error("Invalid Chrome protocol response"));
+      } else if (message.method === "Page.loadEventFired" && typeof message.sessionId === "string")
         loads.get(message.sessionId)?.resolve({});
     }
   });
@@ -739,9 +742,11 @@ function pipeChrome(chrome: string, hung?: () => void) {
   type Page = { targetId?: string; sessionId?: string };
   const open = async (page: Page, url: string, script?: string): Promise<Buffer> => {
     const { targetId } = await send("Target.createTarget", { url: "about:blank" });
+    if (typeof targetId !== "string") throw new Error("Chrome returned no target ID");
     page.targetId = targetId;
     try {
       const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
+      if (typeof sessionId !== "string") throw new Error("Chrome returned no session ID");
       page.sessionId = sessionId;
       await send("Page.enable", {}, sessionId);
       if (script)
@@ -757,33 +762,39 @@ function pipeChrome(chrome: string, hung?: () => void) {
         throw new Error(
           errorText === "net::ERR_CONNECTION_REFUSED"
             ? refused(url)
-            : `Chrome could not load ${url}: ${errorText}`,
+            : `Chrome could not load ${url}: ${String(errorText)}`,
         );
       }
       await loaded;
       loads.delete(sessionId);
       // Chrome prints an error page the server sent as if it were the document.
-      const { result } = (await send(
+      const { result } = await send(
         "Runtime.evaluate",
         {
           expression: `performance.getEntriesByType("navigation")[0]?.responseStatus ?? 0`,
           returnByValue: true,
         },
         sessionId,
-      )) as unknown as { result: { value: number } };
+      );
+      if (!isRecord(result) || typeof result.value !== "number")
+        throw new Error("Chrome returned no HTTP status");
       if (result.value >= 400) throw new Error(`${url} answered HTTP ${result.value}`);
-      const { exceptionDetails } = (await send(
+      const { exceptionDetails } = await send(
         "Runtime.evaluate",
         { expression: LAYOUT, awaitPromise: true },
         sessionId,
-      )) as unknown as {
-        exceptionDetails?: { text: string; exception?: { description?: string } };
-      };
-      if (exceptionDetails)
+      );
+      if (exceptionDetails) {
+        if (!isRecord(exceptionDetails) || typeof exceptionDetails.text !== "string")
+          throw new Error("Invalid Chrome layout exception");
+        const { exception, text } = exceptionDetails;
+        const description = isRecord(exception) ? exception.description : undefined;
         throw new Error(
-          `The layout of ${url} failed: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`,
+          `The layout of ${url} failed: ${typeof description === "string" ? description : text}`,
         );
+      }
       const { data } = await send("Page.printToPDF", PRINT_PARAMS, sessionId);
+      if (typeof data !== "string") throw new Error("Chrome returned no PDF data");
       return stableBytes(Buffer.from(data, "base64"));
     } finally {
       await send("Target.closeTarget", { targetId }).catch(() => {});
@@ -1375,12 +1386,16 @@ function keptComposer(cwd: string) {
     output?.on("data", (chunk: string) => {
       buffer += chunk;
       for (let end = buffer.indexOf("\n"); end >= 0; end = buffer.indexOf("\n")) {
-        const answer = JSON.parse(buffer.slice(0, end));
+        const answer: unknown = JSON.parse(buffer.slice(0, end));
         buffer = buffer.slice(end + 1);
+        if (!isRecord(answer) || typeof answer.id !== "number")
+          throw new Error("Expected a composer response with a numeric ID");
         const call = calls.get(answer.id);
+        if (!call) continue;
         calls.delete(answer.id);
-        if (answer.error) call?.reject(new Error(answer.error));
-        else call?.resolve(answer.html);
+        if (typeof answer.error === "string" && answer.error) call.reject(new Error(answer.error));
+        else if (!answer.error && typeof answer.html === "string") call.resolve(answer.html);
+        else call.reject(new Error("Invalid composer response"));
       }
     });
     const fail = (error?: Error) => {

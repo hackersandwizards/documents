@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { isRecord } from "../scripts/root";
 import { surveyReadout } from "../scripts/samples";
 import {
   bandColor,
@@ -72,7 +73,8 @@ test(
       `getComputedStyle(document.querySelector("ul.${list} li"), "::before").backgroundColor`;
     const probe = `const swatch = (v) => { const i = document.createElement("i"); i.style.background = v; document.body.append(i); return getComputedStyle(i).backgroundColor; };
     return JSON.stringify({ bad: ${marker("bad")}, good: ${marker("good")}, red: swatch("var(--negative)"), teal: swatch("var(--accent)") });`;
-    const seen = JSON.parse(probePage(html, probe, SLIDE));
+    const seen: unknown = JSON.parse(probePage(html, probe, SLIDE));
+    if (!isRecord(seen)) throw new Error("Expected the marker and swatch colours");
     expect(seen.bad).toBe(seen.red);
     expect(seen.good).toBe(seen.teal);
   },

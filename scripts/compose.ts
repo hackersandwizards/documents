@@ -3,11 +3,13 @@ import { readFileSync, writeFileSync, writeSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { getViteConfig } from "astro/config";
+import type { experimental_AstroContainer as AstroContainer } from "astro/container";
+import type { AstroComponentFactory } from "astro/runtime/server/index.js";
 import { createServer } from "vite";
 import { withElements } from "./elements";
 import { escapeHtml, languageTag } from "./fill";
 import { bakeDocumentCss, subsetFaces } from "./render-pdf";
-import { ROOT } from "./root";
+import { isRecord, ROOT } from "./root";
 
 const USAGE = `Usage: bun run documents-compose <Component> <props.json> <output.html>
 
@@ -18,6 +20,18 @@ of the project in the current directory.`;
 
 // Consumers take the escape from here, beside the composer.
 export { escapeHtml };
+
+function isContainerClass(value: unknown): value is Pick<typeof AstroContainer, "create"> {
+  return typeof value === "function" && "create" in value && typeof value.create === "function";
+}
+
+function isAstroComponentFactory(value: unknown): value is AstroComponentFactory {
+  return (
+    typeof value === "function" &&
+    "isAstroComponentFactory" in value &&
+    value.isAstroComponentFactory === true
+  );
+}
 
 /** Astro's compiler for the document components: `render` returns a component's markup
  * (slots as HTML strings), `styles` the scoped styles of every component rendered so far. */
@@ -44,12 +58,22 @@ export async function openComposer(root = process.cwd()) {
     },
   )({ command: "serve", mode: "development" });
   const server = await createServer({ ...config, configFile: false });
-  const { experimental_AstroContainer } = await server.ssrLoadModule("astro/container");
+  const load = async (id: string): Promise<Record<string, unknown>> => {
+    const module: unknown = await server.ssrLoadModule(id);
+    if (!isRecord(module)) throw new Error(`Expected a Vite module: ${id}`);
+    return module;
+  };
+  const { experimental_AstroContainer } = await load("astro/container");
+  if (!isContainerClass(experimental_AstroContainer))
+    throw new Error("Expected the Astro container class");
   const container = await experimental_AstroContainer.create();
   return {
     async render(name: string, props: object, slots: Record<string, string> = {}) {
+      if (!isRecord(props)) throw new Error("Expected a document props object");
       const path = join(ROOT, `components/${name}.astro`);
-      const component = (await server.ssrLoadModule(path)).default;
+      const { default: component } = await load(path);
+      if (!isAstroComponentFactory(component))
+        throw new Error(`Expected an Astro component: ${path}`);
       const html: string = await container.renderToString(component, { props, slots });
       return html.replace(/^<!DOCTYPE html>/i, "");
     },
@@ -60,8 +84,11 @@ export async function openComposer(root = process.cwd()) {
         (id) => id.includes("?astro&type=style") && !id.includes("&inline"),
       );
       const css: string[] = [];
-      for (const id of ids)
-        css.push((await server.ssrLoadModule(id.replace("&lang.css", "&inline&lang.css"))).default);
+      for (const id of ids) {
+        const { default: style } = await load(id.replace("&lang.css", "&inline&lang.css"));
+        if (typeof style !== "string") throw new Error(`Expected CSS from ${id}`);
+        css.push(style);
+      }
       return css.join("\n");
     },
     close: () => server.close(),
@@ -112,10 +139,13 @@ async function serve() {
     let id: unknown;
     let answer: object;
     try {
-      const request = JSON.parse(line);
+      const request: unknown = JSON.parse(line);
+      if (!isRecord(request)) throw new Error("Expected a compose request object");
       id = request.id;
       const { name, props } = request;
-      if (!/^Doc\w+$/.test(name)) throw new Error(`Not a document component: ${name}`);
+      if (typeof name !== "string" || !/^Doc\w+$/.test(name))
+        throw new Error(`Not a document component: ${String(name)}`);
+      if (!isRecord(props)) throw new Error("Expected a document props object");
       // A composer that failed to open is opened again on the next call, not kept failing.
       if (!composers.has(name))
         composers.set(
@@ -146,7 +176,8 @@ else if (import.meta.main) {
     process.exit(1);
   }
   // The props first: a missing or broken file fails before Vite boots.
-  const props = JSON.parse(readFileSync(resolve(propsPath), "utf8"));
+  const props: unknown = JSON.parse(readFileSync(resolve(propsPath), "utf8"));
+  if (!isRecord(props)) throw new Error("Expected a document props object");
   const composer = await openComposer();
   try {
     writeFileSync(resolve(output), await composePage(composer, name, props));

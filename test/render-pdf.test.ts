@@ -34,6 +34,7 @@ import { decompress } from "woff2-encoder";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { svgUri } from "../scripts/fill";
+import { isRecord } from "../scripts/root";
 import { preparation, rateCard, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
 import { fallbackFamilies, probePage, withLinkedBrand, limit } from "./probe";
@@ -512,7 +513,11 @@ describe("a Chrome or composer that cannot start", () => {
       const out = await new Response(child.stdout).text();
       await child.exited;
       expect(child.exitCode).toBe(0);
-      const { chrome, composer } = JSON.parse(out);
+      const result: unknown = JSON.parse(out);
+      if (!isRecord(result) || !Array.isArray(result.chrome) || !Array.isArray(result.composer))
+        throw new Error("Expected Chrome and composer outcomes");
+      const chrome: unknown[] = result.chrome;
+      const composer: unknown[] = result.composer;
       // The second warm call fails on its own spawn, not on the dead Chrome the first one kept.
       for (const message of chrome) expect(message).toContain("ENOENT");
       expect(composer[0]).toStartWith("Composing DocMarkdown failed");
@@ -657,7 +662,8 @@ describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
       PUPPETEER_CACHE_DIR: join(dir, "empty-cache"),
     };
     const child = Bun.spawn([process.execPath, "-e", script], { env, stderr: "inherit" });
-    const result = JSON.parse(await new Response(child.stdout).text());
+    const result: unknown = JSON.parse(await new Response(child.stdout).text());
+    if (!isRecord(result)) throw new Error("Expected Chrome install outcomes");
     expect(result.failed).toContain("Chrome for Testing is required");
     expect(result.retried).toBe("ok");
     // bunx runs the package it is given from the registry: a version range would run whatever
