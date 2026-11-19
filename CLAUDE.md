@@ -163,6 +163,18 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
 - `bun run build`: write the catalog to `dist/`, under scaffolding's `check-lock`.
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
 - `bun run test` runs Vitest on Bun. For one file, run `bun run test <file>`.
+- `bun run mutation` runs Stryker on `scripts/{elements,privacy,prose,prune,root,styles}.ts` with
+  the fast Vitest tests on Bun, outside the gate, and writes `.stryker-reports/mutation.json`.
+  It omits the integration tests in `test/` (file times in seconds):
+  `render-pdf` (45.25), `handout-pdf` (12.58), `onepager` (12.24),
+  `certificate-fit` (10.65), `running-heads` (7.77), `compose` (7.08),
+  `marker-position` (3.83), `cell-baseline` (3.61), `bundled` (3.15),
+  `survey-readout` (2.37), `components` (1.08), and `layers` (0.48), which run Chrome,
+  Astro, or a build, plus `styles` (0.049), which needs the built catalog and runs the CLI.
+  The fast tests leave `compose.ts`, `encode-face.ts`, `fill.ts`, `handout.ts`,
+  `onepager.ts`, `render-pdf.ts` and `survey-readout.ts` to those integration suites,
+  use `samples.ts` as fixtures, and skip the file checks in `verbal-imports` (0.005),
+  `stories` (0.002), and `document-css` (0.002).
 
 ## Releasing a change
 
