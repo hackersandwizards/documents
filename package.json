@@ -96,9 +96,7 @@
     "@astrojs/check": "0.9.12",
     "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.39.1",
     "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v2.28.1",
-    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v5.29.1",
-    "@stryker-mutator/core": "10.1.1",
-    "@stryker-mutator/vitest-runner": "10.1.1",
+    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v5.30.0",
     "@types/bun": "1.4.4",
     "@typescript/native": "npm:typescript@7.0.2",
     "astro": "7.4.11",
@@ -108,8 +106,7 @@
     "puppeteer-core": "25.17.0",
     "stylelint": "18.0.0",
     "typescript": "npm:@typescript/typescript6@6.0.2",
-    "vite": "8.3.8",
-    "vitest": "5.1.0"
+    "vite": "8.3.8"
   },
   "prettier": "@hackersandwizards/scaffolding/prettier",
   "scaffolding": {

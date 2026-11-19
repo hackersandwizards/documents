@@ -1,10 +1,9 @@
-import { defineConfig } from "vitest/config";
-import base from "./vitest.config";
+import base from "@hackersandwizards/scaffolding/vitest";
+import { mergeConfig } from "vitest/config";
 
-export default defineConfig({
-  ...base,
+export default mergeConfig(base, {
   test: {
-    ...base.test,
     include: ["test/{elements,privacy,prose,prune,tokens}.test.ts"],
+    fileParallelism: false,
   },
 });
