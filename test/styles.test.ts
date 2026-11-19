@@ -2,11 +2,11 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import { afterAll, describe, expect, it } from "bun:test";
+import { afterAll, describe, expect, it } from "vitest";
 import { TYPES as LISTED } from "../catalog/types";
 import { foreignStyles, rawInlineStyles } from "../scripts/styles";
 
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(import.meta.dirname, "..");
 // The type pages `bun run build` writes, each a document as the engine prints it.
 const TYPES = join(ROOT, "dist/types");
 // The listed pages only: a former address in dist/types/ is a redirect.

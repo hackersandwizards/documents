@@ -1,11 +1,11 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 // A consumer's server build bundles what a component imports. The default import of brand's
 // verbal.json carries the whole file, its retired lines included, and the consumer's brand-retired
 // fails on them; a named import keeps only the names it takes.
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(import.meta.dirname, "..");
 const SOURCE = /\.(astro|[cm]?[jt]sx?)$/;
 const SPEC = String.raw`["']@hackersandwizards/brand/verbal\.json["']`;
 const IMPORT = new RegExp(String.raw`import\s+([^;]*?)\s*from\s*${SPEC}`, "g");

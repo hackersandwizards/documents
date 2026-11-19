@@ -2,7 +2,7 @@ import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterAll, describe, expect, it } from "bun:test";
+import { afterAll, describe, expect, it } from "vitest";
 import { limit } from "./probe";
 import {
   certificate,
@@ -17,7 +17,7 @@ import { openComposer } from "../scripts/compose";
 import { isRecord, ROOT } from "../scripts/root";
 import { foreignStyles } from "../scripts/styles";
 
-const SCRIPT = resolve(import.meta.dir, "../scripts/compose.ts");
+const SCRIPT = resolve(import.meta.dirname, "../scripts/compose.ts");
 const dir = mkdtempSync(join(tmpdir(), "pdf-compose-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 

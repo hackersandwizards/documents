@@ -1,11 +1,11 @@
-import { afterAll, expect, test } from "bun:test";
+import { afterAll, expect, test } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { scanSamples, scanText } from "../scripts/privacy";
 
 // The privacy check's controls: each rule must hit a planted case, or its silence proves nothing.
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(import.meta.dirname, "..");
 const planted = mkdtempSync(join(tmpdir(), "hw-privacy-"));
 afterAll(() => rmSync(planted, { recursive: true, force: true }));
 

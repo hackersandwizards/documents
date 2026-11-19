@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, test } from "vitest";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -122,7 +122,7 @@ const overflowing = certificate({
   topics: [...longTopics, longTopics[0], longTopics[2]],
 });
 
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(import.meta.dirname, "..");
 let composer: Awaited<ReturnType<typeof openComposer>>;
 let dir: string;
 beforeAll(async () => {

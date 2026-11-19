@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { withElements } from "../scripts/elements";
 import { TYPES } from "../catalog/types";
 import config from "../brand-elements.json";

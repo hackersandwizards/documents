@@ -59,7 +59,7 @@
     "catalog": "bun run dev",
     "build": "check-lock sh -c 'cd catalog && bun --bun astro build'",
     "check": "scaffolding check",
-    "test": "bun test --timeout ${SCAFFOLDING_TEST_TIMEOUT_MS:-5000}",
+    "test": "bun --bun vitest run",
     "check:tests": "bun run test",
     "check:markers": "brand-markers $(grep -l '<ul' dist/types/*/index.html)",
     "check:privacy": "bun scripts/privacy.ts",
@@ -105,7 +105,8 @@
     "puppeteer-core": "25.17.0",
     "stylelint": "18.0.0",
     "typescript": "npm:@typescript/typescript6@6.0.2",
-    "vite": "8.3.8"
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
   },
   "prettier": "@hackersandwizards/scaffolding/prettier",
   "scaffolding": {
@@ -115,7 +116,7 @@
       "./handout.css"
     ],
     "skip": {
-      "test": "the tests read the type pages the catalog build writes, so they run after it, as the first of this repository's own steps"
+      "test": "check:tests runs Vitest after the catalog build writes the type pages that the tests read"
     },
     "check": [
       "check:tests",

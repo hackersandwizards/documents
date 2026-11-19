@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { composePage, openComposer } from "../scripts/compose";
 import { composeOnepager } from "../scripts/onepager";
 import { editStyles } from "../scripts/prune";
@@ -34,7 +34,7 @@ describe("a composed page declares the layer order once, the brand's, first", ()
   for (const [name, compose] of pages)
     it(name, async () => {
       const found = layers(await compose());
-      expect(brandOrder).toEndWith(";");
+      expect(brandOrder.endsWith(";")).toBe(true);
       expect(found[0]).toBe(brandOrder);
       expect(found.filter((l) => l.endsWith(";"))).toEqual([brandOrder]);
     });

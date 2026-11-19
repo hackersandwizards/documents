@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
+import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { composePage, openComposer } from "../scripts/compose";
 import { withoutImports } from "../scripts/root";
@@ -10,7 +11,7 @@ import { documentCss, type HandoutPass, renderHandoutPdf } from "../scripts/rend
 import { handout } from "../scripts/samples";
 import { probePage, limit } from "./probe";
 
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(import.meta.dirname, "..");
 const rules = withoutImports(readFileSync(join(ROOT, "handout.css"), "utf8"));
 let composer: Awaited<ReturnType<typeof openComposer>>;
 let dir: string;
@@ -96,7 +97,6 @@ test(
       Bun.resolveSync("@hackersandwizards/brand/logos/lockup.png", ROOT),
       join(folder, "fig.png"),
     );
-    process.chdir(folder);
     // The widest image the PDF holds for a chapter naming `src`: a file it cannot read prints as
     // Chrome's broken-image icon, 14 px wide, beside the header's 112 px logo.
     const widest = async (src: string) => {
@@ -112,11 +112,15 @@ test(
       const rows = list.split("\n").filter((row) => /\simage\s/.test(row));
       return Math.max(...rows.map((row) => Number(row.trim().split(/\s+/)[3])));
     };
+    // Resolve the project's pinned Chrome before switching to the caller's directory.
+    vi.stubEnv("CHROME_BINARY", chromeBinary());
     try {
+      process.chdir(folder);
       expect(await widest("none.png")).toBe(112);
       expect(await widest("fig.png")).toBeGreaterThan(1000);
     } finally {
       process.chdir(here);
+      vi.unstubAllEnvs();
     }
   },
   limit(120_000),

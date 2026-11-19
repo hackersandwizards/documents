@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -494,7 +494,7 @@ describe("a Chrome or composer that cannot start", () => {
       const tmp = mkdtempSync(join(dir, "nostart-"));
       writeFileSync(join(dir, "nostart.html"), "<!doctype html><html><body>x</body></html>");
       const script = `
-      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
       const outcome = (p) => p.then(() => "ok", (e) => e.message);
       process.env.CHROME_BINARY = "/nonexistent/chrome";
       const render = (warm) => outcome(renderPdf(${JSON.stringify(join(dir, "nostart.html"))}, ${JSON.stringify(join(dir, "nostart.pdf"))}, { warm }));
@@ -520,7 +520,7 @@ describe("a Chrome or composer that cannot start", () => {
       const composer: unknown[] = result.composer;
       // The second warm call fails on its own spawn, not on the dead Chrome the first one kept.
       for (const message of chrome) expect(message).toContain("ENOENT");
-      expect(composer[0]).toStartWith("Composing DocMarkdown failed");
+      expect(composer[0]).toMatch(/^Composing DocMarkdown failed/);
       expect(composer[1]).toBe("ok");
       expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
     },
@@ -550,7 +550,7 @@ describe("a profile left behind", () => {
       writeFileSync(join(dir, "left.html"), "<!doctype html><html><body>x</body></html>");
       // A process of its own, so the sweep has not run yet in it.
       const script = `
-      import { renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
       process.env.CHROME_BINARY = "/nonexistent/chrome";
       await renderPdf(${JSON.stringify(join(dir, "left.html"))}, ${JSON.stringify(join(dir, "left.pdf"))}).catch(() => {});`;
       const child = Bun.spawn([process.execPath, "-e", script], {
@@ -617,7 +617,7 @@ describe.skipIf(!chromeBinary())("renderPdf profile", () => {
     await renderPdf(join(dir, "profile.html"), join(dir, "profile.pdf"));
     const lines = readFileSync(log, "utf8").split("\n");
     const profile = lines.find((l) => l.startsWith("--user-data-dir="))?.slice(16);
-    expect(profile).toStartWith(tmpdir());
+    expect(profile?.startsWith(tmpdir())).toBe(true);
     expect(lines).toContain(`exists ${profile}`);
     expect(existsSync(profile!)).toBe(false);
   });
@@ -644,7 +644,7 @@ describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
     writeFileSync(join(dir, "install.html"), "<!doctype html><html><body>x</body></html>");
     const script = `
       import { unlinkSync } from "node:fs";
-      import { renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
       let ticks = 0;
       const timer = setInterval(() => ticks++, 50);
       const render = () => renderPdf(${JSON.stringify(join(dir, "install.html"))}, ${JSON.stringify(join(dir, "install.pdf"))}).then(() => "ok", (e) => e.message);
@@ -988,7 +988,7 @@ describe.skipIf(!chromeBinary())("the quote, a page with a table", () => {
   it(
     "writes the same bytes in every render, cold or warm, its header cells numbered from 1",
     async () => {
-      const quote = join(import.meta.dir, "..", "dist/types/quote/index.html");
+      const quote = join(import.meta.dirname, "..", "dist/types/quote/index.html");
       const pdfs: Buffer[] = [];
       for (let i = 0; i < 7; i++) {
         const out = join(dir, `quote-${i}.pdf`);
@@ -1137,7 +1137,7 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
       // Its own TMPDIR shows whether the kept Chrome's profile outlives it.
       const tmp = mkdtempSync(join(dir, "exit-"));
       const script = `
-      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dir, "../scripts/render-pdf.ts"))};
+      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
       await composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true });
       await renderPdf(${JSON.stringify(join(dir, "doc.html"))}, ${JSON.stringify(join(dir, "exit.pdf"))}, { warm: true });
       // The kept Chrome and composer, still running here; the test looks for them once this exits.

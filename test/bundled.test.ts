@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join, resolve } from "node:path";
-import { afterAll, describe, expect, it, spyOn } from "bun:test";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import manifest from "../package.json";
 import type * as renderPdf from "../scripts/render-pdf";
 import { isRecord } from "../scripts/root";
@@ -9,7 +9,7 @@ import { isRecord } from "../scripts/root";
 // A consumer's server build (Astro's, for Company OS) bundles these modules into chunks of its own:
 // Node strips no types under node_modules, so the package cannot stay external. The engine must
 // then find its own files from the chunk, which sits where none of them is.
-const REPO = resolve(import.meta.dir, "..");
+const REPO = resolve(import.meta.dirname, "..");
 mkdirSync(join(REPO, "node_modules/.cache"), { recursive: true });
 const out = mkdtempSync(join(REPO, "node_modules/.cache/bundled-"));
 afterAll(() => rmSync(out, { recursive: true, force: true }));
@@ -75,7 +75,7 @@ describe("bundled into a consumer's chunk", () => {
           started.push(String(url));
         }
       };
-      const warn = spyOn(console, "warn");
+      const warn = vi.spyOn(console, "warn");
       try {
         const { documentCss, subsetFaces } = await loadRenderBundle();
         await subsetFaces(page(documentCss(), "Ö"));
@@ -129,7 +129,7 @@ describe("bundled into a consumer's chunk", () => {
       const html = page(documentCss(), "Ä");
       const threaded = await subsetFaces(html);
       globalThis.Worker = Failing;
-      const warn = spyOn(console, "warn").mockImplementation(() => {});
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       try {
         // A second instance of the module: the first has its Workers.
         const { subsetFaces: inProcess } = await loadRenderBundle(`?${name.replace(/ /g, "-")}`);
@@ -165,7 +165,7 @@ describe("bundled into a consumer's chunk", () => {
           super(refusing);
         }
       };
-      const warn = spyOn(console, "warn");
+      const warn = vi.spyOn(console, "warn");
       try {
         const { subsetFaces: refused } = await loadRenderBundle("?refusing");
         expect(await refused(html)).toBe(threaded);
@@ -178,7 +178,7 @@ describe("bundled into a consumer's chunk", () => {
   );
 
   it("loads the survey readout, which reads its stylesheet on import", async () => {
-    expect((await loadBundle("survey-readout.js")).composeSurveyReadout).toBeFunction();
+    expect((await loadBundle("survey-readout.js")).composeSurveyReadout).toBeTypeOf("function");
   });
 
   it("loads the handout's words, which read the company's name from brand on import", async () => {

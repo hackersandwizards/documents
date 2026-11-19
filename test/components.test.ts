@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, test } from "vitest";
 import { mission } from "@hackersandwizards/brand/verbal.json";
 import { decodeHTML } from "entities";
 import { readdirSync } from "node:fs";
@@ -12,7 +12,7 @@ import { handout } from "../scripts/samples";
 import { foreignStyles } from "../scripts/styles";
 import { probePage, limit } from "./probe";
 
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(import.meta.dirname, "..");
 const components = readdirSync(join(ROOT, "components"))
   .filter((f) => f.endsWith(".astro"))
   .map((f) => f.replace(/\.astro$/, ""));

@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { brandFile } from "../scripts/render-pdf";
 import { rawInlineStyles, rawValues } from "../scripts/styles";
 
-const ROOT = join(import.meta.dir, "..");
+const ROOT = join(import.meta.dirname, "..");
 const STYLESHEETS = ["document.css", "onepager.css", "handout.css", "readout.css"];
 const COMPONENTS = readdirSync(join(ROOT, "components")).filter((f) => f.endsWith(".astro"));
 

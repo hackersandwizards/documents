@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { proseHtml } from "../scripts/prose";
 
 test("every style attribute goes, duplicates, any quoting and a '>' in a value included", () => {

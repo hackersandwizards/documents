@@ -162,7 +162,7 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
   `/documents` and writes the type pages to `dist/types/`.
 - `bun run build`: write the catalog to `dist/`, under scaffolding's `check-lock`.
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
-- One test file: `bun test <file>`.
+- `bun run test` runs Vitest on Bun. For one file, run `bun run test <file>`.
 
 ## Releasing a change
 

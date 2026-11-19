@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { pruneStyles } from "../scripts/prune";
 
 const page = (css: string, body: string) =>

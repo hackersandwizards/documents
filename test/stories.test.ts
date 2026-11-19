@@ -1,9 +1,9 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { TYPES } from "../catalog/types";
 
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(import.meta.dirname, "..");
 const components = readdirSync(join(ROOT, "components"))
   .filter((f) => f.endsWith(".astro"))
   .map((f) => f.replace(/\.astro$/, ""));

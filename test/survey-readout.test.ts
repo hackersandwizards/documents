@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isRecord } from "../scripts/root";
@@ -188,8 +188,8 @@ test("a single response gets its own line under the overall score", () => {
 // Words the engine prints itself reach clients: no dash sets off a clause, quotes are straight.
 test("the engine's own words carry no em dash and no curly quote", () => {
   expect(JSON.stringify(READOUT_TEXT)).not.toMatch(/[—“”‘’]/);
-  for (const file of readdirSync(join(import.meta.dir, "../components"))) {
-    const code = readFileSync(join(import.meta.dir, "../components", file), "utf8")
+  for (const file of readdirSync(join(import.meta.dirname, "../components"))) {
+    const code = readFileSync(join(import.meta.dirname, "../components", file), "utf8")
       .split("\n")
       .filter((line) => !/^\s*(\/\/|\*|\/\*|<!--)/.test(line));
     expect({ file, hits: code.filter((line) => /[—“”‘’]/.test(line)) }).toEqual({ file, hits: [] });

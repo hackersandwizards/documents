@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 // The document base (document.css) shrinks toward the brand tokens and the page setup. A document
 // building block is a component, components/Doc<Name>.astro with its own scoped style, shown on a
@@ -32,7 +32,7 @@ function selectorClasses(css: string): string[] {
 
 describe("document base", () => {
   it("styles exactly the classes not yet moved out into components", () => {
-    const css = readFileSync(join(import.meta.dir, "../document.css"), "utf8");
+    const css = readFileSync(join(import.meta.dirname, "../document.css"), "utf8");
     expect(selectorClasses(css).sort()).toEqual([...REMAINING].sort());
   });
 

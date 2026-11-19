@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { encodeNonAsciiHTML } from "entities";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { openComposer } from "../scripts/compose";
@@ -63,7 +63,7 @@ describe("fitOnepager", () => {
       const page2 = execFileSync("pdftotext", ["-f", "2", "-l", "2", pdf, "-"], {
         encoding: "utf8",
       });
-      expect(page2.trimStart().toLowerCase()).toStartWith("schön zu wissen");
+      expect(page2.trimStart().toLowerCase().startsWith("schön zu wissen")).toBe(true);
       // The faces the print never set are gone, the rest cut to what each set, and the page prints
       // the same text as the page composed with every face whole.
       const whole = join(work, "whole.html");
@@ -163,10 +163,14 @@ describe("onepagerBrandFiles", () => {
     "lists exactly the brand files a traced render reads",
     () => {
       expect(() =>
-        execFileSync("bun", ["test", "./test/onepager-trace.ts"], {
-          cwd: ROOT,
-          timeout: limit(55_000),
-        }),
+        execFileSync(
+          "bun",
+          ["--bun", "vitest", "run", "--config", "test/onepager-trace.config.ts"],
+          {
+            cwd: ROOT,
+            timeout: limit(55_000),
+          },
+        ),
       ).not.toThrow();
     },
     limit(60_000),

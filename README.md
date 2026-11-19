@@ -31,9 +31,8 @@ Pin beside it, each `@hackersandwizards` package from its Git tag in the form ab
 - `@hackersandwizards/testimonials`, whose marks a page names by package path
 - `@hackersandwizards/scaffolding` among your runtime dependencies: `./render-pdf` imports its `./chrome` at run time
 
-**Bun only.** The TypeScript exports parse HTML with Bun's `HTMLRewriter`, so under Node,
-vitest included, they throw `HTMLRewriter is not defined`. Call them from a Bun process, and
-test their callers with `bun test`.
+**Bun runtime.** The TypeScript exports parse HTML with Bun's `HTMLRewriter`. Run Vitest on Bun
+with `bun --bun vitest run` when testing callers.
 
 ## Use
 
@@ -78,6 +77,7 @@ and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 - `bun run dev` serves the catalog at `http://127.0.0.1:4330/`
 - `bun run check` runs the gate: scaffolding's steps with the catalog build, then this repository's
 - `bun run build` writes the catalog to `dist/`, never committed; Pages publishes it on every push to `main`
+- `bun run test` runs Vitest on Bun after the catalog has been built
 
 A release is a tag `v<version>` matching `package.json`. Before its commit, Company OS's privacy
 check runs with the real names over this checkout; the tag follows once the push has landed. The
