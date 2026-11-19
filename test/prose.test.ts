@@ -45,3 +45,24 @@ test("the body is read as the browser reads it", () => {
     /the engine draws every style/,
   );
 });
+
+test("only table cells take alignment classes and cells with no style keep their markup", () => {
+  const table =
+    '<table><thead><tr><th style="text-align: right ! important">Total</th></tr></thead>' +
+    '<tbody><tr><td class="keep">1</td></tr></tbody></table>';
+  expect(proseHtml(table)).toBe(
+    '<table><thead><tr><th class="num">Total</th></tr></thead>' +
+      '<tbody><tr><td class="keep">1</td></tr></tbody></table>',
+  );
+  for (const tag of ["p", "td-label", "label-th"]) {
+    expect(proseHtml(`<${tag} class="keep" style="text-align: right">x</${tag}>`)).toBe(
+      `<${tag} class="keep">x</${tag}>`,
+    );
+  }
+});
+
+test("the error names the first element that would style the body", () => {
+  expect(() => proseHtml('<p>x</p><link rel="stylesheet"><style>p{}</style>')).toThrow(
+    /carries <link>/,
+  );
+});

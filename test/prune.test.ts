@@ -84,4 +84,100 @@ describe("pruneStyles", () => {
     ).toBe(css);
     expect(styles(pruneStyles(page(".größer{color:red}", '<p class="größe">x</p>')))).toBe("");
   });
+
+  it("preserves punctuation inside strings, functions and attribute selectors", () => {
+    const css = String.raw`p[data-caption="a,b"],.gone{content:"a\"b}";font-family:'it\'s;fine';width:calc(100% - 1em)}`;
+    const html = `<style media="print">${css}.gone{color:red}</style><p data-caption="a,b">x</p>`;
+    expect(pruneStyles(html)).toBe(
+      `<style media="print">${css}</style><p data-caption="a,b">x</p>`,
+    );
+  });
+
+  it("keeps CSS statements, keyframes and rules inside a matching feature query", () => {
+    const declarations = "@layer components,utilities;@keyframes fade{to{opacity:1}}";
+    const query = "@supports (display:grid)";
+    const matching = "p{display:grid}";
+    const css = `${declarations}${query}{.gone{display:grid}${matching}}`;
+    expect(styles(pruneStyles(page(css, "<p>x</p>")))).toBe(`${declarations}${query}{${matching}}`);
+  });
+
+  it("examines nested selector lists and leaves escaped selectors for the browser", () => {
+    const kept = String.raw`:is(.gone,:where(.other,p)){color:red}.\31 23{color:red}p::first-line{color:red}`;
+    const gone = ":is(.gone,:where(.other,article)) span{color:red}article:not(.gone){color:red}";
+    expect(styles(pruneStyles(page(`${gone}${kept}`, '<p class="123">x</p>')))).toBe(kept);
+  });
+
+  it("keeps the properties a rule reads and drops similarly named unused declarations", () => {
+    const css =
+      ":root{ --tone:blue; --tone-print : red; --other-tone: green }p{color:var(--tone-print)}";
+    expect(styles(pruneStyles(page(css, "<p>x</p>")))).toBe(
+      ":root{ --tone-print : red}p{color:var(--tone-print)}",
+    );
+  });
+
+  it("adds implied table selectors only for a document with the corresponding cells or columns", () => {
+    const columns = "colgroup col{width:10%}";
+    const rows = "tr td{font-weight:bold}";
+    expect(styles(pruneStyles(page(columns + rows, "<table><col></table>")))).toBe(columns);
+    expect(styles(pruneStyles(page(columns + rows, "<p>x</p>")))).toBe("");
+  });
+
+  it("keeps every inlined asset intact when a page holds more than ten", () => {
+    const images = Array.from(
+      { length: 12 },
+      (_, n) => `<img src="data:image/png;base64,${Buffer.from(`image ${n}`).toString("base64")}">`,
+    ).join("");
+    expect(pruneStyles(page(".gone{color:red}", images))).toBe(page("", images));
+  });
+
+  it("leaves module scripts whole and prunes beside ordinary attributes", () => {
+    const css = ".gone{color:red}.kept{color:red}";
+    const body = '<p class="kept" data-on="on">x</p>';
+    expect(styles(pruneStyles(page(css, body)))).toBe(".kept{color:red}");
+    const modulePage = page(css, `${body}<script type="module">1</script>`);
+    expect(pruneStyles(modulePage)).toBe(modulePage);
+  });
+
+  it("keeps strings and URLs that contain CSS punctuation without swallowing the next rule", () => {
+    const label = String.raw`p{content:'it\'s };--unused:label';font-weight:bold}`;
+    const image = "p{background-image:url(images/ink{print}.png)}";
+    const next = "p{display:block}";
+    const css = `${label}${image}.gone{color:red}${next}`;
+    expect(styles(pruneStyles(page(css, "<p>x</p>")))).toBe(`${label}${image}${next}`);
+  });
+
+  it("keeps source whitespace out of pruned rules and preserves a layer order statement", () => {
+    const css = "\n @layer base, print;\n p {color:red}\n .gone {color:red}\n";
+    expect(styles(pruneStyles(page(css, "<p>x</p>")))).toBe("@layer base, print;p{color:red}");
+  });
+
+  it("handles selectors with namespaced attributes and continues after functional pseudo-classes", () => {
+    const kept =
+      'p:is(.printed):has(.caption){color:red}[*|title]{color:red}p[title="x"]{color:red}';
+    const gone = 'p:is([title=")"],.missing) + article{color:red}p[role="aside"]{color:red}';
+    const html = '<p class="printed" title="x">x</p>';
+    expect(styles(pruneStyles(page(`${gone}${kept}`, html)))).toBe(kept);
+  });
+
+  it("drops empty feature queries even when their selector mentions an at-rule name", () => {
+    const css = '@supports selector([data-name="@layer"]){.gone{color:red}}p{color:red}';
+    expect(styles(pruneStyles(page(css, "<p>x</p>")))).toBe("p{color:red}");
+  });
+
+  it("keeps rules for implied page elements and matches classes across extra whitespace", () => {
+    const kept = "html{color:red}head{font-weight:bold}body{display:block}.printed{color:black}";
+    const gone = ".here{color:red}tr{color:red}colgroup{color:red}";
+    const html = `<style>${kept}${gone}</style><p class="card  \tprinted">x</p>`;
+    expect(styles(pruneStyles(html))).toBe(kept);
+    expect(styles(pruneStyles(page("tr{color:red}", "<table><th>x</th></table>")))).toBe(
+      "tr{color:red}",
+    );
+  });
+
+  it("preserves nested rules so their declarations stay with the nested selector", () => {
+    const css = "main{--orphan:0;&:hover{color:red}}main p{color:var(--ink);}";
+    expect(styles(pruneStyles(page(css, "<main><p>x</p></main>")))).toBe(
+      "main{--orphan:0;&:hover{color:red}}main p{color:var(--ink)}",
+    );
+  });
 });

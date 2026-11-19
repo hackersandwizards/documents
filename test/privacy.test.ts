@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "vitest";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { scanSamples, scanText } from "../scripts/privacy";
@@ -123,6 +123,58 @@ test("a checkout's built type pages are scanned, though git ignores them", () =>
   }
 });
 
+test("a checkout scans untracked text and skips deleted paths, directory symlinks and ignored files", () => {
+  const dir = mkdtempSync(join(planted, "checkout-"));
+  expect(Bun.spawnSync(["git", "init", "-q", dir]).exitCode).toBe(0);
+  writeFileSync(join(dir, ".gitignore"), "ignored/\n");
+  mkdirSync(join(dir, "ignored"));
+  writeFileSync(join(dir, "ignored", "text.md"), "Echtfirma");
+  writeFileSync(join(dir, "deleted.md"), "Echtfirma");
+  expect(Bun.spawnSync(["git", "-C", dir, "add", "deleted.md"]).exitCode).toBe(0);
+  renameSync(join(dir, "deleted.md"), join(dir, "ignored", "deleted.md"));
+  symlinkSync("ignored", join(dir, "link"));
+  writeFileSync(join(dir, "notes\nmore.md"), "Example title\nEchtfirma");
+
+  expect(scanText(dir, ["Echtfirma"])).toEqual([
+    { file: "notes\nmore.md", line: 2, what: 'the term "Echtfirma"' },
+  ]);
+});
+
+test("an unreadable git index stops the scan", () => {
+  const dir = mkdtempSync(join(planted, "index-"));
+  expect(Bun.spawnSync(["git", "init", "-q", dir]).exitCode).toBe(0);
+  writeFileSync(join(dir, ".git", "index"), "invalid index contents");
+  expect(() => scanText(dir)).toThrow(/git ls-files failed/);
+});
+
+test("an installed package scans ordinary folders and text while ignoring binary assets and caches", () => {
+  const dir = mkdtempSync(join(planted, "installed-"));
+  for (const folder of ["node_modules", ".astro", "node_modules-guide"]) {
+    mkdirSync(join(dir, folder));
+    writeFileSync(join(dir, folder, "notes.md"), "Echtfirma");
+  }
+  writeFileSync(join(dir, "logo.woff2"), Buffer.from("Echtfirma\0"));
+  writeFileSync(
+    join(dir, "inline.html"),
+    `<img src="data:image/png;base64,AB12${"3456".repeat(4)}">`,
+  );
+
+  expect(scanText(dir, ["Echtfirma"])).toEqual([
+    { file: "node_modules-guide/notes.md", line: 1, what: 'the term "Echtfirma"' },
+  ]);
+});
+
+test("deny term findings follow document order and treat punctuation as literal", () => {
+  const dir = mkdtempSync(join(planted, "terms-"));
+  writeFileSync(join(dir, "notes.md"), "abc-guide\nABC-guide\nABC\nOne.Go\nOneXGo\nOneGo");
+  expect(scanText(dir, ["ABC", "One.Go"]).map(({ line, what }) => [line, what])).toEqual([
+    [1, 'the term "ABC"'],
+    [2, 'the term "ABC"'],
+    [3, 'the term "ABC"'],
+    [4, 'the term "One.Go"'],
+  ]);
+});
+
 test("an empty deny list fails rather than passes", () => {
   const empty = join(planted, "empty.txt");
   writeFileSync(empty, "\n");
@@ -167,4 +219,21 @@ test("a person in the samples outside the invented names fails", () => {
     "agreement.letter.greeting[0]: Anna",
     "certificate.title: Anna Echt",
   ]);
+});
+
+test("only the name-bearing entries in a letter and certificate are scanned as names", () => {
+  expect(
+    scanSamples({
+      invitation: {
+        client: { lines: ["Mara Beispiel", "Main Office"] },
+        letter: { greeting: ["Hallo Mara,", "Danke für die Anmeldung"] },
+      },
+      certificateTraining: { title: "Introductory Course: Mara  (Beispiel)" },
+      draft: { certificate: { title: "Free-text title" } },
+      other: { personName: "Mara\t\tBeispiel", attendeeName: null },
+    }),
+  ).toEqual([]);
+  expect(scanSamples({ certificateTraining: { title: "Introductory Course: Echtfirma" } })).toEqual(
+    ["certificateTraining.title: Echtfirma"],
+  );
 });
