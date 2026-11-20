@@ -6,7 +6,6 @@ import { TYPES as LISTED } from "../../catalog/types";
 import { ROOT } from "../../scripts/root";
 import { foreignStyles } from "../../scripts/styles";
 
-// The type pages `bun run build` writes, each a document as the engine prints it.
 const TYPES = join(ROOT, "dist/types");
 // The listed pages only: a former address in dist/types/ is a redirect.
 const pages = LISTED.map((t) => join(TYPES, t.file, "index.html"));

@@ -4,7 +4,6 @@ import { surveyReadout } from "../../scripts/samples";
 import { composeSurveyReadout } from "../../scripts/survey-readout";
 import { probePage, limit } from "../probe";
 
-/** The deck in Chrome at its slide size. */
 const SLIDE = ["--window-size=1280,720"];
 
 // The readout's markers follow its key, "the score's band on page 3": a weak spot's square takes the

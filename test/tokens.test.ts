@@ -1,11 +1,19 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { city, postcode, street } from "@hackersandwizards/brand/imprint.json";
 import { name } from "@hackersandwizards/brand/verbal.json";
-import { brandFile } from "../scripts/render-pdf";
-import { brandCompany, brandName, isRecord, stripComments, withoutImports } from "../scripts/root";
+import {
+  brandCompany,
+  brandFile,
+  brandName,
+  isRecord,
+  stripComments,
+  withoutImports,
+} from "../scripts/root";
 import { foreignStyles, rawInlineStyles, rawValues, styleAttributes } from "../scripts/styles";
+
+vi.mock("node:fs", { spy: true });
 
 const ROOT = join(import.meta.dirname, "..");
 const STYLESHEETS = ["document.css", "onepager.css", "handout.css", "readout.css"];
@@ -179,5 +187,14 @@ i { content: '/* literal \' text */'; }`);
     const names = { name: name.company, legal: name.legal };
     expect(brandName()).toEqual(names);
     expect(brandCompany()).toEqual({ ...names, city, postcode, street });
+  });
+
+  it.each(["null", "[]"])("names the source when brand facts contain %s", (contents) => {
+    const read = vi.mocked(readFileSync).mockReturnValueOnce(contents);
+    try {
+      expect(() => brandName()).toThrow("Expected an object in brand's verbal.json");
+    } finally {
+      read.mockReset();
+    }
   });
 });

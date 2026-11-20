@@ -55,8 +55,7 @@ package's own component exports.
   an app path. `DocElements` maps the brand's elements over what it wraps, so a component a
   consumer renders in its own Astro route (the hub's handout, through `DocHandout`) matches a composed page.
   A component whose script lays the page out after load pushes that work's promise onto
-  the array `globalThis.hwLayout` (`(globalThis.hwLayout ??= []).push(...)`), all of which
-  `renderPdf` waits for before it prints.
+  the array `window.hwLayout`. `renderPdf` waits for those promises before printing.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
   directory; the command composes one component from a props JSON, and `--serve` composes on
   request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the

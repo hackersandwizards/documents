@@ -678,6 +678,15 @@ function removeLeftProfiles() {
   }
 }
 
+function protocolRecord(frame: string): Record<string, unknown> | undefined {
+  try {
+    const message: unknown = JSON.parse(frame);
+    return isRecord(message) ? message : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** A Chrome driven over its own debugging pipe (fd 3 in, fd 4 out), which no other process can
  * reach, unlike a debugging port, in its own temporary profile, so a render never runs inside, or
  * locks, the user's own Chrome profile. */
@@ -697,15 +706,26 @@ function pipeChrome(chrome: string, hung?: () => void) {
   type Pending = { resolve(r: Result): void; reject(e: Error): void; sessionId?: string };
   const calls = new Map<number, Pending>();
   const loads = new Map<string, Omit<Pending, "sessionId">>();
+  const fail = (error: Error) => {
+    gone = true;
+    for (const call of [...calls.values(), ...loads.values()]) call.reject(error);
+    calls.clear();
+    loads.clear();
+  };
   output?.setEncoding("utf8");
   output?.on("data", (chunk: string) => {
+    if (gone) return;
     buffer += chunk;
     // The buffer holds no end before this chunk, so a large PDF's chunks are scanned once each.
     if (!chunk.includes("\0")) return;
     for (let end = buffer.indexOf("\0"); end >= 0; end = buffer.indexOf("\0")) {
-      const message: unknown = JSON.parse(buffer.slice(0, end));
+      const message = protocolRecord(buffer.slice(0, end));
       buffer = buffer.slice(end + 1);
-      if (!isRecord(message)) throw new Error("Expected a Chrome protocol message");
+      if (!message) {
+        fail(new Error("Invalid Chrome protocol message"));
+        hung?.();
+        return;
+      }
       if (typeof message.id === "number") {
         const call = calls.get(message.id);
         if (!call) continue;
@@ -719,16 +739,14 @@ function pipeChrome(chrome: string, hung?: () => void) {
     }
   });
   const exited = new Promise<void>((resolve) => {
-    const fail = (error?: Error) => {
-      gone = true;
-      for (const call of [...calls.values(), ...loads.values()])
-        call.reject(error ?? new Error("Chrome exited"));
-      calls.clear();
-      loads.clear();
+    child.on("exit", () => {
+      fail(new Error("Chrome exited"));
       resolve();
-    };
-    child.on("exit", () => fail());
-    child.on("error", fail);
+    });
+    child.on("error", (error) => {
+      fail(error);
+      resolve();
+    });
   });
   // A write to a Chrome that has gone fails with EPIPE; its exit above rejects the call.
   input?.on("error", () => {});
@@ -1372,7 +1390,7 @@ export async function composeDocument(
 }
 
 function keptComposer(cwd: string) {
-  const entry = kept(`compose:${cwd}`, () => {
+  const entry = kept(`compose:${cwd}`, (stop) => {
     const child = spawn("bun", [join(ROOT, "scripts/compose.ts"), "--serve"], {
       cwd,
       stdio: ["pipe", "ignore", "inherit", "pipe"],
@@ -1380,16 +1398,23 @@ function keptComposer(cwd: string) {
     let id = 0;
     let buffer = "";
     const calls = new Map<number, { resolve(html: string): void; reject(e: Error): void }>();
+    const fail = (error?: Error) => {
+      for (const call of calls.values()) call.reject(error ?? new Error("The composer exited"));
+      calls.clear();
+    };
     // Missing when bun did not start; its `error` below then rejects every call.
     const output = child.stdio[3] as Readable | undefined;
     output?.setEncoding("utf8");
     output?.on("data", (chunk: string) => {
       buffer += chunk;
       for (let end = buffer.indexOf("\n"); end >= 0; end = buffer.indexOf("\n")) {
-        const answer: unknown = JSON.parse(buffer.slice(0, end));
+        const answer = protocolRecord(buffer.slice(0, end));
         buffer = buffer.slice(end + 1);
-        if (!isRecord(answer) || typeof answer.id !== "number")
-          throw new Error("Expected a composer response with a numeric ID");
+        if (typeof answer?.id !== "number") {
+          fail(new Error("Invalid composer protocol message"));
+          stop();
+          return;
+        }
         const call = calls.get(answer.id);
         if (!call) continue;
         calls.delete(answer.id);
@@ -1398,10 +1423,6 @@ function keptComposer(cwd: string) {
         else call.reject(new Error("Invalid composer response"));
       }
     });
-    const fail = (error?: Error) => {
-      for (const call of calls.values()) call.reject(error ?? new Error("The composer exited"));
-      calls.clear();
-    };
     child.on("exit", () => fail());
     child.on("error", fail);
     // A write to a composer that has gone fails with EPIPE; its exit above rejects the call.

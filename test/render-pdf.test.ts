@@ -446,6 +446,57 @@ describe("a Chrome or composer that cannot start", () => {
   );
 });
 
+describe("a malformed child-process reply", () => {
+  it.each(["Chrome", "composer"])(
+    "rejects a malformed %s reply and lets the next warm request start a new child",
+    async (worker) => {
+      const stubDir = mkdtempSync(join(dir, "bad-reply-"));
+      const stubChrome = join(stubDir, "chrome");
+      const stubBun = join(stubDir, "bun");
+      const input = join(stubDir, "input.html");
+      writeFileSync(input, "<!doctype html><html><body>x</body></html>");
+      writeFileSync(stubChrome, "#!/bin/sh\nprintf 'null\\000' >&4\nread -r request <&3\n", {
+        mode: 0o755,
+      });
+      writeFileSync(stubBun, "#!/bin/sh\nread -r request\nprintf '!\\n' >&3\nread -r request\n", {
+        mode: 0o755,
+      });
+      const script = `
+      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
+      const outcome = (promise) => promise.then(() => "ok", (error) => error.message);
+      const warm = { warm: true, timeoutMs: 2_000 };
+      if (${JSON.stringify(worker)} === "Chrome") {
+        const render = (options) => outcome(renderPdf(${JSON.stringify(input)}, ${JSON.stringify(join(stubDir, "out.pdf"))}, options));
+        console.log(JSON.stringify([await render({ ...warm, warm: false }), await render(warm), await render(warm)]));
+      } else {
+        const originalPath = process.env.PATH;
+        process.env.PATH = ${JSON.stringify(stubDir)} + ":" + originalPath;
+        const compose = () => outcome(composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), warm));
+        const failed = await compose();
+        process.env.PATH = originalPath;
+        console.log(JSON.stringify([failed, await compose()]));
+      }`;
+      const child = Bun.spawn([process.execPath, "-e", script], {
+        env: { ...process.env, CHROME_BINARY: stubChrome, TMPDIR: stubDir },
+        stderr: "pipe",
+        timeout: limit(15_000),
+      });
+      const [stdout, stderr, status] = await Promise.all([
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+        child.exited,
+      ]);
+      expect(status, stderr).toBe(0);
+      const answer: unknown = JSON.parse(stdout);
+      const badReply: unknown = expect.stringContaining(`Invalid ${worker} protocol message`);
+      expect(answer).toEqual(
+        worker === "Chrome" ? [badReply, badReply, badReply] : [badReply, "ok"],
+      );
+    },
+    limit(30_000),
+  );
+});
+
 describe("a profile left behind", () => {
   it(
     "is removed at the next start once an hour old and no running Chrome holds it",
