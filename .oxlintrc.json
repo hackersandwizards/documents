@@ -12,5 +12,23 @@
     "/.agents/**",
     "/.githooks/**",
     "components/**"
+  ],
+  "overrides": [
+    {
+      "files": ["scripts/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^(?:(?:\\.\\./)+(?:components|catalog)|@hackersandwizards/documents/components)(?:/|$)",
+                "message": "Keep scripts independent of components and the catalog."
+              }
+            ]
+          }
+        ]
+      }
+    }
   ]
 }

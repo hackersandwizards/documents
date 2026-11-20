@@ -31,6 +31,10 @@ decision or item ids, pointers to review notes and names go to the commit messag
 
 ## Layout
 
+The catalog can import components and scripts, and components can import scripts. Oxlint rejects
+imports from `components/` or `catalog/` in `scripts/**`, including imports through the
+package's own component exports.
+
 - `tokens.css`: the document tokens: the brand's tokens, print faces, document scale
   (`document.css`: every length, size and step of the base and of each type) and list marker
   (`marker.css`, switched on with `--hw-markers: on` at the print size) imported from
