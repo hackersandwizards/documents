@@ -4,9 +4,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
-import { composePage, openComposer } from "../scripts/compose";
-import { renderPdf } from "../scripts/render-pdf";
-import { probePage, limit } from "./probe";
+import { composePage, openComposer } from "../../scripts/compose";
+import { renderPdf } from "../../scripts/render-pdf";
+import { probePage, limit } from "../probe";
 
 // DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
 // fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
@@ -122,7 +122,7 @@ const overflowing = certificate({
   topics: [...longTopics, longTopics[0], longTopics[2]],
 });
 
-const ROOT = resolve(import.meta.dirname, "..");
+const ROOT = resolve(import.meta.dirname, "../..");
 let composer: Awaited<ReturnType<typeof openComposer>>;
 let dir: string;
 beforeAll(async () => {

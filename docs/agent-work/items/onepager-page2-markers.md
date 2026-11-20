@@ -25,4 +25,4 @@ invisible marker at the start of each top-level block, then the first marker pdf
 page 2. Still open: a block split over the page break (page 2 text before its first marker), an
 element that cannot hold a marker (a table), the print copy's content policy for the marker's
 style, and keeping markers out of the returned HTML and the font cut. Done when `page2Block` and
-`PAGE1_BLOCK` are gone and `test/onepager.test.ts` covers the three cases above in a real render.
+`PAGE1_BLOCK` are gone and `test/pages/onepager.test.ts` covers the three cases above in a real render.

@@ -1,14 +1,14 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { limit } from "./probe";
+import { limit } from "../probe";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { composePage, openComposer } from "../scripts/compose";
-import { withoutImports } from "../scripts/root";
+import { composePage, openComposer } from "../../scripts/compose";
+import { withoutImports } from "../../scripts/root";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
-import { documentCss, renderPdf } from "../scripts/render-pdf";
-import { handout, leistungsnachweisMonth, proposalDe, rateCard } from "../scripts/samples";
+import { documentCss, renderPdf } from "../../scripts/render-pdf";
+import { handout, leistungsnachweisMonth, proposalDe, rateCard } from "../../scripts/samples";
 
 // The running header holds the document's title on one line. The longest title on record is the
 // trainer hub's AE-DEV-TTT product (73 characters). Measured in Chrome:
@@ -18,7 +18,7 @@ const longest = "Agentic Engineering for Developers and QA, Train-the-Trainer (A
 // The control: past the measured limit, so the check below must see two lines.
 const tooLong = `${longest}, Extended Edition`;
 
-const ROOT = resolve(import.meta.dirname, "..");
+const ROOT = resolve(import.meta.dirname, "../..");
 const rules = withoutImports(readFileSync(join(ROOT, "handout.css"), "utf8"));
 let composer: Awaited<ReturnType<typeof openComposer>>;
 let dir: string;

@@ -2,14 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import manifest from "../package.json";
-import type * as renderPdf from "../scripts/render-pdf";
-import { isRecord } from "../scripts/root";
+import manifest from "../../package.json";
+import type * as renderPdf from "../../scripts/render-pdf";
+import { isRecord } from "../../scripts/root";
 
 // A consumer's server build (Astro's, for Company OS) bundles these modules into chunks of its own:
 // Node strips no types under node_modules, so the package cannot stay external. The engine must
 // then find its own files from the chunk, which sits where none of them is.
-const REPO = resolve(import.meta.dirname, "..");
+const REPO = resolve(import.meta.dirname, "../..");
 mkdirSync(join(REPO, "node_modules/.cache"), { recursive: true });
 const out = mkdtempSync(join(REPO, "node_modules/.cache/bundled-"));
 afterAll(() => rmSync(out, { recursive: true, force: true }));
@@ -141,16 +141,6 @@ describe("bundled into a consumer's chunk", () => {
       }
     },
   );
-
-  it("answers null for bytes the encoder refuses", async () => {
-    const worker = new Worker(join(REPO, "scripts/encode-face.ts"));
-    const answer = await new Promise((resolve) => {
-      worker.onmessage = ({ data }: MessageEvent<unknown>) => resolve(data);
-      worker.postMessage(new Uint8Array([1, 2, 3]));
-    });
-    worker.terminate();
-    expect(answer).toBeNull();
-  });
 
   it.skipIf(availableParallelism() < 2)(
     "encodes in-process a face a Worker refuses, keeping the Workers",

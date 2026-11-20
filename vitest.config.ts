@@ -4,7 +4,7 @@ import { mergeConfig } from "vitest/config";
 export default mergeConfig(base, {
   test: {
     include: ["test/**/*.test.ts"],
-    // Chrome and Astro's composer share the machine and the composer's Vite cache.
+    // Astro's composer shares its Vite cache across test files.
     fileParallelism: false,
   },
 });

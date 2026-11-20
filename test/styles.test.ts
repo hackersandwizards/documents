@@ -1,16 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { TYPES as LISTED } from "../catalog/types";
 import { foreignStyles, rawInlineStyles } from "../scripts/styles";
 
 const ROOT = resolve(import.meta.dirname, "..");
-// The type pages `bun run build` writes, each a document as the engine prints it.
 const TYPES = join(ROOT, "dist/types");
-// The listed pages only: a former address in dist/types/ is a redirect.
-const pages = LISTED.map((t) => join(TYPES, t.file, "index.html"));
 const dir = mkdtempSync(join(tmpdir(), "documents-styles-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -19,11 +15,6 @@ const handBuilt = `<!doctype html><html><head><style data-hw-document></style>
 <body><div style="page-break-before: always"></div></body></html>`;
 
 describe("foreignStyles", () => {
-  for (const page of pages)
-    it(`passes the engine's ${page.slice(TYPES.length + 1)}`, () => {
-      expect(foreignStyles(readFileSync(page, "utf8"))).toEqual([]);
-    });
-
   it("control: a hand-built document fails on its style element and its style attribute", () => {
     expect(foreignStyles(handBuilt)).toEqual([
       "a style element the engine did not write: <style>",
@@ -66,29 +57,9 @@ describe("foreignStyles", () => {
   });
 });
 
-// The catalog copies the brand files of LINKED_CSS (catalog/brand.ts) beside the type pages, while
-// _Type.astro, the onepager's and the readout's composers each write their own links: a file one
-// of them links that the copy leaves out loads nothing from disk or on Pages.
-describe("type page links", () => {
-  for (const page of pages)
-    it(`${page.slice(TYPES.length + 1)} links only files in dist/`, () => {
-      const hrefs = [...readFileSync(page, "utf8").matchAll(/<link\b[^>]*\bhref="([^"]+)"/g)]
-        .map((m) => m[1]!)
-        .filter((href) => !/^[a-z]+:|^\//.test(href));
-      expect(hrefs.length).toBeGreaterThan(0);
-      expect(hrefs.filter((href) => !existsSync(resolve(page, "..", href)))).toEqual([]);
-    });
-});
-
 describe("documents-styles", () => {
   const run = (...args: string[]) =>
     spawnSync("bun", [join(ROOT, "scripts/styles.ts"), ...args], { encoding: "utf8" });
-
-  it("exits 0 on the type pages", () => {
-    const result = run(...pages);
-    expect(result.stderr).toBe("");
-    expect(result.status).toBe(0);
-  });
 
   it("exits 1 naming a hand-built document found in a directory", () => {
     writeFileSync(join(dir, "hand.html"), handBuilt);

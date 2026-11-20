@@ -77,7 +77,8 @@ and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 - `bun run dev` serves the catalog at `http://127.0.0.1:4330/`
 - `bun run check` runs the full gate, including the catalog build and the checks that use it
 - `bun run build` writes the catalog to `dist/`, never committed; Pages publishes it on every push to `main`
-- `bun run test` runs Vitest on Bun after the catalog has been built
+- `bun run test` runs the fast Vitest suite. The pre-push gate runs it for source changes.
+- `bun run check:pages` runs the Chrome, bundle, and catalog tests after `bun run build`.
 - `bun run mutation` runs mutation tests with a 15-minute limit
 
 A release is a tag `v<version>` matching `package.json`. Before its commit, Company OS's privacy

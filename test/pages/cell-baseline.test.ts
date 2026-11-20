@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { limit } from "./probe";
+import { limit } from "../probe";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
-import { TYPES as TYPES_LISTED } from "../catalog/types";
+import { TYPES as TYPES_LISTED } from "../../catalog/types";
 
 // A list's items are spaced only between each other, by 2pt: nothing above the first or below the
 // last, and every column of a multi-column list starts level. So a list in a table cell (the
@@ -14,7 +14,7 @@ import { TYPES as TYPES_LISTED } from "../catalog/types";
 // a list whose first item wraps, then a one-line list, each list against the plain text. A
 // baseline is where Chrome lays out a zero-size inline-block set before a cell's first text.
 const TOLERANCE = 0.5; // CSS px
-const TYPES = resolve(import.meta.dirname, "..", "dist/types");
+const TYPES = resolve(import.meta.dirname, "../..", "dist/types");
 const GAP = (2 * 96) / 72; // 2pt in CSS px
 const GAP_TOLERANCE = 0.05; // CSS px: Chrome lays out in 1/64 px
 // Lists that pad their items themselves, which abut: the timeline (DocSteps', and the base's, which

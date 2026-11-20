@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { limit } from "./probe";
+import { limit } from "../probe";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
-import { TYPES as TYPES_LISTED } from "../catalog/types";
+import { TYPES as TYPES_LISTED } from "../../catalog/types";
 
 // Load the brand scanner through Bun so its transitive imports have Bun's import.meta.dir.
 const { CAP_SHARE, TOLERANCE: LIST_TOLERANCE } = createRequire(import.meta.url)(
@@ -21,7 +21,7 @@ const { CAP_SHARE, TOLERANCE: LIST_TOLERANCE } = createRequire(import.meta.url)(
 // x's ink is the x-height band and the H's the cap-height band, and "xxxx" beside a step number.
 const TOLERANCE = 0.6; // CSS px
 const SCALE = 4;
-const TYPES = resolve(import.meta.dirname, "..", "dist/types");
+const TYPES = resolve(import.meta.dirname, "../..", "dist/types");
 // The listed pages only: a former address in dist/types/ is a redirect.
 const pages = TYPES_LISTED.map((t) => t.file);
 
