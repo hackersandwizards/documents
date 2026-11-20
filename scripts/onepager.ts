@@ -248,14 +248,14 @@ const pdfPageText = (pdf: string, page: number) =>
  * again under `tight`, the fallback for copy not yet cut; on two pages, each page's free space
  * spent between its blocks, page 1's after the hero (lift) and page 2's after its first one (air),
  * each at the widest level that keeps two pages and leaves page 1's text as it was. `dir` is the
- * folder the fits are rendered in; `brand` is unused, since the faces are inlined. Returns the page count: a caller that
- * holds two pages as a limit fails on more. Needs Chrome for Testing and poppler (pdfinfo,
- * pdftotext), as renderPdf and assertBrandFonts do.
+ * folder the fits are rendered in. `_brand` remains for compatibility with callers since the
+ * faces are inlined. Returns the page count so callers can enforce the two-page limit. Needs
+ * Chrome for Testing and poppler (pdfinfo, pdftotext), as renderPdf and assertBrandFonts do.
  */
 export async function fitOnepager(
   composer: Awaited<ReturnType<typeof openComposer>>,
   page: Omit<OnepagerPage, "fit">,
-  brand: string,
+  _brand: string,
   dir: string,
 ): Promise<{ html: string; pages: number; fit: OnepagerFit }> {
   const work = mkdtempSync(join(tmpdir(), "hw-onepager-"));
