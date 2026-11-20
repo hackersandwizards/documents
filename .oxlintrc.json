@@ -10,8 +10,7 @@
     "**/.astro/**",
     "/.claude/**",
     "/.agents/**",
-    "/.githooks/**",
-    "components/**"
+    "/.githooks/**"
   ],
   "overrides": [
     {

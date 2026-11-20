@@ -140,8 +140,7 @@ async function printCertificate(props: Record<string, unknown>) {
   // The page os prints through documents-compose: composePage, with the brand's elements and
   // the print scale.
   const composed = await composePage(composer, "DocCertificate", props);
-  // Runs after the component's own fit, which waits on the same promise.
-  const probe = `<script>document.fonts.ready.then(() => {
+  const probe = `<script>Promise.all(globalThis.hwLayout).then(() => {
     const cert = document.querySelector(".certificate");
     const box = cert.getBoundingClientRect();
     let bottom = 0;

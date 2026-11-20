@@ -46,3 +46,38 @@ test("DocHandout keeps a closing run of notes in order beside its block, beside 
   );
   expect(order).toBe(`${P}|one|two|block|next#3`);
 });
+
+test("DocHandout wraps HTML link text and keeps laying out after an SVG link", async () => {
+  const html = await composer.render("DocHandout", {
+    title: P,
+    subtitle: P,
+    chapters: [
+      {
+        title: P,
+        html: `<div class="note-lines" data-lines="2"></div>
+          <svg><a href="https://example.com/"><text>SVG link</text></a></svg>
+          <p><a href="https://www.example.com/a?b=c&amp;d=e">https://www.example.com/a?b=c&amp;d=e</a></p>
+          <h2>Next</h2><p>Body</p>`,
+      },
+    ],
+  });
+  const result = probePage(
+    `<!doctype html><html><body>${html}</body></html>`,
+    `return JSON.stringify({
+      notes: document.querySelectorAll(".note-lines span").length,
+      svg: document.querySelector("svg a text").textContent,
+      link: document.querySelector("section p a").textContent,
+      breaks: document.querySelectorAll("section p a wbr").length,
+      grouped: document.querySelector(".keep > h2")?.textContent,
+      layout: globalThis.hwLayout?.length,
+    });`,
+  );
+  expect(JSON.parse(decodeHTML(result))).toEqual({
+    notes: 2,
+    svg: "SVG link",
+    link: "example.com/a?b=c&d=e",
+    breaks: 5,
+    grouped: "Next",
+    layout: 1,
+  });
+});

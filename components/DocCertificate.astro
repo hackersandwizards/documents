@@ -242,7 +242,7 @@ const topicClass = [
         if (over() > 0.5) cert.classList.add(step);
       }
     };
-    (globalThis.hwLayout ??= []).push(document.fonts.ready.then(fit));
+    (window.hwLayout ??= []).push(document.fonts.ready.then(fit));
   })();
 </script>
 

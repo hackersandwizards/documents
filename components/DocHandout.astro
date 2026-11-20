@@ -115,7 +115,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
     const options = document.currentScript.dataset;
     const shared = options.notes;
     document.querySelectorAll(".note-lines").forEach((el) => {
-      const lines = Number(shared || el.dataset.lines || 28);
+      const lines = Number(shared || el.getAttribute("data-lines") || 28);
       el.append(...Array.from({ length: lines }, () => document.createElement("span")));
       if (shared) el.closest("section.chapter").classList.add("flow");
     });
@@ -136,10 +136,12 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
     });
     // The handout is read on screen, where a link is clicked rather than typed. A link whose
     // text is its own address shows it without the scheme, breakable after a slash or dot.
+    const urlEnds = /^https?:\/\/(www\.)?|\/$/g;
     document.querySelectorAll('section a[href^="http"]').forEach((link) => {
-      const bare = (url) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-      if (bare(link.textContent.trim()) !== bare(link.href)) return;
-      link.innerHTML = bare(link.textContent.trim())
+      if (!(link instanceof HTMLAnchorElement)) return;
+      const text = link.textContent.trim().replace(urlEnds, "");
+      if (text !== link.href.replace(urlEnds, "")) return;
+      link.innerHTML = text
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/([/._?#=]+)/g, "$1<wbr>");
@@ -199,13 +201,13 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
     const loaded = new Promise((done) =>
       document.readyState === "complete" ? done() : addEventListener("load", done, { once: true }),
     );
-    (globalThis.hwLayout ??= []).push(
+    (window.hwLayout ??= []).push(
       Promise.all([document.fonts.ready, loaded]).then(() => {
         const sections = [...document.querySelectorAll("section.chapter")];
         const body = document.body.style.width;
         document.body.style.width = "210mm";
         const named = sections.map((section, i) => {
-          if (section.classList.contains("flow")) return [];
+          if (!(section instanceof HTMLElement) || section.classList.contains("flow")) return [];
           const blocks = [...section.querySelector(".doc-prose").children];
           const width = section.getBoundingClientRect().width;
           section.style.cssText = `column-width:${width}px;column-gap:0;column-fill:auto;height:var(--page-content-height)`;
@@ -222,7 +224,7 @@ section { --chapter-label: ${cssString(t.chapter)}; }`;
         // margins that collapse with its own, or its page starts lower (16.5 pt, measured).
         for (const opening of named.filter((blocks) => blocks.length)) {
           for (let el = opening.at(-1).nextElementSibling; el; el = el.firstElementChild) {
-            el.style.marginTop = "0";
+            if ("style" in el && el.style instanceof CSSStyleDeclaration) el.style.marginTop = "0";
             const style = getComputedStyle(el);
             if (parseFloat(style.paddingTop) || parseFloat(style.borderTopWidth)) break;
             if (style.display !== "block" || style.float !== "none") break;
