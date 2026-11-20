@@ -60,7 +60,7 @@
     "build": "check-lock sh -c 'cd catalog && bun --bun astro build'",
     "check": "scaffolding check",
     "test": "bun --bun vitest run",
-    "mutation": "stryker run",
+    "mutation": "scaffolding-mutation",
     "check:tests": "bun run test",
     "check:markers": "brand-markers $(grep -l '<ul' dist/types/*/index.html)",
     "check:privacy": "bun scripts/privacy.ts",
@@ -96,7 +96,7 @@
     "@astrojs/check": "0.9.12",
     "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.39.1",
     "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v2.28.2",
-    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v5.31.0",
+    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v5.32.0",
     "@types/bun": "1.4.4",
     "@typescript/native": "npm:typescript@7.0.2",
     "astro": "7.4.11",
@@ -118,6 +118,12 @@
     ],
     "skip": {
       "test": "check:tests runs Vitest after the catalog build writes the type pages that the tests read"
+    },
+    "fullOnly": {
+      "check:tests": "runs browser tests and reads built type pages",
+      "check:privacy": "scans the built type pages for private data",
+      "check:elements": "renders and checks elements",
+      "check:retired": "scans generated output"
     },
     "check": [
       "check:tests",

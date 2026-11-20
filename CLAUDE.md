@@ -155,9 +155,9 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
   `brand-copies` and `brand-retired` over `dist/` (`check:retired`), and `brand-elements`. The
   tests read `dist/`, so they run after the build, not among the shared steps.
   `.githooks/pre-commit` runs `bun run check:staged` (scaffolding's `check-staged`), and
-  `.githooks/pre-push` runs `bun run check --changed` over each pushed range: the quick steps,
-  and the whole gate for any path but `.claude/` rule and skill prose, since `scaffolding.changed`
-  maps none here.
+  `.githooks/pre-push` runs `bun run check --changed` over each pushed range. Changed paths
+  select fast steps, with all fast steps as the fallback. The catalog build and the steps in
+  `scaffolding.fullOnly` run in the full gate.
   `bun install` points `core.hooksPath` at `.githooks/`.
 - `bun run check:markers`, by hand after a brand raise and after a change to how lists are styled,
   outside the gate: `brand-markers` on every type page holding a `<ul>` in `dist/`.
@@ -167,7 +167,7 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
 - `bun run build`: write the catalog to `dist/`, under scaffolding's `check-lock`.
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
 - `bun run test` runs Vitest on Bun. For one file, run `bun run test <file>`.
-- `bun run mutation` runs Stryker on `scripts/{elements,privacy,prose,prune,root,styles}.ts` with
+- `bun run mutation` runs Stryker with a 15-minute limit on `scripts/{elements,privacy,prose,prune,root,styles}.ts` with
   the fast Vitest tests on Bun, outside the gate, and writes `.stryker-reports/mutation.json`.
   It omits the integration tests in `test/` (file times in seconds):
   `render-pdf` (45.25), `handout-pdf` (12.58), `onepager` (12.24),

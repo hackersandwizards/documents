@@ -75,9 +75,10 @@ and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 
 - `bun install` installs and points the git hooks at `.githooks/`, which [.githooks/README.md](.githooks/README.md) lists
 - `bun run dev` serves the catalog at `http://127.0.0.1:4330/`
-- `bun run check` runs the gate: scaffolding's steps with the catalog build, then this repository's
+- `bun run check` runs the full gate, including the catalog build and the checks that use it
 - `bun run build` writes the catalog to `dist/`, never committed; Pages publishes it on every push to `main`
 - `bun run test` runs Vitest on Bun after the catalog has been built
+- `bun run mutation` runs mutation tests with a 15-minute limit
 
 A release is a tag `v<version>` matching `package.json`. Before its commit, Company OS's privacy
 check runs with the real names over this checkout; the tag follows once the push has landed. The
