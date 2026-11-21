@@ -39,6 +39,7 @@ test.prop(
   const outsideBlock = Math.floor(point / 16) + 1;
   const absent =
     face("Outside", `U+${outside}`) +
+    face("InvalidPrefix", `0U+${hex}`) +
     (outsideBlock <= 0x10fff ? face("OutsideRange", `U+${outsideBlock.toString(16)}?`) : "");
   const body = `<p>${text}</p>`;
   expect(compactStyles(`<style>${kept}${absent}</style>${body}`)).toBe(
