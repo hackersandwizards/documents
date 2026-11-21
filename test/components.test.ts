@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { openComposer } from "../scripts/compose";
 import { withElements } from "../scripts/elements";
-import { cssString, wordsFor } from "../scripts/fill";
+import { cssString } from "../scripts/fill";
 import { HANDOUT_TEXT } from "../scripts/handout";
 import { handout } from "../scripts/samples";
 import { foreignStyles } from "../scripts/styles";
@@ -373,13 +373,6 @@ test("DocAgreement numbers its clauses and takes one form", async () => {
   expect(
     await rejection(composer.render("DocAgreement", { ...props.DocAgreement, letter })),
   ).toContain("either parties or letter");
-});
-
-test("wordsFor takes a language's words, else the English ones, never an inherited key", () => {
-  const table = { en: "en", de: "de" };
-  expect(wordsFor("de-AT", table)).toBe("de");
-  for (const lang of ["fr", "__proto__", "constructor", undefined])
-    expect(wordsFor(lang, table)).toBe("en");
 });
 
 test("DocCertificate prints its alt text in its language and links only a given address", async () => {

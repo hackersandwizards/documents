@@ -3,15 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { city, postcode, street } from "@hackersandwizards/brand/imprint.json";
 import { name } from "@hackersandwizards/brand/verbal.json";
-import {
-  brandCompany,
-  brandFile,
-  brandName,
-  isRecord,
-  stripComments,
-  withoutImports,
-} from "../scripts/root";
-import { foreignStyles, rawInlineStyles, rawValues, styleAttributes } from "../scripts/styles";
+import { brandCompany, brandFile, brandName, stripComments } from "../scripts/root";
+import { foreignStyles, rawInlineStyles, rawValues } from "../scripts/styles";
 
 vi.mock("node:fs", { spy: true });
 
@@ -137,11 +130,6 @@ describe("stylesheet checks", () => {
     ]);
   });
 
-  it("returns decoded style attributes in document order, including empty attributes", () => {
-    const html = '<p title="style=no" STYLE="--band: green&#59; --share: 4%">x</p><i style></i>';
-    expect(styleAttributes(html)).toEqual(["--band: green; --share: 4%", ""]);
-  });
-
   it("accepts custom properties and a stylesheet relationship split by repeated whitespace", () => {
     const html =
       '<link rel="alternate \t stylesheet" href="../@hackersandwizards/brand/print.css">' +
@@ -162,11 +150,6 @@ describe("stylesheet checks", () => {
 });
 
 describe("document resources", () => {
-  it("removes CSS imports when the caller inlines them and keeps the page rules", () => {
-    const page = 'p { content: "@import"; display:block }\n';
-    expect(withoutImports(`@import "tokens.css";\n${page}@import "fonts.css";\n`)).toBe(page);
-  });
-
   it("removes stylesheet comments while preserving quoted text and selector spacing", () => {
     const css = String.raw`/* heading */
 main /* standalone */ p/* adjacent */ a { content: "say \"/* quoted */\""; color:red; /* shade */ }
@@ -174,13 +157,6 @@ i { content: '/* literal \' text */'; }`;
     expect(stripComments(css))
       .toBe(String.raw`main p a { content: "say \"/* quoted */\""; color:red; }
 i { content: '/* literal \' text */'; }`);
-  });
-
-  it("recognizes JSON records the document accepts and rejects scalars and lists", () => {
-    expect(isRecord({ title: "Minutes" })).toBe(true);
-    for (const value of [null, undefined, ["Minutes"], "Minutes", 1, false]) {
-      expect(isRecord(value)).toBe(false);
-    }
   });
 
   it("reads the current brand name and address for document headers and imprints", () => {

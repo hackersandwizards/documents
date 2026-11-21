@@ -2,6 +2,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { denyPatterns } from "./deny-patterns";
 import { brandCompany, ROOT } from "./root";
 import * as samples from "./samples";
 
@@ -106,29 +107,6 @@ function scanned(root: string): string[] {
 // Data URIs (faces, logos, the QR code) are base64, where any pattern matches by chance.
 const withoutDataUris = (text: string) =>
   text.replace(/data:[\w/+.-]+;base64,[A-Za-z0-9+/=]+/g, "data:");
-
-// A deny term as a whole word, its spaces also as a hyphen, an underscore, a line break or nothing
-// (a slug, a wrapped line), its & also as an entity, its ß and umlauts also spelled out, in any case.
-// An all-capitals term (with a letter) is an acronym and often an ordinary word in lower case: in text it hits in
-// capitals, and in any case only beside a hyphen, underscore, slash or digit, as in a slug.
-const SPELLED: Record<string, string> = { ß: "ss", ä: "ae", ö: "oe", ü: "ue" };
-function denyPatterns(term: string): { inPath: RegExp; inText: RegExp[] } {
-  const body = [...term]
-    .map((ch) => {
-      if (/\s/.test(ch)) return "(?:\\s|&nbsp;|&#160;|[-_.])*";
-      if (ch === "&") return "(?:&|&amp;|&#0*38;|&#x0*26;)";
-      const lower = SPELLED[ch.toLowerCase()];
-      // A capital is spelled in capitals, which the case-sensitive acronym pattern needs.
-      const spelled = lower && ch !== ch.toLowerCase() ? lower.toUpperCase() : lower;
-      return spelled ? `(?:${ch}|${spelled})` : ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    })
-    .join("");
-  const word = `(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])`;
-  const inPath = new RegExp(word, "giu");
-  if (term !== term.toUpperCase() || !/\p{L}/u.test(term)) return { inPath, inText: [inPath] };
-  const slug = `(?<![\\p{L}\\p{N}])${body}(?=[-_/\\d])|(?<=[-_/\\d])${body}(?![\\p{L}\\p{N}])`;
-  return { inPath, inText: [new RegExp(word, "gu"), new RegExp(slug, "giu")] };
-}
 
 /** The text rules, and each deny term, over every scanned file under `root`: a term in a file's
  *  path at line 0, in its text at the line the term starts on. */

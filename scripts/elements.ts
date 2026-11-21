@@ -1,3 +1,5 @@
+import { escapeAttribute } from "entities";
+
 type Edit = [selector: string, cls?: string, attrs?: Record<string, string>];
 
 /** DocCard and DocHeader's tag, which the onepager shares with the document base. */
@@ -63,7 +65,7 @@ export function withElements(html: string, map = ELEMENT_MAP): string {
           const have = (el.getAttribute("class") ?? "").split(/\s+/).filter(Boolean);
           if (!have.includes(cls)) el.setAttribute("class", [...have, cls].join(" "));
         }
-        for (const [k, v] of Object.entries(attrs ?? {})) el.setAttribute(k, v);
+        for (const [k, v] of Object.entries(attrs ?? {})) el.setAttribute(k, escapeAttribute(v));
       },
     });
   return rewriter.transform(html);

@@ -165,10 +165,11 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
 - `bun run fix`: `eslint --fix`, then `prettier --write`.
 - `bun run test` runs the fast Vitest suite on Bun, including the in-memory Astro component
   renders. For one fast test file, run `bun run test <file>`.
+- `bun run explore` runs 512 cases per property with a fresh seed. Replay with `bun run explore --seed <seed>`.
 - `bun run check:pages` runs the tests in `test/pages/` after `bun run build`.
-- `bun run mutation` runs Stryker with a 15-minute limit on `scripts/{elements,privacy,prose,prune,root,styles}.ts` with
-  the fast Vitest tests on Bun, outside the gate, and writes `.stryker-reports/mutation.json`.
-  It uses the fast `elements`, `privacy`, `prose`, `prune`, and `tokens` suites.
+- `bun run mutation` runs Stryker on Bun with a 15-minute limit, outside the gate, and writes
+  `.stryker-reports/mutation.json`. The mutation config selects the fast parser, matcher, escaping
+  and score suites.
 
 ## Releasing a change
 

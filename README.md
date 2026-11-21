@@ -78,6 +78,7 @@ and the first render or `bun run check` installs it into `~/.cache/puppeteer`.
 - `bun run check` runs the full gate, including the catalog build and the checks that use it
 - `bun run build` writes the catalog to `dist/`, never committed; Pages publishes it on every push to `main`
 - `bun run test` runs the fast Vitest suite. The pre-push gate runs it for source changes.
+- `bun run explore` runs 512 cases per property with a fresh seed. Replay with `bun run explore --seed <seed>`.
 - `bun run check:pages` runs the Chrome, bundle, and catalog tests after `bun run build`.
 - `bun run mutation` runs mutation tests with a 15-minute limit
 
