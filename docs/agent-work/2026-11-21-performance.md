@@ -1,6 +1,49 @@
-# Performance, 11.11.2026 (v1.27.3), with the measurements of 08.11. (v1.22.2)
+# Catalog performance
 
-## The survey readout's story links its type page (11.11.)
+## 21.11.2026
+
+The CSS compactor preserves layer order when a nested rule, a CSS string or a conditional style
+sheet mentions the same layer name. The generated onepager and survey readout HTML matched
+byte-for-byte before and after this repair.
+
+The base build is `d4f9275`. The reviewed build is `8c59c90`, immediately before the repair.
+Both used their own frozen lockfile. The fixed build came from the full verification gate.
+
+Three loopback servers served the catalog builds with gzip and a fresh Chrome for Testing 157.0.8103.50
+profile per navigation at 1350 × 940. Runs alternated between builds. These local timings describe
+the tested pages and machine load.
+
+| Page             | Base       | Reviewed   | Fixed      | 1-minute load |
+| ---------------- | ---------- | ---------- | ---------- | ------------- |
+| Catalog home     | 2.7 / 93.9 | 3.1 / 91.8 | 2.6 / 91.6 | 9.65          |
+| Dashboard story  | 2.5 / 56.8 | 2.6 / 58.2 | 2.4 / 61.7 | 8.94          |
+| Standalone story | 2.8 / 40.0 | 2.8 / 45.6 | 2.6 / 39.5 | 8.93          |
+| Document type    | 2.8 / 14.1 | 2.8 / 13.7 | 3.0 / 13.2 | 9.66          |
+| Elements         | 4.6 / 26.1 | 2.4 / 12.2 | 4.1 / 16.1 | 9.90          |
+| Onepager         | 2.6 / 11.0 | 2.9 / 11.5 | 2.6 / 11.2 | 9.44          |
+| Survey readout   | 3.0 / 43.3 | 3.0 / 38.3 | 3.2 / 37.6 | 9.20          |
+
+Times are milliseconds, from navigation start to the first response byte and then to the load event.
+Each cell is the median of three cold navigations. Elements has one cold navigation per build.
+
+Lighthouse 13.6.0 desktop, one run per build. Each cell gives the performance score out of 100
+and largest contentful paint in milliseconds.
+
+| Page             | Base      | Reviewed  | Fixed     | 1-minute load |
+| ---------------- | --------- | --------- | --------- | ------------- |
+| Catalog home     | 100 / 321 | 100 / 321 | 100 / 321 | 8.88          |
+| Dashboard story  | 100 / 621 | 100 / 662 | 100 / 661 | 9.07          |
+| Standalone story | 100 / 281 | 100 / 281 | 100 / 280 | 8.76          |
+| Document type    | 100 / 361 | 100 / 361 | 100 / 360 | 10.98         |
+| Elements         | 100 / 361 | 100 / 361 | 100 / 361 | 9.90          |
+| Onepager         | 100 / 321 | 100 / 321 | 100 / 321 | 9.15          |
+| Survey readout   | 100 / 361 | 100 / 361 | 100 / 361 | 8.89          |
+
+The local measurements showed no consistent slowdown after the repair.
+
+## Performance, 11.11.2026 (v1.27.3), with the measurements of 08.11. (v1.22.2)
+
+### The survey readout's story links its type page (11.11.)
 
 The readout's story put the whole deck, every brand face inlined, into a `srcdoc` frame, since a
 `srcdoc` frame cannot resolve the type page's relative brand links. The story now frames the
@@ -30,13 +73,13 @@ The home loads its tiles' frames lazily, so at this viewport the readout tile is
 the home's spread is the load's. Lighthouse was not run: at a load above twice the core count its
 scores do not compare with the 08.11. ones below.
 
-## Measured 08.11. (v1.22.2)
+### Measured 08.11. (v1.22.2)
 
 Measured on the Mac (Apple Silicon, Bun 1.4.4, Chrome for Testing 156), on servers this run started
 on free ports. Other sessions ran Lighthouse on the same machine; each Lighthouse batch waited until
 the 1-minute load was at or below 4, and the load sits beside every number as 1, 5 and 15 minutes.
 
-### What changed against 07.11.
+#### What changed against 07.11.
 
 - Catalog home on mobile: 63 then, 64 before this run's change, 78 after it. The story pages no
   longer inline the catalog's 123 KB stylesheet (below).
@@ -46,7 +89,7 @@ the 1-minute load was at or below 4, and the load sits beside every number as 1,
   Lighthouse's `is-crawlable`. Intended, no performance change.
 - Everything else is within the noise of the load.
 
-### The change: the catalog links its stylesheet
+#### The change: the catalog links its stylesheet
 
 `build.inlineStylesheets: "always"` put the catalog's whole stylesheet (Astrobook's shell, the
 brand's faces, every component) into each story page: 123 KB, 40 KB gzipped. The home loads one
@@ -60,7 +103,7 @@ of the home, a story in the dashboard and two story frames are pixel-identical. 
 home 52 to 11 KB, story in the dashboard 49 to 10 KB, story frame 67 to 28 KB, plus the shared
 39 KB stylesheet once.
 
-### Lighthouse 12.8.2, production build, median of three
+#### Lighthouse 12.8.2, production build, median of three
 
 Served as GitHub Pages serves (gzip, `Cache-Control: max-age=600`). Before and after ran back to back
 per page and form factor, under the same load reading.
@@ -88,7 +131,7 @@ Control: the Angebot page with only those links flattened into one inline style 
 of 91 (FCP 2.0 s instead of 2.9 s; three runs each, alternating, load 3.85 4.39 4.85). The brief
 is below.
 
-### Navigation and interaction, headless Chrome, median of five
+#### Navigation and interaction, headless Chrome, median of five
 
 Unthrottled, viewport 1366x900, a fresh profile per run, two passes in alternating order.
 
@@ -105,7 +148,7 @@ Second pass, load 3.64 at the start of after and 3.75 at the start of before:
 The first pass read 62 and 40 ms before, 69 and 53 ms after for the two story steps, at load 3.9
 and 4.7; the second pass, at 3.6 and 3.8, reads as in the table. Beyond the home, no difference outside the load.
 
-### Startup
+#### Startup
 
 Launch to the first 200, three cold runs each:
 
@@ -114,7 +157,7 @@ Launch to the first 200, three cold runs each:
   catalog deploys as static files.
 - `bun run build`, whole process: 2.13, 1.49, 1.51 s for 97 pages (load 3.0 to 3.3).
 
-### Dev routes, measured 07.11. (v1.14.0), 20 requests each after one warm-up
+#### Dev routes, measured 07.11. (v1.14.0), 20 requests each after one warm-up
 
 Not measured again on 08.11.; the change above touches only the build. The paths are those of
 then: `Typen` is now `Types` and `elemente` is now `elements`, and the old paths forward.
@@ -134,7 +177,7 @@ then: `Typen` is now `Types` and `elemente` is now `elements`, and the old paths
 Load 11.4 to 11.8. The onepager route opens a fresh Vite composer per request, so a component
 edit shows on reload: opening it takes 126 to 154 ms, composing 14 to 18 ms (six runs). Kept.
 
-### The engine (the endpoints of this package)
+#### The engine (the endpoints of this package)
 
 DocProposal from the samples, load 3.79 at start and 5.26 at the end:
 
@@ -172,7 +215,7 @@ os's production build from a scratch copy, with this change's packed files, serv
 `bun dist/server/entry.mjs`: the `trainer-briefing` route answered 200 with a PDF, four Workers
 started (logged from the scratch copy's Worker file).
 
-### Open in other repositories
+#### Open in other repositories
 
 - brand (done in v1.53.0): flat builds `elements.flat.css` and `document.flat.css`, which the type
   pages now link. Angebot type page on mobile, Lighthouse 12.8.2, five alternating runs each, load

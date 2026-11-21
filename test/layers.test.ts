@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { compactStyles } from "../scripts/compact-styles";
 import { composePage, openComposer } from "../scripts/compose";
 import { composeOnepager } from "../scripts/onepager";
 import { editStyles } from "../scripts/prune";
@@ -33,4 +34,24 @@ describe("a composed page declares the layer order once, the brand's, first", ()
       expect(found[0]).toBe(brandOrder);
       expect(found.filter((l) => l.endsWith(";"))).toEqual([brandOrder]);
     });
+});
+
+it("a top-level layer does not place a same-named layer inside another layer", () => {
+  const css =
+    "@layer first;@layer outer{@layer first;@layer next{p{color:red}}@layer first{p{color:blue}}}";
+  const html = `<style>${css}</style><p>x</p>`;
+  expect(compactStyles(html)).toBe(html);
+});
+
+it("a layer name inside a string does not place that layer", () => {
+  const css =
+    'p{content:"@layer first;"}@layer first;@layer next{p{color:red}}@layer first{p{color:blue}}';
+  const html = `<style>${css}</style><p>x</p>`;
+  expect(compactStyles(html)).toBe(html);
+});
+
+it("a conditional style sheet does not place a layer in an unconditional sheet", () => {
+  const html =
+    '<style media="print">@layer first;</style><style>@layer first;@layer next{p{color:red}}@layer first{p{color:blue}}</style><p>x</p>';
+  expect(compactStyles(html)).toBe(html);
 });

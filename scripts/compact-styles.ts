@@ -1,5 +1,5 @@
 import { decodeHTML } from "entities";
-import { editStyles, pruneStyles } from "./prune";
+import { cssItems, editStyles, pruneStyles } from "./prune";
 import { stripComments } from "./root";
 
 /** A code point from a CSS or JS escape; one past U+10FFFF is no character. */
@@ -42,27 +42,39 @@ export function printableCodePoints(html: string): Set<number> {
 export const editFaces = (html: string, edit: (face: string) => string) =>
   editStyles(html, (css) => css.replace(/@font-face\s*\{[^}]*\}\s*/g, edit));
 
-/** A page's style elements with each `@layer` order statement dropped that names only layers
- * declared before it: only a layer's first mention places it, and a page joining several brand
- * files can repeat the order. */
+// Escaped and non-ASCII names are kept verbatim.
+const LAYER_NAME = /^-?[_a-z][\w-]*(?:\.-?[_a-z][\w-]*)*$/i;
+
+/** Only an unconditional declaration in the same scope can make a layer order redundant. */
 function layerOnce(html: string): string {
   const seen = new Set<string>();
-  return editStyles(html, (css) =>
-    css.replace(/@layer\s+([\w.,\s-]+?)\s*([;{])/g, (at, names: string, end: string) => {
-      const layers = names.split(",").map((n) => n.trim());
-      const fresh = layers.some((n) => !seen.has(n));
-      for (const n of layers) seen.add(n);
-      return end === "{" || fresh ? at : "";
-    }),
-  );
+  return editStyles(html, (css, open) => {
+    if (!/@layer\s/i.test(css) || /\b(?:media|type|title|disabled)\b/i.test(open)) return css;
+    let kept = "";
+    let offset = 0;
+    for (const { prelude, body, end } of cssItems(css)) {
+      const statement = body === undefined;
+      if (statement && !prelude.endsWith(";")) continue;
+      const names = /^@layer\s+(.+)$/is.exec(statement ? prelude.slice(0, -1) : prelude)?.[1];
+      if (!names) continue;
+      const layers = names.split(",").map((name) => name.trim());
+      if ((!statement && layers.length !== 1) || !layers.every((name) => LAYER_NAME.test(name))) {
+        continue;
+      }
+      if (statement && layers.every((name) => seen.has(name))) {
+        kept += css.slice(offset, end - prelude.length);
+        offset = end;
+      }
+      for (const name of layers) seen.add(name);
+    }
+    return kept + css.slice(offset);
+  });
 }
 
 /**
  * A standalone page as it leaves the engine: its style elements without comments, which a reader
  * of the page never needs, without the rules and custom properties its markup cannot use
- * (pruneStyles), and without each face whose `unicode-range` holds no character of the
- * page, which Chrome never loads there: brand's latin-ext, arrow and box-drawing faces were about
- * 260 KB of every page (measured).
+ * (pruneStyles), and without each face whose `unicode-range` holds no character of the page.
  */
 export function compactStyles(html: string): string {
   const bare = pruneStyles(layerOnce(editStyles(html, stripComments)));

@@ -1,7 +1,7 @@
 /** A style sheet's top-level items: a statement ending in `;` or a block, its prelude and body.
  * Strings and parentheses are skipped over, so a `{`, `}` or `;` inside them ends nothing. */
-function items(css: string): { prelude: string; body?: string }[] {
-  const out: { prelude: string; body?: string }[] = [];
+export function cssItems(css: string): { prelude: string; body?: string; end: number }[] {
+  const out: ReturnType<typeof cssItems> = [];
   let start = 0;
   let depth = 0;
   let open = -1;
@@ -15,14 +15,19 @@ function items(css: string): { prelude: string; body?: string }[] {
     else if (parens > 0) continue;
     else if (c === "{" && depth++ === 0) open = i;
     else if (c === "}" && --depth === 0) {
-      out.push({ prelude: css.slice(start, open).trim(), body: css.slice(open + 1, i) });
+      out.push({
+        prelude: css.slice(start, open).trim(),
+        body: css.slice(open + 1, i),
+        end: i + 1,
+      });
       start = i + 1;
     } else if (c === ";" && depth === 0) {
-      out.push({ prelude: css.slice(start, i + 1).trim() });
+      out.push({ prelude: css.slice(start, i + 1).trim(), end: i + 1 });
       start = i + 1;
     }
   }
-  if (css.slice(start).trim()) out.push({ prelude: css.slice(start).trim() });
+  const trailing = css.slice(start).trim();
+  if (trailing) out.push({ prelude: trailing, end: css.length });
   return out;
 }
 
@@ -112,7 +117,7 @@ const GROUPING = /^@(media|supports|layer|container|scope|document)\b/i;
  * grouping block walked alike, an emptied one dropped, except a `@layer` one, whose position orders
  * the layers. Any other at-rule stays whole. */
 function walk(css: string, rule: (prelude: string, body: string) => string): string {
-  return items(css)
+  return cssItems(css)
     .map(({ prelude, body }) => {
       if (body === undefined) return prelude;
       if (GROUPING.test(prelude)) {
@@ -143,10 +148,10 @@ const dropProperties = (css: string, read: Set<string>) =>
   });
 
 /** Each style element's CSS, rewritten by `edit`. */
-export const editStyles = (html: string, edit: (css: string) => string) =>
+export const editStyles = (html: string, edit: (css: string, open: string) => string) =>
   html.replace(
     /(<style\b[^>]*>)([\s\S]*?)(?=<\/style>)/gi,
-    (_, open: string, css: string) => open + edit(css),
+    (_, open: string, css: string) => open + edit(css, open),
   );
 
 /**
