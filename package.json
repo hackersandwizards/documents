@@ -68,8 +68,6 @@
     "mutation": "SCAFFOLDING_MUTATION_BUN=1 scaffolding-mutation",
     "check:markers": "brand-markers $(grep -l '<ul' dist/types/*/index.html)",
     "check:privacy": "bun scripts/privacy.ts",
-    "check:colours": "brand-colours",
-    "check:copies": "brand-copies",
     "check:staged": "check-staged"
   },
   "peerDependencies": {
@@ -130,11 +128,7 @@
     "check": [
       "browser-test",
       "check:privacy",
-      [
-        "check:colours",
-        "check:copies",
-        "retired"
-      ],
+      "retired",
       "elements"
     ]
   },

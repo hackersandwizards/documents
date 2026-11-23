@@ -145,14 +145,14 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
 - `bun run check`: `scaffolding check`, the gate from `@hackersandwizards/scaffolding`: format,
   lint, stylelint (`stylelint.config.js`), typecheck (`tsc`, then `astro check` over the components,
   the catalog and the scripts, `scaffolding.typecheck`), structure, coupling, spaces,
-  the confidential-terms check, licenses, the fast tests, the catalog build and `admin-check`,
-  then this repository's steps from `scaffolding.check` in `package.json`: the browser, bundle,
-  and built catalog tests (`browser-test`), the privacy check
-  (`check:privacy`), `check:colours` (`brand-colours.json` holds the exceptions) and `check:copies`
-  alongside `retired` over `dist/`, then `elements`. The catalog tests read `dist/` after the build.
+  the confidential-terms check, licenses, `colours` (`brand-colours.json` holds the exceptions),
+  `copies`, the fast tests, the catalog build and `admin-check`, then the steps from
+  `scaffolding.check` in `package.json`: `browser-test`, `check:privacy`, `retired` over `dist/`,
+  then `elements`. The browser, bundle and built catalog tests read `dist/` after the build.
   `.githooks/pre-commit` runs `bun run check:staged` (scaffolding's `check-staged`), and
   `.githooks/pre-push` runs `bun run check --changed` over each pushed range. Changed paths
-  select fast steps, with all fast steps as the fallback. The catalog build, `browser-test`,
+  select fast steps, with all fast steps as the fallback. `colours` and `copies` run in every
+  changed check, including an empty range. The catalog build, `browser-test`,
   `retired`, `elements` and the steps in `scaffolding.fullOnly` run only in the full gate.
   `bun install` points `core.hooksPath` at `.githooks/`.
 - `bun run check:markers`, by hand after a brand raise and after a change to how lists are styled,
