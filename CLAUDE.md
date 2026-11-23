@@ -147,14 +147,13 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
   the catalog and the scripts, `scaffolding.typecheck`), structure, coupling, spaces,
   the confidential-terms check, licenses, the fast tests, the catalog build and `admin-check`,
   then this repository's steps from `scaffolding.check` in `package.json`: the browser, bundle,
-  and built catalog tests (`check:pages`), the privacy check
-  (`check:privacy`), the brand colour scan (`brand-colours.json` holds the exceptions) beside
-  `brand-copies` and `brand-retired` over `dist/` (`check:retired`), and `brand-elements`. The
-  catalog tests read `dist/`, so `check:pages` runs after the build.
+  and built catalog tests (`browser-test`), the privacy check
+  (`check:privacy`), `check:colours` (`brand-colours.json` holds the exceptions) and `check:copies`
+  alongside `retired` over `dist/`, then `elements`. The catalog tests read `dist/` after the build.
   `.githooks/pre-commit` runs `bun run check:staged` (scaffolding's `check-staged`), and
   `.githooks/pre-push` runs `bun run check --changed` over each pushed range. Changed paths
-  select fast steps, with all fast steps as the fallback. The catalog build and the steps in
-  `scaffolding.fullOnly` run in the full gate.
+  select fast steps, with all fast steps as the fallback. The catalog build, `browser-test`,
+  `retired`, `elements` and the steps in `scaffolding.fullOnly` run only in the full gate.
   `bun install` points `core.hooksPath` at `.githooks/`.
 - `bun run check:markers`, by hand after a brand raise and after a change to how lists are styled,
   outside the gate: `brand-markers` on every type page holding a `<ul>` in `dist/`.
@@ -162,11 +161,11 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
   pages at `/types/<type>/index.html`. Dev serves at the root; the build keeps the Pages base
   `/documents` and writes the type pages to `dist/types/`.
 - `bun run build`: write the catalog to `dist/`, under scaffolding's `check-lock`.
-- `bun run fix`: `eslint --fix`, then `prettier --write`.
+- `bun run scaffolding fix` runs `eslint --fix`, then `prettier --write`.
 - `bun run test` runs the fast Vitest suite on Bun, including the in-memory Astro component
   renders. For one fast test file, run `bun run test <file>`.
-- `bun run explore` runs 512 cases per property with a fresh seed. Replay with `bun run explore --seed <seed>`.
-- `bun run check:pages` runs the tests in `test/pages/` after `bun run build`.
+- `bun run scaffolding-explore` runs 512 cases per property with a fresh seed. Replay with `bun run scaffolding-explore --seed <seed>`.
+- `bun --bun vitest run test/pages` runs the browser suite after `bun run build`.
 - `bun run mutation` runs Stryker on Bun with a 15-minute limit, outside the gate, and writes
   `.stryker-reports/mutation.json`. The mutation config selects the fast parser, matcher, escaping
   and score suites.

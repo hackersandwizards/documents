@@ -64,18 +64,13 @@
     "catalog": "bun run dev",
     "build": "check-lock sh -c 'cd catalog && bun --bun astro build'",
     "check": "scaffolding check",
-    "test": "bun --bun vitest run --exclude 'test/pages/**'",
-    "explore": "scaffolding-explore",
+    "test": "scaffolding test",
     "mutation": "SCAFFOLDING_MUTATION_BUN=1 scaffolding-mutation",
-    "check:pages": "bun --bun vitest run test/pages",
     "check:markers": "brand-markers $(grep -l '<ul' dist/types/*/index.html)",
     "check:privacy": "bun scripts/privacy.ts",
     "check:colours": "brand-colours",
     "check:copies": "brand-copies",
-    "check:elements": "brand-elements",
-    "check:retired": "brand-retired dist",
-    "check:staged": "check-staged",
-    "fix": "bun --bun eslint --cache --concurrency=auto . --fix && bun --bun prettier --write ."
+    "check:staged": "check-staged"
   },
   "peerDependencies": {
     "@hackersandwizards/brand": ">=2.17.0",
@@ -123,22 +118,24 @@
       "./document.css",
       "./handout.css"
     ],
-    "test": "test",
+    "browserTest": "test/pages",
+    "brand": {
+      "retired": [
+        "dist"
+      ]
+    },
     "fullOnly": {
-      "check:pages": "runs Chrome, bundles the engine, and checks the built catalog",
-      "check:privacy": "scans the built type pages for private data",
-      "check:elements": "renders and checks elements",
-      "check:retired": "scans generated output"
+      "check:privacy": "scans the built type pages for private data"
     },
     "check": [
-      "check:pages",
+      "browser-test",
       "check:privacy",
       [
         "check:colours",
         "check:copies",
-        "check:retired"
+        "retired"
       ],
-      "check:elements"
+      "elements"
     ]
   },
   "dependencies": {
