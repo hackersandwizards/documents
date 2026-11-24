@@ -185,7 +185,7 @@ installed, the tint panels' teal line on paper, and the readout's corner lockup,
 ## Behavioral rules
 
 Project rules live in `.claude/rules/*.md`. Read and apply them each session. Claude loads them
-natively. Codex and pi must read the directory themselves. Ignore the global `~/.claude/rules` set
+natively. Codex must read the directory itself. Ignore the global `~/.claude/rules` set
 in this repository. These project rules supersede it. The rules and skills under `.claude/` are
 mirrored from the agent-config hub (`~/.claude/scripts/sync-agent-config.sh`): change them there,
 never here.
