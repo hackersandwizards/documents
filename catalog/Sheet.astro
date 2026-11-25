@@ -3,6 +3,7 @@
 // stylesheets are inlined, since an import would load them on the dashboard too.
 import config from "virtual:astrobook/global-config.mjs";
 import { ELEMENT_MAP, ONEPAGER_ELEMENTS, withElements } from "../scripts/elements";
+import { editStyles } from "../scripts/prune";
 import { stripComments, withoutImports } from "../scripts/root";
 import tokensCss from "../tokens.css?raw";
 import documentCss from "../document.css?raw";
@@ -36,10 +37,7 @@ const css = [
 // The onepager takes its own map, as composeOnepager applies it.
 const map = sheet === "onepager" ? ONEPAGER_ELEMENTS : ELEMENT_MAP;
 const html = preview
-  ? withElements(await Astro.slots.render("default"), map).replace(
-      /(<style[^>]*>)([\s\S]*?)(<\/style>)/g,
-      (_, open: string, css: string, close: string) => open + bodyToSheet(css) + close,
-    )
+  ? editStyles(withElements(await Astro.slots.render("default"), map), bodyToSheet)
   : "";
 ---
 
