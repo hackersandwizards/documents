@@ -478,8 +478,9 @@ export const onepager = {
 </div>`,
 };
 
-/** A rating question's tally: its distribution over the scale from `start`, count and mean. */
-const ratings = (title: string, dist: number[], start = 1, group?: string) => {
+/** A rating question's tally on a 1-based scale: its distribution, count and mean. */
+const ratings = (title: string, dist: number[], group?: string) => {
+  const start = 1;
   const n = dist.reduce((a, b) => a + b, 0);
   const mean = dist.reduce((sum, c, i) => sum + c * (start + i), 0) / n;
   return { title, n, mean, start, end: start + dist.length - 1, dist, group };
@@ -498,9 +499,9 @@ export const surveyReadout = {
   scales: [
     ratings("The exercises fit our daily work.", [0, 1, 5, 4]),
     ratings("The pace was right for me.", [0, 2, 6, 2]),
-    ratings("The trainer explained clearly.", [0, 0, 3, 7], 1, "Trainer"),
-    ratings("The trainer answered our questions.", [0, 0, 2, 8], 1, "Trainer"),
-    ratings("I feel confident using agents at work.", [0, 3, 5, 2], 1, "Confidence & application"),
+    ratings("The trainer explained clearly.", [0, 0, 3, 7], "Trainer"),
+    ratings("The trainer answered our questions.", [0, 0, 2, 8], "Trainer"),
+    ratings("I feel confident using agents at work.", [0, 3, 5, 2], "Confidence & application"),
   ],
   risks: [
     { label: "Review effort grows", n: 5 },
