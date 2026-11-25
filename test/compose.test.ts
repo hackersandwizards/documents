@@ -2,7 +2,10 @@ import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterAll, describe, expect, it } from "vitest";
+import { once } from "node:events";
+import { createInterface } from "node:readline";
+import { Readable } from "node:stream";
+import { afterAll, assert, beforeAll, describe, expect, it } from "vitest";
 import { limit } from "./probe";
 import {
   certificate,
@@ -85,24 +88,37 @@ describe("scripts/compose.ts", () => {
     expect(html).not.toContain("Summe netto");
   });
 
-  it(
-    "composes the certificate's wording, verification footer and escaped roster text",
-    () => {
+  describe("composed certificates", () => {
+    let en: string;
+    let de: string;
+    let deSample: string;
+
+    beforeAll(() => {
       const compose = (props: object) => {
         writeFileSync(join(dir, "c.json"), JSON.stringify(props));
         execFileSync("bun", [SCRIPT, "DocCertificate", join(dir, "c.json"), join(dir, "c.html")]);
         return readFileSync(join(dir, "c.html"), "utf8");
       };
-      const en = compose({
+      en = compose({
         ...certificate,
         attendeeName: "Łukasz Wiśniewski-Grzybowski",
         attendeeCompany: "Q<b>&</b>A",
       });
+      de = compose({ ...certificate, lang: "de" });
+      deSample = compose(certificateDe);
+    }, limit(20_000));
+
+    it("uses the completion title in English", () => {
       expect(en).toContain("Certificate of Completion");
       expect(en).not.toContain("Certificate of Attendance");
-      // A long name breaks only between its words.
+    });
+
+    it("breaks the attendee name between words and escapes the company name", () => {
       expect(en).toMatch(/<span[^>]*>Łukasz<\/span>\s+<span[^>]*>Wiśniewski-Grzybowski<\/span>/);
       expect(en).toContain("Q&lt;b&gt;&amp;&lt;/b&gt;A");
+    });
+
+    it("includes the English verification credential and actions", () => {
       expect(en).toContain(`src="${certificate.qrCodeUri}"`);
       expect(en).toContain("Scan to verify &amp; add to LinkedIn");
       expect(en).toContain("Add to LinkedIn profile");
@@ -111,41 +127,63 @@ describe("scripts/compose.ts", () => {
           `<p class="footer-credential"[^>]*>Credential ID: ${certificate.credentialId}</p>`,
         ),
       );
+    });
+
+    it("inlines the certificate lockup", () => {
       expect(en).toMatch(/<img src="data:image\/svg\+xml,%3Csvg [^"]+" alt="hackers&amp;wizards"/);
-      const de = compose({ ...certificate, lang: "de" });
+    });
+
+    it("uses the completion title in German", () => {
       expect(de).toContain("Abschlusszertifikat");
       expect(de).not.toContain("Teilnahmezertifikat");
+    });
+
+    it("translates the verification instructions into German", () => {
       expect(de).toContain("Scannen: verifizieren &amp; zu LinkedIn hinzufügen");
       expect(de).toContain("Zertifikat verifizieren und zum LinkedIn-Profil hinzufügen");
-      const deSample = compose(certificateDe);
+    });
+
+    it("prints the German sample's training details in German", () => {
       expect(deSample).toContain("Training (2 Tage)");
       expect(deSample).toContain("Spezifikation mit Agenten");
       expect(deSample).toContain("12.–13. November 2026");
       for (const english of ["Days", "Specification", "Rules files", "12–13 November"])
         expect(deSample).not.toContain(english);
-    },
-    limit(20_000),
-  );
+    });
+  });
 
-  it("composes a Markdown document: escaped kind, the imprint, no style of the body's", () => {
-    writeFileSync(
-      join(dir, "md.json"),
-      JSON.stringify({
-        kind: "A & B",
-        legal: true,
-        html: '<h1 style="color: red">T</h1><table><tr><td style="text-align: right;">1</td></tr></table><div class="page-break"></div>',
-        css: ".x { color: red; }",
-      }),
-    );
-    execFileSync("bun", [SCRIPT, "DocMarkdown", join(dir, "md.json"), join(dir, "md.html")]);
-    const html = readFileSync(join(dir, "md.html"), "utf8");
-    expect(html).toMatch(/<span class="doc-tag[^"]*"[^>]*>A &amp; B<\/span>/);
-    expect(html).toContain("Sitz und Registergericht Hamburg, HRB 198840");
-    expect(html).not.toContain(".x { color: red; }");
-    expect(html).not.toContain("color: red");
-    expect(html).toContain('<td class="num">1</td>');
-    expect(html).toContain('<div class="page-break"></div>');
-    expect(foreignStyles(html)).toEqual([]);
+  describe("composed Markdown", () => {
+    let html: string;
+
+    beforeAll(() => {
+      writeFileSync(
+        join(dir, "md.json"),
+        JSON.stringify({
+          kind: "A & B",
+          legal: true,
+          html: '<h1 style="color: red">T</h1><table><tr><td style="text-align: right;">1</td></tr></table><div class="page-break"></div>',
+          css: ".x { color: red; }",
+        }),
+      );
+      execFileSync("bun", [SCRIPT, "DocMarkdown", join(dir, "md.json"), join(dir, "md.html")]);
+      html = readFileSync(join(dir, "md.html"), "utf8");
+    });
+
+    it("escapes the document kind", () => {
+      expect(html).toMatch(/<span class="doc-tag[^"]*"[^>]*>A &amp; B<\/span>/);
+    });
+
+    it("prints the company imprint", () => {
+      expect(html).toContain("Sitz und Registergericht Hamburg, HRB 198840");
+    });
+
+    it("uses base styles and preserves supported print markup", () => {
+      expect(html).not.toContain(".x { color: red; }");
+      expect(html).not.toContain("color: red");
+      expect(html).toContain('<td class="num">1</td>');
+      expect(html).toContain('<div class="page-break"></div>');
+      expect(foreignStyles(html)).toEqual([]);
+    });
   });
 
   it("refuses a Markdown body carrying a style element", () => {
@@ -180,22 +218,34 @@ describe("scripts/compose.ts", () => {
       const child = spawn("bun", [SCRIPT, "--serve"], {
         stdio: ["pipe", "ignore", "pipe", "pipe"],
       });
-      const answers: string[] = [];
-      child.stdio[3]!.on("data", (chunk: Buffer) =>
-        answers.push(...chunk.toString().split("\n").filter(Boolean)),
-      );
-      child.stdin!.write("not json\n");
-      child.stdin!.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
-      const until = Date.now() + limit(10_000);
-      while (answers.length < 2 && child.exitCode === null && Date.now() < until)
-        await new Promise((r) => setTimeout(r, 50));
-      child.stdin!.end();
-      const [first, second] = answers.map((line): unknown => JSON.parse(line));
-      if (!isRecord(first) || !isRecord(second)) throw new Error("Expected composer responses");
-      expect(first.error).toContain("JSON");
-      expect(second.id).toBe(2);
-      if (typeof second.error !== "string") throw new Error("Expected a composer error string");
-      expect(second.error).toContain("Not a document component: Header");
+      const exited = once(child, "exit");
+      const replyPipe = child.stdio[3];
+      assert(replyPipe instanceof Readable, "Expected a readable pipe on descriptor 3");
+      const lines = createInterface({
+        input: replyPipe,
+        signal: AbortSignal.timeout(limit(10_000)),
+      });
+      const responses = lines[Symbol.asyncIterator]();
+      try {
+        child.stdin!.write("not json\n");
+        child.stdin!.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
+        const firstLine = await responses.next();
+        const secondLine = await responses.next();
+        assert(!firstLine.done, "Expected the malformed JSON response line");
+        assert(!secondLine.done, "Expected the foreign component response line");
+        const first: unknown = JSON.parse(firstLine.value);
+        const second: unknown = JSON.parse(secondLine.value);
+        assert(isRecord(first), "Expected an error response for malformed JSON");
+        assert(isRecord(second), "Expected an error response for a foreign component");
+        expect(first.error).toContain("JSON");
+        expect(second.id).toBe(2);
+        assert(typeof second.error === "string", "Expected a composer error string");
+        expect(second.error).toContain("Not a document component: Header");
+      } finally {
+        lines.close();
+        child.stdin!.end();
+        await exited;
+      }
     },
     limit(20_000),
   );

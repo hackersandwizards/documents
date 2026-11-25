@@ -4,7 +4,7 @@
 // renders that page again in Chrome, which reads no brand file, since the page inlines them.
 import fs, * as fsExports from "node:fs";
 import fsp, * as fspExports from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, vi } from "vitest";
 
@@ -16,6 +16,22 @@ const traced =
     read.add(path instanceof URL ? fileURLToPath(path) : String(path));
     return f(...args);
   };
+const traceTimeout = (60_000 * Number(process.env.SCAFFOLDING_TEST_TIMEOUT_MS || 5000)) / 5000;
+
+test("engine scripts load no brand modules outside the file trace", () => {
+  const root = resolve(import.meta.dirname, "..");
+  const imports = /(from|import\()\s*["']@hackersandwizards\/brand/;
+  expect(fs.readFileSync(join(root, "components", "DocHeader.astro"), "utf8")).toMatch(imports);
+  const scripts = join(root, "scripts");
+  const scriptFiles = fs
+    .readdirSync(scripts, { recursive: true, encoding: "utf8" })
+    .filter((file) => file.endsWith(".ts"));
+  expect(scriptFiles, "TypeScript files in scripts/").not.toHaveLength(0);
+  expect(
+    scriptFiles.filter((file) => imports.test(fs.readFileSync(join(scripts, file), "utf8"))),
+  ).toEqual([]);
+});
+
 test(
   "onepagerBrandFiles lists exactly the brand files a traced render reads",
   async () => {
@@ -65,29 +81,16 @@ test(
     // Resolving a brand file reads brand's package.json, and vitefu's dependency crawl the
     // package.json of each dependency Bun nests under brand; the page carries none of them.
     const tracedFiles = [...read]
+      .filter((path) => path.startsWith(brand))
       .filter(
         (path) =>
-          path.startsWith(brand) &&
-          path !== `${brand}package.json` &&
-          !/^node_modules\/(@[^/]+\/)?[^/]+\/package\.json$/.test(path.slice(brand.length)),
+          !/^(?:node_modules\/(@[^/]+\/)?[^/]+\/)?package\.json$/.test(path.slice(brand.length)),
       )
       .sort();
     // The control: the trace sees Vite's read of DocHeader's lockup and the engine's of a face.
     expect(tracedFiles.some((path) => path.endsWith("logos/lockup-screen.svg"))).toBe(true);
     expect(tracedFiles.some((path) => path.endsWith(".woff2"))).toBe(true);
     expect(onepagerBrandFiles()).toEqual(tracedFiles);
-    // Bun's own loader reads an imported module without node:fs: no script imports a brand module.
-    // The control: the pattern finds the import Vite reads in DocHeader.
-    const imports = /(from|import\()\s*["']@hackersandwizards\/brand/;
-    expect(fs.readFileSync(join(ROOT, "components", "DocHeader.astro"), "utf8")).toMatch(imports);
-    const scripts = join(ROOT, "scripts");
-    const scriptFiles = fs
-      .readdirSync(scripts, { recursive: true, encoding: "utf8" })
-      .filter((file) => file.endsWith(".ts"));
-    expect(scriptFiles, "TypeScript files in scripts/").not.toHaveLength(0);
-    expect(
-      scriptFiles.filter((file) => imports.test(fs.readFileSync(join(scripts, file), "utf8"))),
-    ).toEqual([]);
   },
-  (60_000 * Number(process.env.SCAFFOLDING_TEST_TIMEOUT_MS || 5000)) / 5000,
+  traceTimeout,
 );

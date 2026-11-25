@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from "vitest";
+import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
 import { mission } from "@hackersandwizards/brand/verbal.json";
 import { decodeHTML } from "entities";
 import { readdirSync } from "node:fs";
@@ -189,34 +189,54 @@ test("DocProposal prints the amount of a fixed-price row that has no rate", asyn
   expect(html).not.toContain("undefined");
 });
 
-test("DocProposal prints its tiers and signature lines, and an outcome without measures alone", async () => {
-  const plain = await composer.render("DocProposal", proposal);
-  expect(plain).not.toContain('class="tiers');
-  expect(plain).not.toContain('class="signatures');
-  expect(plain).toContain("Woran ihr es messt");
-  expect(plain).toContain('class="acceptance');
-  const html = await composer.render("DocProposal", {
-    ...proposal,
-    price: {
-      ...proposal.price,
-      tiers: {
-        heading: "[TIERS]",
-        columns: [P, P],
-        rows: [{ item: "[TIER]", cells: [{ list: "[LIST]", offer: "[OFFER]" }] }],
-        note: "[TIER-NOTE]",
+describe("DocProposal variants", () => {
+  let plain: string;
+  let configured: string;
+  beforeAll(async () => {
+    plain = await composer.render("DocProposal", proposal);
+    configured = await composer.render("DocProposal", {
+      ...proposal,
+      price: {
+        ...proposal.price,
+        tiers: {
+          heading: "[TIERS]",
+          columns: [P, P],
+          rows: [{ item: "[TIER]", cells: [{ list: "[LIST]", offer: "[OFFER]" }] }],
+          note: "[TIER-NOTE]",
+        },
       },
-    },
-    outcome: { result: "[RESULT]" },
-    signatures: [{ label: P, party: "[PARTY]", name: "[SIGNER]" }],
+      outcome: { result: "[RESULT]" },
+      signatures: [{ label: P, party: "[PARTY]", name: "[SIGNER]" }],
+    });
   });
-  for (const text of ["[TIERS]", "[TIER]", "[LIST]", "[OFFER]", "[TIER-NOTE]", "[PARTY]"])
-    expect(html).toContain(text);
-  expect(html).toContain("Unterschrift: [SIGNER]");
-  expect(html).toContain('class="tiers');
-  expect(html).toContain('class="signatures');
-  expect(html).not.toContain("Woran ihr es messt");
-  expect(html).not.toContain('class="acceptance');
-  expect(html).not.toContain("undefined");
+
+  test("renders price tiers only when supplied", () => {
+    expect(plain).not.toContain('class="tiers');
+    expect(configured).toContain('class="tiers');
+    for (const text of ["[TIERS]", "[TIER]", "[LIST]", "[OFFER]", "[TIER-NOTE]"])
+      expect(configured).toContain(text);
+  });
+
+  test("replaces reply acceptance with the supplied signatures", () => {
+    expect(plain).not.toContain('class="signatures');
+    expect(plain).toContain('class="acceptance');
+    expect(configured).toContain('class="signatures');
+    expect(configured).not.toContain('class="acceptance');
+    expect(configured).toContain("[PARTY]");
+  });
+
+  test("labels the supplied signer", () => {
+    expect(configured).toContain("Unterschrift: [SIGNER]");
+  });
+
+  test("omits measures when only the outcome is supplied", () => {
+    expect(plain).toContain("Woran ihr es messt");
+    expect(configured).not.toContain("Woran ihr es messt");
+  });
+
+  test("prints no undefined text in the configured variant", () => {
+    expect(configured).not.toContain("undefined");
+  });
 });
 
 // The VAT label, the community's access and the order by reply are terms, so the props carry them.
@@ -273,7 +293,8 @@ test.each([
   "%s carries the imprint of § 35a GmbHG",
   async (name, componentProps, register) => {
     const html = await composer.render(name, componentProps as Record<string, unknown>);
-    const imprint = html.match(/class="company-meta"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? "";
+    const imprint = html.match(/class="company-meta"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    assert(imprint, "Expected the company imprint in the rendered component");
     expect(imprint).toContain("hackers&amp;wizards GmbH");
     expect(imprint).toContain(register);
     expect(imprint).toContain("Benedikt Stemmildt, Stefan Munz");
@@ -283,18 +304,29 @@ test.each([
 );
 
 test.each([
-  ["DocProposal", proposal, "totalValue", "netto zzgl. USt."],
-  ["DocRateCard", props.DocRateCard, "terms", "Konditionen"],
-  ["DocLeistungsnachweis", props.DocLeistungsnachweis, "confirmation", "Bestätigung des Kunden"],
-  ["DocCertificate", props.DocCertificate, "preamble", "This is to certify that"],
-  ["DocHandout", props.DocHandout, "contents", "Contents"],
-])("%s takes `labels.%s` in place of its default", async (name, componentProps, key, text) => {
-  const base = componentProps as Record<string, unknown>;
-  expect(await composer.render(name, base)).toContain(text);
-  const html = await composer.render(name, { ...base, labels: { [key]: "[LABEL]" } });
-  expect(html).toContain("[LABEL]");
-  expect(html).not.toContain(text);
-});
+  { name: "DocProposal", props: proposal, label: { key: "totalValue", text: "netto zzgl. USt." } },
+  { name: "DocRateCard", props: props.DocRateCard, label: { key: "terms", text: "Konditionen" } },
+  {
+    name: "DocLeistungsnachweis",
+    props: props.DocLeistungsnachweis,
+    label: { key: "confirmation", text: "Bestätigung des Kunden" },
+  },
+  {
+    name: "DocCertificate",
+    props: props.DocCertificate,
+    label: { key: "preamble", text: "This is to certify that" },
+  },
+  { name: "DocHandout", props: props.DocHandout, label: { key: "contents", text: "Contents" } },
+])(
+  "$name takes labels.$label.key in place of its default",
+  async ({ name, props: base, label }) => {
+    const { key, text } = label;
+    expect(await composer.render(name, base)).toContain(text);
+    const html = await composer.render(name, { ...base, labels: { [key]: "[LABEL]" } });
+    expect(html).toContain("[LABEL]");
+    expect(html).not.toContain(text);
+  },
+);
 
 test("DocProposal with an empty signatures list keeps its acceptance block", async () => {
   const html = await composer.render("DocProposal", { ...proposal, signatures: [] });

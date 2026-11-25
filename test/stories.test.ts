@@ -32,7 +32,10 @@ function shown(component: string, seen: Set<string>): Set<string> {
 test("every component appears on a type page, and every type page is listed", () => {
   const pages = readdirSync(join(ROOT, "catalog/pages/types"), { recursive: true }) as string[];
   const covered = new Set<string>();
-  for (const page of pages.filter((p) => /\.(astro|ts)$/.test(p)))
+  const sources = pages.filter((p) => /\.(astro|ts)$/.test(p));
+  expect(sources.length).toBeGreaterThanOrEqual(TYPES.length);
+  expect(components.length).toBeGreaterThanOrEqual(24);
+  for (const page of sources)
     for (const [, c] of readFileSync(join(ROOT, "catalog/pages/types", page), "utf8").matchAll(
       /components\/(Doc\w+)\.astro"/g,
     ))
@@ -41,9 +44,7 @@ test("every component appears on a type page, and every type page is listed", ()
   shown("DocOnepager", covered);
   expect(components.filter((c) => !covered.has(c))).toEqual([]);
   const listed = new Set(
-    pages
-      .map((p) => p.split("/")[0]!.replace(/\.astro$/, ""))
-      .filter((p) => !p.includes(".") && !p.startsWith("_")),
+    pages.map((p) => p.split("/")[0]!.replace(/\.astro$/, "")).filter((p) => !/[.]|^_/.test(p)),
   );
   expect([...listed].sort()).toEqual(TYPES.map((t) => t.file).sort());
 });
