@@ -225,14 +225,20 @@ const topicClass = [
         const name = cert.querySelector(".attendee-name");
         const lines = name.offsetHeight / parseFloat(getComputedStyle(name).lineHeight);
         if (step[1] === "name" && lines < 1.5) continue;
-        let best = null;
-        for (const option of step.filter((c) => c.startsWith("fit-"))) {
-          cert.classList.add(option);
-          const after = over();
-          cert.classList.remove(option);
-          if (after < left) [best, left] = [option, after];
+        const [best] = step
+          .filter((c) => c.startsWith("fit-"))
+          .map((option) => {
+            cert.classList.add(option);
+            const after = over();
+            cert.classList.remove(option);
+            return { option, after };
+          })
+          .filter(({ after }) => after < left)
+          .sort((a, b) => a.after - b.after);
+        if (best) {
+          left = best.after;
+          cert.classList.add(best.option);
         }
-        if (best) cert.classList.add(best);
       }
       if (left > 0.5) return cert.classList.add("certificate-overflow");
       // A late step can free more than was missing: give back each earlier one the page still holds.
