@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
-import { renderHandoutPdf } from "../scripts/render-pdf";
+import { renderHandoutPdf } from "../scripts/render-handout-pdf";
 import { limit } from "./probe";
 
 test(

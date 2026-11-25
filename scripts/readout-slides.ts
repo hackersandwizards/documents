@@ -1,0 +1,188 @@
+import { escapeHtml as esc, fill } from "./fill";
+import { bandColor, BANDS } from "./score-bands";
+import { distScale, figureColor, scaleRow, scoreLegend, WORDED_BARS } from "./readout-scales";
+import type { ReadoutScale, ReadoutText, SurveyReadout } from "./survey-readout";
+
+function quoteCard(t: string): string {
+  return `<blockquote class="quote">${esc(t)}</blockquote>`;
+}
+
+// Each answer stays under the question the attendee typed it into, praise and criticism alike: the
+// slide quotes the question, so a critical answer under "liked" reads as the attendee's choice.
+const askedLine = (t: ReadoutText, q: string) =>
+  q ? `<div class="asked">${esc(fill(t.asked, { question: q }))}</div>` : "";
+
+function quoteList(t: ReadoutText, texts: string[]): string {
+  if (texts.length === 0) return `<div class="caption">${esc(t.noAnswers)}</div>`;
+  // Longest first, the most specific answers, ties in submission order. Every answer goes in; the
+  // page's fit script keeps as many as fit and counts the rest in the caption.
+  const ordered = [...texts].sort((x, y) => y.length - x.length);
+  return `${ordered.map(quoteCard).join("")}<div class="caption more" data-text="${esc(t.more)}" hidden></div>`;
+}
+
+// Title, at a glance, scores, risks, liked, improve, readout.
+export const SLIDE_COUNT = 7;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** A content slide in the slide engine's frame: the brand strip, the kicker above the title, the
+ *  page counter beside the corner wordmark. */
+function slideShell(inner: string, kicker: string, page: number): string {
+  return `<section class="slide">
+    <div class="strip hw-strip" aria-hidden="true"></div>
+    <div class="sbody"><div class="kicker label-caps">${esc(kicker)}</div>${inner}</div>
+    <footer class="chrome"><span class="page">${pad2(page)} / ${pad2(SLIDE_COUNT)}</span><!--WORDMARK--></footer>
+  </section>`;
+}
+
+function rateLabel({ attendees, counts }: SurveyReadout): string {
+  return attendees ? Math.round((counts.completed / attendees) * 100) + "%" : "—";
+}
+
+function coverSlide(d: SurveyReadout, t: ReadoutText): string {
+  const { attendees, days, dateRange, teams } = d;
+  return `<section class="slide title">
+    <div class="strip hw-strip" aria-hidden="true"></div>
+    <div class="sbody center">
+      <div class="eyebrow">${esc(t.eyebrow)}</div>
+      <h1>${esc(d.customerName)}</h1>
+      <div class="subtitle">${esc(
+        [d.training, days ? fill(t.days, { attendees, days, dateRange, teams }) : ""]
+          .filter(Boolean)
+          .join(" · "),
+      )}</div>
+      <div class="dates">${esc(d.dateRange)}</div>
+      <div class="metarow">
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${d.counts.completed}</b><span>${esc(t.responses)}</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${d.attendees || "—"}</b><span>${esc(t.attendees)}</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${rateLabel(d)}</b><span>${esc(t.responseRate)}</span></div>
+        <div class="hw-kpi metabig"><b class="hw-kpi-value">${d.teams}</b><span>${esc(d.teams === 1 ? t.team : t.teams)}</span></div>
+      </div>
+      <div class="hw-rule cover-rule" data-variant="bar" aria-hidden="true"></div>
+      <div class="langnote">${esc(t.verbatim)}</div>
+    </div>
+    <footer class="chrome"><!--LOCKUP--></footer>
+  </section>`;
+}
+
+function glanceSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
+  const h = d.headline;
+  return slideShell(
+    `<h2>${esc(t.glance)}</h2>
+     <div class="glance">
+       <div class="bignum" style="--band:${h.n ? figureColor(bandColor(h.mean, h)) : "inherit"}">
+         <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>${esc(fill(t.overall, { end: h.end }))}</span>
+         ${h.n ? `<div class="caption">${esc(fill(h.n === 1 ? t.distributionOne : t.distribution, { n: h.n }))}</div>` : ""}
+       </div>
+       <div class="glancedist">
+         ${distScale(t, h)}
+         <div class="caption axis">${esc(fill(h.dist.length > WORDED_BARS ? t.axisCounts : t.axis, h))}</div>
+       </div>
+     </div>
+     <div class="glancefoot">
+       <div><b>${d.counts.completed}</b> ${esc(t.completed)}${d.counts.all > d.counts.completed ? ` · ${esc(fill(t.unfinished, { n: d.counts.all - d.counts.completed }))}` : ""}</div>
+       <div><b>${rateLabel(d)}</b> ${esc(fill(t.ofAttendees, { attendees: d.attendees || "?" }))}</div>
+       <div><b>${d.teams}</b> ${esc(d.teams === 1 ? t.team : t.teams)}</div>
+     </div>`,
+    kicker,
+    2,
+  );
+}
+
+function scoresSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
+  const groups = new Map<string, ReadoutScale[]>();
+  for (const s of d.scales) {
+    const g = s.group ?? t.groups[0]!;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g)!.push(s);
+  }
+  // The words' order first, then any group they do not name, so no scale drops off the slide.
+  const groupsHtml = [...new Set([...t.groups, ...groups.keys()])]
+    .filter((g) => groups.has(g))
+    .map(
+      (g) =>
+        `<div class="sgroup"><div class="gtitle">${esc(g)}</div>${groups
+          .get(g)!
+          .map(scaleRow)
+          .join("")}</div>`,
+    )
+    .join("");
+  return slideShell(
+    `<h2>${esc(t.scores)}</h2>${d.scales.length ? scoreLegend(t, d.scales, d.headline) : ""}
+     <div class="scols">${groupsHtml || `<div class="caption">${esc(t.noDimension)}</div>`}</div>`,
+    kicker,
+    3,
+  );
+}
+
+function risksSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
+  // Bars run on the share of respondents, the figure printed beside them, so a full track is 100%.
+  const respondents = Math.max(1, d.counts.completed, ...d.risks.map((x) => x.n));
+  const topRisk = Math.max(...d.risks.map((x) => x.n));
+  return slideShell(
+    `<h2>${esc(t.risks)}</h2>
+     <div class="risks">
+       ${d.risks
+         .map(
+           (x) => `<div class="risk">
+             <div class="rlabel">${esc(x.label)}</div>
+             <div class="rtrack"><div class="rfill${x.n === topRisk ? " top" : ""}" style="--share:${(x.n / respondents) * 100}%"></div></div>
+             <div class="rn">${x.n}<span class="rpct">${Math.round((x.n / respondents) * 100)}%</span></div>
+           </div>`,
+         )
+         .join("")}
+     </div>
+     ${d.noRisk ? `<div class="norisk">${esc(fill(t.noRisk, { ...d.noRisk, share: Math.round((d.noRisk.n / respondents) * 100) }))}</div>` : ""}
+     <div class="caption">${esc(fill(t.riskCaption, { n: d.counts.completed }))}</div>`,
+    kicker,
+    4,
+  );
+}
+
+function freeTextSlides(d: SurveyReadout, t: ReadoutText, kicker: string): string[] {
+  const s5 = slideShell(
+    `<h2>${esc(t.liked)}</h2>${askedLine(t, d.asked.liked)}<div class="quotes">${quoteList(t, d.liked)}</div>`,
+    kicker,
+    5,
+  );
+
+  const s6 = slideShell(
+    `<h2>${esc(t.improve)}</h2>${askedLine(t, d.asked.improve)}<div class="quotes">${quoteList(t, d.improve)}</div>`,
+    kicker,
+    6,
+  );
+  return [s5, s6];
+}
+
+function readoutSlide(r: SurveyReadout["readout"], t: ReadoutText, kicker: string): string {
+  const list = (items: string[], cls: string, colors?: string[]) =>
+    items.length
+      ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${esc(colors[k] ?? "")}"` : ""}>${esc(i)}</li>`).join("")}</ul>`
+      : '<div class="caption">—</div>';
+  const bands = BANDS.map(
+    ([, col], i) =>
+      `<span class="lkey"><i style="--band:${col}"></i>${esc(t.bands[i] ?? "")}</span>`,
+  ).join("");
+  return slideShell(
+    `<h2>${esc(t.readout)}</h2>
+     <div class="legend"><span class="lscale">${esc(t.markerKey)}</span>${bands}<span class="lsep"></span><span class="lkey"><i class="hollow"></i>${esc(t.flagKey)}</span></div>
+     <div class="readout">
+       <div class="rcol"><div class="rhead good">${esc(t.strengths)}</div>${list(r.strengths, "good")}</div>
+       <div class="rcol"><div class="rhead bad">${esc(t.weakSpots)}</div>${list(r.weak, "bad", r.weakColors)}</div>
+       <div class="rcol"><div class="rhead flag">${esc(t.flags)}</div>${list(r.flags, "flag")}</div>
+     </div>`,
+    kicker,
+    7,
+  );
+}
+
+export function readoutSlides(d: SurveyReadout, t: ReadoutText): string {
+  const kicker = fill(t.kicker, { customer: d.customerName });
+  return [
+    coverSlide(d, t),
+    glanceSlide(d, t, kicker),
+    scoresSlide(d, t, kicker),
+    risksSlide(d, t, kicker),
+    ...freeTextSlides(d, t, kicker),
+    readoutSlide(d.readout, t, kicker),
+  ].join("\n");
+}

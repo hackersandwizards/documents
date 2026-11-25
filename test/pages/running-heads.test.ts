@@ -4,10 +4,12 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { composePage, openComposer } from "../../scripts/compose";
+import { composeUnbakedPage, openComposer } from "../../scripts/compose";
 import { withoutImports } from "../../scripts/root";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
-import { documentCss, renderPdf } from "../../scripts/render-pdf";
+import { subsetFaces } from "../../scripts/font-faces";
+import { documentCss } from "../../scripts/document-css";
+import { renderPdf } from "../../scripts/render-pdf";
 import { handout, leistungsnachweisMonth, proposalDe, rateCard } from "../../scripts/samples";
 
 // The running header holds the document's title on one line. The longest title on record is the
@@ -38,8 +40,8 @@ async function render(
   edit = (html: string) => html,
   warm = false,
 ) {
-  const html = await composePage(composer, component, props, (page) =>
-    page.replace(
+  const html = await subsetFaces(
+    (await composeUnbakedPage(composer, component, props)).replace(
       "<style data-hw-document></style>",
       () => `<style>${documentCss()}\n${component === "DocHandout" ? rules : ""}</style>`,
     ),

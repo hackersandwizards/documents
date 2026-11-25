@@ -15,14 +15,10 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { inflateSync } from "node:zlib";
-import {
-  assertBrandFonts,
-  bakeDocumentCss,
-  composeDocument,
-  cutFacesToPdf,
-  documentCss,
-  renderPdf,
-} from "../../scripts/render-pdf";
+import { assertBrandFonts, cutFacesToPdf } from "../../scripts/font-faces";
+import { bakeDocumentCss, documentCss } from "../../scripts/document-css";
+import { composeDocument, composeWarmDocument } from "../../scripts/compose-document";
+import { renderPdf } from "../../scripts/render-pdf";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { svgUri } from "../../scripts/fill";
@@ -611,8 +607,8 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
     async () => {
       const props = { kind: "Trainer Briefing", lang: "en", html: "<h1>Briefing</h1><p>Text</p>" };
       const once = await composeDocument("DocMarkdown", props);
-      await composeDocument("DocRateCard", rateCard, process.cwd(), { warm: true });
-      const warm = await composeDocument("DocMarkdown", props, process.cwd(), { warm: true });
+      await composeWarmDocument("DocRateCard", rateCard, process.cwd());
+      const warm = await composeWarmDocument("DocMarkdown", props, process.cwd());
       expect(warm).toBe(once);
       writeFileSync(join(dir, "warm.html"), once);
       await renderPdf(join(dir, "warm.html"), join(dir, "warm-cli.pdf"));
@@ -630,8 +626,9 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
       // Its own TMPDIR shows whether the kept Chrome's profile outlives it.
       const tmp = mkdtempSync(join(dir, "exit-"));
       const script = `
-      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../../scripts/render-pdf.ts"))};
-      await composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true });
+      import { composeWarmDocument } from ${JSON.stringify(join(import.meta.dirname, "../../scripts/compose-document.ts"))};
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../../scripts/render-pdf.ts"))};
+      await composeWarmDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd());
       await renderPdf(${JSON.stringify(join(dir, "doc.html"))}, ${JSON.stringify(join(dir, "exit.pdf"))}, { warm: true });
       // The kept Chrome and composer, still running here; the test looks for them once this exits.
       const { spawnSync } = await import("node:child_process");

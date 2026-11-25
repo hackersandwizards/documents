@@ -1,5 +1,6 @@
 import { posix, relative } from "node:path";
-import { brandFile, inlineCss } from "../scripts/render-pdf";
+import { brandFile } from "../scripts/render-pdf";
+import { inlineCss } from "../scripts/document-css";
 import { ROOT } from "../scripts/root";
 
 /** A file brand exports, as a path from this repository's root: where the catalog's `copy` puts it

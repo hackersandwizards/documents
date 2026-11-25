@@ -57,32 +57,36 @@ package's own component exports.
   A component whose script lays the page out after load pushes that work's promise onto
   the array `window.hwLayout`. `renderPdf` waits for those promises before printing.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
-  directory; the command composes one component from a props JSON, and `--serve` composes on
-  request for `composeDocument`'s `warm`. `scripts/render-pdf.ts`: the print settings on the
-  Chrome and flags of scaffolding's `./chrome`, the render date blanked and the table header ids
-  renumbered so one input prints the same bytes, the document base baked into
-  `<style data-hw-document>` (brand's fallback faces with it, which `print.css` imports),
-  `compactStyles`, which every standalone page passes (baked, onepager,
-  survey readout): its styles without CSS comments, which a reader of the page never needs, with the
-  brand's `@layer` order once, first (`test/layers.test.ts`), without the
-  rules (by class, id, element or attribute name) and custom properties its markup cannot use (`pruneStyles`, `scripts/prune.ts`; a page
-  with a script or an event handler, such as the certificate, the handout and the readout, keeps every rule), and without a
-  face whose `unicode-range` none of its characters fall in, `subsetFaces`, which cuts each inlined face to
-  the page's characters for a composed page and the onepager, its WOFF2 encoding, like `cutFacesToPdf`'s, on Bun Workers (`scripts/encode-face.ts`) and in-process where none can run (a consumer that bakes a stored page in place
-  runs it after `bakeDocumentCss`), `cutFacesToPdf`, which cuts each face of a printed page to the
-  characters that face printed and drops the faces it never printed (`fitOnepager` runs it),
-  `composeDocument` and the font check `assertBrandFonts`. `warm` on
-  `composeDocument` and `renderPdf` keeps the composer and Chrome running between calls, for a long-running caller such as an app route. `renderPdf` prints an HTML file or a
-  page an `http(s)` URL serves, an HTML file's images inlined: a file beside it, and a file one of
-  our packages exports named by its package path (`src="@hackersandwizards/testimonials/marks/..."`),
-  resolved from where this package is installed, which fails the render where that package does not
-  export it. `inlineImages` does that inlining, exported for a
-  consumer's viewer of stored pages too. `renderHandoutPdf` prints a `DocHandout` in passes, each read back
-  with poppler's `pdftotext` for `toc`, `flow` and `notes`, from a URL (the pass as its query) or a
-  function composing the HTML; without poppler the first render stands and the result says so.
+  directory. `composeUnbakedPage` assembles component markup and scoped styles. `composePage`
+  bakes the base and subsets the faces. The command composes one component from a props JSON,
+  and `--serve` composes on request for `composeWarmDocument`.
+- `scripts/compose-document.ts`: `composeDocument` runs the composer in a fresh child process.
+  `composeWarmDocument` keeps the composer for its Astro project between calls.
+- `scripts/render-pdf.ts`: `renderPdf` prints an HTML file or an HTTP(S) URL with the print
+  settings and flags of scaffolding's `./chrome`. `warm` keeps Chrome running between calls.
+  The render date is blanked and table header IDs renumbered so one input prints the same bytes.
+- `scripts/document-css.ts`: `documentCss` inlines the document base and `brandCss` inlines the
+  brand styles through `inlineCss`. `bakeDocumentCss` fills `<style data-hw-document>` with the
+  base, including the fallback faces from `print.css`. It runs `compactStyles`, as every
+  standalone page does. That pass drops CSS comments, keeps the brand's `@layer` order once and
+  first (`test/layers.test.ts`), and removes rules and custom properties the markup cannot use
+  (`pruneStyles`, `scripts/prune.ts`). Pages with scripts or event handlers keep every rule.
+  A face whose `unicode-range` covers none of the page's characters is removed.
+- `scripts/font-faces.ts`: `subsetFaces` cuts each inlined face to the page's characters. Call
+  it after `bakeDocumentCss` when baking a stored page. `cutFacesToPdf` keeps only the characters
+  each face printed and drops unused faces. `fitOnepager` calls it. Both encode WOFF2 on Bun
+  Workers (`scripts/encode-face.ts`) and in-process where none can run. `assertBrandFonts` checks
+  the fonts embedded in a PDF.
+- `scripts/inline-images.ts`: `inlineImages` embeds images beside a page and images our packages
+  export. It resolves package paths from where the engine is installed. A missing package
+  export fails the render. A consumer can also use it in a viewer for stored pages.
+- `scripts/render-handout-pdf.ts`: `renderHandoutPdf` prints a `DocHandout` in passes, each read
+  back with poppler's `pdftotext` for `toc`, `flow` and `notes`. The source is a URL receiving
+  the pass as query parameters or a function composing HTML for the pass. Without poppler the
+  first render stands and the result says so.
 - `onepager.css` and `scripts/onepager.ts`: the training-offering onepager's own stylesheet,
   `composeOnepager`, which composes `DocOnepager` on it instead of the whole document base, and
-  `fitOnepager`, which renders it and picks the fit (tight, page-2 start, lift and air levels) that
+  `fitOnepager(composer, page, dir)`, which renders it and picks the fit (tight, page-2 start, lift and air levels) that
   keeps it on two pages. `onepagerBrandFiles` lists every brand file that render reads, for a
   consumer that hashes them; `test/onepager-trace.ts` traces a render to hold the list exact.
 - `handout.css` and `components/DocHandout.astro`: the printed training handout, the document base
@@ -125,7 +129,10 @@ package's own component exports.
   consumer gets them.
 
 A consumer reaches the engine through `exports` (`./tokens.css`, `./document.css`, `./onepager.css`,
-`./handout.css`, `./components/*`, `./compose`, `./render-pdf`, `./onepager`, `./survey-readout`, `./handout`) and the `documents-compose`, `documents-privacy` and `documents-styles` commands, run as `bun run <command>`. Every other
+`./handout.css`, `./components/*`, `./compose`, `./compose-document`, `./render-pdf`,
+`./document-css`, `./font-faces`, `./inline-images`, `./render-handout-pdf`, `./onepager`,
+`./survey-readout`, `./handout`) and the `documents-compose`, `documents-privacy` and
+`documents-styles` commands, run as `bun run <command>`. Every other
 path is internal. `scaffolding.styles` in `package.json` lists `document.css` and `handout.css`, the
 stylesheets a consumer loads beside the components, which scaffolding's `check-coupling` then lets
 through. Renaming a command, changing its arguments or moving an exported file breaks

@@ -4,9 +4,11 @@ import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "nod
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
-import { composePage, openComposer } from "../../scripts/compose";
+import { composeUnbakedPage, openComposer } from "../../scripts/compose";
 import { withoutImports } from "../../scripts/root";
-import { documentCss, type HandoutPass, renderHandoutPdf } from "../../scripts/render-pdf";
+import { subsetFaces } from "../../scripts/font-faces";
+import { documentCss } from "../../scripts/document-css";
+import { type HandoutPass, renderHandoutPdf } from "../../scripts/render-handout-pdf";
 import { handout } from "../../scripts/samples";
 import { probePage, limit } from "../probe";
 
@@ -42,13 +44,16 @@ const props = {
     notes!,
   ],
 };
-const compose = (pass: HandoutPass, extra: object = {}) =>
-  composePage(composer, "DocHandout", { ...props, ...extra, ...pass }, (page) =>
-    page.replace(
+const composeHandoutPage = async (props: Record<string, unknown>) =>
+  subsetFaces(
+    (await composeUnbakedPage(composer, "DocHandout", props)).replace(
       "<style data-hw-document></style>",
       () => `<style>${documentCss()}\n${rules}</style>`,
     ),
   );
+
+const compose = (pass: HandoutPass, extra: object = {}) =>
+  composeHandoutPage({ ...props, ...extra, ...pass });
 
 /** The page each chapter's eyebrow prints on, and the page numbers the cover's contents prints. */
 function read(pdf: string, eyebrow = "CHAPTER") {
@@ -212,25 +217,16 @@ test(
     );
     try {
       const port = (await server.stdout.getReader().read()).value!;
-      const html = await composePage(
-        composer,
-        "DocHandout",
-        {
-          title: "T",
-          chapters: [
-            {
-              title: "C",
-              html: `<p>first</p><p><img src="http://127.0.0.1:${new TextDecoder().decode(port).trim()}/t.png"></p><p>after</p>`,
-            },
-            { title: "D", html: "<p>x</p>" },
-          ],
-        },
-        (page) =>
-          page.replace(
-            "<style data-hw-document></style>",
-            () => `<style>${documentCss()}\n${rules}</style>`,
-          ),
-      );
+      const html = await composeHandoutPage({
+        title: "T",
+        chapters: [
+          {
+            title: "C",
+            html: `<p>first</p><p><img src="http://127.0.0.1:${new TextDecoder().decode(port).trim()}/t.png"></p><p>after</p>`,
+          },
+          { title: "D", html: "<p>x</p>" },
+        ],
+      });
       const opening = probePage(
         html,
         `return [...document.querySelector("section.chapter").querySelectorAll(".opening")].map((b) => b.textContent.trim()).join("|");`,
@@ -250,24 +246,15 @@ test(
   "a line starting in the lower half of the space under a margin note runs at full width",
   async () => {
     const item = "Each turn the agent sees the files it opened and the commands it ran.";
-    const html = await composePage(
-      composer,
-      "DocHandout",
-      {
-        title: "T",
-        chapters: [
-          {
-            title: "C",
-            html: `<h2>Notes</h2><aside class="margin-note">One line.</aside><ul><li>One</li><li>Two</li><li>Three</li><li id="probed">${item}</li></ul>`,
-          },
-        ],
-      },
-      (page) =>
-        page.replace(
-          "<style data-hw-document></style>",
-          () => `<style>${documentCss()}\n${rules}</style>`,
-        ),
-    );
+    const html = await composeHandoutPage({
+      title: "T",
+      chapters: [
+        {
+          title: "C",
+          html: `<h2>Notes</h2><aside class="margin-note">One line.</aside><ul><li>One</li><li>Two</li><li>Three</li><li id="probed">${item}</li></ul>`,
+        },
+      ],
+    });
     const seen = probePage(
       html,
       `const note = document.querySelector(".margin-note");

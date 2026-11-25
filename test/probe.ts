@@ -3,7 +3,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromeArgs, chromeBinary, INSTALL_HINT } from "@hackersandwizards/scaffolding/chrome";
-import { brandFile, inlineCss } from "../scripts/render-pdf";
+import { brandFile } from "../scripts/render-pdf";
+import { inlineCss } from "../scripts/document-css";
 
 /** `html` rendered in Chrome, then `probe` (a script body run on load, after the page's own load
  * listeners) returns the string the test reads. `args` adds Chrome flags, such as a window size. */

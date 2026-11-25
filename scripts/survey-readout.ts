@@ -3,9 +3,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { escapeHtml as esc, fill, languageTag, svgUri } from "./fill";
-import { brandCss, compactStyles } from "./render-pdf";
+import { brandCss } from "./document-css";
+import { compactStyles } from "./compact-styles";
+import { readoutSlides } from "./readout-slides";
+export { SLIDE_COUNT } from "./readout-slides";
 import { brandFile, brandName, ROOT, withoutImports } from "./root";
-import { bandColor, BANDS, CONTEXT, scalePosition, STEP } from "./score-bands";
 
 export { bandColor, scalePosition, STRENGTH_AT } from "./score-bands";
 
@@ -104,260 +106,17 @@ export const READOUT_TEXT = {
 };
 export type ReadoutText = typeof READOUT_TEXT;
 
-/** A mean's figure: its band's colour, or ink where the band is a tint. */
-const figureColor = (band: string) => (band === STEP || band === CONTEXT ? "var(--ink)" : band);
-
-/** The key under the scores title: what the bar, its colour and the strip mean, per scale present. */
-function scoreLegend(
-  t: ReadoutText,
-  scales: { start: number; end: number }[],
-  overall?: { start: number; end: number },
-): string {
-  const ranges = [...new Map(scales.map((s) => [`${s.start}–${s.end}`, s])).values()];
-  const cut = (from: number, s: { start: number; end: number }) =>
-    (s.start + from * (s.end - s.start)).toFixed(2).replace(/0$/, "");
-  const keys = ranges.map((s) => {
-    const steps = BANDS.map(([from, col], i) => {
-      const label = esc(
-        i === BANDS.length - 1 ? t.bandBelow : fill(t.bandFrom, { value: cut(from, s) }),
-      );
-      return `<span class="lkey"><i style="--band:${col}"></i>${label}</span>`;
-    }).join("");
-    return `<span class="lscale">${esc(fill(t.barKey, s))}</span>${steps}`;
-  });
-  // Page 2's overall score may run on another scale; say so where the rows' scale differs.
-  const other =
-    overall && !ranges.some((s) => s.start === overall.start && s.end === overall.end)
-      ? `<span class="lsep"></span><span class="lscale">${esc(fill(t.overallScale, overall))}</span>`
-      : "";
-  const strips = ranges.map((s) => {
-    const steps = Array.from({ length: s.end - s.start + 1 }, (_, i) => s.start + i)
-      .map((v) => `<span class="lkey"><i style="--band:${rampColor(v, s)}"></i>${v}</span>`)
-      .join("");
-    return `<span class="lscale">${esc(t.stripKey)}</span>${steps}`;
-  });
-  return `<div class="legend">${keys.join('<span class="lsep"></span>')}${other}</div><div class="legend">${strips.join('<span class="lsep"></span>')}</div>`;
-}
-
-function shortDim(title: string): string {
-  return title.replace(/\.$/, "");
-}
-
-/** A rating's shade, ink on the opacity ladder, the top step for the top rating: answer
- * distributions carry no band colour, which on 1-4 would paint ratings 1 and 2 the same red. */
-const LADDER = [15, 25, 40, 70, 100];
-function rampColor(val: number, s: { start: number; end: number }): string {
-  const steps = LADDER.slice(-Math.min(LADDER.length, s.end - s.start + 1));
-  const pct = steps[Math.round(scalePosition(val, s) * (steps.length - 1))];
-  return `color-mix(in srgb, var(--ink) ${pct}%, var(--tint))`;
-}
-
-function distBar(s: ReadoutScale): string {
-  const segs = s.dist
-    .map((c, i) => {
-      const val = s.start + i;
-      if (c === 0) return "";
-      const col = rampColor(val, s);
-      return `<span class="seg" style="--count:${c};--band:${col}" title="${val}: ${c}"></span>`;
-    })
-    .join("");
-  return `<div class="dist">${segs}</div>`;
-}
-
-function scaleRow(s: ReadoutScale): string {
-  // An unanswered row has no score: no band colour, no bar, a dash for the mean.
-  const col = s.n ? bandColor(s.mean, s) : "inherit";
-  const fill = s.n ? scalePosition(s.mean, s) * 100 : 0;
-  return `
-    <div class="srow">
-      <div class="slabel">${esc(shortDim(s.title))}</div>
-      <div class="strack">
-        <div class="sfill" style="--share:${fill.toFixed(1)}%;--band:${col}"></div>
-      </div>
-      <div class="smean" style="--band:${figureColor(col)}">${s.n ? s.mean.toFixed(1) : "–"}</div>
-      ${distBar(s)}
-    </div>`;
-}
-
-function quoteCard(t: string): string {
-  return `<blockquote class="quote">${esc(t)}</blockquote>`;
-}
-
-// Each answer stays under the question the attendee typed it into, praise and criticism alike: the
-// slide quotes the question, so a critical answer under "liked" reads as the attendee's choice.
-const askedLine = (t: ReadoutText, q: string) =>
-  q ? `<div class="asked">${esc(fill(t.asked, { question: q }))}</div>` : "";
-
-function quoteList(t: ReadoutText, texts: string[]): string {
-  if (texts.length === 0) return `<div class="caption">${esc(t.noAnswers)}</div>`;
-  // Longest first, the most specific answers, ties in submission order. Every answer goes in; the
-  // page's fit script keeps as many as fit and counts the rest in the caption.
-  const ordered = [...texts].sort((x, y) => y.length - x.length);
-  return `${ordered.map(quoteCard).join("")}<div class="caption more" data-text="${esc(t.more)}" hidden></div>`;
-}
-
-// Title, at a glance, scores, risks, liked, improve, readout.
-export const SLIDE_COUNT = 7;
-const pad2 = (n: number) => String(n).padStart(2, "0");
-
-/** A content slide in the slide engine's frame: the brand strip, the kicker above the title, the
- *  page counter beside the corner wordmark. */
-function slideShell(inner: string, kicker: string, page: number): string {
-  return `<section class="slide">
-    <div class="strip hw-strip" aria-hidden="true"></div>
-    <div class="sbody"><div class="kicker label-caps">${esc(kicker)}</div>${inner}</div>
-    <footer class="chrome"><span class="page">${pad2(page)} / ${pad2(SLIDE_COUNT)}</span><!--WORDMARK--></footer>
-  </section>`;
-}
-
 /** The readout deck as a standalone HTML page, seven 1280x720 slides with the brand inlined, or,
  * given `brand` (which turns a file brand exports into the link the page reaches it by), linked, as
  * the catalog does. */
 export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) => string): string {
-  const { counts, headline, scales, risks, noRisk, asked, liked, improve, readout: r } = d;
-  if (r.weakColors.length !== r.weak.length)
+  const { customerName, readout } = d;
+  if (readout.weakColors.length !== readout.weak.length)
     throw new Error("composeSurveyReadout: readout.weakColors needs one colour per weak spot");
   // A key the caller left undefined keeps today's word.
   const own = Object.entries(d.text ?? {}).filter(([, v]) => v !== undefined);
   const t: ReadoutText = { ...READOUT_TEXT, ...Object.fromEntries(own) };
-  const a = {
-    counts,
-    headline,
-    scales,
-    risks,
-    noRisk,
-    asked,
-    liked,
-    improve,
-    training: d.training,
-  };
-  const m = { attendees: d.attendees, days: d.days, dateRange: d.dateRange, teams: d.teams };
-  const customerName = d.customerName;
-  const rate = m.attendees ? Math.round((a.counts.completed / m.attendees) * 100) : null;
-
-  const s1 = `<section class="slide title">
-    <div class="strip hw-strip" aria-hidden="true"></div>
-    <div class="sbody center">
-      <div class="eyebrow">${esc(t.eyebrow)}</div>
-      <h1>${esc(customerName)}</h1>
-      <div class="subtitle">${esc(
-        [a.training, m.days ? fill(t.days, m) : ""].filter(Boolean).join(" · "),
-      )}</div>
-      <div class="dates">${esc(m.dateRange)}</div>
-      <div class="metarow">
-        <div class="hw-kpi metabig"><b class="hw-kpi-value">${a.counts.completed}</b><span>${esc(t.responses)}</span></div>
-        <div class="hw-kpi metabig"><b class="hw-kpi-value">${m.attendees || "—"}</b><span>${esc(t.attendees)}</span></div>
-        <div class="hw-kpi metabig"><b class="hw-kpi-value">${rate != null ? rate + "%" : "—"}</b><span>${esc(t.responseRate)}</span></div>
-        <div class="hw-kpi metabig"><b class="hw-kpi-value">${m.teams}</b><span>${esc(m.teams === 1 ? t.team : t.teams)}</span></div>
-      </div>
-      <div class="hw-rule cover-rule" data-variant="bar" aria-hidden="true"></div>
-      <div class="langnote">${esc(t.verbatim)}</div>
-    </div>
-    <footer class="chrome"><!--LOCKUP--></footer>
-  </section>`;
-
-  const kicker = fill(t.kicker, { customer: customerName });
-  const h = a.headline;
-  const s2 = slideShell(
-    `<h2>${esc(t.glance)}</h2>
-     <div class="glance">
-       <div class="bignum" style="--band:${h.n ? figureColor(bandColor(h.mean, h)) : "inherit"}">
-         <b>${h.n ? h.mean.toFixed(1) : "—"}</b><span>${esc(fill(t.overall, { end: h.end }))}</span>
-         ${h.n ? `<div class="caption">${esc(fill(h.n === 1 ? t.distributionOne : t.distribution, { n: h.n }))}</div>` : ""}
-       </div>
-       <div class="glancedist">
-         ${distScale(t, h)}
-         <div class="caption axis">${esc(fill(h.dist.length > WORDED_BARS ? t.axisCounts : t.axis, h))}</div>
-       </div>
-     </div>
-     <div class="glancefoot">
-       <div><b>${a.counts.completed}</b> ${esc(t.completed)}${a.counts.all > a.counts.completed ? ` · ${esc(fill(t.unfinished, { n: a.counts.all - a.counts.completed }))}` : ""}</div>
-       <div><b>${rate != null ? rate + "%" : "—"}</b> ${esc(fill(t.ofAttendees, { attendees: m.attendees || "?" }))}</div>
-       <div><b>${m.teams}</b> ${esc(m.teams === 1 ? t.team : t.teams)}</div>
-     </div>`,
-    kicker,
-    2,
-  );
-
-  const groups = new Map<string, ReadoutScale[]>();
-  for (const s of a.scales) {
-    const g = s.group ?? t.groups[0]!;
-    if (!groups.has(g)) groups.set(g, []);
-    groups.get(g)!.push(s);
-  }
-  // The words' order first, then any group they do not name, so no scale drops off the slide.
-  const groupsHtml = [...new Set([...t.groups, ...groups.keys()])]
-    .filter((g) => groups.has(g))
-    .map(
-      (g) =>
-        `<div class="sgroup"><div class="gtitle">${esc(g)}</div>${groups
-          .get(g)!
-          .map(scaleRow)
-          .join("")}</div>`,
-    )
-    .join("");
-  const s3 = slideShell(
-    `<h2>${esc(t.scores)}</h2>${a.scales.length ? scoreLegend(t, a.scales, a.headline) : ""}
-     <div class="scols">${groupsHtml || `<div class="caption">${esc(t.noDimension)}</div>`}</div>`,
-    kicker,
-    3,
-  );
-
-  // Bars run on the share of respondents, the figure printed beside them, so a full track is 100%.
-  const respondents = Math.max(1, a.counts.completed, ...a.risks.map((x) => x.n));
-  const topRisk = Math.max(...a.risks.map((x) => x.n));
-  const s4 = slideShell(
-    `<h2>${esc(t.risks)}</h2>
-     <div class="risks">
-       ${a.risks
-         .map(
-           (x) => `<div class="risk">
-             <div class="rlabel">${esc(x.label)}</div>
-             <div class="rtrack"><div class="rfill${x.n === topRisk ? " top" : ""}" style="--share:${(x.n / respondents) * 100}%"></div></div>
-             <div class="rn">${x.n}<span class="rpct">${Math.round((x.n / respondents) * 100)}%</span></div>
-           </div>`,
-         )
-         .join("")}
-     </div>
-     ${a.noRisk ? `<div class="norisk">${esc(fill(t.noRisk, { ...a.noRisk, share: Math.round((a.noRisk.n / respondents) * 100) }))}</div>` : ""}
-     <div class="caption">${esc(fill(t.riskCaption, { n: a.counts.completed }))}</div>`,
-    kicker,
-    4,
-  );
-
-  const s5 = slideShell(
-    `<h2>${esc(t.liked)}</h2>${askedLine(t, a.asked.liked)}<div class="quotes">${quoteList(t, a.liked)}</div>`,
-    kicker,
-    5,
-  );
-
-  const s6 = slideShell(
-    `<h2>${esc(t.improve)}</h2>${askedLine(t, a.asked.improve)}<div class="quotes">${quoteList(t, a.improve)}</div>`,
-    kicker,
-    6,
-  );
-
-  const list = (items: string[], cls: string, colors?: string[]) =>
-    items.length
-      ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${esc(colors[k] ?? "")}"` : ""}>${esc(i)}</li>`).join("")}</ul>`
-      : '<div class="caption">—</div>';
-  const bands = BANDS.map(
-    ([, col], i) =>
-      `<span class="lkey"><i style="--band:${col}"></i>${esc(t.bands[i] ?? "")}</span>`,
-  ).join("");
-  const s7 = slideShell(
-    `<h2>${esc(t.readout)}</h2>
-     <div class="legend"><span class="lscale">${esc(t.markerKey)}</span>${bands}<span class="lsep"></span><span class="lkey"><i class="hollow"></i>${esc(t.flagKey)}</span></div>
-     <div class="readout">
-       <div class="rcol"><div class="rhead good">${esc(t.strengths)}</div>${list(r.strengths, "good")}</div>
-       <div class="rcol"><div class="rhead bad">${esc(t.weakSpots)}</div>${list(r.weak, "bad", r.weakColors)}</div>
-       <div class="rcol"><div class="rhead flag">${esc(t.flags)}</div>${list(r.flags, "flag")}</div>
-     </div>`,
-    kicker,
-    7,
-  );
-
-  const slides = [s1, s2, s3, s4, s5, s6, s7].join("\n");
+  const slides = readoutSlides(d, t);
   const logo = (file: string) => svgUri(readFileSync(brandFile(`logos/${file}`), "utf8"));
   const lockup = logo("lockup.svg");
   const wordmark = `<img class="wordmark" src="${logo("wordmark.svg")}" alt="${ALT}" />`;
@@ -387,28 +146,6 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
           .replaceAll("<!--WORDMARK-->", () => wordmark),
       ),
   );
-}
-
-/** The most ratings whose bars each fit "99 answers": seven collided in Chrome. */
-const WORDED_BARS = 5;
-
-function distScale(t: ReadoutText, s: ReadoutScale): string {
-  // Bars scale to the most-chosen value, so the chart uses its height: scaled to the total, the
-  // tallest bar stood at 40% and the chart read as a strip under an empty band.
-  const total = Math.max(1, ...s.dist);
-  return `<div class="dscale">${s.dist
-    .map((c, i) => {
-      const val = s.start + i;
-      // Each count says what it counts, over its bar, so no key column names the rows. A value
-      // nobody chose draws no bar, only its count on the baseline: a sliver read as a response.
-      const words = s.dist.length > WORDED_BARS ? "{n}" : c === 1 ? t.answer : t.answers;
-      const n = `<div class="dn">${esc(fill(words, { n: c }))}</div>`;
-      const bar = c
-        ? `<div class="dbar" style="--share:${(c / total) * 100}%;--band:${rampColor(val, s)}">${n}</div>`
-        : n;
-      return `<div class="dcol"><div class="dbarwrap">${bar}</div><div class="dv">${val}</div></div>`;
-    })
-    .join("")}</div>`;
 }
 
 /** The lockup's and the wordmark's alt text. */

@@ -8,7 +8,9 @@ import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { openComposer } from "../../scripts/compose";
 import { composeOnepager, fitOnepager } from "../../scripts/onepager";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
-import { assertBrandFonts, inlineImages, renderPdf } from "../../scripts/render-pdf";
+import { assertBrandFonts } from "../../scripts/font-faces";
+import { inlineImages } from "../../scripts/inline-images";
+import { renderPdf } from "../../scripts/render-pdf";
 import { ROOT } from "../../scripts/root";
 import { onepager } from "../../scripts/samples";
 import { fallbackFamilies, probePage, limit } from "../probe";
@@ -34,7 +36,7 @@ describe("fitOnepager", () => {
     "finds page 2's block through named entities, and the page carries its own faces",
     async () => {
       expect(html).toContain("Sch&ouml;n");
-      const fit = await fitOnepager(composer, { ...onepager, html }, "unused", work);
+      const fit = await fitOnepager(composer, { ...onepager, html }, work);
       expect(fit.pages).toBe(2);
       expect(fit.fit.page2Start).toBeGreaterThan(2);
       expect(fit.html).not.toContain("tokens/fonts/");
@@ -80,8 +82,8 @@ describe("fitOnepager, page 2's first line", () => {
         "<h3><em>Maßnahmen</em>: gut zu wissen</h3>",
       );
       expect(html).toContain("Maßnahmen");
-      const fit = await fitOnepager(composer, { ...onepager, html }, "unused", work);
-      const plain = await fitOnepager(composer, onepager, "unused", work);
+      const fit = await fitOnepager(composer, { ...onepager, html }, work);
+      const plain = await fitOnepager(composer, onepager, work);
       expect(fit.pages).toBe(2);
       expect(fit.fit.page2Start).toBe(plain.fit.page2Start);
       // Page 2 opens on a short block whose word page 1 prints too, in its facts card: the fit
@@ -90,18 +92,18 @@ describe("fitOnepager, page 2's first line", () => {
         '<div class="planning">',
         '<p class="path-note">Erster Hinweis</p>\n<p class="path-note">Zweiter Hinweis</p>\n<p class="path-note">Format</p>\n<div class="planning">',
       );
-      const short = await fitOnepager(composer, { ...onepager, html: notes }, "unused", work);
+      const short = await fitOnepager(composer, { ...onepager, html: notes }, work);
       // The notes stand before the block that opens page 2 in the sample; the third is two blocks on.
       expect(short.fit.page2Start).toBe(plain.fit.page2Start! + 2);
       // A commented-out block is no block of the page.
       const commented = `<!-- <section><p>Entwurf</p></section> -->${onepager.html}`;
-      const kept = await fitOnepager(composer, { ...onepager, html: commented }, "unused", work);
+      const kept = await fitOnepager(composer, { ...onepager, html: commented }, work);
       expect(kept.fit.page2Start).toBe(plain.fit.page2Start);
       // An element left open would shift the count: refused, not balanced on the wrong block.
       const open = onepager.html.replace("</h3>", "</h3><ul><li>offen</ul>");
-      expect(
-        await rejection(fitOnepager(composer, { ...onepager, html: open }, "unused", work)),
-      ).toMatch(/leaves an element open/);
+      expect(await rejection(fitOnepager(composer, { ...onepager, html: open }, work))).toMatch(
+        /leaves an element open/,
+      );
     },
     limit(120_000),
   );

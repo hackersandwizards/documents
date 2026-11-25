@@ -3,7 +3,9 @@ import { availableParallelism } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import manifest from "../../package.json";
-import type * as renderPdf from "../../scripts/render-pdf";
+import type * as composer from "../../scripts/compose-document";
+import type * as css from "../../scripts/document-css";
+import type * as fonts from "../../scripts/font-faces";
 import { isRecord } from "../../scripts/root";
 
 // A consumer's server build (Astro's, for Company OS) bundles these modules into chunks of its own:
@@ -15,10 +17,11 @@ const out = mkdtempSync(join(REPO, "node_modules/.cache/bundled-"));
 afterAll(() => rmSync(out, { recursive: true, force: true }));
 
 const built = await Bun.build({
-  entrypoints: ["render-pdf", "survey-readout", "onepager", "compose", "handout"].map((m) =>
-    join(REPO, `scripts/${m}.ts`),
-  ),
+  entrypoints: Object.values(manifest.exports)
+    .filter((path) => path.endsWith(".ts"))
+    .map((path) => join(REPO, path)),
   outdir: out,
+  naming: "[name].[ext]",
   target: "node",
   packages: "external",
 });
@@ -28,7 +31,9 @@ async function loadBundle(file: string): Promise<Record<string, unknown>> {
   return module;
 }
 
-type RenderBundle = Pick<typeof renderPdf, "composeDocument" | "documentCss" | "subsetFaces">;
+type RenderBundle = Pick<typeof composer, "composeDocument"> &
+  Pick<typeof css, "documentCss"> &
+  Pick<typeof fonts, "subsetFaces">;
 
 function isRenderBundle(module: Record<string, unknown>): module is RenderBundle {
   return (
@@ -39,8 +44,13 @@ function isRenderBundle(module: Record<string, unknown>): module is RenderBundle
 }
 
 async function loadRenderBundle(query = ""): Promise<RenderBundle> {
-  const module = await loadBundle(`render-pdf.js${query}`);
-  if (!isRenderBundle(module)) throw new Error("Expected render-pdf exports in the bundle");
+  const module = {
+    ...(await loadBundle("compose-document.js")),
+    ...(await loadBundle("document-css.js")),
+    ...(await loadBundle(`font-faces.js${query}`)),
+  };
+  if (!isRenderBundle(module))
+    throw new Error("Expected composition, CSS and font exports in the bundles");
   return module;
 }
 

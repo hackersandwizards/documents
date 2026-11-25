@@ -13,16 +13,11 @@ import {
 import { createRequire } from "node:module";
 import { hostname, tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
-import {
-  bakeDocumentCss,
-  brandCss,
-  compactStyles,
-  composeDocument,
-  documentCss,
-  inlineImages,
-  renderPdf,
-  subsetFaces,
-} from "../scripts/render-pdf";
+import { bakeDocumentCss, brandCss, documentCss } from "../scripts/document-css";
+import { compactStyles, renderPdf } from "../scripts/render-pdf";
+import { composeDocument } from "../scripts/compose-document";
+import { inlineImages } from "../scripts/inline-images";
+import { subsetFaces } from "../scripts/font-faces";
 import { decompress } from "woff2-encoder";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { isRecord } from "../scripts/root";
@@ -412,14 +407,15 @@ describe("a Chrome or composer that cannot start", () => {
       const tmp = mkdtempSync(join(dir, "nostart-"));
       writeFileSync(join(dir, "nostart.html"), "<!doctype html><html><body>x</body></html>");
       const script = `
-      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
+      import { composeWarmDocument } from ${JSON.stringify(join(import.meta.dirname, "../scripts/compose-document.ts"))};
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
       const outcome = (p) => p.then(() => "ok", (e) => e.message);
       process.env.CHROME_BINARY = "/nonexistent/chrome";
       const render = (warm) => outcome(renderPdf(${JSON.stringify(join(dir, "nostart.html"))}, ${JSON.stringify(join(dir, "nostart.pdf"))}, { warm }));
       const chrome = [await render(false), await render(true), await render(true)];
       const path = process.env.PATH;
       process.env.PATH = "/nonexistent";
-      const compose = () => outcome(composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), { warm: true }));
+      const compose = () => outcome(composeWarmDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd()));
       const composer = [await compose()];
       process.env.PATH = path;
       composer.push(await compose());
@@ -462,7 +458,8 @@ describe("a malformed child-process reply", () => {
         mode: 0o755,
       });
       const script = `
-      import { composeDocument, renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
+      import { composeWarmDocument } from ${JSON.stringify(join(import.meta.dirname, "../scripts/compose-document.ts"))};
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
       const outcome = (promise) => promise.then(() => "ok", (error) => error.message);
       const warm = { warm: true, timeoutMs: 2_000 };
       if (${JSON.stringify(worker)} === "Chrome") {
@@ -471,7 +468,7 @@ describe("a malformed child-process reply", () => {
       } else {
         const originalPath = process.env.PATH;
         process.env.PATH = ${JSON.stringify(stubDir)} + ":" + originalPath;
-        const compose = () => outcome(composeDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd(), warm));
+        const compose = () => outcome(composeWarmDocument("DocMarkdown", { html: "<p>x</p>" }, process.cwd()));
         const failed = await compose();
         process.env.PATH = originalPath;
         console.log(JSON.stringify([failed, await compose()]));

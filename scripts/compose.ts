@@ -8,7 +8,8 @@ import type { AstroComponentFactory } from "astro/runtime/server/index.js";
 import { createServer } from "vite";
 import { withElements } from "./elements";
 import { escapeHtml, languageTag } from "./fill";
-import { bakeDocumentCss, subsetFaces } from "./render-pdf";
+import { bakeDocumentCss } from "./document-css";
+import { subsetFaces } from "./font-faces";
 import { isRecord, ROOT } from "./root";
 
 const USAGE = `Usage: bun run documents-compose <Component> <props.json> <output.html>
@@ -33,9 +34,7 @@ function isAstroComponentFactory(value: unknown): value is AstroComponentFactory
   );
 }
 
-/** Astro's compiler for the document components: `render` returns a component's markup
- * (slots as HTML strings), `styles` the scoped styles of every component rendered so far. */
-export async function openComposer(root = process.cwd()) {
+async function openDocumentVite(root: string) {
   // Astro's compiler without the project's Astro config: its integrations have no part in a
   // document, and a cache of its own leaves a running dev server's untouched.
   const config = await getViteConfig(
@@ -57,7 +56,13 @@ export async function openComposer(root = process.cwd()) {
       compressHTML: false,
     },
   )({ command: "serve", mode: "development" });
-  const server = await createServer({ ...config, configFile: false });
+  return createServer({ ...config, configFile: false });
+}
+
+/** Astro's compiler for the document components: `render` returns a component's markup
+ * (slots as HTML strings), `styles` the scoped styles of every component rendered so far. */
+export async function openComposer(root = process.cwd()) {
+  const server = await openDocumentVite(root);
   const load = async (id: string): Promise<Record<string, unknown>> => {
     const module: unknown = await server.ssrLoadModule(id);
     if (!isRecord(module)) throw new Error(`Expected a Vite module: ${id}`);
@@ -95,21 +100,18 @@ export async function openComposer(root = process.cwd()) {
   };
 }
 
-/** One component with its props as a standalone page: `base` fills the marked style element, and
- * the faces it inlines are cut to the page's characters (subsetFaces). */
-export async function composePage(
+/** One component and its scoped styles, with a marker for the document base. */
+export async function composeUnbakedPage(
   composer: Awaited<ReturnType<typeof openComposer>>,
   name: string,
   props: Record<string, unknown>,
-  base = bakeDocumentCss,
 ): Promise<string> {
   const lang = languageTag(typeof props.lang === "string" ? props.lang : "de");
   const body = withElements(await composer.render(name, props));
   // Without a title the renderer takes the first heading's, as for every document without one.
   const title =
     typeof props.title === "string" ? `<title>${escapeHtml(props.title)}</title>\n` : "";
-  return subsetFaces(
-    base(`<!doctype html>
+  return `<!doctype html>
 <html lang="${lang}" data-hw-scale="print">
 <head>
 <meta charset="utf-8" />
@@ -122,14 +124,21 @@ ${await composer.styles()}
 ${body}
 </body>
 </html>
-`),
-  );
+`;
+}
+
+export async function composePage(
+  composer: Awaited<ReturnType<typeof openComposer>>,
+  name: string,
+  props: Record<string, unknown>,
+): Promise<string> {
+  return subsetFaces(bakeDocumentCss(await composeUnbakedPage(composer, name, props)));
 }
 
 /** `--serve`: composes each request read from stdin, one JSON line `{ id, name, props }`, and
  * answers on fd 3 with `{ id, html }` or `{ id, error }`, keeping a composer per component, so
  * each page is the one a fresh run writes (a composer's styles are those of every component it
- * rendered). composeDocument's `warm` keeps this process. */
+ * rendered). composeWarmDocument keeps this process. */
 async function serve() {
   const composers = new Map<string, ReturnType<typeof openComposer>>();
   // Its stdin closes with the caller, however that ends.

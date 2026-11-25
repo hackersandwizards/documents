@@ -40,7 +40,8 @@ Compose a component with its props, then print the page to PDF. Run it from your
 root: `composeDocument` compiles the component with that project's Astro.
 
 ```ts
-import { composeDocument, renderPdf } from "@hackersandwizards/documents/render-pdf";
+import { composeDocument } from "@hackersandwizards/documents/compose-document";
+import { renderPdf } from "@hackersandwizards/documents/render-pdf";
 
 const html = await composeDocument("DocMarkdown", { kind: "Briefing", html: "<h1>Hi</h1>" });
 await Bun.write("briefing.html", html);
@@ -49,11 +50,16 @@ await renderPdf("briefing.html", "briefing.pdf");
 
 The imports, each under `@hackersandwizards/documents/`:
 
-- `render-pdf`: `renderPdf` (an HTML file or URL), `composeDocument`, `renderHandoutPdf`, `bakeDocumentCss`, `assertBrandFonts`, `inlineImages`, `subsetFaces`, `brandCss`
+- `render-pdf`: `renderPdf` prints an HTML file or URL
+- `compose-document`: `composeDocument` starts a fresh composer and `composeWarmDocument` keeps one per Astro project
+- `document-css`: `bakeDocumentCss`, `documentCss`, `brandCss`, `inlineCss`
+- `font-faces`: `subsetFaces`, `cutFacesToPdf`, `assertBrandFonts`
+- `inline-images`: `inlineImages` resolves and embeds local and package images
+- `render-handout-pdf`: `renderHandoutPdf` measures and prints a handout
 - `document.css`: the print base; `tokens.css`: the document tokens, every value a role on the brand's tokens
 - `components/<Doc*.astro>`: a document component, rendered in your own Astro route
-- `compose`: `openComposer`, `composePage`, `escapeHtml`
-- `onepager`: `composeOnepager`, `fitOnepager`, the onepager and its two-page fit; `onepager.css`: its own stylesheet
+- `compose`: `openComposer`, `composePage`, `composeUnbakedPage`, `escapeHtml`
+- `onepager`: `composeOnepager`, `fitOnepager(composer, page, dir)`, the onepager and its two-page fit; `onepager.css`: its own stylesheet
 - `survey-readout`: `composeSurveyReadout`, the attendee-feedback readout deck; `bandColor`, `scalePosition`, `STRENGTH_AT`, its score bands
 - `handout` and `handout.css`: `HANDOUT_TEXT`, the handout's words per language, and its print stylesheet
 

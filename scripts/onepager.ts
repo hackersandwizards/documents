@@ -6,7 +6,9 @@ import type { openComposer } from "./compose";
 import { ONEPAGER_ELEMENTS, withElements } from "./elements";
 import { escapeHtml, languageTag } from "./fill";
 import { flatBlock, page2Block } from "./page2-block";
-import { compactStyles, cutFacesToPdf, inlineCss, renderPdf, subsetFaces } from "./render-pdf";
+import { compactStyles, renderPdf } from "./render-pdf";
+import { cutFacesToPdf, subsetFaces } from "./font-faces";
+import { inlineCss } from "./document-css";
 import { brandFile, ROOT, withoutImports } from "./root";
 
 export { page2Block } from "./page2-block";
@@ -130,6 +132,25 @@ function fitCss(fit: OnepagerFit = {}): string {
 .page > :nth-child(n + ${start + 1}):not(${KEPT}) { margin-top: var(--air-gap, 0); }`;
 }
 
+async function onepagerCardTag(composer: Awaited<ReturnType<typeof openComposer>>, tint: boolean) {
+  const SLOT = "\u0001";
+  const [open, close] = (await composer.render("DocCard", { tint }, { default: SLOT })).split(SLOT);
+  if (!open?.startsWith("<div ") || close?.trim() !== "</div>")
+    throw new Error(`DocCard no longer wraps its slot in one <div>: ${open}${SLOT}${close}`);
+  return open.trim();
+}
+
+function applyOnepagerCards(html: string, cards: { card: string; tint: string }): string {
+  return html.replace(/<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g, (tag, cls: string) => {
+    const own = cls.split(" ");
+    if (!own.includes("card")) return tag;
+    const card = own.includes("tint") ? cards.tint : cards.card;
+    const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
+    const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
+    return card.replace(/class="[^"]*"/, `class="${all}"`);
+  });
+}
+
 /** The onepager as a standalone HTML page, the brand files and faces inlined. Given `link`, which
  * turns a file brand exports into the link the page reaches it by, it links the brand's tokens,
  * faces and favicon instead, as the catalog does, so a brand release leaves the page current. */
@@ -139,26 +160,14 @@ export async function composeOnepager(
   link?: (file: string) => string,
 ): Promise<string> {
   const lang = languageTag(page.lang);
-  const SLOT = "\u0001";
-  const cardTag = async (tint: boolean) => {
-    const [open, close] = (await composer.render("DocCard", { tint }, { default: SLOT })).split(
-      SLOT,
-    );
-    if (!open?.startsWith("<div ") || close?.trim() !== "</div>")
-      throw new Error(`DocCard no longer wraps its slot in one <div>: ${open}${SLOT}${close}`);
-    return open.trim();
+  const cards = {
+    card: await onepagerCardTag(composer, false),
+    tint: await onepagerCardTag(composer, true),
   };
-  const cards = { card: await cardTag(false), tint: await cardTag(true) };
-  const rendered = (
-    await composer.render("DocOnepager", { lang, kind: page.kind, html: page.html })
-  ).replace(/<div class="([^"]*)"(?: data-astro-cid-\w+)?>/g, (tag, cls: string) => {
-    const own = cls.split(" ");
-    if (!own.includes("card")) return tag;
-    const card = own.includes("tint") ? cards.tint : cards.card;
-    const base = card.match(/class="([^"]*)"/)?.[1].split(" ") ?? [];
-    const all = [...base, ...own.filter((c) => !base.includes(c))].join(" ");
-    return card.replace(/class="[^"]*"/, `class="${all}"`);
-  });
+  const rendered = applyOnepagerCards(
+    await composer.render("DocOnepager", { lang, kind: page.kind, html: page.html }),
+    cards,
+  );
   const body = withElements(rendered, ONEPAGER_ELEMENTS);
   const style = [
     baseCss(link !== undefined),
@@ -213,22 +222,7 @@ const pdfPages = (pdf: string) =>
 const pdfPageText = (pdf: string, page: number) =>
   execFileSync("pdftotext", ["-f", `${page}`, "-l", `${page}`, pdf, "-"], { encoding: "utf8" });
 
-/**
- * The onepager composed with the page balance that fits it: rendered once as it is; over two pages,
- * again under `tight`, the fallback for copy not yet cut; on two pages, each page's free space
- * spent between its blocks, page 1's after the hero (lift) and page 2's after its first one (air),
- * each at the widest level that keeps two pages and leaves page 1's text as it was. `dir` is the
- * folder the fits are rendered in. `_brand` remains for compatibility with callers since the
- * faces are inlined. Returns the page count so callers can enforce the two-page limit. Needs
- * Chrome for Testing and poppler (pdfinfo, pdftotext), as renderPdf and assertBrandFonts do.
- */
-export async function fitOnepager(
-  composer: Awaited<ReturnType<typeof openComposer>>,
-  page: Omit<OnepagerPage, "fit">,
-  _brand: string,
-  dir: string,
-): Promise<{ html: string; pages: number; fit: OnepagerFit }> {
-  const work = mkdtempSync(join(tmpdir(), "hw-onepager-"));
+function onepagerTrials(bake: (fit: OnepagerFit) => Promise<string>, dir: string, work: string) {
   const tag = work.split("-").pop();
   // Each fit renders once into its own files, so the levels of one kind render side by side and
   // the last step reads the chosen fit back instead of rendering it again.
@@ -242,7 +236,7 @@ export async function fitOnepager(
         pdf: join(work, `fit-${renders.size}.pdf`),
       };
       renders.set(key, f);
-      writeFileSync(f.html, await composeOnepager(composer, { ...page, fit }));
+      writeFileSync(f.html, await bake(fit));
     }
     return f;
   };
@@ -262,10 +256,50 @@ export async function fitOnepager(
     }
     return { pages: await pages, pdf };
   };
+  return {
+    files,
+    render,
+    close() {
+      for (const { html } of renders.values()) rmSync(html, { force: true });
+      rmSync(work, { recursive: true, force: true });
+    },
+  };
+}
+
+async function widestOnepagerSpacing(
+  fits: OnepagerFit[],
+  first: string,
+  trial: ReturnType<typeof onepagerTrials>,
+): Promise<OnepagerFit | undefined> {
+  for (const fit of fits) await trial.files(fit);
+  const attempts = await Promise.all(fits.map(trial.render));
+  let kept: OnepagerFit | undefined;
+  for (const [i, { pages, pdf }] of attempts.entries()) {
+    if (pages !== 2 || flatText(pdfPageText(pdf, 1)) !== first) break;
+    kept = fits[i];
+  }
+  return kept;
+}
+
+/**
+ * The onepager composed with the page balance that fits it: rendered once as it is; over two pages,
+ * again under `tight`, the fallback for copy not yet cut; on two pages, each page's free space
+ * spent between its blocks, page 1's after the hero (lift) and page 2's after its first one (air),
+ * each at the widest level that keeps two pages and leaves page 1's text as it was. `dir` is the
+ * folder the fits are rendered in. Returns the page count so callers can enforce the two-page limit. Needs
+ * Chrome for Testing and poppler (pdfinfo, pdftotext), as renderPdf and assertBrandFonts do.
+ */
+export async function fitOnepager(
+  composer: Awaited<ReturnType<typeof openComposer>>,
+  page: Omit<OnepagerPage, "fit">,
+  dir: string,
+): Promise<{ html: string; pages: number; fit: OnepagerFit }> {
+  const work = mkdtempSync(join(tmpdir(), "hw-onepager-"));
+  const trial = onepagerTrials((fit) => composeOnepager(composer, { ...page, fit }), dir, work);
   try {
     let fit: OnepagerFit = {};
-    let { pages, pdf } = await render(fit);
-    if (pages > 2) ({ pages, pdf } = await render((fit = { tight: true })));
+    let { pages, pdf } = await trial.render(fit);
+    if (pages > 2) ({ pages, pdf } = await trial.render((fit = { tight: true })));
     if (pages === 2) {
       const page1Text = pdfPageText(pdf, 1);
       const blocks = topLevelBlocks(page.html).map(flatBlock);
@@ -274,25 +308,18 @@ export async function fitOnepager(
         throw new Error(`fitOnepager: no block of "${page.title}" holds page 2's first line`);
       // The header is .page's first child, the first block its second.
       fit = { ...fit, page2Start: index + 2 };
-      const first = flatText(page1Text);
       for (const kind of ["lift", "air"] as const) {
-        const base = fit;
-        for (const level of LEVELS) await files({ ...base, [kind]: level });
-        const tries = await Promise.all(LEVELS.map((level) => render({ ...base, [kind]: level })));
-        for (const [i, level] of LEVELS.entries()) {
-          if (tries[i]!.pages !== 2 || flatText(pdfPageText(tries[i]!.pdf, 1)) !== first) break;
-          fit = { ...fit, [kind]: level };
-        }
+        const candidates = LEVELS.map((level) => ({ ...fit, [kind]: level }));
+        fit = (await widestOnepagerSpacing(candidates, flatText(page1Text), trial)) ?? fit;
       }
-      ({ pages, pdf } = await render(fit));
+      ({ pages, pdf } = await trial.render(fit));
     }
     return {
-      html: await cutFacesToPdf(readFileSync((await files(fit)).html, "utf8"), pdf),
+      html: await cutFacesToPdf(readFileSync((await trial.files(fit)).html, "utf8"), pdf),
       pages,
       fit,
     };
   } finally {
-    for (const { html } of renders.values()) rmSync(html, { force: true });
-    rmSync(work, { recursive: true, force: true });
+    trial.close();
   }
 }
