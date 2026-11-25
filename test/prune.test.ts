@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { pruneStyles } from "../scripts/prune";
+import { describe, expect, it, test } from "vitest";
+import {
+  attributeMatches,
+  bareSelectorMatches,
+  cssItemDelimiters,
+  pruneStyles,
+  skipQuotedString,
+} from "../scripts/prune";
 
 const page = (css: string, body: string) =>
   `<html><head><style>${css}</style></head><body>${body}</body></html>`;
@@ -178,4 +184,53 @@ describe("pruneStyles", () => {
       "main{--orphan:0;&:hover{color:red}}main p{color:var(--ink)}",
     );
   });
+});
+
+test.each([
+  ["'foo'", 0, 4],
+  ['a"x\\"y"z', 1, 6],
+  ["a'unclosed", 1, 10],
+])("finds the closing quote in %j", (text, start, expected) => {
+  expect(skipQuotedString(text, start)).toBe(expected);
+});
+
+test.each([
+  [
+    'p{";";}',
+    [
+      { char: "{", index: 1 },
+      { char: ";", index: 5 },
+      { char: "}", index: 6 },
+    ],
+  ],
+  ["f(g(;));", [{ char: ";", index: 7 }]],
+  ["a(unclosed;", []],
+])("finds stylesheet delimiters outside strings and parentheses in %j", (css, expected) => {
+  expect([...cssItemDelimiters(css)]).toEqual(expected);
+});
+
+const selectorPage = {
+  attributes: new Set(["data-own"]),
+  classes: new Set(["known"]),
+  ids: new Set(["main"]),
+  tags: new Set(["p"]),
+};
+
+test.each([
+  ['[DATA-OWN="x"]', true],
+  ["[open]", true],
+  ["[data-absent]", false],
+  ["[unknown\\2d name]", true],
+])("checks whether an attribute selector can match %s", (selector, expected) => {
+  expect(attributeMatches(selector, selectorPage)).toBe(expected);
+});
+
+test.each([
+  ["P.known#main:hover", true],
+  ["p::first-letter", true],
+  ["p.missing", false],
+  ["p#other", false],
+  ["aside.known", false],
+])("checks tag, ID, and class requirements in %s", (selector, expected) => {
+  expect(bareSelectorMatches(selector, selectorPage)).toBe(expected);
 });

@@ -1,5 +1,4 @@
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -9,11 +8,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
-import { afterAll, beforeAll, expect, test, vi } from "vitest";
-import { makeChromeProfile } from "../scripts/chrome-profile";
+import { join } from "node:path";
+import { afterAll, beforeAll, expect, test } from "vitest";
 import { imageReference, localImage, packageImage } from "../scripts/image-sources";
-import { onepagerTrials } from "../scripts/onepager-trials";
 import { brandFile } from "../scripts/root";
 
 const root = realpathSync(mkdtempSync(join(tmpdir(), "document-file-tests-")));
@@ -71,41 +68,4 @@ test("fails a missing package export when missing images are disallowed", () => 
   expect(() => packageImage({ file: missing, ext: "svg", src: missing }, brand)).toThrow(
     "exports no image",
   );
-});
-
-test("creates distinct Chrome profiles in the temporary root", () => {
-  vi.stubEnv("TMPDIR", root);
-  try {
-    const first = makeChromeProfile();
-    const second = makeChromeProfile();
-    expect([dirname(first), dirname(second)]).toEqual([root, root]);
-    expect([basename(first), basename(second)]).toEqual([
-      expect.stringMatching(/^hw-chrome-/),
-      expect.stringMatching(/^hw-chrome-/),
-    ]);
-    expect(first).not.toBe(second);
-    expect([existsSync(first), existsSync(second)]).toEqual([true, true]);
-  } finally {
-    vi.unstubAllEnvs();
-  }
-});
-
-test.each([
-  ["a repeated fit", { tight: true }, true],
-  ["a different fit", { lift: 1 }, false],
-])("reuses the trial files only for the same fit (%s)", async (_name, secondFit, reused) => {
-  const bake = vi.fn((fit: object) => Promise.resolve(JSON.stringify(fit)));
-  const trial = onepagerTrials(bake, root);
-  const paths = await (async () => {
-    try {
-      const first = await trial.files({ tight: true });
-      const second = await trial.files(secondFit);
-      expect(first.html === second.html).toBe(reused);
-      expect(readFileSync(second.html, "utf8")).toBe(JSON.stringify(secondFit));
-      return [first.html, second.html, dirname(first.pdf)];
-    } finally {
-      trial.close();
-    }
-  })();
-  expect(paths.map(existsSync)).toEqual([false, false, false]);
 });

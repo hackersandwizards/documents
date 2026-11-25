@@ -71,39 +71,45 @@ test.each([
   ).toBe(noRiskShare);
 });
 
-test.each([
-  [
-    {
-      title: "Feedback <",
-      question: "Which & why?",
-      answers: ["short", "longer < answer"],
-      page: 5,
-    },
-    [
-      "<h2>Feedback &lt;</h2>",
-      "Which &amp; why?",
-      'longer &lt; answer</blockquote><blockquote class="quote">short',
-      "05 / 07",
-    ],
-  ],
-  [
-    { title: "Suggestions", question: "", answers: [], page: 6 },
-    ["<h2>Suggestions</h2>", text.noAnswers, "06 / 07"],
-  ],
-])("renders and escapes quote slide %j", (slide, fragments) => {
-  const html = quoteSlide(slide, text, "Kicker");
-  expect(fragments.filter((fragment) => !html.includes(fragment))).toEqual([]);
-});
+const feedback = {
+  title: "Feedback <",
+  question: "Which & why?",
+  answers: ["short", "longer < answer"],
+  page: 5,
+};
+const suggestions = { title: "Suggestions", question: "", answers: [], page: 6 };
 
 test.each([
-  [{ strengths: [], weak: [], weakColors: [], flags: [] }, ['<div class="caption">—</div>']],
+  ["escapes the title", feedback, "<h2>Feedback &lt;</h2>"],
+  ["escapes the question", feedback, "Which &amp; why?"],
   [
-    { strengths: ["Progress"], weak: ["Repair"], weakColors: ["red"], flags: ["Check <first>"] },
-    ['class="good"><li>Progress</li>', 'style="--mark:red">Repair</li>', "Check &lt;first&gt;"],
+    "orders answers longest first and escapes their text",
+    feedback,
+    'longer &lt; answer</blockquote><blockquote class="quote">short',
   ],
-])("renders rollup lists and marks from %j", (readout, fragments) => {
-  const html = readoutSlide(readout, text, "Kicker");
-  expect(fragments.map((fragment) => html.includes(fragment))).not.toContain(false);
+  ["shows the feedback page number", feedback, "05 / 07"],
+  ["shows the suggestions title", suggestions, "<h2>Suggestions</h2>"],
+  ["shows the fallback for no answers", suggestions, text.noAnswers],
+  ["shows the suggestions page number", suggestions, "06 / 07"],
+])("quote slide %s", (_behavior, slide, fragment) => {
+  expect(quoteSlide(slide, text, "Kicker")).toContain(fragment);
+});
+
+const emptyReadout = { strengths: [], weak: [], weakColors: [], flags: [] };
+const populatedReadout = {
+  strengths: ["Progress"],
+  weak: ["Repair"],
+  weakColors: ["red"],
+  flags: ["Check <first>"],
+};
+
+test.each([
+  ["shows the fallback for empty lists", emptyReadout, '<div class="caption">—</div>'],
+  ["lists strengths", populatedReadout, 'class="good"><li>Progress</li>'],
+  ["marks weak spots", populatedReadout, 'style="--mark:red">Repair</li>'],
+  ["escapes flags", populatedReadout, "Check &lt;first&gt;"],
+])("readout slide %s", (_behavior, readout, fragment) => {
+  expect(readoutSlide(readout, text, "Kicker")).toContain(fragment);
 });
 
 test("places the quote slides after risks and before the readout", () => {

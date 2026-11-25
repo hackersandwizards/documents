@@ -4,6 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { renderPdf } from "./render-pdf";
 
+/** The page balance fitOnepager picks: `tight` for copy over two pages, then the widest gap level
+ *  (0 to 4) between page 1's blocks after the hero (`lift`) and between page 2's blocks after its
+ *  first one (`air`); `page2Start` is the position of the block that opens page 2 among the
+ *  children of `.page` (1 is the header). */
 export interface OnepagerFit {
   tight?: boolean;
   lift?: number;

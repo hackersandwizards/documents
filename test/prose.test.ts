@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { proseHtml } from "../scripts/prose";
+import { cellAlignmentClass, proseHtml } from "../scripts/prose";
 
 test("removes the 101st duplicate style attribute", () => {
   const many = Array.from({ length: 101 }, (_, i) => `style="--x:${i}"`).join(" ");
@@ -75,4 +75,14 @@ test("the error names the first element that would style the body", () => {
   expect(() => proseHtml('<p>x</p><link rel="stylesheet"><style>p{}</style>')).toThrow(
     /carries <link>/,
   );
+});
+
+test.each([
+  ["font-weight: bold; TEXT-ALIGN: Right !important", "num"],
+  ["text-align: center", "center"],
+  ["text-align: left; text-align: right", undefined],
+  ["text-align: constructor", undefined],
+  ["vertical-text-align: right", undefined],
+])("reads table alignment from %s", (style, expected) => {
+  expect(cellAlignmentClass(style)).toBe(expected);
 });
