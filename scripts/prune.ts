@@ -9,30 +9,17 @@ function skipQuotedString(text: string, start: number): number {
   return i;
 }
 
-/** Index of the closing `)` matching `text[start]`, skipping quoted strings and nested parens. */
-function skipParenthesized(text: string, start: number): number {
-  let depth = 1;
-  let i = start + 1;
-  for (; i < text.length && depth > 0; i++) {
-    const c = text[i]!;
-    if (c === '"' || c === "'") i = skipQuotedString(text, i);
-    else if (PAREN_DELTA[c]) depth += PAREN_DELTA[c];
+function* cssItemDelimiters(css: string) {
+  let parens = 0;
+  for (let index = 0; index < css.length; index++) {
+    const char = css.charAt(index);
+    if (char === '"' || char === "'") {
+      index = skipQuotedString(css, index);
+      continue;
+    }
+    parens += PAREN_DELTA[char] ?? 0;
+    if (parens <= 0 && "{};".includes(char)) yield { char, index };
   }
-  return i - 1;
-}
-
-/** Index of the closing `}` matching `css[open]`, skipping strings, parentheses and nested blocks,
- * or -1 when unclosed. */
-function findBlockEnd(css: string, open: number): number {
-  let depth = 1;
-  for (let i = open + 1; i < css.length; i++) {
-    const c = css[i]!;
-    if (c === '"' || c === "'") i = skipQuotedString(css, i);
-    else if (c === "(") i = skipParenthesized(css, i);
-    else if (c === "{") depth++;
-    else if (c === "}" && --depth === 0) return i;
-  }
-  return -1;
 }
 
 /** A style sheet's top-level items: a statement ending in `;` or a block, its prelude and body.
@@ -40,23 +27,20 @@ function findBlockEnd(css: string, open: number): number {
 export function cssItems(css: string): { prelude: string; body?: string; end: number }[] {
   const out: ReturnType<typeof cssItems> = [];
   let start = 0;
-  for (let i = 0; i < css.length; i++) {
-    const c = css[i]!;
-    if (c === '"' || c === "'") i = skipQuotedString(css, i);
-    else if (c === "(") i = skipParenthesized(css, i);
-    else if (c === "{") {
-      const close = findBlockEnd(css, i);
-      if (close < 0) break;
+  let depth = 0;
+  let open = -1;
+  for (const { char, index } of cssItemDelimiters(css)) {
+    if (char === "{" && depth++ === 0) open = index;
+    else if (char === "}" && --depth === 0) {
       out.push({
-        prelude: css.slice(start, i).trim(),
-        body: css.slice(i + 1, close),
-        end: close + 1,
+        prelude: css.slice(start, open).trim(),
+        body: css.slice(open + 1, index),
+        end: index + 1,
       });
-      start = close + 1;
-      i = close;
-    } else if (c === ";") {
-      out.push({ prelude: css.slice(start, i + 1).trim(), end: i + 1 });
-      start = i + 1;
+      start = index + 1;
+    } else if (char === ";" && depth === 0) {
+      out.push({ prelude: css.slice(start, index + 1).trim(), end: index + 1 });
+      start = index + 1;
     }
   }
   const trailing = css.slice(start).trim();
@@ -70,7 +54,7 @@ function splitTop(text: string, sep: string): string[] {
   let depth = 0;
   let start = 0;
   for (let i = 0; i < text.length; i++) {
-    const c = text[i]!;
+    const c = text.charAt(i);
     if (c === '"' || c === "'") i = skipQuotedString(text, i);
     else if (DELIMITER_DELTA[c]) depth += DELIMITER_DELTA[c];
     else if (c === sep && depth === 0) {
@@ -107,7 +91,7 @@ function endOfPseudoArgs(selector: string, open: number): number {
   let depth = 1;
   let j = open + 1;
   for (; j < selector.length && depth > 0; j++) {
-    const ch = selector[j]!;
+    const ch = selector.charAt(j);
     if (ch === "[") j += ATTRIBUTE.exec(selector.slice(j))![0].length - 1;
     else if (PAREN_DELTA[ch]) depth += PAREN_DELTA[ch];
   }

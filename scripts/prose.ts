@@ -1,4 +1,7 @@
-const CELL_ALIGNMENT: Record<string, string> = { right: "num", center: "center" };
+const CELL_ALIGNMENT = new Map([
+  ["right", "num"],
+  ["center", "center"],
+]);
 
 /** The document base's alignment class for a table cell's `text-align` declaration, if any. */
 function cellAlignmentClass(style: string): string | undefined {
@@ -7,7 +10,7 @@ function cellAlignmentClass(style: string): string | undefined {
     .map((declaration) => declaration.split(":").map((part) => part.trim().toLowerCase()))
     .find(([property]) => property === "text-align")?.[1];
   const value = align?.replace(/!\s*important$/, "").trim();
-  return value ? CELL_ALIGNMENT[value] : undefined;
+  return value ? CELL_ALIGNMENT.get(value) : undefined;
 }
 
 /**
