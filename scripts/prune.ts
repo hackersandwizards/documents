@@ -1,27 +1,60 @@
+const PAREN_DELTA: Record<string, number> = { "(": 1, ")": -1 };
+const DELIMITER_DELTA: Record<string, number> = { "(": 1, "[": 1, ")": -1, "]": -1 };
+
+/** Index of the closing quote matching `text[start]`, respecting backslash escapes. */
+function skipQuotedString(text: string, start: number): number {
+  const quote = text[start];
+  let i = start + 1;
+  while (i < text.length && text[i] !== quote) i += text[i] === "\\" ? 2 : 1;
+  return i;
+}
+
+/** Index of the closing `)` matching `text[start]`, skipping quoted strings and nested parens. */
+function skipParenthesized(text: string, start: number): number {
+  let depth = 1;
+  let i = start + 1;
+  for (; i < text.length && depth > 0; i++) {
+    const c = text[i]!;
+    if (c === '"' || c === "'") i = skipQuotedString(text, i);
+    else if (PAREN_DELTA[c]) depth += PAREN_DELTA[c];
+  }
+  return i - 1;
+}
+
+/** Index of the closing `}` matching `css[open]`, skipping strings, parentheses and nested blocks,
+ * or -1 when unclosed. */
+function findBlockEnd(css: string, open: number): number {
+  let depth = 1;
+  for (let i = open + 1; i < css.length; i++) {
+    const c = css[i]!;
+    if (c === '"' || c === "'") i = skipQuotedString(css, i);
+    else if (c === "(") i = skipParenthesized(css, i);
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return i;
+  }
+  return -1;
+}
+
 /** A style sheet's top-level items: a statement ending in `;` or a block, its prelude and body.
  * Strings and parentheses are skipped over, so a `{`, `}` or `;` inside them ends nothing. */
 export function cssItems(css: string): { prelude: string; body?: string; end: number }[] {
   const out: ReturnType<typeof cssItems> = [];
   let start = 0;
-  let depth = 0;
-  let open = -1;
-  let parens = 0;
   for (let i = 0; i < css.length; i++) {
-    const c = css[i];
-    if (c === '"' || c === "'") {
-      for (i++; i < css.length && css[i] !== c; i++) if (css[i] === "\\") i++;
-    } else if (c === "(") parens++;
-    else if (c === ")") parens--;
-    else if (parens > 0) continue;
-    else if (c === "{" && depth++ === 0) open = i;
-    else if (c === "}" && --depth === 0) {
+    const c = css[i]!;
+    if (c === '"' || c === "'") i = skipQuotedString(css, i);
+    else if (c === "(") i = skipParenthesized(css, i);
+    else if (c === "{") {
+      const close = findBlockEnd(css, i);
+      if (close < 0) break;
       out.push({
-        prelude: css.slice(start, open).trim(),
-        body: css.slice(open + 1, i),
-        end: i + 1,
+        prelude: css.slice(start, i).trim(),
+        body: css.slice(i + 1, close),
+        end: close + 1,
       });
-      start = i + 1;
-    } else if (c === ";" && depth === 0) {
+      start = close + 1;
+      i = close;
+    } else if (c === ";") {
       out.push({ prelude: css.slice(start, i + 1).trim(), end: i + 1 });
       start = i + 1;
     }
@@ -37,11 +70,9 @@ function splitTop(text: string, sep: string): string[] {
   let depth = 0;
   let start = 0;
   for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (c === '"' || c === "'") {
-      for (i++; i < text.length && text[i] !== c; i++) if (text[i] === "\\") i++;
-    } else if (c === "(" || c === "[") depth++;
-    else if (c === ")" || c === "]") depth--;
+    const c = text[i]!;
+    if (c === '"' || c === "'") i = skipQuotedString(text, i);
+    else if (DELIMITER_DELTA[c]) depth += DELIMITER_DELTA[c];
     else if (c === sep && depth === 0) {
       parts.push(text.slice(start, i));
       start = i + 1;
@@ -71,6 +102,38 @@ const ID_NAME = new RegExp(`#${NAME}`, "gu");
 const ATTRIBUTE = /^\[(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\]"'])*\]?/;
 const ATTRIBUTE_NAME = /^\[\s*([\w-]+)\s*(?:[~|^$*]?=|\])/;
 
+/** Index just past the closing `)` matching `selector[open]`, skipping attribute tests. */
+function endOfPseudoArgs(selector: string, open: number): number {
+  let depth = 1;
+  let j = open + 1;
+  for (; j < selector.length && depth > 0; j++) {
+    const ch = selector[j]!;
+    if (ch === "[") j += ATTRIBUTE.exec(selector.slice(j))![0].length - 1;
+    else if (PAREN_DELTA[ch]) depth += PAREN_DELTA[ch];
+  }
+  return j;
+}
+
+/** Whether an attribute selector `[name...]` can match any element on `page`. */
+function attributeMatches(test: string, page: Present): boolean {
+  const name = ATTRIBUTE_NAME.exec(test)?.[1]?.toLowerCase();
+  return !name || page.attributes.has(name) || SET_LATER.has(name);
+}
+
+/** Whether a selector stripped of attribute tests and functional arguments matches `page`. */
+function bareSelectorMatches(selector: string, page: Present): boolean {
+  const bare = selector.replace(/::?[\w-]+/g, "");
+  for (const [, cls] of bare.matchAll(CLASS_NAME)) if (!page.classes.has(cls!)) return false;
+  for (const [, id] of bare.matchAll(ID_NAME)) if (!page.ids.has(id!)) return false;
+  for (const [, tag] of bare.matchAll(/(?:^|[\s>+~])([a-zA-Z][\w-]*)/g))
+    if (!page.tags.has(tag!.toLowerCase())) return false;
+  return true;
+}
+
+/** Whether any selector in a comma-separated list can match `page`. */
+const anySelectorMatches = (list: string, page: Present): boolean =>
+  splitTop(list, ",").some((s) => canMatch(s.trim(), page));
+
 /** Whether a selector can match the page: every class, id, element name and attribute name it
  * needs outside a functional pseudo-class is one the markup carries, and of an `:is()` or
  * `:where()` list one selector can match. Another functional pseudo-class, such as `:not()` or
@@ -82,32 +145,17 @@ function canMatch(selector: string, page: Present): boolean {
     const c = selector[i]!;
     if (c === "[") {
       const test = ATTRIBUTE.exec(selector.slice(i))![0];
-      const name = ATTRIBUTE_NAME.exec(test)?.[1]?.toLowerCase();
-      if (name && !page.attributes.has(name) && !SET_LATER.has(name)) return false;
+      if (!attributeMatches(test, page)) return false;
       bare += " ";
       i += test.length - 1;
     } else if (c === "(") {
-      let depth = 1;
-      let j = i + 1;
-      for (; j < selector.length && depth > 0; j++) {
-        if (selector[j] === "[") j += ATTRIBUTE.exec(selector.slice(j))![0].length - 1;
-        else if (selector[j] === "(") depth++;
-        else if (selector[j] === ")") depth--;
-      }
-      if (
-        /:(is|where)$/i.test(bare) &&
-        !splitTop(selector.slice(i + 1, j - 1), ",").some((s) => canMatch(s.trim(), page))
-      )
+      const end = endOfPseudoArgs(selector, i);
+      if (/:(is|where)$/i.test(bare) && !anySelectorMatches(selector.slice(i + 1, end - 1), page))
         return false;
-      i = j - 1;
+      i = end - 1;
     } else bare += c;
   }
-  bare = bare.replace(/::?[\w-]+/g, "");
-  for (const [, cls] of bare.matchAll(CLASS_NAME)) if (!page.classes.has(cls!)) return false;
-  for (const [, id] of bare.matchAll(ID_NAME)) if (!page.ids.has(id!)) return false;
-  for (const [, tag] of bare.matchAll(/(?:^|[\s>+~])([a-zA-Z][\w-]*)/g))
-    if (!page.tags.has(tag!.toLowerCase())) return false;
-  return true;
+  return bareSelectorMatches(bare, page);
 }
 
 // Blocks whose body holds rules, which prune themselves; any other at-rule stays whole.
@@ -131,9 +179,7 @@ function walk(css: string, rule: (prelude: string, body: string) => string): str
 
 /** The rules of `css` that can match the page. */
 const pruneRules = (css: string, page: Present) =>
-  walk(css, (prelude, body) =>
-    splitTop(prelude, ",").some((s) => canMatch(s.trim(), page)) ? `${prelude}{${body}}` : "",
-  );
+  walk(css, (prelude, body) => (anySelectorMatches(prelude, page) ? `${prelude}{${body}}` : ""));
 
 /** `css` without each custom property declaration whose name `read` lacks, and without a rule
  * left empty. A body holding nested rules stays as it is. */
