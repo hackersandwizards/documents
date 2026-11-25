@@ -1,3 +1,15 @@
+const CELL_ALIGNMENT: Record<string, string> = { right: "num", center: "center" };
+
+/** The document base's alignment class for a table cell's `text-align` declaration, if any. */
+function cellAlignmentClass(style: string): string | undefined {
+  const align = style
+    .split(";")
+    .map((declaration) => declaration.split(":").map((part) => part.trim().toLowerCase()))
+    .find(([property]) => property === "text-align")?.[1];
+  const value = align?.replace(/!\s*important$/, "").trim();
+  return value ? CELL_ALIGNMENT[value] : undefined;
+}
+
 /**
  * A Markdown body as the engine sets it: no style of the caller's. Every style attribute goes,
  * so a body looks as the engine draws it; pandoc's column alignment, the one style a table
@@ -22,14 +34,9 @@ export function proseHtml(html: string): string {
         // call: once per style the element lists.
         for (const [name] of [...el.attributes]) if (name === "style") el.removeAttribute("style");
         if (!/^t[hd]$/.test(el.tagName)) return;
-        const align = style
-          .split(";")
-          .map((declaration) => declaration.split(":").map((part) => part.trim().toLowerCase()))
-          .find(([property]) => property === "text-align")?.[1];
-        const value = align?.replace(/!\s*important$/, "").trim();
-        if (value !== "right" && value !== "center") return;
+        const cls = cellAlignmentClass(style);
+        if (!cls) return;
         const own = el.getAttribute("class");
-        const cls = value === "right" ? "num" : "center";
         el.setAttribute("class", own ? `${own} ${cls}` : cls);
       },
     })
