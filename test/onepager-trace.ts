@@ -81,9 +81,13 @@ test(
     const imports = /(from|import\()\s*["']@hackersandwizards\/brand/;
     expect(fs.readFileSync(join(ROOT, "components", "DocHeader.astro"), "utf8")).toMatch(imports);
     const scripts = join(ROOT, "scripts");
-    for (const file of fs.readdirSync(scripts, { recursive: true, encoding: "utf8" }))
-      if (file.endsWith(".ts"))
-        expect(fs.readFileSync(join(scripts, file), "utf8")).not.toMatch(imports);
+    const scriptFiles = fs
+      .readdirSync(scripts, { recursive: true, encoding: "utf8" })
+      .filter((file) => file.endsWith(".ts"));
+    expect(scriptFiles, "TypeScript files in scripts/").not.toHaveLength(0);
+    expect(
+      scriptFiles.filter((file) => imports.test(fs.readFileSync(join(scripts, file), "utf8"))),
+    ).toEqual([]);
   },
   (60_000 * Number(process.env.SCAFFOLDING_TEST_TIMEOUT_MS || 5000)) / 5000,
 );

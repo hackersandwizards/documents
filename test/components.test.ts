@@ -130,22 +130,37 @@ test("every component has placeholder props here", () => {
   expect([...components].sort()).toEqual(Object.keys(props).sort());
 });
 
+const renderStandalone = (name: string) =>
+  composer.render(name, props[name], {
+    default: `<p>${P}</p>`,
+    aside: `<p>${P}</p>`,
+  });
+
 test.each(components)(
   "%s renders standalone",
   async (name) => {
-    const html = await composer.render(name, props[name], {
-      default: `<p>${P}</p>`,
-      aside: `<p>${P}</p>`,
-    });
+    const html = await renderStandalone(name);
     expect(html).toContain(P);
     // A style element or attribute a component writes carries the engine's marker, as a consumer's
     // bake requires; the catalog's type pages mark every bare one, so only this read sees it.
     expect(foreignStyles(html)).toEqual([]);
-    if (["DocHeader", "DocProposal", "DocRateCard", "DocMarkdown"].includes(name))
-      expect(html).toMatch(/data:image\/svg\+xml,%3Csvg /);
-    // The header and the certificate draw their strip as brand's element, not a hand-drawn gradient.
-    if (["DocHeader", "DocCertificate"].includes(name))
-      expect(html).toContain('class="strip hw-strip"');
+  },
+  limit(30_000),
+);
+
+test.each(["DocHeader", "DocProposal", "DocRateCard", "DocMarkdown"])(
+  "%s inlines its SVG as a data URI",
+  async (name) => {
+    expect(await renderStandalone(name)).toMatch(/data:image\/svg\+xml,%3Csvg /);
+  },
+  limit(30_000),
+);
+
+// The header and certificate use the shared strip element so the brand owns the gradient.
+test.each(["DocHeader", "DocCertificate"])(
+  "%s draws the brand strip",
+  async (name) => {
+    expect(await renderStandalone(name)).toContain('class="strip hw-strip"');
   },
   limit(30_000),
 );

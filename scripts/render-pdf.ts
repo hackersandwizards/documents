@@ -644,11 +644,16 @@ function removeLeftProfiles() {
   const root = tmpdir();
   for (const name of readdirSync(root).filter((n) => n.startsWith(PROFILE))) {
     const profile = join(root, name);
+    let made: number;
     try {
-      const made = lstatSync(profile).mtimeMs;
-      if (Date.now() - made > STALE_PROFILE_MS && !profileHeld(profile))
-        rm(profile, { recursive: true, force: true }).catch(() => {});
-    } catch {}
+      made = lstatSync(profile).mtimeMs;
+    } catch (error) {
+      const { code } = error as NodeJS.ErrnoException;
+      if (code === "ENOENT" || code === "EACCES" || code === "EPERM") continue;
+      throw error;
+    }
+    if (Date.now() - made > STALE_PROFILE_MS && !profileHeld(profile))
+      rm(profile, { recursive: true, force: true }).catch(() => {});
   }
 }
 

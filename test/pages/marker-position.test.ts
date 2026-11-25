@@ -200,15 +200,38 @@ async function measure(file: string, css = "") {
   }
 }
 
+const baselineMeasurements = new Map<string, ReturnType<typeof measure>>();
+
+function measureBaseline(file: string) {
+  const existing = baselineMeasurements.get(file);
+  if (existing) return existing;
+  const measured = measure(file);
+  baselineMeasurements.set(file, measured);
+  return measured;
+}
+
 test.each(pages)(
   "%s: every step number and every square outside a list sits on its line",
   async (file) => {
-    const { offsets, listSquares } = await measure(file);
+    const { offsets } = await measureBaseline(file);
     const off = offsets.filter((m) => Math.abs(m.offset) > tolerance(m.label));
     expect(off.map((m) => `${m.label}: ${m.offset.toFixed(2)} px`)).toEqual([]);
-    // check:markers takes the pages holding a <ul>; a list square elsewhere would go unmeasured.
-    if (listSquares)
-      expect(await Bun.file(join(TYPES, file, "index.html")).text()).toContain("<ul");
+  },
+  limit(60_000),
+);
+
+// check:markers takes the pages holding a <ul>; a list square elsewhere would go unmeasured.
+test(
+  "every type page with a list square is included in check:markers",
+  async () => {
+    const withListSquares: string[] = [];
+    for (const file of pages) {
+      const { listSquares } = await measureBaseline(file);
+      if (listSquares !== 0) withListSquares.push(file);
+    }
+    expect(withListSquares, "Type pages with list squares").not.toHaveLength(0);
+    for (const file of withListSquares)
+      expect(await Bun.file(join(TYPES, file, "index.html")).text(), file).toContain("<ul");
   },
   limit(60_000),
 );

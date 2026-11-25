@@ -1,4 +1,5 @@
 import { decodeHTML } from "entities";
+import { canonicalLanguageTag } from "./fill";
 import { cssItems, editStyles, pruneStyles } from "./prune";
 import { stripComments } from "./root";
 
@@ -13,14 +14,9 @@ const escaped = (match: string, hex: string) => {
  * data URIs aside. A character a script builds from computed values is not seen: its face is
  * dropped and the PDF prints a fallback, which assertBrandFonts fails. */
 export function printableCodePoints(html: string): Set<number> {
-  const tag = /<html\b[^>]*?\slang\s*=\s*["']?([\w-]+)/i.exec(html)?.[1] ?? "en";
-  // An invalid tag such as de_DE, on which toLocaleUpperCase throws, cases as English.
-  const lang = (() => {
-    try {
-      return Intl.getCanonicalLocales(tag)[0]!;
-    } catch {}
-    return "en";
-  })();
+  const tag = /<html\b[^>]*?\slang\s*=\s*["']?([\w-]+)/i.exec(html)?.[1];
+  // Case as English when the tag is invalid, since toLocaleUpperCase throws on tags like de_DE.
+  const lang = (tag && canonicalLanguageTag(tag)) ?? "en";
   const text = decodeHTML(
     html.replace(
       /data:[\w.+-]+\/[\w.+-]+(?:;[\w.=-]+)*;base64,[\w+/=]+|data:image\/svg\+xml,[^"'\s)]*/g,

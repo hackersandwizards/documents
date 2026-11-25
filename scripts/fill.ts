@@ -12,14 +12,20 @@ export const cssString = (text: string) =>
     c === '"' || c === "\\" ? `\\${c}` : `\\${c.charCodeAt(0).toString(16).toUpperCase()} `,
   )}"`;
 
+/** The canonical spelling of a language tag, or undefined if the tag is invalid. */
+export function canonicalLanguageTag(tag: string): string | undefined {
+  try {
+    return Intl.getCanonicalLocales(tag)[0];
+  } catch (error) {
+    if (error instanceof RangeError) return undefined;
+    throw error;
+  }
+}
+
 /** `lang` as a page's `lang` attribute: a language tag such as `de` or `en-GB`, else an error, so
  *  a tag such as `de_DE` never reaches a document. */
 export function languageTag(lang: string): string {
-  let valid = false;
-  try {
-    valid = typeof lang === "string" && Intl.getCanonicalLocales(lang).length === 1;
-  } catch {}
-  if (!valid)
+  if (typeof lang !== "string" || canonicalLanguageTag(lang) === undefined)
     throw new Error(`lang must be a language tag such as de or en, not ${JSON.stringify(lang)}`);
   return lang;
 }

@@ -27,13 +27,12 @@ describe("a composed page declares the layer order once, the brand's, first", ()
     ["the onepager", () => composeOnepager(composer, onepager)],
     ["the survey readout", () => composeSurveyReadout(surveyReadout)],
   ];
-  for (const [name, compose] of pages)
-    it(name, async () => {
-      const found = layers(await compose());
-      expect(brandOrder.endsWith(";")).toBe(true);
-      expect(found[0]).toBe(brandOrder);
-      expect(found.filter((l) => l.endsWith(";"))).toEqual([brandOrder]);
-    });
+  it.each(pages)("%s", async (_name, compose) => {
+    const found = layers(await compose());
+    expect(brandOrder.endsWith(";")).toBe(true);
+    expect(found[0]).toBe(brandOrder);
+    expect(found.filter((l) => l.endsWith(";"))).toEqual([brandOrder]);
+  });
 });
 
 it("a top-level layer does not place a same-named layer inside another layer", () => {
