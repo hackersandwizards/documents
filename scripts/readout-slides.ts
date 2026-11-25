@@ -63,7 +63,7 @@ function rateLabel({ attendees, counts }: SurveyReadout): string {
   return attendees ? Math.round((counts.completed / attendees) * 100) + "%" : "—";
 }
 
-function coverSlide(d: SurveyReadout, t: ReadoutText): string {
+export function coverSlide(d: SurveyReadout, t: ReadoutText): string {
   const { attendees, days, dateRange, teams } = d;
   return `<section class="slide title">
     <div class="strip hw-strip" aria-hidden="true"></div>
@@ -89,7 +89,7 @@ function coverSlide(d: SurveyReadout, t: ReadoutText): string {
   </section>`;
 }
 
-function glanceSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
+export function glanceSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
   const h = d.headline;
   return slideShell(
     `<h2>${esc(t.glance)}</h2>
@@ -113,7 +113,7 @@ function glanceSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
   );
 }
 
-function scoresSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
+export function scoresSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
   const groups = new Map<string, ReadoutScale[]>();
   for (const s of d.scales) {
     const g = s.group ?? t.groups[0]!;
@@ -139,7 +139,7 @@ function scoresSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
   );
 }
 
-function risksSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
+export function risksSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
   // Bars run on the share of respondents, the figure printed beside them, so a full track is 100%.
   const respondents = Math.max(1, d.counts.completed, ...d.risks.map((x) => x.n));
   const topRisk = Math.max(...d.risks.map((x) => x.n));
@@ -165,7 +165,7 @@ function risksSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
 
 type QuoteSlide = { title: string; question: string; answers: string[]; page: number };
 
-function quoteSlide(
+export function quoteSlide(
   { title, question, answers, page }: QuoteSlide,
   t: ReadoutText,
   kicker: string,
@@ -177,7 +177,7 @@ function quoteSlide(
   );
 }
 
-function readoutSlide(r: SurveyReadout["readout"], t: ReadoutText, kicker: string): string {
+export function readoutSlide(r: SurveyReadout["readout"], t: ReadoutText, kicker: string): string {
   const list = (items: string[], cls: string, colors?: string[]) =>
     items.length
       ? `<ul class="${cls}">${items.map((i, k) => `<li${colors ? ` style="--mark:${esc(colors[k] ?? "")}"` : ""}>${esc(i)}</li>`).join("")}</ul>`

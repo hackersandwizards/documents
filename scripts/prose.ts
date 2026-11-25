@@ -4,7 +4,7 @@ const CELL_ALIGNMENT = new Map([
 ]);
 
 /** The document base's alignment class for a table cell's `text-align` declaration, if any. */
-function cellAlignmentClass(style: string): string | undefined {
+export function cellAlignmentClass(style: string): string | undefined {
   const align = style
     .split(";")
     .map((declaration) => declaration.split(":").map((part) => part.trim().toLowerCase()))

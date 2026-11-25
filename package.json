@@ -63,6 +63,7 @@
     "scripts/font-faces.ts",
     "scripts/assert-brand-fonts.ts",
     "scripts/inline-images.ts",
+    "scripts/image-sources.ts",
     "scripts/kept-process.ts",
     "scripts/pdf-character-map.ts",
     "scripts/print-chrome.ts",

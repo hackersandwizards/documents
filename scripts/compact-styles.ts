@@ -42,7 +42,7 @@ export const editFaces = (html: string, edit: (face: string) => string) =>
 const LAYER_NAME = /^-?[_a-z][\w-]*(?:\.-?[_a-z][\w-]*)*$/i;
 
 /** The layer names of a valid `@layer` statement or single-layer block, or undefined for any other item. */
-function parseLayerItem({
+export function parseLayerItem({
   prelude,
   body,
 }: {

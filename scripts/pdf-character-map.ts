@@ -17,7 +17,7 @@ function unicodeStream(pdf: Buffer, text: string, id: string) {
 
 const cmapText = (hex: string) => Buffer.from(hex, "hex").swap16().toString("utf16le");
 
-function codePointsInCmap(cmap: string): Set<number> {
+export function codePointsInCmap(cmap: string): Set<number> {
   const points = new Set<number>();
   for (const [, block] of cmap.matchAll(/beginbfchar([\s\S]*?)endbfchar/g))
     for (const [, dst] of block!.matchAll(/<[\da-f]+>\s*<([\da-f]+)>/gi))

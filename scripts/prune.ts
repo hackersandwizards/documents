@@ -2,14 +2,14 @@ const PAREN_DELTA: Record<string, number> = { "(": 1, ")": -1 };
 const DELIMITER_DELTA: Record<string, number> = { "(": 1, "[": 1, ")": -1, "]": -1 };
 
 /** Index of the closing quote matching `text[start]`, respecting backslash escapes. */
-function skipQuotedString(text: string, start: number): number {
+export function skipQuotedString(text: string, start: number): number {
   const quote = text[start];
   let i = start + 1;
   while (i < text.length && text[i] !== quote) i += text[i] === "\\" ? 2 : 1;
   return i;
 }
 
-function* cssItemDelimiters(css: string) {
+export function* cssItemDelimiters(css: string) {
   let parens = 0;
   for (let index = 0; index < css.length; index++) {
     const char = css.charAt(index);
@@ -99,13 +99,13 @@ function endOfPseudoArgs(selector: string, open: number): number {
 }
 
 /** Whether an attribute selector `[name...]` can match any element on `page`. */
-function attributeMatches(test: string, page: Present): boolean {
+export function attributeMatches(test: string, page: Present): boolean {
   const name = ATTRIBUTE_NAME.exec(test)?.[1]?.toLowerCase();
   return !name || page.attributes.has(name) || SET_LATER.has(name);
 }
 
 /** Whether a selector stripped of attribute tests and functional arguments matches `page`. */
-function bareSelectorMatches(selector: string, page: Present): boolean {
+export function bareSelectorMatches(selector: string, page: Present): boolean {
   const bare = selector.replace(/::?[\w-]+/g, "");
   for (const [, cls] of bare.matchAll(CLASS_NAME)) if (!page.classes.has(cls!)) return false;
   for (const [, id] of bare.matchAll(ID_NAME)) if (!page.ids.has(id!)) return false;
