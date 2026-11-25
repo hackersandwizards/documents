@@ -16,10 +16,22 @@ mkdirSync(join(REPO, "node_modules/.cache"), { recursive: true });
 const out = mkdtempSync(join(REPO, "node_modules/.cache/bundled-"));
 afterAll(() => rmSync(out, { recursive: true, force: true }));
 
+const exportTypes = {
+  "./compose": { openComposer: "function", composePage: "function" },
+  "./render-pdf": { renderPdf: "function" },
+  "./compose-document": { composeDocument: "function", composeWarmDocument: "function" },
+  "./document-css": { bakeDocumentCss: "function" },
+  "./font-faces": { subsetFaces: "function" },
+  "./inline-images": { inlineImages: "function" },
+  "./render-handout-pdf": { renderHandoutPdf: "function" },
+  "./onepager": { composeOnepager: "function", fitOnepager: "function" },
+  "./handout": { HANDOUT_TEXT: "object" },
+  "./survey-readout": { composeSurveyReadout: "function", bandColor: "function" },
+};
+const moduleExports = Object.entries(manifest.exports).filter(([, path]) => path.endsWith(".ts"));
+
 const built = await Bun.build({
-  entrypoints: Object.values(manifest.exports)
-    .filter((path) => path.endsWith(".ts"))
-    .map((path) => join(REPO, path)),
+  entrypoints: moduleExports.map(([, path]) => join(REPO, path)),
   outdir: out,
   naming: "[name].[ext]",
   target: "node",
@@ -56,6 +68,16 @@ async function loadRenderBundle(query = ""): Promise<RenderBundle> {
 
 describe("bundled into a consumer's chunk", () => {
   it("builds", () => expect(built.success).toBe(true));
+
+  it("lists the exported API of every bundled entry point", () => {
+    expect(Object.keys(exportTypes).sort()).toEqual(moduleExports.map(([key]) => key).sort());
+  });
+
+  it.each(Object.entries(exportTypes))("loads %s and exposes its API", async (key, expected) => {
+    const module = await loadBundle(`${key.slice(2)}.js`);
+    const types = Object.keys(expected).map((name) => [name, typeof module[name]]);
+    expect(Object.fromEntries(types)).toEqual(expected);
+  });
 
   it("reads the document base", async () => {
     expect((await loadRenderBundle()).documentCss()).toContain("@page");
