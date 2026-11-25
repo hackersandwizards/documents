@@ -75,8 +75,8 @@ package's own component exports.
 - `scripts/font-faces.ts`: `subsetFaces` cuts each inlined face to the page's characters. Call
   it after `bakeDocumentCss` when baking a stored page. `cutFacesToPdf` keeps only the characters
   each face printed and drops unused faces. `fitOnepager` calls it. Both encode WOFF2 on Bun
-  Workers (`scripts/encode-face.ts`) and in-process where none can run. `assertBrandFonts` checks
-  the fonts embedded in a PDF.
+  Workers (`scripts/encode-face.ts`) and in-process where none can run.
+- `scripts/assert-brand-fonts.ts`: `assertBrandFonts` checks the fonts embedded in a finished PDF.
 - `scripts/inline-images.ts`: `inlineImages` embeds images beside a page and images our packages
   export. It resolves package paths from where the engine is installed. A missing package
   export fails the render. A consumer can also use it in a viewer for stored pages.
@@ -130,7 +130,7 @@ package's own component exports.
 
 A consumer reaches the engine through `exports` (`./tokens.css`, `./document.css`, `./onepager.css`,
 `./handout.css`, `./components/*`, `./compose`, `./compose-document`, `./render-pdf`,
-`./document-css`, `./font-faces`, `./inline-images`, `./render-handout-pdf`, `./onepager`,
+`./document-css`, `./font-faces`, `./assert-brand-fonts`, `./inline-images`, `./render-handout-pdf`, `./onepager`,
 `./survey-readout`, `./handout`) and the `documents-compose`, `documents-privacy` and
 `documents-styles` commands, run as `bun run <command>`. Every other
 path is internal. `scaffolding.styles` in `package.json` lists `document.css` and `handout.css`, the

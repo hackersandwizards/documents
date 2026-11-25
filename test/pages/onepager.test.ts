@@ -8,7 +8,7 @@ import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { openComposer } from "../../scripts/compose";
 import { composeOnepager, fitOnepager } from "../../scripts/onepager";
 import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
-import { assertBrandFonts } from "../../scripts/font-faces";
+import { assertBrandFonts } from "../../scripts/assert-brand-fonts";
 import { inlineImages } from "../../scripts/inline-images";
 import { renderPdf } from "../../scripts/render-pdf";
 import { ROOT } from "../../scripts/root";

@@ -22,6 +22,7 @@ const exportTypes = {
   "./compose-document": { composeDocument: "function", composeWarmDocument: "function" },
   "./document-css": { bakeDocumentCss: "function" },
   "./font-faces": { subsetFaces: "function" },
+  "./assert-brand-fonts": { assertBrandFonts: "function" },
   "./inline-images": { inlineImages: "function" },
   "./render-handout-pdf": { renderHandoutPdf: "function" },
   "./onepager": { composeOnepager: "function", fitOnepager: "function" },

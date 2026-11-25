@@ -53,7 +53,8 @@ The imports, each under `@hackersandwizards/documents/`:
 - `render-pdf`: `renderPdf` prints an HTML file or URL
 - `compose-document`: `composeDocument` starts a fresh composer and `composeWarmDocument` keeps one per Astro project
 - `document-css`: `bakeDocumentCss`, `documentCss`, `brandCss`, `inlineCss`
-- `font-faces`: `subsetFaces`, `cutFacesToPdf`, `assertBrandFonts`
+- `font-faces`: `subsetFaces`, `cutFacesToPdf`
+- `assert-brand-fonts`: `assertBrandFonts` checks the fonts embedded in a PDF
 - `inline-images`: `inlineImages` resolves and embeds local and package images
 - `render-handout-pdf`: `renderHandoutPdf` measures and prints a handout
 - `document.css`: the print base; `tokens.css`: the document tokens, every value a role on the brand's tokens
