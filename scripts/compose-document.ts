@@ -11,7 +11,7 @@ import { ROOT } from "./root";
 const execFileAsync = promisify(execFile);
 
 /**
- * A document component composed by `scripts/compose.ts` into a standalone, baked HTML string.
+ * A document component composed by `scripts/compose-cli.ts` into a standalone, baked HTML string.
  * A child process, so no Vite server starts inside the caller, which may be the app's own; `cwd`
  * is the Astro project whose compiler it runs.
  */
@@ -26,7 +26,9 @@ export async function composeDocument(
     const output = join(dir, "document.html");
     writeFileSync(input, JSON.stringify(props));
     try {
-      await execFileAsync("bun", [join(ROOT, "scripts/compose.ts"), name, input, output], { cwd });
+      await execFileAsync("bun", [join(ROOT, "scripts/compose-cli.ts"), name, input, output], {
+        cwd,
+      });
     } catch (error) {
       const stderr = (error as { stderr?: string }).stderr;
       throw new Error(`Composing ${name} failed: ${stderr || (error as Error).message}`, {
@@ -63,7 +65,7 @@ export async function composeWarmDocument(
 
 function keptComposer(cwd: string) {
   return kept(`compose:${cwd}`, (stop) => {
-    const child = spawn("bun", [join(ROOT, "scripts/compose.ts"), "--serve"], {
+    const child = spawn("bun", [join(ROOT, "scripts/compose-cli.ts"), "--serve"], {
       cwd,
       stdio: ["pipe", "ignore", "inherit", "pipe"],
     });

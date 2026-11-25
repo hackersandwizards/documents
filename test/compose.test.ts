@@ -20,11 +20,11 @@ import { openComposer } from "../scripts/compose";
 import { isRecord, ROOT } from "../scripts/root";
 import { foreignStyles } from "../scripts/styles";
 
-const SCRIPT = resolve(import.meta.dirname, "../scripts/compose.ts");
+const SCRIPT = resolve(import.meta.dirname, "../scripts/compose-cli.ts");
 const dir = mkdtempSync(join(tmpdir(), "pdf-compose-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
-describe("scripts/compose.ts", () => {
+describe("scripts/compose-cli.ts", () => {
   it("renders a document component with the base and its components' scoped styles", () => {
     writeFileSync(join(dir, "props.json"), JSON.stringify(rateCard));
     const out = join(dir, "rate-card.html");

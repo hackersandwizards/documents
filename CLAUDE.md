@@ -2,7 +2,7 @@
 
 The hackers&wizards document engine as one package, `@hackersandwizards/documents`: the document
 base `document.css`, the document components `components/Doc*.astro`, composing a component with
-its props to standalone HTML (`scripts/compose.ts`, the `documents-compose` command) and rendering
+its props to standalone HTML (`scripts/compose-cli.ts`, the `documents-compose` command) and rendering
 HTML to PDF with headless Chrome (`scripts/render-pdf.ts`). Company OS and the trainer hub run it
 and keep what fills a document: the props, the Markdown reading, the callers.
 
@@ -58,8 +58,9 @@ package's own component exports.
   the array `window.hwLayout`. `renderPdf` waits for those promises before printing.
 - `scripts/compose.ts`: `openComposer` runs Astro's compiler of the project in the current
   directory. `composeUnbakedPage` assembles component markup and scoped styles. `composePage`
-  bakes the base and subsets the faces. The command composes one component from a props JSON,
-  and `--serve` composes on request for `composeWarmDocument`.
+  bakes the base and subsets the faces.
+- `scripts/compose-cli.ts` runs `documents-compose` for one component from a props JSON.
+  In `--serve` mode it composes on request for `composeWarmDocument`.
 - `scripts/compose-document.ts`: `composeDocument` runs the composer in a fresh child process.
   `composeWarmDocument` keeps the composer for its Astro project between calls.
 - `scripts/render-pdf.ts`: `renderPdf` prints an HTML file or an HTTP(S) URL with the print

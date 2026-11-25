@@ -32,7 +32,7 @@
     "./survey-readout": "./scripts/survey-readout.ts"
   },
   "bin": {
-    "documents-compose": "scripts/compose.ts",
+    "documents-compose": "scripts/compose-cli.ts",
     "documents-privacy": "scripts/privacy.ts",
     "documents-styles": "scripts/styles.ts"
   },
@@ -54,6 +54,7 @@
     "scripts/fill.ts",
     "scripts/handout.ts",
     "scripts/compose.ts",
+    "scripts/compose-cli.ts",
     "scripts/elements.ts",
     "scripts/render-pdf.ts",
     "scripts/chrome-pipe.ts",
