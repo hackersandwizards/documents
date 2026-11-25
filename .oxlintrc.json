@@ -22,7 +22,7 @@
             "patterns": [
               {
                 "regex": "^(?:(?:\\.\\./)+(?:components|catalog)|@hackersandwizards/documents/components)(?:/|$)",
-                "message": "Keep scripts independent of components and the catalog."
+                "message": "scripts/** cannot import from components/, catalog/, or @hackersandwizards/documents/components. Move shared types, helpers, or sample data into scripts/ (such as scripts/samples.ts), or render components via scripts/compose.ts or catalog/. Do not silence with oxlint-disable."
               }
             ]
           }
