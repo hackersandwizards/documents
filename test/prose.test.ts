@@ -21,23 +21,50 @@ test("a bare value with an apostrophe still loses its style; a quoted value keep
   );
 });
 
-// The browser's reading of markup, not a pattern's: an attribute after a quote or a slash with no
-// space, a namespaced tag, a style element named only inside a comment or a longer tag name.
-test("the body is read as the browser reads it", () => {
-  expect(proseHtml(`<p class="a"style="color:red">x</p>`)).toBe(`<p class="a">x</p>`);
-  expect(proseHtml(`<p/style=color:red>x</p>`)).not.toContain("style");
-  expect(proseHtml(`<o:p style="color:red">x</o:p>`)).toBe(`<o:p>x</o:p>`);
-  expect(proseHtml(`<td class-x="y" class="a" style="text-align:right">1</td>`)).toBe(
-    `<td class-x="y" class="a num">1</td>`,
-  );
-  expect(proseHtml(`<td style="vertical-text-align:right">1</td>`)).toBe(`<td>1</td>`);
-  expect(proseHtml(`<!-- <style> --><style-guide>x</style-guide>`)).toBe(
-    `<!-- <style> --><style-guide>x</style-guide>`,
-  );
-  expect(() => proseHtml(`<p>x</p><STYLE>p{}</STYLE>`)).toThrow(/the engine draws every style/);
-  expect(() => proseHtml(`<link rel="stylesheet" href="x.css">`)).toThrow(
-    /the engine draws every style/,
-  );
+test.each([
+  {
+    syntax: "adjacent attributes",
+    input: '<p class="a"style="color:red">x</p>',
+    expected: '<p class="a">x</p>',
+  },
+  {
+    syntax: "a namespace",
+    input: '<o:p style="color:red">x</o:p>',
+    expected: "<o:p>x</o:p>",
+  },
+])("removes style attributes with $syntax", ({ input, expected }) => {
+  expect(proseHtml(input)).toBe(expected);
+});
+
+test("removes the style attribute after a slash", () => {
+  expect(proseHtml("<p/style=color:red>x</p>")).not.toContain("style");
+});
+
+test.each([
+  {
+    declaration: "text-align on a cell with similarly named attributes",
+    input: '<td class-x="y" class="a" style="text-align:right">1</td>',
+    expected: '<td class-x="y" class="a num">1</td>',
+  },
+  {
+    declaration: "a similarly named property",
+    input: '<td style="vertical-text-align:right">1</td>',
+    expected: "<td>1</td>",
+  },
+])("applies only table alignment classes for $declaration", ({ input, expected }) => {
+  expect(proseHtml(input)).toBe(expected);
+});
+
+test("keeps a style name in a comment or a longer tag name", () => {
+  const input = "<!-- <style> --><style-guide>x</style-guide>";
+  expect(proseHtml(input)).toBe(input);
+});
+
+test.each([
+  { element: "style", input: "<p>x</p><STYLE>p{}</STYLE>" },
+  { element: "link", input: '<link rel="stylesheet" href="x.css">' },
+])("rejects a $element element that would style the body", ({ input }) => {
+  expect(() => proseHtml(input)).toThrow(/the engine draws every style/);
 });
 
 test("a table cell with no style keeps its class", () => {

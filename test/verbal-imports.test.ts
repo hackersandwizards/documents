@@ -28,12 +28,20 @@ function wholeImports(source: string): string[] {
 // The samples build the path from a variable, so this file's own source holds no such import.
 const JSON_PATH = "@hackersandwizards/brand/verbal.json";
 
-test("the scan sees the imports", () => {
+test("the scan includes document component sources", () => {
   expect(files.some((f) => f.startsWith("components/DocHeader"))).toBe(true);
-  expect(wholeImports(`import verbal from "${JSON_PATH}";`)).toHaveLength(1);
-  expect(wholeImports(`import v, { name } from '${JSON_PATH}'`)).toHaveLength(1);
-  expect(wholeImports(`import * as v from "${JSON_PATH}"`)).toHaveLength(1);
-  expect(wholeImports(`const v = await import("${JSON_PATH}")`)).toHaveLength(1);
+});
+
+test.each([
+  { kind: "default", source: `import verbal from "${JSON_PATH}";` },
+  { kind: "default and named", source: `import v, { name } from '${JSON_PATH}'` },
+  { kind: "namespace", source: `import * as v from "${JSON_PATH}"` },
+  { kind: "dynamic", source: `const v = await import("${JSON_PATH}")` },
+])("the scan reports a $kind import of verbal.json", ({ source }) => {
+  expect(wholeImports(source)).toHaveLength(1);
+});
+
+test("the scan accepts a named import of verbal.json", () => {
   expect(wholeImports(`import { mission, name } from "${JSON_PATH}";`)).toEqual([]);
 });
 

@@ -1,4 +1,4 @@
-import { afterAll, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -59,14 +59,18 @@ test("every text rule hits a planted case", () => {
   expect(scanText(planted)).toEqual([]);
 });
 
-test("a deny term hits a file name, any case, an entity, a slug and a line break", () => {
-  const dir = mkdtempSync(join(tmpdir(), "hw-privacy-deny-"));
-  try {
-    writeFileSync(join(dir, "echtfirma-logo.svg"), "<svg/>");
-    expect(scanText(dir, ["Echtfirma"])).toEqual([
-      { file: "echtfirma-logo.svg", line: 0, what: 'the term "Echtfirma" in the path' },
-    ]);
-    rmSync(join(dir, "echtfirma-logo.svg"));
+test("a deny term reports the file name and line zero", () => {
+  const dir = mkdtempSync(join(planted, "deny-path-"));
+  writeFileSync(join(dir, "echtfirma-logo.svg"), "<svg/>");
+  expect(scanText(dir, ["Echtfirma"])).toEqual([
+    { file: "echtfirma-logo.svg", line: 0, what: 'the term "Echtfirma" in the path' },
+  ]);
+});
+
+describe("deny terms in document text", () => {
+  let dir: string;
+  beforeAll(() => {
+    dir = mkdtempSync(join(planted, "deny-text-"));
     writeFileSync(
       join(dir, "a.md"),
       [
@@ -83,18 +87,18 @@ test("a deny term hits a file name, any case, an entity, a slug and a line break
         "MUELLERBAU",
       ].join("\n"),
     );
-    const lines = (terms: string[]) => scanText(dir, terms).map((f) => f.line);
-    expect(lines(["Echtfirma"])).toEqual([1]);
-    expect(lines(["E&C"])).toEqual([2]);
-    expect(lines(["Echte Firma"])).toEqual([3, 4]);
-    expect(lines(["Müllerbau"])).toEqual([6, 7, 11]);
-    // An umlaut in capitals is spelled out in capitals.
-    expect(lines(["MÜLLERBAU"])).toEqual([6, 11]);
-    // An all-capitals term is an acronym: in text in capitals, in any case only in a slug.
-    expect(lines(["ECHT"])).toEqual([8, 10, 10]);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  });
+
+  test.each([
+    { term: "Echtfirma", lines: [1] },
+    { term: "E&C", lines: [2] },
+    { term: "Echte Firma", lines: [3, 4] },
+    { term: "Müllerbau", lines: [6, 7, 11] },
+    { term: "MÜLLERBAU", lines: [6, 11] },
+    { term: "ECHT", lines: [8, 10, 10] },
+  ])("$term matches its allowed spellings on lines $lines", ({ term, lines }) => {
+    expect(scanText(dir, [term]).map((finding) => finding.line)).toEqual(lines);
+  });
 });
 
 test("a checkout's built type pages are scanned, though git ignores them", () => {
@@ -172,23 +176,34 @@ test("an empty deny list fails rather than passes", () => {
   expect(run.stderr.toString()).toContain("holds no deny terms");
 });
 
-test("a person in the samples outside the invented names fails", () => {
+test("the repository samples use invented names", () => {
   expect(scanSamples()).toEqual([]);
-  expect(scanSamples({ rateCard: { personName: "Anna Echt" } })).toEqual([
-    "rateCard.personName: Anna Echt",
-  ]);
-  expect(scanSamples({ surveyReadout: { customerName: "Echtfirma GmbH" } })).toEqual([
-    "surveyReadout.customerName: Echtfirma",
-  ]);
-  // A name in lower or mixed case is a name too.
-  expect(
-    scanSamples({ rateCard: { client: { company: "echtfirma", shortName: "eFirma" } } }),
-  ).toEqual(["rateCard.client.company: echtfirma", "rateCard.client.shortName: eFirma"]);
-  expect(scanSamples({ rateCard: { client: { shortName: "Echtfirma" } } })).toEqual([
-    "rateCard.client.shortName: Echtfirma",
-  ]);
-  expect(
-    scanSamples({
+});
+
+test.each([
+  {
+    scenario: "staff name",
+    sample: { rateCard: { personName: "Anna Echt" } },
+    findings: ["rateCard.personName: Anna Echt"],
+  },
+  {
+    scenario: "customer name",
+    sample: { surveyReadout: { customerName: "Echtfirma GmbH" } },
+    findings: ["surveyReadout.customerName: Echtfirma"],
+  },
+  {
+    scenario: "lower- and mixed-case client names",
+    sample: { rateCard: { client: { company: "echtfirma", shortName: "eFirma" } } },
+    findings: ["rateCard.client.company: echtfirma", "rateCard.client.shortName: eFirma"],
+  },
+  {
+    scenario: "client short name",
+    sample: { rateCard: { client: { shortName: "Echtfirma" } } },
+    findings: ["rateCard.client.shortName: Echtfirma"],
+  },
+  {
+    scenario: "agreement and certificate names",
+    sample: {
       agreement: {
         signatures: [{ party: "Echtfirma GmbH", name: "Anna Echt" }],
         counterparty: "Echtfirma",
@@ -199,16 +214,19 @@ test("a person in the samples outside the invented names fails", () => {
         },
       },
       certificate: { title: "Certificate Agentic Engineering Training: Anna Echt" },
-    }),
-  ).toEqual([
-    "agreement.signatures[0].party: Echtfirma",
-    "agreement.signatures[0].name: Anna Echt",
-    "agreement.counterparty: Echtfirma",
-    "agreement.salutation: Anna",
-    "agreement.letter.recipient.lines[0]: Anna Echt",
-    "agreement.letter.greeting[0]: Anna",
-    "certificate.title: Anna Echt",
-  ]);
+    },
+    findings: [
+      "agreement.signatures[0].party: Echtfirma",
+      "agreement.signatures[0].name: Anna Echt",
+      "agreement.counterparty: Echtfirma",
+      "agreement.salutation: Anna",
+      "agreement.letter.recipient.lines[0]: Anna Echt",
+      "agreement.letter.greeting[0]: Anna",
+      "certificate.title: Anna Echt",
+    ],
+  },
+])("reports names outside the invented list in $scenario", ({ sample, findings }) => {
+  expect(scanSamples(sample)).toEqual(findings);
 });
 
 test("only the name-bearing entries in a letter and certificate are scanned as names", () => {

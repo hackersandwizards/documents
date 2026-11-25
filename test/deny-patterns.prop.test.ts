@@ -4,25 +4,24 @@ import { denyPatterns } from "../scripts/deny-patterns";
 
 const words = fc.stringMatching(/^[a-zé]{1,24}$/);
 
-test.prop(
-  [
-    words,
-    words,
-    fc.constantFrom("", "-", "_", ".", "\n", "&nbsp;", "&#160;"),
-    fc.constantFrom("&", "&amp;", "&#00038;", "&#x026;"),
+const termSpelling = fc.record({
+  first: words,
+  last: words,
+  gap: fc.constantFrom("", "-", "_", ".", "\n", "&nbsp;", "&#160;"),
+  amp: fc.constantFrom("&", "&amp;", "&#00038;", "&#x026;"),
+});
+
+test.prop([termSpelling], {
+  examples: [
+    [{ first: "é", last: "ä", gap: "\n", amp: "&#x026;" }],
+    [{ first: "a".repeat(1024), last: "z", gap: "", amp: "&amp;" }],
+    [{ first: "a", last: "b", gap: "_", amp: "&#00038;" }],
+    [{ first: "a", last: "b", gap: "&#160;", amp: "&" }],
+    [{ first: "a", last: "b", gap: "&nbsp;", amp: "&" }],
   ],
-  {
-    examples: [
-      ["é", "ä", "\n", "&#x026;"],
-      ["a".repeat(1024), "z", "", "&amp;"],
-      ["a", "b", "_", "&#00038;"],
-      ["a", "b", "&#160;", "&"],
-      ["a", "b", "&nbsp;", "&"],
-    ],
-  },
-)(
+})(
   "mixed-case terms match equivalent separators and entities on whole-word boundaries",
-  (first, last, gap, amp) => {
+  ({ first, last, gap, amp }) => {
     const { inText, inPath } = denyPatterns(`Re${first} & ${last}`);
     const match = `RE${first.toUpperCase()}${gap}${amp}${gap}${last.toUpperCase()}`;
     expect([`(${match})`.match(inPath), `(${match})`.match(inText[0])]).toEqual([[match], [match]]);

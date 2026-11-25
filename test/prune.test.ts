@@ -45,13 +45,10 @@ describe("pruneStyles", () => {
         ),
       ),
     );
-    expect(out).not.toContain("--a");
-    expect(out).not.toContain("--b");
-    expect(out).not.toContain("--f");
-    // The control: read through var(), a style attribute and a style query.
-    expect(out).toContain("--c:2");
-    expect(out).toContain("--d:3");
-    expect(out).toContain("--e:on");
+    expect(out).toBe(
+      ":root{--c:2;--d:3;--e:on}.kept{color:var(--c)}" +
+        "@container style(--e: on){.kept{color:red}}",
+    );
   });
 
   it("keeps a rule on an element the parser adds, and the inlined data as it was", () => {

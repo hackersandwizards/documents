@@ -66,26 +66,25 @@ test.prop([fc.uniqueArray(fc.stringMatching(/^[a-z]{1,12}$/), { maxLength: 12 })
   ).toBe(`<style>${order}</style><style>${mixed}${block}</style>${page}`);
 });
 
-test.prop(
-  [
-    fc.constantFrom("tr", "az", "en", "de_DE", "x"),
-    fc.constantFrom("", 'class="sample" ', 'class="sample" id="demo" '),
-    fc.constantFrom("=", " = ", "  =  "),
-    fc.boolean(),
+const pageLanguageMarkup = fc.record({
+  lang: fc.constantFrom("tr", "az", "en", "de_DE", "x"),
+  attributes: fc.constantFrom("", 'class="sample" ', 'class="sample" id="demo" '),
+  equals: fc.constantFrom("=", " = ", "  =  "),
+  quoted: fc.boolean(),
+});
+
+test.prop([pageLanguageMarkup], {
+  examples: [
+    [{ lang: "tr", attributes: "", equals: "=", quoted: false }],
+    [{ lang: "tr", attributes: 'class="sample" id="demo" ', equals: "  =  ", quoted: true }],
+    [{ lang: "az", attributes: 'class="sample" ', equals: " = ", quoted: false }],
+    [{ lang: "de_DE", attributes: "", equals: "=", quoted: false }],
+    [{ lang: "x", attributes: "", equals: "=", quoted: true }],
+    [{ lang: "en", attributes: "", equals: " = ", quoted: true }],
   ],
-  {
-    examples: [
-      ["tr", "", "=", false],
-      ["tr", 'class="sample" id="demo" ', "  =  ", true],
-      ["az", 'class="sample" ', " = ", false],
-      ["de_DE", "", "=", false],
-      ["x", "", "=", true],
-      ["en", "", " = ", true],
-    ],
-  },
-)(
+})(
   "printable characters include the page language's upper and lower case forms",
-  (lang, attributes, equals, quoted) => {
+  ({ lang, attributes, equals, quoted }) => {
     const page = `<html ${attributes}lang${equals}${quoted ? `"${lang}"` : lang}><p>i Ş</p></html>`;
     const points = printableCodePoints(page);
     expect(points.has(0x130)).toBe(lang === "tr" || lang === "az");
