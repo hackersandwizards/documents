@@ -39,20 +39,14 @@ async function loadPrintPage(pipe: ChromePipe, sessionId: string, job: PrintJob)
   await pipe.send("Page.enable", {}, sessionId);
   if (script)
     await pipe.send("Page.addScriptToEvaluateOnNewDocument", { source: script }, sessionId);
-  const loaded = pipe.loaded(sessionId);
-  // Failed navigation skips awaiting the load promise, which can still reject.
-  loaded.catch(() => {});
-  const { errorText } = await pipe.send("Page.navigate", { url }, sessionId);
+  const errorText = await pipe.navigate(url, sessionId);
   if (errorText) {
-    pipe.forgetLoad(sessionId);
     throw new Error(
       errorText === "net::ERR_CONNECTION_REFUSED"
         ? refused(url)
         : `Chrome could not load ${url}: ${String(errorText)}`,
     );
   }
-  await loaded;
-  pipe.forgetLoad(sessionId);
   // Chrome also prints an HTTP error page as if it were the document.
   const { result } = await pipe.send(
     "Runtime.evaluate",

@@ -5,10 +5,11 @@ import { isRecord } from "./root";
 
 type Result = Record<string, unknown>;
 type Pending = { resolve(r: Result): void; reject(e: Error): void; sessionId?: string };
+type PendingLoad = { resolve(): void; reject(error: unknown): void };
 
 export class ChromePipe {
   readonly exited: Promise<void>;
-  private readonly loads = new Map<string, Omit<Pending, "sessionId">>();
+  private readonly loads = new Map<string, PendingLoad>();
   private readonly input: Writable | undefined;
   private readonly calls = new Map<number, Pending>();
   private id = 0;
@@ -30,7 +31,7 @@ export class ChromePipe {
         }
         if (typeof message.id === "number") this.receiveReply(message.id, message);
         else if (message.method === "Page.loadEventFired" && typeof message.sessionId === "string")
-          this.loads.get(message.sessionId)?.resolve({});
+          this.takeLoad(message.sessionId)?.resolve();
         return true;
       }),
     );
@@ -73,12 +74,30 @@ export class ChromePipe {
     });
   }
 
-  loaded(sessionId: string): Promise<Result> {
-    return new Promise((resolve, reject) => this.loads.set(sessionId, { resolve, reject }));
+  async navigate(url: string, sessionId: string): Promise<unknown> {
+    const loaded = new Promise<void>((resolve, reject) => {
+      this.loads.set(sessionId, { resolve, reject });
+    });
+    // A failed navigation skips awaiting the load, which can still reject.
+    loaded.catch(() => {});
+    try {
+      const { errorText } = await this.send("Page.navigate", { url }, sessionId);
+      if (errorText) {
+        this.takeLoad(sessionId)?.reject(new Error(String(errorText)));
+        return errorText;
+      }
+      await loaded;
+      return undefined;
+    } catch (error) {
+      this.takeLoad(sessionId)?.reject(error);
+      throw error;
+    }
   }
 
-  forgetLoad(sessionId: string) {
+  private takeLoad(sessionId: string) {
+    const load = this.loads.get(sessionId);
     this.loads.delete(sessionId);
+    return load;
   }
 
   rejectSession(sessionId: string, error: Error) {
@@ -87,6 +106,6 @@ export class ChromePipe {
       this.calls.delete(key);
       call.reject(error);
     }
-    if (sessionId) this.loads.get(sessionId)?.reject(error);
+    if (sessionId) this.takeLoad(sessionId)?.reject(error);
   }
 }
