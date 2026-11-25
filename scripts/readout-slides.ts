@@ -1,7 +1,32 @@
 import { escapeHtml as esc, fill } from "./fill";
 import { bandColor, BANDS } from "./score-bands";
 import { distScale, figureColor, scaleRow, scoreLegend, WORDED_BARS } from "./readout-scales";
-import type { ReadoutScale, ReadoutText, SurveyReadout } from "./survey-readout";
+import type { ReadoutScale } from "./readout-scales";
+import type { ReadoutText } from "./readout-text";
+
+export interface SurveyReadout {
+  customerName: string;
+  training: string;
+  /** The training's length in days, 0 where unknown. */
+  days: number;
+  dateRange: string;
+  attendees: number;
+  teams: number;
+  counts: { all: number; completed: number };
+  /** Overall satisfaction. */
+  headline: ReadoutScale;
+  scales: ReadoutScale[];
+  risks: { label: string; n: number }[];
+  /** The "no major risk" answer, kept off the ranked risks. */
+  noRisk?: { label: string; n: number };
+  /** The two open questions as the form asked them. */
+  asked: { liked: string; improve: string };
+  liked: string[];
+  improve: string[];
+  readout: { strengths: string[]; weak: string[]; weakColors: string[]; flags: string[] };
+  /** Replaces any of the deck's own words, READOUT_TEXT; `{name}` marks a figure filled in. */
+  text?: Partial<ReadoutText>;
+}
 
 function quoteCard(t: string): string {
   return `<blockquote class="quote">${esc(t)}</blockquote>`;

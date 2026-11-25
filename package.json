@@ -66,6 +66,7 @@
     "scripts/process-protocol.ts",
     "scripts/readout-scales.ts",
     "scripts/readout-slides.ts",
+    "scripts/readout-text.ts",
     "scripts/render-handout-pdf.ts",
     "scripts/root.ts",
     "scripts/privacy.ts",

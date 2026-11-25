@@ -1,6 +1,20 @@
 import { escapeHtml as esc, fill } from "./fill";
 import { bandColor, BANDS, CONTEXT, scalePosition, STEP } from "./score-bands";
-import type { ReadoutScale, ReadoutText } from "./survey-readout";
+import type { ReadoutText } from "./readout-text";
+
+/** One rated question or matrix row: its mean, its count per rating from `start` to `end`. */
+export interface ReadoutScale {
+  title: string;
+  n: number;
+  mean: number;
+  start: number;
+  end: number;
+  /** index 0 is the rating `start` */
+  dist: number[];
+  /** The section on the scores slide: "Content & format" (the default), "Trainer" or
+   * "Confidence & application". */
+  group?: string;
+}
 
 /** A mean's figure: its band's colour, or ink where the band is a tint. */
 export const figureColor = (band: string) =>
