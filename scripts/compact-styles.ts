@@ -41,6 +41,24 @@ export const editFaces = (html: string, edit: (face: string) => string) =>
 // Escaped and non-ASCII names are kept verbatim.
 const LAYER_NAME = /^-?[_a-z][\w-]*(?:\.-?[_a-z][\w-]*)*$/i;
 
+/** The layer names of a valid `@layer` statement or single-layer block, or undefined for any other item. */
+function parseLayerItem({
+  prelude,
+  body,
+}: {
+  prelude: string;
+  body?: string;
+}): { statement: boolean; layers: string[] } | undefined {
+  const statement = body === undefined;
+  if (statement && !prelude.endsWith(";")) return undefined;
+  const names = /^@layer\s+(.+)$/is.exec(statement ? prelude.slice(0, -1) : prelude)?.[1];
+  if (!names) return undefined;
+  const layers = names.split(",").map((name) => name.trim());
+  if ((!statement && layers.length !== 1) || !layers.every((name) => LAYER_NAME.test(name)))
+    return undefined;
+  return { statement, layers };
+}
+
 /** Only an unconditional declaration in the same scope can make a layer order redundant. */
 function layerOnce(html: string): string {
   const seen = new Set<string>();
@@ -48,20 +66,14 @@ function layerOnce(html: string): string {
     if (!/@layer\s/i.test(css) || /\b(?:media|type|title|disabled)\b/i.test(open)) return css;
     let kept = "";
     let offset = 0;
-    for (const { prelude, body, end } of cssItems(css)) {
-      const statement = body === undefined;
-      if (statement && !prelude.endsWith(";")) continue;
-      const names = /^@layer\s+(.+)$/is.exec(statement ? prelude.slice(0, -1) : prelude)?.[1];
-      if (!names) continue;
-      const layers = names.split(",").map((name) => name.trim());
-      if ((!statement && layers.length !== 1) || !layers.every((name) => LAYER_NAME.test(name))) {
-        continue;
+    for (const item of cssItems(css)) {
+      const parsed = parseLayerItem(item);
+      if (!parsed) continue;
+      if (parsed.statement && parsed.layers.every((name) => seen.has(name))) {
+        kept += css.slice(offset, item.end - item.prelude.length);
+        offset = item.end;
       }
-      if (statement && layers.every((name) => seen.has(name))) {
-        kept += css.slice(offset, end - prelude.length);
-        offset = end;
-      }
-      for (const name of layers) seen.add(name);
+      for (const name of parsed.layers) seen.add(name);
     }
     return kept + css.slice(offset);
   });
