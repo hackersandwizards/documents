@@ -44,7 +44,7 @@ async function loadPrintPage(pipe: ChromePipe, sessionId: string, job: PrintJob)
   loaded.catch(() => {});
   const { errorText } = await pipe.send("Page.navigate", { url }, sessionId);
   if (errorText) {
-    pipe.loads.delete(sessionId);
+    pipe.forgetLoad(sessionId);
     throw new Error(
       errorText === "net::ERR_CONNECTION_REFUSED"
         ? refused(url)
@@ -52,7 +52,7 @@ async function loadPrintPage(pipe: ChromePipe, sessionId: string, job: PrintJob)
     );
   }
   await loaded;
-  pipe.loads.delete(sessionId);
+  pipe.forgetLoad(sessionId);
   const { result } = await pipe.send(
     "Runtime.evaluate",
     {

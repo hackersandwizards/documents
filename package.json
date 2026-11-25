@@ -47,6 +47,7 @@
     "scripts/deny-patterns.ts",
     "scripts/encode-face.ts",
     "scripts/onepager.ts",
+    "scripts/onepager-trials.ts",
     "scripts/page2-block.ts",
     "scripts/survey-readout.ts",
     "scripts/score-bands.ts",

@@ -8,7 +8,7 @@ type Pending = { resolve(r: Result): void; reject(e: Error): void; sessionId?: s
 
 export class ChromePipe {
   readonly exited: Promise<void>;
-  readonly loads = new Map<string, Omit<Pending, "sessionId">>();
+  private readonly loads = new Map<string, Omit<Pending, "sessionId">>();
   private readonly input: Writable | undefined;
   private readonly calls = new Map<number, Pending>();
   private id = 0;
@@ -75,6 +75,10 @@ export class ChromePipe {
 
   loaded(sessionId: string): Promise<Result> {
     return new Promise((resolve, reject) => this.loads.set(sessionId, { resolve, reject }));
+  }
+
+  forgetLoad(sessionId: string) {
+    this.loads.delete(sessionId);
   }
 
   rejectSession(sessionId: string, error: Error) {
