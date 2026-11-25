@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -8,7 +8,11 @@ import { composeUnbakedPage, openComposer } from "../../scripts/compose";
 import { withoutImports } from "../../scripts/root";
 import { subsetFaces } from "../../scripts/font-faces";
 import { documentCss } from "../../scripts/document-css";
-import { type HandoutPass, renderHandoutPdf } from "../../scripts/render-handout-pdf";
+import {
+  type HandoutPass,
+  type HandoutResult,
+  renderHandoutPdf,
+} from "../../scripts/render-handout-pdf";
 import { handout } from "../../scripts/samples";
 import { probePage, limit } from "../probe";
 
@@ -130,45 +134,49 @@ test(
   limit(120_000),
 );
 
-// German, so the eyebrow's word the first fetch reads is the page's own, not the English default.
-test(
-  "a URL gets each pass as its query, and its page names the eyebrow",
-  async () => {
-    const queries: string[] = [];
+describe("a handout served from a URL", () => {
+  const queries: string[] = [];
+  let result: HandoutResult;
+  let pdf: string;
+
+  beforeAll(async () => {
     const server = Bun.serve({
       port: 0,
       hostname: "127.0.0.1",
-      async fetch(request) {
-        const url = new URL(request.url);
-        // Chrome asks for a favicon too.
-        if (url.pathname !== "/print") return new Response(null, { status: 404 });
-        const query = url.searchParams;
-        queries.push(query.toString());
-        const toc = query.get("toc")?.split(",").map(Number);
-        const html = await compose(
-          { toc, flow: query.get("flow") ?? undefined, notes: query.get("notes") ?? undefined },
-          { lang: "de" },
-        );
-        return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+      routes: {
+        "/print": async (request) => {
+          const query = new URL(request.url).searchParams;
+          queries.push(query.toString());
+          const toc = query.get("toc")?.split(",").map(Number);
+          const [flow] = query.getAll("flow");
+          const [notes] = query.getAll("notes");
+          const html = await compose({ toc, flow, notes }, { lang: "de" });
+          return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+        },
       },
+      fetch: () => new Response(null, { status: 404 }),
     });
     try {
-      const pdf = join(dir, "served.pdf");
-      const result = await renderHandoutPdf(`http://127.0.0.1:${server.port}/print`, pdf);
-      expect(result.numbered).toBe(true);
-      // One more request than renders: the first pass is fetched for the eyebrow's word.
-      expect(queries.length).toBe(result.renders + 1);
-      expect(queries[0]).toBe("");
-      expect(queries.at(-1)).toContain("toc=");
-      const { starts, listed } = read(pdf, "KAPITEL");
-      expect(starts.length).toBe(props.chapters.length);
-      expect(listed).toEqual(starts);
+      pdf = join(dir, "served.pdf");
+      result = await renderHandoutPdf(`http://127.0.0.1:${server.port}/print`, pdf);
     } finally {
       await server.stop(true);
     }
-  },
-  limit(120_000),
-);
+  }, limit(120_000));
+
+  test("fetches the original page and sends the contents as a query on the final pass", () => {
+    expect(queries.length).toBe(result.renders + 1);
+    expect(queries[0]).toBe("");
+    expect(queries.at(-1)).toContain("toc=");
+  });
+
+  test("numbers the contents using chapter pages read under the German eyebrow", () => {
+    expect(result.numbered).toBe(true);
+    const { starts, listed } = read(pdf, "KAPITEL");
+    expect(starts.length).toBe(props.chapters.length);
+    expect(listed).toEqual(starts);
+  });
+});
 
 test(
   "without pdftotext the first render stands, unnumbered, and the result says so",

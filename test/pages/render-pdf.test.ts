@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, assert, beforeAll, describe, expect, it } from "vitest";
 import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -167,7 +167,7 @@ describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
     };
     const child = Bun.spawn([process.execPath, "-e", script], { env, stderr: "inherit" });
     const result: unknown = JSON.parse(await new Response(child.stdout).text());
-    if (!isRecord(result)) throw new Error("Expected Chrome install outcomes");
+    assert(isRecord(result), "Expected Chrome install outcomes");
     expect(result.failed).toContain("Chrome for Testing is required");
     expect(result.retried).toBe("ok");
     // bunx runs the package it is given from the registry: a version range would run whatever
@@ -564,9 +564,12 @@ describe.skipIf(!chromeBinary())("the preparation's code", () => {
     async () => {
       const long =
         "bunx some-long-command --with-a-flag=value --and-another=/a/long/path/to/a/file/that/goes/on.txt";
-      const steps = preparation.steps.map((step, i) =>
-        i === 0 ? { ...step, html: step.html.replace("choco install nodejs-lts git", long) } : step,
-      );
+      const [first, ...following] = preparation.steps;
+      assert(first, "Expected an installation step in the sample");
+      const steps = [
+        { ...first, html: first.html.replace("choco install nodejs-lts git", long) },
+        ...following,
+      ];
       expect(steps[0]!.html).toContain(long);
       const html = await composeDocument("DocPreparation", { ...preparation, steps });
       const width = probePage(html, `return String(document.documentElement.scrollWidth);`, [

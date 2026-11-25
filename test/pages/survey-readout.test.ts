@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { assert, expect, test } from "vitest";
 import { isRecord } from "../../scripts/root";
 import { surveyReadout } from "../../scripts/samples";
 import { composeSurveyReadout } from "../../scripts/survey-readout";
@@ -20,7 +20,7 @@ test(
     const probe = `const swatch = (v) => { const i = document.createElement("i"); i.style.background = v; document.body.append(i); return getComputedStyle(i).backgroundColor; };
     return JSON.stringify({ bad: ${marker("bad")}, good: ${marker("good")}, red: swatch("var(--negative)"), teal: swatch("var(--accent)") });`;
     const seen: unknown = JSON.parse(probePage(html, probe, SLIDE));
-    if (!isRecord(seen)) throw new Error("Expected the marker and swatch colours");
+    assert(isRecord(seen), "Expected the marker and swatch colours");
     expect(seen.bad).toBe(seen.red);
     expect(seen.good).toBe(seen.teal);
   },
@@ -50,23 +50,29 @@ test(
 
 // "N answers" over each bar overran its column on a seven-point scale; a longer scale prints the
 // bare count and names the unit on its axis, and no count runs past its column.
-test(
-  "a count fits over its bar on a five- and an eleven-point scale",
-  () => {
-    for (const dist of [
-      [99, 98, 97, 96, 95],
-      [1, 2, 3, 5, 8, 13, 21, 34, 55, 9, 4],
-    ]) {
-      const headline = { ...surveyReadout.headline, start: 1, end: dist.length, dist };
-      const html = composeSurveyReadout({ ...surveyReadout, headline });
-      expect(html).toContain(dist.length > 5 ? ">55<" : ">99 answers<");
-      const over = probePage(
-        html,
-        `return [...document.querySelectorAll(".dn")].filter((e) => e.scrollWidth > e.closest(".dcol").clientWidth + 1).length;`,
-        SLIDE,
-      );
-      expect(over).toBe("0");
-    }
+test.each([
+  { scale: "five-point scale", dist: [99, 98, 97, 96, 95], label: ">99 answers<" },
+  {
+    scale: "eleven-point scale",
+    dist: [1, 2, 3, 5, 8, 13, 21, 34, 55, 9, 4],
+    label: ">55<",
+  },
+])(
+  "counts fit above the bars on a $scale",
+  ({ dist, label }) => {
+    const headline = { ...surveyReadout.headline, start: 1, end: dist.length, dist };
+    const html = composeSurveyReadout({ ...surveyReadout, headline });
+    expect(html).toContain(label);
+    const result = probePage(
+      html,
+      `const counts = [...document.querySelectorAll(".dn")];
+       return JSON.stringify({
+         labels: counts.length,
+         overflows: counts.filter((e) => e.scrollWidth > e.closest(".dcol").clientWidth + 1).length,
+       });`,
+      SLIDE,
+    );
+    expect(JSON.parse(result)).toEqual({ labels: dist.length, overflows: 0 });
   },
   limit(60_000),
 );

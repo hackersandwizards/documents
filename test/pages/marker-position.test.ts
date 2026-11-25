@@ -27,6 +27,7 @@ const pages = TYPES_LISTED.map((t) => t.file);
 
 type Box = { x: number; y: number; width: number; height: number };
 type Probe = { label: string; edge: "middle" | "bottom"; marker: Box; text: Box; caps: Box | null };
+type Marker = { host: Element; text: Text; edge: Probe["edge"]; numeral?: Element };
 
 /** Runs in the page: rewrites the line beside each marker brand-markers leaves out and returns the
  * boxes to read, with the count of list squares it left to brand-markers. */
@@ -51,76 +52,92 @@ function collect(): { probes: Probe[]; listSquares: number } {
         : 0;
   const label = (el: Element) =>
     `${el.tagName.toLowerCase()}.${el.className.toString().split(" ")[0]} "${el.textContent!.trim().slice(0, 30)}"`;
-  // A list item's square and its opening paragraph's are brand-markers' to measure.
-  const listItem = (el: Element) =>
-    el.tagName === "LI" || (el.tagName === "P" && el.parentElement?.tagName === "LI");
-  const marked: { host: Element; text: Text; edge: Probe["edge"]; mark?: Element }[] = [];
-  let listSquares = 0;
-  for (const host of document.querySelectorAll("body *")) {
+  const classifyPseudo = (host: Element): "list-square" | "middle" | "bottom" | "none" => {
     const before = getComputedStyle(host, "::before");
-    const square = before.content === '""' && markerSize(before) > 0 && markerSize(before) <= 16;
-    if (square && listItem(host)) {
-      listSquares++;
-      continue;
+    const size = markerSize(before);
+    if (before.content === '""' && size > 0 && size <= 16) {
+      return host.matches("li, li > p") ? "list-square" : "middle";
     }
-    const counter = host.tagName === "LI" && /^counter\(/.test(before.content);
-    if (!square && !counter) continue;
-    const text = firstText(host);
-    if (text) marked.push({ host, text, edge: square ? "middle" : "bottom" });
-  }
-  for (const mark of document.querySelectorAll(":is(li, h1, h2, h3, h4) *")) {
-    if (mark.children.length || !/^\d{1,2}\.?$/.test(mark.textContent!.trim())) continue;
-    let next = mark.nextSibling;
-    while (next && !next.textContent!.trim()) next = next.nextSibling;
-    const text = next && (next instanceof Text ? next : firstText(next as Element));
-    if (text) marked.push({ host: mark.parentElement!, text, edge: "bottom", mark });
-  }
-  for (const m of marked) {
-    m.text.data = (m.edge === "middle" ? "xxxxHHHH " : "xxxx ") + m.text.data.trimStart();
+    return host.tagName === "LI" && /^counter\(/.test(before.content) ? "bottom" : "none";
+  };
+  const pseudoMarkers = () => {
+    const markers: Marker[] = [];
+    let listSquares = 0;
+    for (const host of document.querySelectorAll("body *")) {
+      const kind = classifyPseudo(host);
+      if (kind === "none") continue;
+      if (kind === "list-square") {
+        listSquares++;
+        continue;
+      }
+      const text = firstText(host);
+      if (text) markers.push({ host, text, edge: kind });
+    }
+    return { markers, listSquares };
+  };
+  const inlineNumerals = (): Marker[] => {
+    const markers: Marker[] = [];
+    for (const numeral of document.querySelectorAll(":is(li, h1, h2, h3, h4) *")) {
+      if (numeral.children.length || !/^\d{1,2}\.?$/.test(numeral.textContent!.trim())) continue;
+      let next = numeral.nextSibling;
+      while (next && !next.textContent!.trim()) next = next.nextSibling;
+      const text = next && (next instanceof Text ? next : firstText(next as Element));
+      if (text) markers.push({ host: numeral.parentElement!, text, edge: "bottom", numeral });
+    }
+    return markers;
+  };
+  const prepareLine = ({ edge, text, host }: Marker) => {
+    text.data = (edge === "middle" ? "xxxxHHHH " : "xxxx ") + text.data.trimStart();
     // An underline or shadow would add ink below the bands; an ancestor's decoration reaches
     // every descendant, so it goes on each element from the text up to the host.
-    for (let el = m.text.parentElement; el && el !== m.host.parentElement; el = el.parentElement) {
+    for (let el = text.parentElement; el && el !== host.parentElement; el = el.parentElement) {
       el.style.textDecorationLine = "none";
       el.style.textShadow = "none";
     }
-  }
+  };
   const rectOf = (node: Node, end?: number, start = 0) => {
     const range = document.createRange();
     range.setStart(node, start);
     range.setEnd(node, end ?? node.textContent!.length);
     return range.getClientRects()[0]!;
   };
-  const box = (left: number, right: number, top: number, bottom: number): Box => ({
+  const box = ({ left, right, top, bottom }: DOMRectReadOnly): Box => ({
     x: left + scrollX,
     y: top + scrollY,
     width: right - left,
     height: bottom - top,
   });
-  const probes = marked.map(({ host, text, edge, mark }) => {
-    const t = rectOf(text, 4);
-    let marker: Box;
-    if (mark) {
-      const n = rectOf(mark.firstChild!);
-      marker = box(n.left, n.right, n.top, n.bottom);
-    } else {
-      const before = getComputedStyle(host, "::before");
-      const flex = getComputedStyle(host).display.endsWith("flex");
-      const gap = flex ? parseFloat(getComputedStyle(host).columnGap) || 0 : 0;
-      const right = t.left - (parseFloat(before.marginRight) || 0) - gap;
-      const left =
-        edge === "middle" ? right - markerSize(before) : host.getBoundingClientRect().left;
-      marker = box(left - 1, right + 1, t.top - 3, t.bottom + 3);
-    }
-    const c = edge === "middle" ? rectOf(text, 8, 4) : null;
+  const pseudoBox = ({ host, edge }: Marker, textRect: DOMRect): Box => {
+    const before = getComputedStyle(host, "::before");
+    const style = getComputedStyle(host);
+    const gap = style.display.endsWith("flex") ? parseFloat(style.columnGap) || 0 : 0;
+    const right = textRect.left - (parseFloat(before.marginRight) || 0) - gap;
+    const left = edge === "middle" ? right - markerSize(before) : host.getBoundingClientRect().left;
+    return box(
+      DOMRect.fromRect({
+        x: left - 1,
+        y: textRect.top - 3,
+        width: right - left + 2,
+        height: textRect.height + 6,
+      }),
+    );
+  };
+  const readProbe = (marker: Marker): Probe => {
+    const { host, text, edge, numeral } = marker;
+    const textRect = rectOf(text, 4);
     return {
       label: label(host),
       edge,
-      marker,
-      text: box(t.left, t.right, t.top, t.bottom),
-      caps: c && box(c.left, c.right, c.top, c.bottom),
+      marker: numeral ? box(rectOf(numeral.firstChild!)) : pseudoBox(marker, textRect),
+      text: box(textRect),
+      caps: edge === "middle" ? box(rectOf(text, 8, 4)) : null,
     };
-  });
-  return { probes, listSquares };
+  };
+
+  const { markers, listSquares } = pseudoMarkers();
+  const measured = [...markers, ...inlineNumerals()];
+  measured.forEach(prepareLine);
+  return { probes: measured.map(readProbe), listSquares };
 }
 
 /**
@@ -224,11 +241,15 @@ test.each(pages)(
 test(
   "every type page with a list square is included in check:markers",
   async () => {
-    const withListSquares: string[] = [];
+    expect(pages.length).toBeGreaterThanOrEqual(20);
+    const counts = [];
     for (const file of pages) {
       const { listSquares } = await measureBaseline(file);
-      if (listSquares !== 0) withListSquares.push(file);
+      counts.push({ file, listSquares });
     }
+    const withListSquares = counts
+      .filter(({ listSquares }) => listSquares > 0)
+      .map(({ file }) => file);
     expect(withListSquares, "Type pages with list squares").not.toHaveLength(0);
     for (const file of withListSquares)
       expect(await Bun.file(join(TYPES, file, "index.html")).text(), file).toContain("<ul");

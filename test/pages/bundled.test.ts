@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join, resolve } from "node:path";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, assert, describe, expect, it, vi } from "vitest";
 import manifest from "../../package.json";
 import type * as composer from "../../scripts/compose-document";
 import type * as css from "../../scripts/document-css";
@@ -183,8 +183,8 @@ describe("bundled into a consumer's chunk", () => {
 
   it("loads the handout's words, which read the company's name from brand on import", async () => {
     const { HANDOUT_TEXT } = await loadBundle("handout.js");
-    if (!isRecord(HANDOUT_TEXT) || !isRecord(HANDOUT_TEXT.de))
-      throw new Error("Expected German handout text in the bundle");
+    assert(isRecord(HANDOUT_TEXT), "Expected handout text in the bundle");
+    assert(isRecord(HANDOUT_TEXT.de), "Expected German handout text in the bundle");
     expect(HANDOUT_TEXT.de.runningBrand).toBe("hackers&wizards");
   });
 });

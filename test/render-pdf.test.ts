@@ -20,7 +20,6 @@ import { inlineImages } from "../scripts/inline-images";
 import { subsetFaces } from "../scripts/font-faces";
 import { decompress } from "woff2-encoder";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
-import { isRecord } from "../scripts/root";
 import { rateCard, surveyReadout } from "../scripts/samples";
 import { composeSurveyReadout } from "../scripts/survey-readout";
 import { fallbackFamilies, withLinkedBrand, limit } from "./probe";
@@ -73,36 +72,60 @@ describe("compactStyles", () => {
     expect(out).not.toContain("U+21??");
   });
 
-  it("control: a character in a face's range keeps it, written as text, entity or CSS escape", () => {
-    // Text after "data:" is no data URI.
-    expect(compactStyles(page("<p>Metadata: Čaluk</p>"))).toContain("U+0100");
-    expect(compactStyles(page("<p>&#x10C;aluk</p>"))).toContain("U+0100");
-    expect(
-      compactStyles(page("<ul><li>x</li></ul>", 'li::before { content: "\\2192"; }')),
-    ).toContain("U+21??");
-    // text-transform: uppercase prints ÿ as Ÿ (U+0178), and i as İ (U+0130) in Turkish.
-    expect(compactStyles(page("<p>ÿ</p>"))).toContain("U+0100");
-    expect(compactStyles(page("<p>i</p>").replace("<html>", '<html lang="tr">'))).toContain(
-      "U+0100",
-    );
-    expect(compactStyles(page("<p>i</p>"))).not.toContain("U+0100");
-    expect(compactStyles(page("<p>i</p>").replace("<html>", "<html lang='tr'>"))).toContain(
-      "U+0100",
-    );
-    // A JS escape takes four digits, or one to six in braces.
-    expect(compactStyles(page('<script>document.title = "\\u0142a";</script>'))).toContain(
-      "U+0100",
-    );
-    expect(compactStyles(page('<script>document.title = "\\u{142}";</script>'))).toContain(
-      "U+0100",
-    );
-    expect(compactStyles(page('<script>document.title = "\\u142a";</script>'))).not.toContain(
-      "U+0100",
-    );
-    // A data attribute names no language.
-    expect(
-      compactStyles(page("<p>i</p>").replace("<html>", '<html data-lang="tr">')),
-    ).not.toContain("U+0100");
+  it.each([
+    {
+      input: "literal text after a data label",
+      html: page("<p>Metadata: Čaluk</p>"),
+      range: "U+0100",
+      kept: true,
+    },
+    { input: "an HTML entity", html: page("<p>&#x10C;aluk</p>"), range: "U+0100", kept: true },
+    {
+      input: "a CSS escape",
+      html: page("<ul><li>x</li></ul>", 'li::before { content: "\\2192"; }'),
+      range: "U+21??",
+      kept: true,
+    },
+    { input: "a cased Latin character", html: page("<p>ÿ</p>"), range: "U+0100", kept: true },
+    {
+      input: "a Turkish tag in double quotes",
+      html: page("<p>i</p>").replace("<html>", '<html lang="tr">'),
+      range: "U+0100",
+      kept: true,
+    },
+    { input: "the default language", html: page("<p>i</p>"), range: "U+0100", kept: false },
+    {
+      input: "a Turkish tag in single quotes",
+      html: page("<p>i</p>").replace("<html>", "<html lang='tr'>"),
+      range: "U+0100",
+      kept: true,
+    },
+    {
+      input: "a four-digit JavaScript escape",
+      html: page('<script>document.title = "\\u0142a";</script>'),
+      range: "U+0100",
+      kept: true,
+    },
+    {
+      input: "a braced JavaScript escape",
+      html: page('<script>document.title = "\\u{142}";</script>'),
+      range: "U+0100",
+      kept: true,
+    },
+    {
+      input: "a JavaScript escape for another character",
+      html: page('<script>document.title = "\\u142a";</script>'),
+      range: "U+0100",
+      kept: false,
+    },
+    {
+      input: "a data-lang attribute",
+      html: page("<p>i</p>").replace("<html>", '<html data-lang="tr">'),
+      range: "U+0100",
+      kept: false,
+    },
+  ])("keeps the face for $input: $kept", ({ html, range, kept }) => {
+    expect(compactStyles(html).includes(range)).toBe(kept);
   });
 
   it("leaves text and selectors alone: a face in the body, an escape past U+10FFFF, a comment between selectors", () => {
@@ -428,14 +451,12 @@ describe("a Chrome or composer that cannot start", () => {
       await child.exited;
       expect(child.exitCode).toBe(0);
       const result: unknown = JSON.parse(out);
-      if (!isRecord(result) || !Array.isArray(result.chrome) || !Array.isArray(result.composer))
-        throw new Error("Expected Chrome and composer outcomes");
-      const chrome: unknown[] = result.chrome;
-      const composer: unknown[] = result.composer;
-      // The second warm call fails on its own spawn, not on the dead Chrome the first one kept.
-      for (const message of chrome) expect(message).toContain("ENOENT");
-      expect(composer[0]).toMatch(/^Composing DocMarkdown failed/);
-      expect(composer[1]).toBe("ok");
+      const missingChrome: unknown = expect.stringContaining("ENOENT");
+      const missingComposer: unknown = expect.stringMatching(/^Composing DocMarkdown failed/);
+      expect(result).toEqual({
+        chrome: [missingChrome, missingChrome, missingChrome],
+        composer: [missingComposer, "ok"],
+      });
       expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
     },
     limit(60_000),
@@ -443,9 +464,14 @@ describe("a Chrome or composer that cannot start", () => {
 });
 
 describe("a malformed child-process reply", () => {
-  it.each(["Chrome", "composer"])(
-    "rejects a malformed %s reply and lets the next warm request start a new child",
-    async (worker) => {
+  const badChromeReply: unknown = expect.stringContaining("Invalid Chrome protocol message");
+  const badComposerReply: unknown = expect.stringContaining("Invalid composer protocol message");
+  it.each([
+    { worker: "Chrome", replies: [badChromeReply, badChromeReply, badChromeReply] },
+    { worker: "composer", replies: [badComposerReply, "ok"] },
+  ])(
+    "rejects a malformed $worker reply and lets the next warm request start a new child",
+    async ({ worker, replies }) => {
       const stubDir = mkdtempSync(join(dir, "bad-reply-"));
       const stubChrome = join(stubDir, "chrome");
       const stubBun = join(stubDir, "bun");
@@ -485,10 +511,7 @@ describe("a malformed child-process reply", () => {
       ]);
       expect(status, stderr).toBe(0);
       const answer: unknown = JSON.parse(stdout);
-      const badReply: unknown = expect.stringContaining(`Invalid ${worker} protocol message`);
-      expect(answer).toEqual(
-        worker === "Chrome" ? [badReply, badReply, badReply] : [badReply, "ok"],
-      );
+      expect(answer).toEqual(replies);
     },
     limit(30_000),
   );
@@ -501,15 +524,16 @@ describe("a profile left behind", () => {
       const tmp = mkdtempSync(join(dir, "left-"));
       const old = new Date(Date.now() - 2 * 3_600_000);
       const gone = Bun.spawnSync(["true"]).pid;
-      const locks: Record<string, string | undefined> = {
-        "hw-chrome-stale": undefined,
+      mkdirSync(join(tmp, "hw-chrome-stale"));
+      utimesSync(join(tmp, "hw-chrome-stale"), old, old);
+      const locks = {
         "hw-chrome-crashed": `${hostname()}-${gone}`,
         "hw-chrome-held": `${hostname()}-${process.pid}`,
         "hw-chrome-elsewhere": "other-host-1",
       };
       for (const [name, lock] of Object.entries(locks)) {
         mkdirSync(join(tmp, name));
-        if (lock) symlinkSync(lock, join(tmp, name, "SingletonLock"));
+        symlinkSync(lock, join(tmp, name, "SingletonLock"));
         utimesSync(join(tmp, name), old, old);
       }
       mkdirSync(join(tmp, "hw-chrome-new"));

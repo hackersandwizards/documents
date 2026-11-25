@@ -33,10 +33,11 @@ afterAll(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+type PrintableDocument = { component: string; props: Record<string, unknown> };
+
 /** A component's props rendered to a PDF in the test folder, the handout on its own stylesheet. */
 async function render(
-  component: string,
-  props: Record<string, unknown>,
+  { component, props }: PrintableDocument,
   edit = (html: string) => html,
   warm = false,
 ) {
@@ -89,7 +90,9 @@ function textBelowHead(pdf: string): string[] {
 
 /** The header lines on the long chapter's second page, the first that carries a running head. */
 async function headerLines(title: string): Promise<number> {
-  return headerLinesPerPage(await render("DocHandout", { ...longHandout, title }))[2]!;
+  return headerLinesPerPage(
+    await render({ component: "DocHandout", props: { ...longHandout, title } }),
+  )[2]!;
 }
 
 test.skipIf(!chromeBinary())(
@@ -106,8 +109,12 @@ test.skipIf(!chromeBinary())(
 test.skipIf(!chromeBinary())(
   "page 1 of a proposal and a rate card carries no running head, page 2 does",
   async () => {
-    expect(headerLinesPerPage(await render("DocProposal", proposalDe)).slice(0, 2)).toEqual([0, 1]);
-    expect(headerLinesPerPage(await render("DocRateCard", rateCard))[0]).toBe(0);
+    expect(
+      headerLinesPerPage(await render({ component: "DocProposal", props: proposalDe })).slice(0, 2),
+    ).toEqual([0, 1]);
+    expect(headerLinesPerPage(await render({ component: "DocRateCard", props: rateCard }))[0]).toBe(
+      0,
+    );
   },
   limit(120_000),
 );
@@ -117,21 +124,19 @@ test.skipIf(!chromeBinary())(
 test.skipIf(!chromeBinary())(
   "a chapter's opening page alone drops the running head, and no line moves",
   async () => {
-    const pdf = await render("DocHandout", longHandout);
+    const pdf = await render({ component: "DocHandout", props: longHandout });
     const heads = headerLinesPerPage(pdf);
     const lines = textBelowHead(pdf);
     // The control names no block: every chapter page shows the head, and the text sits where
     // Chrome's own breaks put it.
-    const plain = await render("DocHandout", longHandout, (html) =>
+    const plain = await render({ component: "DocHandout", props: longHandout }, (html) =>
       html.replace("const named = sections.map(", "const named = [].map("),
     );
     const control = headerLinesPerPage(plain);
     expect(control.slice(1)).toEqual(control.slice(1).map(() => 1));
     expect(lines).toEqual(textBelowHead(plain));
-    expect(heads[1]).toBe(0);
-    expect(heads.slice(2, -1)).toEqual(heads.slice(2, -1).map(() => 1));
-    expect(heads.at(-1)).toBe(0);
     expect(heads.length).toBeGreaterThan(4);
+    expect(heads.slice(1)).toEqual([0, ...Array<number>(heads.length - 3).fill(1), 0]);
   },
   limit(120_000),
 );
@@ -150,7 +155,9 @@ test.skipIf(!chromeBinary()).each([false, true])(
       expect(held).not.toBe(html);
       return held;
     };
-    const heads = headerLinesPerPage(await render("DocHandout", longHandout, late, warm));
+    const heads = headerLinesPerPage(
+      await render({ component: "DocHandout", props: longHandout }, late, warm),
+    );
     expect(heads[1]).toBe(0);
     expect(heads.at(-1)).toBe(0);
     expect(heads.slice(2, -1)).toEqual(heads.slice(2, -1).map(() => 1));
@@ -164,7 +171,10 @@ test.skipIf(!chromeBinary())(
   "a timesheet over two pages carries the rail on page 2",
   async () => {
     const rows = Array.from({ length: 4 }, () => leistungsnachweisMonth.rows).flat();
-    const pdf = await render("DocLeistungsnachweis", { ...leistungsnachweisMonth, rows });
+    const pdf = await render({
+      component: "DocLeistungsnachweis",
+      props: { ...leistungsnachweisMonth, rows },
+    });
     /** The colour of the topmost pixel row at the middle of `page`, at 72 dpi. */
     const top = (page: number) => {
       const ppm = execFileSync("pdftoppm", [
