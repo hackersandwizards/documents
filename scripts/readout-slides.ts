@@ -138,19 +138,18 @@ function risksSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
   );
 }
 
-function freeTextSlides(d: SurveyReadout, t: ReadoutText, kicker: string): string[] {
-  const s5 = slideShell(
-    `<h2>${esc(t.liked)}</h2>${askedLine(t, d.asked.liked)}<div class="quotes">${quoteList(t, d.liked)}</div>`,
-    kicker,
-    5,
-  );
+type QuoteSlide = { title: string; question: string; answers: string[]; page: number };
 
-  const s6 = slideShell(
-    `<h2>${esc(t.improve)}</h2>${askedLine(t, d.asked.improve)}<div class="quotes">${quoteList(t, d.improve)}</div>`,
+function quoteSlide(
+  { title, question, answers, page }: QuoteSlide,
+  t: ReadoutText,
+  kicker: string,
+) {
+  return slideShell(
+    `<h2>${esc(title)}</h2>${askedLine(t, question)}<div class="quotes">${quoteList(t, answers)}</div>`,
     kicker,
-    6,
+    page,
   );
-  return [s5, s6];
 }
 
 function readoutSlide(r: SurveyReadout["readout"], t: ReadoutText, kicker: string): string {
@@ -182,7 +181,12 @@ export function readoutSlides(d: SurveyReadout, t: ReadoutText): string {
     glanceSlide(d, t, kicker),
     scoresSlide(d, t, kicker),
     risksSlide(d, t, kicker),
-    ...freeTextSlides(d, t, kicker),
+    quoteSlide({ title: t.liked, question: d.asked.liked, answers: d.liked, page: 5 }, t, kicker),
+    quoteSlide(
+      { title: t.improve, question: d.asked.improve, answers: d.improve, page: 6 },
+      t,
+      kicker,
+    ),
     readoutSlide(d.readout, t, kicker),
   ].join("\n");
 }
