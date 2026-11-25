@@ -217,36 +217,36 @@ const topicClass = [
         bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
       return bottom - (box.bottom - parseFloat(getComputedStyle(cert).paddingBottom));
     };
-    const fit = () => {
-      cert.classList.remove(...all, "certificate-overflow");
+    const applyFitSteps = () => {
       let left = over();
       for (const step of steps) {
         if (left <= 0.5) break;
         const name = cert.querySelector(".attendee-name");
         const lines = name.offsetHeight / parseFloat(getComputedStyle(name).lineHeight);
         if (step[1] === "name" && lines < 1.5) continue;
-        const [best] = step
-          .filter((c) => c.startsWith("fit-"))
-          .map((option) => {
-            cert.classList.add(option);
-            const after = over();
-            cert.classList.remove(option);
-            return { option, after };
-          })
-          .filter(({ after }) => after < left)
-          .sort((a, b) => a.after - b.after);
-        if (best) {
-          left = best.after;
-          cert.classList.add(best.option);
+        let best = null;
+        for (const option of step.filter((c) => c.startsWith("fit-"))) {
+          cert.classList.add(option);
+          const after = over();
+          cert.classList.remove(option);
+          if (after < left) [best, left] = [option, after];
         }
+        if (best) cert.classList.add(best);
       }
-      if (left > 0.5) return cert.classList.add("certificate-overflow");
-      // A late step can free more than was missing: give back each earlier one the page still holds.
+      return left;
+    };
+    // A late step can free more than was missing: give back each earlier one the page still holds.
+    const releaseSurplusSteps = () => {
       const kept = all.filter((c) => cert.classList.contains(c));
       for (const step of kept.slice(0, -1).reverse()) {
         cert.classList.remove(step);
         if (over() > 0.5) cert.classList.add(step);
       }
+    };
+    const fit = () => {
+      cert.classList.remove(...all, "certificate-overflow");
+      if (applyFitSteps() > 0.5) return cert.classList.add("certificate-overflow");
+      releaseSurplusSteps();
     };
     (window.hwLayout ??= []).push(document.fonts.ready.then(fit));
   })();
