@@ -37,6 +37,7 @@ describe("fitOnepager with named entities", () => {
 
   beforeAll(async () => {
     fit = await fitOnepager(composer, { ...onepager, html }, work);
+    // Rendered from a folder holding no brand file, so every face comes from the page itself.
     writeFileSync(file, fit.html);
     await renderPdf(file, pdf);
   }, limit(60_000));
@@ -48,17 +49,20 @@ describe("fitOnepager with named entities", () => {
     const page2 = execFileSync("pdftotext", ["-f", "2", "-l", "2", pdf, "-"], {
       encoding: "utf8",
     });
+    // A two-page result alone does not show where the fit placed the break.
     expect(page2.trimStart().toLowerCase().startsWith("schön zu wissen")).toBe(true);
   });
 
   it("prints outside the repository with its own brand and fallback faces", () => {
     expect(fit.html).not.toContain("tokens/fonts/");
+    // Cutting the faces to the print keeps the fallback faces, which carry no data.
     const { named, defined } = fallbackFamilies(fit.html);
     expect(named.length).toBeGreaterThan(0);
     expect(defined).toEqual(named);
     expect(() => assertBrandFonts(pdf)).not.toThrow();
   });
 
+  // Brand's CSS comments name internal decisions that must stay out of the standalone page.
   it("strips CSS comments from the standalone page", () => {
     expect(fit.html).not.toMatch(/\/\*/);
   });
@@ -85,6 +89,7 @@ describe("fitOnepager, page 2's first line", () => {
     plain = await fitOnepager(composer, onepager, work);
   }, limit(120_000));
 
+  // The PDF prints ß as SS and omits the space before punctuation that stripping the tag leaves.
   it(
     "finds the opening block through capitals, ß and an inline tag",
     async () => {
@@ -100,6 +105,7 @@ describe("fitOnepager, page 2's first line", () => {
     limit(120_000),
   );
 
+  // The first page's facts card also prints Format, the text of the block that opens page 2.
   it(
     "identifies a short opening block even when its text occurs on page 1",
     async () => {
@@ -108,6 +114,7 @@ describe("fitOnepager, page 2's first line", () => {
         '<p class="path-note">Erster Hinweis</p>\n<p class="path-note">Zweiter Hinweis</p>\n<p class="path-note">Format</p>\n<div class="planning">',
       );
       const short = await fitOnepager(composer, { ...onepager, html }, work);
+      // The notes precede the original opening block. The third note is two blocks after the first.
       expect(short.fit.page2Start).toBe(plain.fit.page2Start! + 2);
     },
     limit(120_000),
@@ -124,6 +131,7 @@ describe("fitOnepager, page 2's first line", () => {
   );
 });
 
+// An unclosed element would shift the block count used to place the page break.
 it(
   "refuses markup with an unclosed block",
   async () => {

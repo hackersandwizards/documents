@@ -150,10 +150,12 @@ describe("a handout served from a URL", () => {
           const toc = query.get("toc")?.split(",").map(Number);
           const [flow] = query.getAll("flow");
           const [notes] = query.getAll("notes");
+          // German makes the first fetch read the rendered eyebrow instead of using the English default.
           const html = await compose({ toc, flow, notes }, { lang: "de" });
           return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
         },
       },
+      // Chrome can also request a favicon, which does not count as a print request.
       fetch: () => new Response(null, { status: 404 }),
     });
     try {
@@ -165,6 +167,7 @@ describe("a handout served from a URL", () => {
   }, limit(120_000));
 
   test("fetches the original page and sends the contents as a query on the final pass", () => {
+    // The fetch for the eyebrow label adds a request before the print renders.
     expect(queries.length).toBe(result.renders + 1);
     expect(queries[0]).toBe("");
     expect(queries.at(-1)).toContain("toc=");

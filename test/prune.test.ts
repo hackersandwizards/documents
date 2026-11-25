@@ -45,6 +45,7 @@ describe("pruneStyles", () => {
         ),
       ),
     );
+    // The controls are live through var(), an inline style and a container style query.
     expect(out).toBe(
       ":root{--c:2;--d:3;--e:on}.kept{color:var(--c)}" +
         "@container style(--e: on){.kept{color:red}}",

@@ -94,7 +94,9 @@ describe("deny terms in document text", () => {
     { term: "E&C", lines: [2] },
     { term: "Echte Firma", lines: [3, 4] },
     { term: "Müllerbau", lines: [6, 7, 11] },
+    // A capital umlaut is spelled out in capitals.
     { term: "MÜLLERBAU", lines: [6, 11] },
+    // Acronyms match in capitals in ordinary text and in either case beside a slug separator.
     { term: "ECHT", lines: [8, 10, 10] },
   ])("$term matches its allowed spellings on lines $lines", ({ term, lines }) => {
     expect(scanText(dir, [term]).map((finding) => finding.line)).toEqual(lines);

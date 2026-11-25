@@ -18,9 +18,11 @@ const traced =
   };
 const traceTimeout = (60_000 * Number(process.env.SCAFFOLDING_TEST_TIMEOUT_MS || 5000)) / 5000;
 
+// Bun's own loader reads an imported module without going through node:fs.
 test("engine scripts load no brand modules outside the file trace", () => {
   const root = resolve(import.meta.dirname, "..");
   const imports = /(from|import\()\s*["']@hackersandwizards\/brand/;
+  // The control finds the brand import Vite reads in DocHeader.
   expect(fs.readFileSync(join(root, "components", "DocHeader.astro"), "utf8")).toMatch(imports);
   const scripts = join(root, "scripts");
   const scriptFiles = fs

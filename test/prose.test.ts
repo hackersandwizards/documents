@@ -23,7 +23,7 @@ test("a bare value with an apostrophe still loses its style; a quoted value keep
 
 test.each([
   {
-    syntax: "adjacent attributes",
+    syntax: "an attribute immediately after a closing quote",
     input: '<p class="a"style="color:red">x</p>',
     expected: '<p class="a">x</p>',
   },
@@ -36,7 +36,7 @@ test.each([
   expect(proseHtml(input)).toBe(expected);
 });
 
-test("removes the style attribute after a slash", () => {
+test("removes the style attribute immediately after a slash", () => {
   expect(proseHtml("<p/style=color:red>x</p>")).not.toContain("style");
 });
 

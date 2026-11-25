@@ -52,6 +52,7 @@ function collect(): { probes: Probe[]; listSquares: number } {
         : 0;
   const label = (el: Element) =>
     `${el.tagName.toLowerCase()}.${el.className.toString().split(" ")[0]} "${el.textContent!.trim().slice(0, 30)}"`;
+  // Brand-markers measures the squares on list items and their opening paragraphs.
   const classifyPseudo = (host: Element): "list-square" | "middle" | "bottom" | "none" => {
     const before = getComputedStyle(host, "::before");
     const size = markerSize(before);

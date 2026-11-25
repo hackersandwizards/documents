@@ -74,58 +74,56 @@ describe("compactStyles", () => {
 
   it.each([
     {
-      input: "literal text after a data label",
+      input: "literal text after data: in a label",
       html: page("<p>Metadata: Čaluk</p>"),
       range: "U+0100",
-      kept: true,
     },
-    { input: "an HTML entity", html: page("<p>&#x10C;aluk</p>"), range: "U+0100", kept: true },
+    { input: "an HTML entity", html: page("<p>&#x10C;aluk</p>"), range: "U+0100" },
     {
       input: "a CSS escape",
       html: page("<ul><li>x</li></ul>", 'li::before { content: "\\2192"; }'),
       range: "U+21??",
-      kept: true,
     },
-    { input: "a cased Latin character", html: page("<p>ÿ</p>"), range: "U+0100", kept: true },
+    { input: "ÿ uppercased to Ÿ (U+0178)", html: page("<p>ÿ</p>"), range: "U+0100" },
     {
-      input: "a Turkish tag in double quotes",
+      input: "i uppercased to İ (U+0130) with double-quoted Turkish lang",
       html: page("<p>i</p>").replace("<html>", '<html lang="tr">'),
       range: "U+0100",
-      kept: true,
     },
-    { input: "the default language", html: page("<p>i</p>"), range: "U+0100", kept: false },
     {
-      input: "a Turkish tag in single quotes",
+      input: "i uppercased to İ with single-quoted Turkish lang",
       html: page("<p>i</p>").replace("<html>", "<html lang='tr'>"),
       range: "U+0100",
-      kept: true,
     },
+    // JavaScript Unicode escapes take four hex digits, or one to six within braces.
     {
       input: "a four-digit JavaScript escape",
       html: page('<script>document.title = "\\u0142a";</script>'),
       range: "U+0100",
-      kept: true,
     },
     {
       input: "a braced JavaScript escape",
       html: page('<script>document.title = "\\u{142}";</script>'),
       range: "U+0100",
-      kept: true,
     },
+  ])("keeps the face for $input", ({ html, range }) => {
+    expect(compactStyles(html)).toContain(range);
+  });
+
+  it.each([
+    { input: "the default language", html: page("<p>i</p>"), range: "U+0100" },
     {
-      input: "a JavaScript escape for another character",
+      input: "a four-digit JavaScript escape outside the range",
       html: page('<script>document.title = "\\u142a";</script>'),
       range: "U+0100",
-      kept: false,
     },
     {
-      input: "a data-lang attribute",
+      input: "a data-lang attribute without an HTML language declaration",
       html: page("<p>i</p>").replace("<html>", '<html data-lang="tr">'),
       range: "U+0100",
-      kept: false,
     },
-  ])("keeps the face for $input: $kept", ({ html, range, kept }) => {
-    expect(compactStyles(html).includes(range)).toBe(kept);
+  ])("drops the face for $input", ({ html, range }) => {
+    expect(compactStyles(html)).not.toContain(range);
   });
 
   it("leaves text and selectors alone: a face in the body, an escape past U+10FFFF, a comment between selectors", () => {
@@ -451,6 +449,7 @@ describe("a Chrome or composer that cannot start", () => {
       await child.exited;
       expect(child.exitCode).toBe(0);
       const result: unknown = JSON.parse(out);
+      // The second warm call fails on its own spawn, not on the dead Chrome the first one kept.
       const missingChrome: unknown = expect.stringContaining("ENOENT");
       const missingComposer: unknown = expect.stringMatching(/^Composing DocMarkdown failed/);
       expect(result).toEqual({
