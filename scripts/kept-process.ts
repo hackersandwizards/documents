@@ -8,6 +8,7 @@ function stopChild(child: ChildProcess, cleanup?: () => void) {
     cleanup?.();
     return;
   }
+  // A child stuck on SIGTERM is killed outright. A caller exiting meanwhile still cleans up.
   const force = setTimeout(() => child.kill("SIGKILL"), STOP_MS);
   const onExit = () => cleanup?.();
   process.once("exit", onExit);

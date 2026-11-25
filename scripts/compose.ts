@@ -127,6 +127,8 @@ ${body}
 `;
 }
 
+/** Compose one component with its props, bake the marked stylesheet, and cut the inlined faces
+ * to the page's characters. */
 export async function composePage(
   composer: Awaited<ReturnType<typeof openComposer>>,
   name: string,

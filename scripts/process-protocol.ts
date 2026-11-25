@@ -16,7 +16,7 @@ export function readProtocol(
   let buffer = "";
   return (chunk: string) => {
     buffer += chunk;
-    // Only a chunk that adds a delimiter can complete a frame.
+    // Only a chunk with a delimiter can complete a frame. A Chrome PDF can span many chunks.
     if (!chunk.includes(delimiter)) return;
     for (let end = buffer.indexOf(delimiter); end >= 0; end = buffer.indexOf(delimiter)) {
       const message = protocolRecord(buffer.slice(0, end));

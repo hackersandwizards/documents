@@ -40,7 +40,7 @@ async function loadPrintPage(pipe: ChromePipe, sessionId: string, job: PrintJob)
   if (script)
     await pipe.send("Page.addScriptToEvaluateOnNewDocument", { source: script }, sessionId);
   const loaded = pipe.loaded(sessionId);
-  // Navigation can fail before the load promise is awaited.
+  // Failed navigation skips awaiting the load promise, which can still reject.
   loaded.catch(() => {});
   const { errorText } = await pipe.send("Page.navigate", { url }, sessionId);
   if (errorText) {
@@ -53,6 +53,7 @@ async function loadPrintPage(pipe: ChromePipe, sessionId: string, job: PrintJob)
   }
   await loaded;
   pipe.forgetLoad(sessionId);
+  // Chrome also prints an HTTP error page as if it were the document.
   const { result } = await pipe.send(
     "Runtime.evaluate",
     {
@@ -116,13 +117,16 @@ async function closePrintTarget(pipe: ChromePipe, targetId: string): Promise<boo
   }
 }
 
-/** A Chrome driven over its own debugging pipe (fd 3 in, fd 4 out), in a private profile. */
+/** Unlike a debugging port, a private pipe (fd 3 in, fd 4 out) is unreachable to other processes.
+ * The temporary profile keeps the render from using or locking the user's Chrome profile. */
 function pipeChrome(chrome: string, hung?: () => void) {
   const profile = makeChromeProfile();
   const child = spawn(chrome, [...chromeArgs(profile), "--remote-debugging-pipe", "about:blank"], {
     stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"],
   });
   const pipe = new ChromePipe(child, hung);
+  // On timeout, close only this target and reject its calls. A browser that cannot close the
+  // target within STOP_MS is hung and must stop.
   const abandon = async ({ targetId, sessionId }: Target, error: Error) => {
     if (sessionId !== undefined) pipe.rejectSession(sessionId, error);
     if (targetId && (await closePrintTarget(pipe, targetId))) return;

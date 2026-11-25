@@ -39,7 +39,12 @@ export async function composeDocument(
   }
 }
 
-/** Compose with a process shared by calls in one Astro project, stopped after a minute idle. */
+/**
+ * Compose with a process shared by calls in one Astro project. A fresh composer costs about
+ * 0.5 s and a kept one a few ms, plus 0.4 to 0.8 s to cut the faces when the page's characters
+ * differ from the previous call (measured). The process quits after a minute idle and with the
+ * caller.
+ */
 export async function composeWarmDocument(
   name: string,
   props: Record<string, unknown>,
