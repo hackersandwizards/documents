@@ -85,22 +85,41 @@ async function printTarget(pipe: ChromePipe, target: Target, job: PrintJob): Pro
   const { targetId } = await pipe.send("Target.createTarget", { url: "about:blank" });
   if (typeof targetId !== "string") throw new Error("Chrome returned no target ID");
   target.targetId = targetId;
+  let printed: { pdf: Buffer } | { error: unknown };
+  let closeFailure: { error: unknown } | undefined;
   try {
     const { sessionId } = await pipe.send("Target.attachToTarget", { targetId, flatten: true });
     if (typeof sessionId !== "string") throw new Error("Chrome returned no session ID");
     target.sessionId = sessionId;
     await loadPrintPage(pipe, sessionId, job);
-    return await printLoadedPage(pipe, sessionId, job.url);
+    printed = { pdf: await printLoadedPage(pipe, sessionId, job.url) };
+  } catch (error) {
+    printed = { error };
   } finally {
-    await pipe.send("Target.closeTarget", { targetId }).catch(() => {});
+    try {
+      await pipe.closeTarget(targetId);
+    } catch (error) {
+      closeFailure = { error };
+    }
   }
+  if ("error" in printed) {
+    if (closeFailure && printed.error !== closeFailure.error)
+      throw new AggregateError(
+        [printed.error, closeFailure.error],
+        "Printing and closing the Chrome target both failed",
+        { cause: printed.error },
+      );
+    throw printed.error;
+  }
+  if (closeFailure) throw closeFailure.error;
+  return printed.pdf;
 }
 
 async function closePrintTarget(pipe: ChromePipe, targetId: string): Promise<boolean> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
-      pipe.send("Target.closeTarget", { targetId }).then(
+      pipe.closeTarget(targetId).then(
         () => true,
         () => false,
       ),
@@ -144,8 +163,6 @@ async function printWithin(
   stop: (error: Error) => void,
 ): Promise<Buffer> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  // The print's own rejection, once the timeout has answered, is no unhandled one.
-  print.catch(() => {});
   try {
     return await Promise.race([
       print,

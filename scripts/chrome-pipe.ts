@@ -5,7 +5,10 @@ import { isRecord } from "./root";
 
 type Result = Record<string, unknown>;
 type Pending = { resolve(r: Result): void; reject(e: Error): void; sessionId?: string };
-type PendingLoad = { resolve(): void; reject(error: unknown): void };
+type PendingLoad = (error?: Error) => void;
+
+class ChromeExitedError extends Error {}
+class ChromeTargetClosedError extends Error {}
 
 export class ChromePipe {
   readonly exited: Promise<void>;
@@ -13,7 +16,7 @@ export class ChromePipe {
   private readonly input: Writable | undefined;
   private readonly calls = new Map<number, Pending>();
   private id = 0;
-  private gone = false;
+  private failure: Error | undefined;
 
   constructor(child: ChildProcess, hung?: () => void) {
     // Both pipes are missing when Chrome did not start; its error rejects the pending calls.
@@ -23,7 +26,7 @@ export class ChromePipe {
     output?.on(
       "data",
       readProtocol("\0", (message) => {
-        if (this.gone) return false;
+        if (this.failure) return false;
         if (!message) {
           this.fail(new Error("Invalid Chrome protocol message"));
           hung?.();
@@ -31,13 +34,13 @@ export class ChromePipe {
         }
         if (typeof message.id === "number") this.receiveReply(message.id, message);
         else if (message.method === "Page.loadEventFired" && typeof message.sessionId === "string")
-          this.takeLoad(message.sessionId)?.resolve();
+          this.takeLoad(message.sessionId)?.();
         return true;
       }),
     );
     this.exited = new Promise<void>((resolve) => {
       child.on("exit", () => {
-        this.fail(new Error("Chrome exited"));
+        this.fail(new ChromeExitedError("Chrome exited"));
         resolve();
       });
       child.on("error", (error) => {
@@ -53,43 +56,56 @@ export class ChromePipe {
     const call = this.calls.get(id);
     if (!call) return;
     this.calls.delete(id);
-    if (isRecord(error) && typeof error.message === "string") call.reject(new Error(error.message));
-    else if (!error && isRecord(result)) call.resolve(result);
+    if (isRecord(error) && typeof error.message === "string") {
+      if (error.code === -32602 && error.message === "No target with given id found")
+        call.reject(new ChromeTargetClosedError(error.message));
+      else call.reject(new Error(error.message));
+    } else if (!error && isRecord(result)) call.resolve(result);
     else call.reject(new Error("Invalid Chrome protocol response"));
   }
 
   private fail(error: Error) {
-    this.gone = true;
-    for (const call of [...this.calls.values(), ...this.loads.values()]) call.reject(error);
+    this.failure ??= error;
+    for (const call of this.calls.values()) call.reject(error);
+    for (const load of this.loads.values()) load(error);
     this.calls.clear();
     this.loads.clear();
   }
 
   send(method: string, params: object, sessionId?: string): Promise<Result> {
     return new Promise((resolve, reject) => {
-      if (this.gone) return reject(new Error("Chrome exited"));
+      if (this.failure) return reject(this.failure);
       const id = ++this.id;
       this.calls.set(id, { resolve, reject, sessionId });
       this.input?.write(`${JSON.stringify({ id, method, params, sessionId })}\0`);
     });
   }
 
+  async closeTarget(targetId: string): Promise<void> {
+    try {
+      await this.send("Target.closeTarget", { targetId });
+    } catch (error) {
+      if (!(error instanceof ChromeExitedError) && !(error instanceof ChromeTargetClosedError))
+        throw error;
+    }
+  }
+
   async navigate(url: string, sessionId: string): Promise<unknown> {
-    const loaded = new Promise<void>((resolve, reject) => {
-      this.loads.set(sessionId, { resolve, reject });
+    // Chrome may finish or lose the load before replying to Page.navigate.
+    const loaded = new Promise<Error | undefined>((resolve) => {
+      this.loads.set(sessionId, resolve);
     });
-    // A failed navigation skips awaiting the load, which can still reject.
-    loaded.catch(() => {});
     try {
       const { errorText } = await this.send("Page.navigate", { url }, sessionId);
       if (errorText) {
-        this.takeLoad(sessionId)?.reject(new Error(String(errorText)));
+        this.takeLoad(sessionId);
         return errorText;
       }
-      await loaded;
+      const loadError = await loaded;
+      if (loadError) throw loadError;
       return undefined;
     } catch (error) {
-      this.takeLoad(sessionId)?.reject(error);
+      this.takeLoad(sessionId);
       throw error;
     }
   }
@@ -106,6 +122,6 @@ export class ChromePipe {
       this.calls.delete(key);
       call.reject(error);
     }
-    if (sessionId) this.takeLoad(sessionId)?.reject(error);
+    if (sessionId) this.takeLoad(sessionId)?.(error);
   }
 }
