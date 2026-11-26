@@ -517,6 +517,37 @@ describe("a malformed child-process reply", () => {
 });
 
 describe("a profile left behind", () => {
+  // A process of its own, so the sweep has not run yet in it.
+  const sweepChild = (tmp: string, chrome: string) => {
+    const file = join(dir, "left.html");
+    const pdf = join(dir, "left.pdf");
+    writeFileSync(file, "<!doctype html><html><body>x</body></html>");
+    const script = `
+      import { renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
+      process.env.CHROME_BINARY = ${JSON.stringify(chrome)};
+      await renderPdf(${JSON.stringify(file)}, ${JSON.stringify(pdf)}).catch((error) => {
+        if (error?.code !== "ENOENT") throw error;
+      });`;
+    return Bun.spawn([process.execPath, "-e", script], {
+      env: { ...process.env, TMPDIR: tmp },
+      stderr: "pipe",
+    });
+  };
+
+  it(
+    "propagates an unexpected failure starting Chrome in the sweep fixture",
+    async () => {
+      const work = mkdtempSync(join(dir, "left-start-failure-"));
+      const directoryInsteadOfChrome = mkdtempSync(join(work, "chrome-"));
+      const child = sweepChild(work, directoryInsteadOfChrome);
+      const stderr = await new Response(child.stderr).text();
+      await child.exited;
+      expect(child.exitCode).toBe(1);
+      expect(stderr).toContain("EACCES");
+    },
+    limit(60_000),
+  );
+
   it(
     "is removed at the next start once an hour old and no running Chrome holds it",
     async () => {
@@ -536,17 +567,10 @@ describe("a profile left behind", () => {
         utimesSync(join(tmp, name), old, old);
       }
       mkdirSync(join(tmp, "hw-chrome-new"));
-      writeFileSync(join(dir, "left.html"), "<!doctype html><html><body>x</body></html>");
-      // A process of its own, so the sweep has not run yet in it.
-      const script = `
-      import { renderPdf } from ${JSON.stringify(join(import.meta.dirname, "../scripts/render-pdf.ts"))};
-      process.env.CHROME_BINARY = "/nonexistent/chrome";
-      await renderPdf(${JSON.stringify(join(dir, "left.html"))}, ${JSON.stringify(join(dir, "left.pdf"))}).catch(() => {});`;
-      const child = Bun.spawn([process.execPath, "-e", script], {
-        env: { ...process.env, TMPDIR: tmp },
-        stderr: "inherit",
-      });
+      const child = sweepChild(tmp, "/nonexistent/chrome");
+      const stderr = await new Response(child.stderr).text();
       await child.exited;
+      expect(child.exitCode, stderr).toBe(0);
       expect(readdirSync(tmp).sort()).toEqual([
         "hw-chrome-elsewhere",
         "hw-chrome-held",

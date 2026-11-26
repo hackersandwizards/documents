@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { foreignStyles, rawInlineStyles } from "../scripts/styles";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -15,6 +15,19 @@ const handBuilt = `<!doctype html><html><head><style data-hw-document></style>
 <body><div style="page-break-before: always"></div></body></html>`;
 
 describe("foreignStyles", () => {
+  it("propagates an unexpected stylesheet URL decoder failure", () => {
+    const href = "unexpected.css";
+    const failure = new TypeError("URL decoder failed");
+    const mocked = vi.spyOn(globalThis, "decodeURIComponent").mockImplementationOnce(() => {
+      throw failure;
+    });
+    try {
+      expect(() => foreignStyles(`<link rel="stylesheet" href="${href}">`)).toThrow(failure);
+    } finally {
+      mocked.mockRestore();
+    }
+  });
+
   it("control: a hand-built document fails on its style element and its style attribute", () => {
     expect(foreignStyles(handBuilt)).toEqual([
       "a style element the engine did not write: <style>",

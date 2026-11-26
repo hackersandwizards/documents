@@ -8,7 +8,10 @@ import { brandPath, linkedFiles } from "./brand";
 import { TYPES } from "./types";
 
 const BASE = "/documents";
-const FORMER_GROUPS: Record<string, string> = { Types: "Typen", Components: "Komponenten" };
+const FORMER_GROUPS: Record<"Types" | "Components", string> = {
+  Types: "Typen",
+  Components: "Komponenten",
+};
 
 export default defineConfig({
   base: BASE,
@@ -63,7 +66,9 @@ export default defineConfig({
           )) {
             const to = encodeURI(`${BASE}/${dirname(page)}/`);
             const [area, group, ...rest] = page.split("/");
-            const former = [area, FORMER_GROUPS[group!], ...rest].join("/");
+            if (group !== "Types" && group !== "Components")
+              throw new Error(`Catalog group missing: ${page}`);
+            const former = [area, FORMER_GROUPS[group], ...rest].join("/");
             for (const stub of [join(out, former), join(out, "catalog", former)]) {
               mkdirSync(dirname(stub), { recursive: true });
               writeFileSync(

@@ -115,13 +115,21 @@ async function printTarget(pipe: ChromePipe, target: Target, job: PrintJob): Pro
   return printed.pdf;
 }
 
-async function closePrintTarget(pipe: ChromePipe, targetId: string): Promise<boolean> {
+async function closePrintTarget(pipe: ChromePipe, targetId: string): Promise<boolean | undefined> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       pipe.closeTarget(targetId).then(
         () => true,
-        () => false,
+        (error: unknown) => {
+          if (
+            error instanceof Error &&
+            error.message === "Specified target doesn't support closing"
+          )
+            return false;
+          console.error("Closing timed-out Chrome target failed", error);
+          return undefined;
+        },
       ),
       new Promise<boolean>((resolve) => (timer = setTimeout(resolve, STOP_MS, false))),
     ]);

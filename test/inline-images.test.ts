@@ -9,9 +9,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, expect, test } from "vitest";
+import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { imageReference, localImage, packageImage } from "../scripts/image-sources";
 import { brandFile } from "../scripts/root";
+
+vi.mock("node:fs", { spy: true });
 
 const root = realpathSync(mkdtempSync(join(tmpdir(), "document-file-tests-")));
 const imageDir = join(root, "images");
@@ -48,6 +50,36 @@ test.each([
   ["missing.svg", imageDir, undefined],
 ])("resolves local %s inside root %s", (name, within, expected) => {
   expect(localImage(join(imageDir, name), "svg", within)).toBe(expected);
+});
+
+test.each(["missing.svg", ".", "image.svg/child.svg"])(
+  "skips path resolution for %s when it is no image file",
+  (name) => {
+    vi.mocked(realpathSync).mockClear();
+    expect(localImage(join(imageDir, name), "svg", imageDir)).toBeUndefined();
+    expect(realpathSync).not.toHaveBeenCalled();
+  },
+);
+
+test("propagates an unexpected image reference decoder failure", () => {
+  const src = "unexpected.svg";
+  const failure = new TypeError("Image reference decoder failed");
+  const mocked = vi.spyOn(globalThis, "decodeURIComponent").mockImplementationOnce(() => {
+    throw failure;
+  });
+  try {
+    expect(() => imageReference(src)).toThrow(failure);
+  } finally {
+    mocked.mockRestore();
+  }
+});
+
+test("propagates an I/O error reading a local image", () => {
+  const failure = Object.assign(new Error("Cannot read image"), { code: "EIO" });
+  vi.mocked(readFileSync).mockImplementationOnce(() => {
+    throw failure;
+  });
+  expect(() => localImage(join(imageDir, "image.svg"), "svg")).toThrow(failure);
 });
 
 const brand = "@hackersandwizards/brand";

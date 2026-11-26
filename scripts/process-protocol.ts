@@ -1,12 +1,15 @@
 import { isRecord } from "./root";
 
 function protocolRecord(frame: string): Record<string, unknown> | undefined {
+  if (!frame.trimStart().startsWith("{")) return undefined;
+  let message: unknown;
   try {
-    const message: unknown = JSON.parse(frame);
-    return isRecord(message) ? message : undefined;
-  } catch {
-    return undefined;
+    message = JSON.parse(frame);
+  } catch (error) {
+    if (error instanceof SyntaxError) return undefined;
+    throw error;
   }
+  return isRecord(message) ? message : undefined;
 }
 
 export function readProtocol(

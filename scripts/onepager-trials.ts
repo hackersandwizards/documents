@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { ChromeExitedError } from "./chrome-pipe";
 import { renderPdf } from "./render-pdf";
 
 /** The page balance fitOnepager picks: `tight` for copy over two pages, then the widest gap level
@@ -48,10 +49,13 @@ export function onepagerTrials(bake: (fit: OnepagerFit) => Promise<string>, dir:
     let pages = rendered.get(key);
     if (!pages) {
       // In the kept Chrome: a fit renders up to 13 times, and a fresh Chrome per render
-      // cost about 0.4 s each. One retry: a fresh-Chrome render sometimes exited non-zero on macOS,
+      // cost about 0.4 s each. Retry an exit once: a fresh-Chrome render sometimes exited non-zero on macOS,
       // and whether a kept one still does is not measured.
       pages = renderPdf(html, pdf, { warm: true })
-        .catch(() => renderPdf(html, pdf, { warm: true }))
+        .catch((error: unknown) => {
+          if (error instanceof ChromeExitedError) return renderPdf(html, pdf, { warm: true });
+          throw error;
+        })
         .then(() => pdfPages(pdf));
       rendered.set(key, pages);
     }

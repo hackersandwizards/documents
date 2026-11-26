@@ -33,7 +33,7 @@ export function languageTag(lang: string): string {
 /** A component's words for `lang` from its table per language, by the tag's language (`de-AT`
  *  takes `de`); a language the table lacks takes the English words. */
 export function wordsFor<T>(lang: unknown, table: { en: T } & Partial<Record<string, T>>): T {
-  const key = typeof lang === "string" ? lang.split("-")[0]!.toLowerCase() : "en";
+  const key = typeof lang === "string" ? lang.split("-", 1)[0].toLowerCase() : "en";
   return (Object.hasOwn(table, key) ? table[key] : undefined) ?? table.en;
 }
 
@@ -43,9 +43,18 @@ export function wordsFor<T>(lang: unknown, table: { en: T } & Partial<Record<str
 export const svgUri = (svg: string) =>
   `data:image/svg+xml,${svg.replace(/[%#"<>&\n\r\t]/g, encodeURIComponent)}`;
 
+const HTML_ESCAPES: Readonly<Record<string, string | undefined>> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
 /** The escape for text and attribute values set into a page. */
 export const escapeHtml = (text: string) =>
-  text.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
+  text.replace(/[&<>"']/g, (character) => {
+    const escape = HTML_ESCAPES[character];
+    if (escape === undefined) throw new Error(`HTML escape missing: ${character}`);
+    return escape;
+  });

@@ -24,13 +24,21 @@ export function printableCodePoints(html: string): Set<number> {
     ),
   )
     .replace(/\\([\da-f]{1,6})\s?/gi, escaped)
-    .replace(/\\u(?:\{([\da-f]{1,6})\}|([\da-f]{4}))/gi, (match, braced?: string, four?: string) =>
-      escaped(match, (braced ?? four)!),
+    .replace(
+      /\\u(?:\{([\da-f]{1,6})\}|([\da-f]{4}))/gi,
+      (match, braced?: string, four?: string) => {
+        const hex = braced ?? four;
+        if (hex === undefined) throw new Error(`Unicode escape digits missing: ${match}`);
+        return escaped(match, hex);
+      },
     );
   const points = new Set<number>();
   for (const c of new Set(text))
     for (const form of [c, c.toLocaleUpperCase(lang), c.toLocaleLowerCase(lang)])
-      for (const p of form) points.add(p.codePointAt(0)!);
+      for (const p of form) {
+        const point = p.codePointAt(0);
+        if (point !== undefined) points.add(point);
+      }
   return points;
 }
 

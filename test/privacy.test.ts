@@ -1,8 +1,32 @@
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { afterAll, beforeAll, describe, expect, test, beforeEach, afterEach, vi } from "vitest";
+import {
+  mkdirSync,
+  mkdtempSync,
+  renameSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { scanSamples, scanText } from "../scripts/privacy";
+
+vi.mock("node:fs", { spy: true });
+
+beforeEach(() => {
+  for (const key of Object.keys(process.env))
+    if (key.startsWith("GIT_")) vi.stubEnv(key, undefined);
+});
+afterEach(() => vi.unstubAllEnvs());
+
+test("propagates a denied stat when scanning for private data", () => {
+  const denied = Object.assign(new Error("Cannot inspect folder"), { code: "EACCES" });
+  vi.mocked(statSync).mockImplementationOnce(() => {
+    throw denied;
+  });
+  expect(() => scanText(planted)).toThrow(denied);
+});
 
 // The privacy check's controls: each rule must hit a planted case, or its silence proves nothing.
 const ROOT = resolve(import.meta.dirname, "..");

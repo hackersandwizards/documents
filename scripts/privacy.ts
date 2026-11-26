@@ -76,12 +76,8 @@ function files(root: string, entry: string): string[] {
   // Installed dependencies and Astro's cache are not the package's own files.
   if (/(^|\/)(node_modules|\.astro)$/.test(entry)) return [];
   const path = join(root, entry);
-  let stat;
-  try {
-    stat = statSync(path);
-  } catch {
-    return [];
-  }
+  const stat = statSync(path, { throwIfNoEntry: false });
+  if (stat === undefined) return [];
   if (stat.isFile()) return [path];
   return readdirSync(path).flatMap((child) => files(root, join(entry, child)));
 }

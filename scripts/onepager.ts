@@ -201,10 +201,12 @@ function topLevelBlocks(html: string): string[] {
   const markup = html.replace(/<!--[\s\S]*?-->/g, "");
   for (const m of markup.matchAll(/<(\/?)([a-z][\w-]*)[^>]*?(\/?)>/gi)) {
     const [tag, closing, name, selfClosing] = m;
+    const { index } = m;
+    if (index === undefined) throw new Error(`fitOnepager: markup position missing: ${tag}`);
     if (closing) {
-      if (--depth === 0) blocks.push(markup.slice(start, m.index! + tag.length));
+      if (--depth === 0) blocks.push(markup.slice(start, index + tag.length));
     } else if (!selfClosing && !VOID.test(name)) {
-      if (depth++ === 0) start = m.index!;
+      if (depth++ === 0) start = index;
     } else if (depth === 0) blocks.push(tag);
   }
   if (depth !== 0) throw new Error("fitOnepager: the copy leaves an element open; close every tag");

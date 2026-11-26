@@ -1,8 +1,13 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { afterEach, beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { rejection } from "@hackersandwizards/scaffolding/rejection";
+import { ChromeExitedError } from "../scripts/chrome-pipe";
+import { renderPdf } from "../scripts/render-pdf";
 import { onepagerTrials } from "../scripts/onepager-trials";
+
+vi.mock("../scripts/render-pdf");
 
 let root: string;
 let trial: ReturnType<typeof onepagerTrials>;
@@ -31,6 +36,33 @@ test("writes a different fit to its own HTML file", async () => {
   const second = await trial.files(fit);
   expect(second.html).not.toBe(first.html);
   expect(readFileSync(second.html, "utf8")).toBe(JSON.stringify(fit));
+});
+
+test("propagates a Chrome spawn failure without retrying the same fit", async () => {
+  const failure = Object.assign(new Error("Cannot spawn Chrome"), { code: "EACCES" });
+  vi.mocked(renderPdf)
+    .mockRejectedValueOnce(failure)
+    .mockRejectedValueOnce(new Error("Unexpected second render"));
+  try {
+    expect(await rejection(trial.render({ tight: true }))).toBe("Error: Cannot spawn Chrome");
+  } finally {
+    vi.mocked(renderPdf).mockReset();
+  }
+});
+
+test("retries a Chrome exit once on the same HTML and PDF paths", async () => {
+  const fit = { tight: true };
+  const { html, pdf } = await trial.files(fit);
+  vi.mocked(renderPdf)
+    .mockRejectedValueOnce(new ChromeExitedError("First Chrome exited"))
+    .mockRejectedValueOnce(new ChromeExitedError("Second Chrome exited"));
+  try {
+    expect(await rejection(trial.render(fit))).toBe("Error: Second Chrome exited");
+    expect(renderPdf).toHaveBeenNthCalledWith(2, html, pdf, { warm: true });
+    expect(renderPdf).toHaveBeenCalledTimes(2);
+  } finally {
+    vi.mocked(renderPdf).mockReset();
+  }
 });
 
 test("closing the trial removes every candidate and its PDF work directory", async () => {

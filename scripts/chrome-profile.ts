@@ -9,22 +9,33 @@ const PROFILE = "hw-chrome-";
 const STALE_PROFILE_MS = 3_600_000;
 let profilesSwept = 0;
 
+function profileLock(profile: string): string | undefined {
+  const path = join(profile, "SingletonLock");
+  try {
+    if (!lstatSync(path, { throwIfNoEntry: false })?.isSymbolicLink()) return undefined;
+    return readlinkSync(path);
+  } catch (error) {
+    const code = error instanceof Error && "code" in error ? error.code : undefined;
+    if (code === "ENOENT" || code === "ENOTDIR" || code === "EINVAL") return undefined;
+    throw error;
+  }
+}
+
 /** Whether a running Chrome holds the profile: its SingletonLock names `<host>-<pid>`, and a lock
  * naming another host counts as held. */
 function profileHeld(profile: string): boolean {
-  let lock: string;
-  try {
-    lock = readlinkSync(join(profile, "SingletonLock"));
-  } catch {
-    return false;
-  }
+  const lock = profileLock(profile);
+  if (lock === undefined) return false;
   const [, host, pid] = /^(.*)-(\d+)$/.exec(lock) ?? [];
   if (host !== hostname()) return true;
   try {
     process.kill(Number(pid), 0);
     return true;
   } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
+    const code = error instanceof Error && "code" in error ? error.code : undefined;
+    if (code === "EPERM") return true;
+    if (code === "ESRCH") return false;
+    throw error;
   }
 }
 

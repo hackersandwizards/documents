@@ -170,8 +170,9 @@ interface Props {
   labels?: Partial<typeof DE>;
 }
 const p = Astro.props;
-if (p.price.vat && !p.price.vatLabel)
-  throw new Error("DocProposal: price.vat needs price.vatLabel");
+const vat = p.price.vat;
+const vatLabel = vat ? p.price.vatLabel : undefined;
+if (vat && !vatLabel) throw new Error("DocProposal: price.vat needs price.vatLabel");
 const t = { ...wordsFor(p.lang, { de: DE, en: EN }), ...p.labels };
 const by = p.validUntil ? fill(t.replyBy, p) : "";
 const reply = fill(t.reply, { by });
@@ -195,7 +196,7 @@ const rows = p.price.rows.map((row) => ({
 }));
 const tiers = p.price.tiers;
 const foot = [
-  p.price.vat && { label: p.price.vatLabel!, figure: p.price.vat },
+  vat && vatLabel && { label: vatLabel, figure: vat },
   p.price.gross && { label: t.gross, figure: p.price.gross },
 ].filter((row): row is { label: string; figure: string } => !!row);
 // Without a subtotal and an acceptance object the block carries no total line.

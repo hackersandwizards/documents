@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { availableParallelism } from "node:os";
 import { join } from "node:path";
 import { compress, decompress } from "woff2-encoder";
+import type { EncodeResult } from "./encode-face";
 import { editFaces, printableCodePoints } from "./compact-styles";
 import { printedCharacters } from "./pdf-character-map";
 import { ROOT } from "./root";
@@ -61,6 +62,7 @@ const decodedFace = (data: string) => {
 type EncodeJob = {
   font: Uint8Array;
   resolve: (woff2: Uint8Array | Promise<Uint8Array>) => void;
+  reject: (error: unknown) => void;
 };
 
 /** Encoding is nearly all of a cut's time. Node has no global Worker and strips no types under
@@ -76,7 +78,7 @@ const encodeHere = ({ font, resolve }: EncodeJob) => resolve(compress(font));
 function startEncoder() {
   encoders++;
   let job: EncodeJob | undefined;
-  // The page is the same either way, so a Worker that cannot run costs time and not the document.
+  // A Worker that cannot start or exits leaves the same page to encode in-process.
   const encodeAllHere = (reason: unknown) => {
     if (encoderLimit > 1) console.warn(`Encoding font faces in-process: ${String(reason)}`);
     encoderLimit = 1;
@@ -96,9 +98,11 @@ function startEncoder() {
     encoders--;
     void worker.terminate();
   };
-  worker.onmessage = ({ data }: MessageEvent<Uint8Array | null>) => {
-    if (data) job!.resolve(data);
-    else encodeHere(job!);
+  worker.onmessage = ({ data }: MessageEvent<EncodeResult>) => {
+    if (job === undefined) throw new Error("Font encode job missing: unexpected Worker reply");
+    if (data === null) encodeHere(job);
+    else if (data instanceof Uint8Array) job.resolve(data);
+    else job.reject(data.error);
     takeNext();
   };
   worker.onerror = (event) => {
@@ -113,8 +117,8 @@ function startEncoder() {
 }
 
 const encodeFace = (font: Uint8Array) =>
-  new Promise<Uint8Array>((resolve) => {
-    const job = { font, resolve };
+  new Promise<Uint8Array>((resolve, reject) => {
+    const job = { font, resolve, reject };
     if (encoderLimit < 2) return encodeHere(job);
     encodeQueue.push(job);
     if (encoders < encoderLimit) startEncoder();
@@ -147,7 +151,7 @@ export async function subsetFaces(html: string): Promise<string> {
   // Sorted, so one page under another fit, which reorders its first appearances, cuts the same.
   const text =
     String.fromCodePoint(...[...printableCodePoints(html)].sort((a, b) => a - b)) + ALWAYS;
-  const faces = [...new Set([...html.matchAll(FACES)].map(([, data]) => data!))];
+  const faces = [...new Set([...html.matchAll(FACES)].map(([, data]) => data))];
   const cut = new Map(
     await Promise.all(faces.map(async (d) => [d, await cutFace(d, text)] as const)),
   );
@@ -197,7 +201,7 @@ export async function cutFacesToPdf(html: string, pdf: string): Promise<string> 
   // text: nothing is cut.
   if (printed.size === 0) return html;
   const faces = await Promise.all(
-    [...new Set([...html.matchAll(FACES)].map(([, data]) => data!))].map(async (data) => {
+    [...new Set([...html.matchAll(FACES)].map(([, data]) => data))].map(async (data) => {
       // Not through `decoded`, which holds the brand's faces: these are this page's cuts.
       const font = await decompress(Buffer.from(data, "base64"));
       return { data, font, name: postScriptName(font) ?? "" };
@@ -218,6 +222,7 @@ export async function cutFacesToPdf(html: string, pdf: string): Promise<string> 
   return editFaces(html, (face) => {
     const data = new RegExp(FACES.source).exec(face)?.[1];
     if (!data) return face;
-    return cut.get(data) ? face.replace(data, cut.get(data)!) : "";
+    const subset = cut.get(data);
+    return subset ? face.replace(data, subset) : "";
   });
 }

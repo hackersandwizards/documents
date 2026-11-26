@@ -68,7 +68,7 @@ export function inlineCss(path: string, read?: Set<string>): string {
 function unsetProperties(html: string): string[] {
   const sheets = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(([, css]) => css);
   const css = [...sheets, ...styleAttributes(html)].join("\n");
-  const names = (pattern: RegExp) => new Set([...css.matchAll(pattern)].map(([, n]) => n!));
+  const names = (pattern: RegExp) => new Set([...css.matchAll(pattern)].map(([, name]) => name));
   // A declaration's name opens its block or follows a `;`, never a selector such as `.card--x:hover`.
   const defined = names(/(?:^|[{;\s])(--[\w-]+)\s*:/g);
   return [...names(/var\(\s*(--[\w-]+)\s*\)/g)].filter((name) => !defined.has(name));

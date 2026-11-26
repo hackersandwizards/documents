@@ -3,7 +3,7 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { assert, expect, test, vi } from "vitest";
-import { coldPrint } from "../scripts/print-chrome";
+import { coldPrint, keptChrome } from "../scripts/print-chrome";
 import { readProtocol } from "../scripts/process-protocol";
 
 vi.mock("node:child_process", { spy: true });
@@ -14,7 +14,7 @@ const targetMissing = { code: -32602, message: "No target with given id found" }
 const closeFailed = { code: -32602, message: "Invalid close parameters" };
 const printFailed = { code: -32000, message: "Printing failed" };
 
-function chromeReplies(close: { error: object } | "exit", print: object) {
+function chromeReplies(close: { error: object } | "exit", print?: object) {
   const child = new EventEmitter();
   const input = new PassThrough();
   const output = new PassThrough();
@@ -39,16 +39,19 @@ function chromeReplies(close: { error: object } | "exit", print: object) {
       }
       if (method === "Page.navigate")
         send({ method: "Page.loadEventFired", sessionId: request.sessionId });
+      if (method === "Page.printToPDF" && print === undefined) return true;
       send({ id, ...replies.get(method) });
       return true;
     }),
   );
+  const kill = vi.fn(() => child.emit("exit"));
   vi.mocked(spawn).mockReturnValueOnce(
     Object.assign(child, {
       stdio: [null, null, null, input, output],
-      kill: () => child.emit("exit"),
+      kill: () => kill(),
     }) as ChildProcess,
   );
+  return { input, kill };
 }
 
 const printed = { result: { data: pdf.toString("base64") } };
@@ -64,6 +67,32 @@ test.each([
 test("propagates an unexpected failure to close the printed target", async () => {
   chromeReplies({ error: closeFailed }, printed);
   expect(await rejection(coldPrint("chrome", job))).toBe(`Error: ${closeFailed.message}`);
+});
+
+test("logs an unexpected close error before stopping a timed-out kept Chrome", async () => {
+  const { kill } = chromeReplies({ error: closeFailed });
+  const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const chrome = keptChrome("timed-out-test-chrome");
+    expect(await rejection(chrome.print({ ...job, timeoutMs: 10 }))).toContain("did not print");
+    await vi.waitFor(() => expect(kill).toHaveBeenCalledTimes(1));
+    expect(stderr).toHaveBeenCalledWith(
+      "Closing timed-out Chrome target failed",
+      new Error(closeFailed.message),
+    );
+    expect(stderr).toHaveBeenCalledBefore(kill);
+  } finally {
+    stderr.mockRestore();
+  }
+});
+
+test("only ignores EPIPE errors on the Chrome input stream", async () => {
+  const { input } = chromeReplies({ error: targetMissing }, printed);
+  await coldPrint("chrome", job);
+  const brokenPipe = Object.assign(new Error("Pipe closed"), { code: "EPIPE" });
+  const failure = Object.assign(new Error("Pipe I/O failed"), { code: "EIO" });
+  expect(input.emit("error", brokenPipe)).toBe(true);
+  expect(() => input.emit("error", failure)).toThrow(failure);
 });
 
 test("reports both failures when printing and closing the target fail", async () => {

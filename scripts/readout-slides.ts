@@ -116,20 +116,21 @@ export function glanceSlide(d: SurveyReadout, t: ReadoutText, kicker: string): s
 export function scoresSlide(d: SurveyReadout, t: ReadoutText, kicker: string): string {
   const groups = new Map<string, ReadoutScale[]>();
   for (const s of d.scales) {
-    const g = s.group ?? t.groups[0]!;
-    if (!groups.has(g)) groups.set(g, []);
-    groups.get(g)!.push(s);
+    const group = s.group ?? t.groups[0];
+    if (group === undefined) throw new Error(`Readout group missing: ${s.title}`);
+    const scales = groups.get(group);
+    if (scales === undefined) groups.set(group, [s]);
+    else scales.push(s);
   }
   // The words' order first, then any group they do not name, so no scale drops off the slide.
   const groupsHtml = [...new Set([...t.groups, ...groups.keys()])]
-    .filter((g) => groups.has(g))
-    .map(
-      (g) =>
-        `<div class="sgroup"><div class="gtitle">${esc(g)}</div>${groups
-          .get(g)!
-          .map(scaleRow)
-          .join("")}</div>`,
-    )
+    .flatMap((group) => {
+      const scales = groups.get(group);
+      if (scales === undefined) return [];
+      return `<div class="sgroup"><div class="gtitle">${esc(group)}</div>${scales
+        .map(scaleRow)
+        .join("")}</div>`;
+    })
     .join("");
   return slideShell(
     `<h2>${esc(t.scores)}</h2>${d.scales.length ? scoreLegend(t, d.scales, d.headline) : ""}

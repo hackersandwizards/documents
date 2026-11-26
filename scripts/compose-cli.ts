@@ -33,15 +33,15 @@ async function serve() {
         throw new Error(`Not a document component: ${String(name)}`);
       if (!isRecord(props)) throw new Error("Expected a document props object");
       // A composer that failed to open is opened again on the next call, not kept failing.
-      if (!composers.has(name))
-        composers.set(
-          name,
-          openComposer().catch((error) => {
-            composers.delete(name);
-            throw error;
-          }),
-        );
-      answer = { id, html: await composePage(await composers.get(name)!, name, props) };
+      let composer = composers.get(name);
+      if (composer === undefined) {
+        composer = openComposer().catch((error) => {
+          composers.delete(name);
+          throw error;
+        });
+        composers.set(name, composer);
+      }
+      answer = { id, html: await composePage(await composer, name, props) };
     } catch (error) {
       answer = { id, error: (error as Error).stack ?? String(error) };
     }

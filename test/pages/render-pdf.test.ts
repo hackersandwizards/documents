@@ -1,4 +1,4 @@
-import { afterAll, afterEach, assert, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, assert, beforeAll, describe, expect, it, vi } from "vitest";
 import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -29,6 +29,28 @@ import { probePage, limit } from "../probe";
 
 const dir = mkdtempSync(join(tmpdir(), "render-pdf-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+function childAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ESRCH") return false;
+    throw error;
+  }
+}
+
+it("propagates an unexpected failure probing a child process", () => {
+  const failure = new TypeError("Child process probe failed");
+  const kill = vi.spyOn(process, "kill").mockImplementationOnce(() => {
+    throw failure;
+  });
+  try {
+    expect(() => childAlive(process.pid)).toThrow(failure);
+  } finally {
+    kill.mockRestore();
+  }
+});
 
 describe.skipIf(!chromeBinary())("cutFacesToPdf", () => {
   // Each ToUnicode map of `pdf` rewritten by `rewrite`; the cut reads the maps alone, so the
@@ -406,6 +428,19 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       const out = join(dir, `bad-svg-${warm}.pdf`);
       await renderPdf(file, out, { warm });
       expect(execFileSync("pdftotext", [out, "-"], { encoding: "utf8" })).toContain("Kept");
+
+      const png = readFileSync(brand("lockup.png")).toString("base64");
+      const foreign = svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+        <foreignObject width="10" height="10"><image xmlns="http://www.w3.org/1999/xhtml" href="data:image/png;base64,${png}"/></foreignObject>
+      </svg>`);
+      writeFileSync(
+        file,
+        `<!doctype html><body><p>Foreign image kept</p><img width="10" src="${foreign}"></body>`,
+      );
+      await renderPdf(file, out, { warm });
+      expect(execFileSync("pdftotext", [out, "-"], { encoding: "utf8" })).toContain(
+        "Foreign image kept",
+      );
     },
     limit(60_000),
   );
@@ -524,7 +559,56 @@ describe.skipIf(!chromeBinary())("a bold label paragraph", () => {
   );
 });
 
+describe.skipIf(!chromeBinary())("errors redrawing a raster", () => {
+  const source =
+    "data:image/png;base64," +
+    readFileSync(
+      createRequire(import.meta.url).resolve("@hackersandwizards/brand/logos/lockup.png"),
+    ).toString("base64");
+  it.each([
+    ["plain", source],
+    [
+      "in an SVG",
+      svgUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><image width="512" height="512" href="${source}"/></svg>`,
+      ),
+    ],
+  ])(
+    "propagates an unexpected canvas failure with a raster %s",
+    async (variant, src) => {
+      const file = join(dir, `canvas-error-${variant}.html`);
+      writeFileSync(
+        file,
+        `<!doctype html><body><img style="width: 20px" src="${src}"><script>
+      HTMLCanvasElement.prototype.toDataURL = () => { throw new TypeError("Canvas encoder failed"); };
+    </script></body>`,
+      );
+      expect(await rejection(renderPdf(file, file + ".pdf"))).toContain("Canvas encoder failed");
+    },
+    limit(60_000),
+  );
+});
+
 describe.skipIf(!chromeBinary())("a body naming other resources", () => {
+  const beacon = (url: string) =>
+    `(globalThis.hwLayout ??= []).push(fetch(${JSON.stringify(url)}).catch((error) => { if (!(error instanceof TypeError) || error.message !== "Failed to fetch") throw error; }));`;
+
+  it(
+    "propagates an unexpected beacon failure in the resource-blocking fixture",
+    async () => {
+      const file = join(dir, "beacon-failure.html");
+      writeFileSync(
+        file,
+        `<!doctype html><body><script>
+          globalThis.fetch = () => Promise.reject(new TypeError("Beacon loader failed"));
+          ${beacon("https://example.com/beacon")}
+        </script></body>`,
+      );
+      expect(await rejection(renderPdf(file, file + ".pdf"))).toContain("Beacon loader failed");
+    },
+    limit(60_000),
+  );
+
   it(
     "prints no local file it frames and calls no host out of the render",
     async () => {
@@ -542,7 +626,7 @@ describe.skipIf(!chromeBinary())("a body naming other resources", () => {
         const url = `http://127.0.0.1:${server.port}`;
         writeFileSync(
           join(dir, "active.html"),
-          `<!doctype html><html><head><meta charset="utf-8"></head><body><p>Body</p><iframe src="secret.txt"></iframe><iframe src="${pathToFileURL(join(dir, "secret.txt")).href}"></iframe><img src="${url}/pixel.png"><script>fetch("${url}/beacon").catch(() => {});</script></body></html>`,
+          `<!doctype html><html><head><meta charset="utf-8"></head><body><p>Body</p><iframe src="secret.txt"></iframe><iframe src="${pathToFileURL(join(dir, "secret.txt")).href}"></iframe><img src="${url}/pixel.png"><script>${beacon(url + "/beacon")}</script></body></html>`,
         );
         await renderPdf(join(dir, "active.html"), join(dir, "active.pdf"));
         const text = execFileSync("pdftotext", [join(dir, "active.pdf"), "-"], {
@@ -648,14 +732,7 @@ describe.skipIf(!chromeBinary())("the warm path", () => {
       expect(readdirSync(tmp).filter((f) => f.startsWith("hw-chrome-"))).toEqual([]);
       const children = (await new Response(child.stdout).text()).trim().split(/\s+/).map(Number);
       expect(children.length).toBeGreaterThanOrEqual(2);
-      const alive = children.filter((pid) => {
-        try {
-          process.kill(pid, 0);
-          return true;
-        } catch {
-          return false;
-        }
-      });
+      const alive = children.filter(childAlive);
       expect(alive).toEqual([]);
     },
     limit(60_000),

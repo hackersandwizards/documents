@@ -8,7 +8,10 @@ import catalogs from "@hackersandwizards/brand/catalogs.json";
 import { name } from "@hackersandwizards/brand/verbal.json";
 import { escapeHtml } from "../../../scripts/fill";
 
-const { portal, anchors } = catalogs.find((c) => c.name === "Brand")!;
+const brand = catalogs.find((c) => c.name === "Brand");
+if (brand === undefined) throw new Error("Brand catalog missing: catalogs.json");
+const { portal, anchors } = brand;
+if (anchors === undefined) throw new Error("Brand catalog anchors missing: catalogs.json");
 const TILES: [string, string, string][] = [
   [
     "label",
@@ -99,7 +102,7 @@ const CSS = `
       <div class="tile" data-hw-tile={name} data-hw-version={version}>
         <p class="tile-origin">
           <span class="chip">from brand v{version}</span> <code>.hw-{name}</code>{" "}
-          <a class="tile-link" href={portal + anchors!.element.replace("<element>", name)}>
+          <a class="tile-link" href={portal + anchors.element.replace("<element>", name)}>
             Catalog
           </a>
         </p>

@@ -28,7 +28,9 @@ export function inlineImages(html: string, dir: string, options: InlineImagesOpt
       element(el) {
         if (failure !== undefined) return;
         try {
-          const image = imageReference(decodeHTMLAttribute(el.getAttribute("src")!.trim()));
+          const src = el.getAttribute("src");
+          if (src === null) throw new Error("inlineImages: src missing on img[src]");
+          const image = imageReference(decodeHTMLAttribute(src.trim()));
           if (!image) return;
           const pkg = PACKAGE_SRC.exec(image.file)?.[1];
           const uri =

@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, assert, describe, expect, it, vi } from "vitest";
+import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import manifest from "../../package.json";
 import type * as composer from "../../scripts/compose-document";
 import type * as css from "../../scripts/document-css";
@@ -196,6 +197,30 @@ describe("bundled into a consumer's chunk", () => {
       } finally {
         globalThis.Worker = Thread;
         warn.mockRestore();
+      }
+    },
+  );
+
+  it.skipIf(availableParallelism() < 2)(
+    "rejects a font job with an unexpected error sent from a Worker",
+    async () => {
+      const failed = join(out, "failed-worker.js");
+      writeFileSync(
+        failed,
+        'self.onmessage = () => postMessage({ error: new TypeError("Worker encoder failed") });',
+      );
+      globalThis.Worker = class extends Thread {
+        constructor() {
+          super(failed);
+        }
+      };
+      try {
+        const { documentCss, subsetFaces } = await loadRenderBundle("?failed");
+        expect(await rejection(subsetFaces(page(documentCss(), "A")))).toContain(
+          "Worker encoder failed",
+        );
+      } finally {
+        globalThis.Worker = Thread;
       }
     },
   );

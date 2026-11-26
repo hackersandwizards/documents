@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { readProtocol } from "../scripts/process-protocol";
 
 const protocols = [
@@ -23,6 +23,20 @@ test.each(protocols)(
     expect(records).toEqual(expected);
   },
 );
+
+test("propagates an unexpected protocol parser failure", () => {
+  const frame = '{"id":"parser failure"}';
+  const failure = new TypeError("Protocol parser failed");
+  const read = readProtocol("\n", () => true);
+  const mocked = vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
+    throw failure;
+  });
+  try {
+    expect(() => read(frame + "\n")).toThrow(failure);
+  } finally {
+    mocked.mockRestore();
+  }
+});
 
 test("stops dispatching a chunk when the receiver rejects a frame", () => {
   const records: unknown[] = [];

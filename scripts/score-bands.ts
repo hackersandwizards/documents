@@ -30,5 +30,7 @@ export const BANDS: [number, string][] = [
  * the bar never contradicts the legend's "from 2.69". */
 export function bandColor(value: number, scale: { start: number; end: number }): string {
   const at = scalePosition(Number(value.toFixed(1)), scale);
-  return BANDS.find(([from]) => at >= from)![1];
+  const band = BANDS.find(([from]) => at >= from);
+  if (band === undefined) throw new Error(`Score band missing: position ${at}`);
+  return band[1];
 }

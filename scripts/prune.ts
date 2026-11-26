@@ -86,13 +86,19 @@ const ID_NAME = new RegExp(`#${NAME}`, "gu");
 const ATTRIBUTE = /^\[(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\]"'])*\]?/;
 const ATTRIBUTE_NAME = /^\[\s*([\w-]+)\s*(?:[~|^$*]?=|\])/;
 
+function attributeAt(selector: string, index: number): string {
+  const match = ATTRIBUTE.exec(selector.slice(index));
+  if (match === null) throw new Error(`Attribute selector missing at ${index}: ${selector}`);
+  return match[0];
+}
+
 /** Index just past the closing `)` matching `selector[open]`, skipping attribute tests. */
 function endOfPseudoArgs(selector: string, open: number): number {
   let depth = 1;
   let j = open + 1;
   for (; j < selector.length && depth > 0; j++) {
     const ch = selector.charAt(j);
-    if (ch === "[") j += ATTRIBUTE.exec(selector.slice(j))![0].length - 1;
+    if (ch === "[") j += attributeAt(selector, j).length - 1;
     else if (PAREN_DELTA[ch]) depth += PAREN_DELTA[ch];
   }
   return j;
@@ -107,10 +113,10 @@ export function attributeMatches(test: string, page: Present): boolean {
 /** Whether a selector stripped of attribute tests and functional arguments matches `page`. */
 export function bareSelectorMatches(selector: string, page: Present): boolean {
   const bare = selector.replace(/::?[\w-]+/g, "");
-  for (const [, cls] of bare.matchAll(CLASS_NAME)) if (!page.classes.has(cls!)) return false;
-  for (const [, id] of bare.matchAll(ID_NAME)) if (!page.ids.has(id!)) return false;
+  for (const [, cls] of bare.matchAll(CLASS_NAME)) if (!page.classes.has(cls)) return false;
+  for (const [, id] of bare.matchAll(ID_NAME)) if (!page.ids.has(id)) return false;
   for (const [, tag] of bare.matchAll(/(?:^|[\s>+~])([a-zA-Z][\w-]*)/g))
-    if (!page.tags.has(tag!.toLowerCase())) return false;
+    if (!page.tags.has(tag.toLowerCase())) return false;
   return true;
 }
 
@@ -126,9 +132,9 @@ function canMatch(selector: string, page: Present): boolean {
   if (selector.includes("\\")) return true;
   let bare = "";
   for (let i = 0; i < selector.length; i++) {
-    const c = selector[i]!;
+    const c = selector.charAt(i);
     if (c === "[") {
-      const test = ATTRIBUTE.exec(selector.slice(i))![0];
+      const test = attributeAt(selector, i);
       if (!attributeMatches(test, page)) return false;
       bare += " ";
       i += test.length - 1;
@@ -232,11 +238,11 @@ export function pruneStyles(html: string): string {
     // Every mention but a declaration's own name: a `var()`, a style query, a style attribute.
     const read = new Set(
       [...out.matchAll(/(?<![{;]\s*)(--[\w-]+)|(--[\w-]+)(?![\w-]|\s*:)/g)].map(
-        ([, a, b]) => (a ?? b)!,
+        ([, a, b]) => a ?? b,
       ),
     );
     const next = editStyles(out, (css) => dropProperties(css, read));
-    if (next === out) return out.replace(/;base64,@hw(\d+)@/g, (_, i: string) => data[+i]!);
+    if (next === out) return out.replace(/;base64,@hw(\d+)@/g, (_, i: string) => String(data[+i]));
     out = next;
   }
 }

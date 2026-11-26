@@ -9,7 +9,7 @@ function unicodeStream(pdf: Buffer, text: string, id: string) {
   const start = head.index + head[0].length;
   const body = pdf.subarray(start, start + length);
   // A stream without a filter is read as it stands; one other than Chrome's FlateDecode alone fails.
-  const filter = /\/Filter\s*(\[[^\]]*\]|\/\w+)/.exec(head[1]!)?.[1].replace(/[[\]\s]/g, "");
+  const filter = /\/Filter\s*(\[[^\]]*\]|\/\w+)/.exec(head[1])?.[1].replace(/[[\]\s]/g, "");
   if (filter && filter !== "/FlateDecode")
     throw new Error(`printedCharacters: stream ${id} has the filter ${filter}`);
   return (filter ? inflateSync(body) : body).toString("latin1");
@@ -20,12 +20,15 @@ const cmapText = (hex: string) => Buffer.from(hex, "hex").swap16().toString("utf
 export function codePointsInCmap(cmap: string): Set<number> {
   const points = new Set<number>();
   for (const [, block] of cmap.matchAll(/beginbfchar([\s\S]*?)endbfchar/g))
-    for (const [, dst] of block!.matchAll(/<[\da-f]+>\s*<([\da-f]+)>/gi))
-      for (const char of cmapText(dst!)) points.add(char.codePointAt(0)!);
+    for (const [, dst] of block.matchAll(/<[\da-f]+>\s*<([\da-f]+)>/gi))
+      for (const char of cmapText(dst)) {
+        const point = char.codePointAt(0);
+        if (point !== undefined) points.add(point);
+      }
   for (const [, block] of cmap.matchAll(/beginbfrange([\s\S]*?)endbfrange/g))
-    for (const [, lo, hi, dst] of block!.matchAll(/<([\da-f]+)>\s*<([\da-f]+)>\s*<([\da-f]+)>/gi)) {
-      const first = cmapText(dst!).codePointAt(0)!;
-      for (let k = 0; k <= parseInt(hi!, 16) - parseInt(lo!, 16); k++) points.add(first + k);
+    for (const [, lo, hi, dst] of block.matchAll(/<([\da-f]+)>\s*<([\da-f]+)>\s*<([\da-f]+)>/gi)) {
+      const first = Number(cmapText(dst).codePointAt(0));
+      for (let k = 0; k <= parseInt(hi, 16) - parseInt(lo, 16); k++) points.add(first + k);
     }
   return points;
 }

@@ -1,4 +1,4 @@
-import { readFileSync, realpathSync } from "node:fs";
+import { readFileSync, realpathSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { isAbsolute, relative, sep } from "node:path";
 
@@ -39,8 +39,9 @@ export function imageReference(src: string): ImageReference | undefined {
   if (!name) return undefined;
   try {
     return { file: decodeURIComponent(name), ext, src };
-  } catch {
-    return undefined;
+  } catch (error) {
+    if (error instanceof URIError) return undefined;
+    throw error;
   }
 }
 
@@ -71,14 +72,42 @@ export function packageImage(
   return uri;
 }
 
-export function localImage(path: string, ext: string, root?: string) {
+const UNREADABLE_IMAGE = new Set<unknown>([
+  // The file can disappear between the stat check and the read.
+  "ENOENT",
+  "EACCES",
+  "EPERM",
+  "ELOOP",
+  "ENAMETOOLONG",
+]);
+
+function statImage(path: string) {
   try {
-    if (root !== undefined) {
-      const inside = relative(root, realpathSync(path));
-      if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) return undefined;
-    }
-    return dataUri(ext, readFileSync(path));
-  } catch {
-    return undefined;
+    return statSync(path, { throwIfNoEntry: false });
+  } catch (error) {
+    // statSync reports a file in the middle of the path separately from a missing entry.
+    if (error instanceof Error && "code" in error && error.code === "ENOTDIR") return undefined;
+    throw error;
   }
+}
+
+function resolvesInside(path: string, root: string): boolean {
+  const inside = relative(root, realpathSync(path));
+  return inside !== ".." && !inside.startsWith(`..${sep}`) && !isAbsolute(inside);
+}
+
+export function localImage(path: string, ext: string, root?: string) {
+  if (path.includes("\0")) return undefined;
+  let bytes: Buffer;
+  try {
+    const stat = statImage(path);
+    if (stat === undefined || stat.isDirectory()) return undefined;
+    if (root !== undefined && !resolvesInside(path, root)) return undefined;
+    bytes = readFileSync(path);
+  } catch (error) {
+    if (error instanceof Error && "code" in error && UNREADABLE_IMAGE.has(error.code))
+      return undefined;
+    throw error;
+  }
+  return dataUri(ext, bytes);
 }

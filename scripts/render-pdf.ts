@@ -22,7 +22,8 @@ export { brandFile } from "./root";
  * An SVG keeps its viewBox and size. A raster image's new src is set from its own load event,
  * which holds the window's load, so the print waits for every redraw; work after load raced the
  * print (measured). An SVG's rasters decode asynchronously, so that work goes on
- * `globalThis.hwLayout`, which the print waits for; an SVG it cannot read prints as it is. A
+ * `globalThis.hwLayout`, which the print waits for; an SVG with a source or embedded image Chrome
+ * cannot decode prints as it is. A
  * document without a `<title>` takes its first heading's. It runs in a block, so a page script
  * declaring one of its names stops neither.
  */
@@ -33,11 +34,19 @@ const redraw = (source, src, scale) => {
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
   canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
-  canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
-  const png = canvas.toDataURL("image/png");
-  if (!/^data:image\\/jpeg|\\.jpe?g($|[?#])/i.test(src)) return png;
-  const jpeg = canvas.toDataURL("image/jpeg", 0.9);
-  return jpeg.length < png.length ? jpeg : png;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.drawImage(source, 0, 0, canvas.width, canvas.height);
+  // A file:// image the render could not inline taints the canvas; it prints at its source size.
+  try {
+    const png = canvas.toDataURL("image/png");
+    if (!/^data:image\\/jpeg|\\.jpe?g($|[?#])/i.test(src)) return png;
+    const jpeg = canvas.toDataURL("image/jpeg", 0.9);
+    return jpeg.length < png.length ? jpeg : png;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "SecurityError") return null;
+    throw error;
+  }
 };
 const keep = (img) => {
   if (getComputedStyle(img).aspectRatio.startsWith("auto"))
@@ -47,11 +56,36 @@ const keep = (img) => {
 const svgText = (src) => {
   const comma = src.indexOf(",");
   const data = src.slice(comma + 1);
-  if (!/;base64/i.test(src.slice(0, comma))) return decodeURIComponent(data);
-  return new TextDecoder().decode(Uint8Array.from(atob(data), (c) => c.charCodeAt(0)));
+  if (!/;base64/i.test(src.slice(0, comma))) {
+    try {
+      return decodeURIComponent(data);
+    } catch (error) {
+      if (error instanceof URIError) return;
+      throw error;
+    }
+  }
+  let binary;
+  try {
+    binary = atob(data);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "InvalidCharacterError") return;
+    throw error;
+  }
+  return new TextDecoder().decode(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
+};
+const decodedImage = async (img) => {
+  try {
+    await img.decode();
+    return true;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "EncodingError") return false;
+    throw error;
+  }
 };
 const svgRasters = async (img, rect) => {
-  const doc = new DOMParser().parseFromString(svgText(img.currentSrc), "image/svg+xml");
+  const svg = svgText(img.currentSrc);
+  if (svg === undefined) return;
+  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
   const box = doc.documentElement.viewBox?.baseVal;
   if (!box?.width || !box.height) return;
   const unit = Math.min(rect.width / box.width, rect.height / box.height);
@@ -61,8 +95,9 @@ const svgRasters = async (img, rect) => {
     if (!/^data:image\\/(png|jpeg|webp|gif)/i.test(href)) continue;
     const raster = new Image();
     raster.src = href;
-    await raster.decode();
+    if (!(await decodedImage(raster)) || image.namespaceURI !== "http://www.w3.org/2000/svg") return;
     const url = redraw(raster, href, Math.max((3 * unit * image.width.baseVal.value) / raster.naturalWidth, (3 * unit * image.height.baseVal.value) / raster.naturalHeight));
+    if (url === null) return;
     if (!url) continue;
     image.removeAttribute("xlink:href");
     image.setAttribute("href", url);
@@ -71,7 +106,7 @@ const svgRasters = async (img, rect) => {
   if (!changed) return;
   img.srcset = "";
   img.src = "data:image/svg+xml," + encodeURIComponent(new XMLSerializer().serializeToString(doc));
-  await img.decode();
+  await decodedImage(img);
 };
 for (const img of document.images) {
   const shrink = () => {
@@ -79,7 +114,7 @@ for (const img of document.images) {
     img.dataset.printScaled = "";
     const rect = img.getBoundingClientRect();
     if (/^data:image\\/svg/i.test(img.currentSrc)) {
-      (globalThis.hwLayout ??= []).push(svgRasters(img, rect).catch(() => {}));
+      (globalThis.hwLayout ??= []).push(svgRasters(img, rect));
       return;
     }
     if (/\\.svg($|[?#])/i.test(img.currentSrc)) return;
@@ -88,8 +123,12 @@ for (const img of document.images) {
     const fit = contain ? Math.min : Math.max;
     const scale = fit((3 * rect.width) / img.naturalWidth, (3 * rect.height) / img.naturalHeight);
     let url;
-    // A file:// image the render could not inline taints the canvas; it prints at its source size.
-    try { url = redraw(img, img.currentSrc, scale); } catch { return; }
+    try {
+      url = redraw(img, img.currentSrc, scale);
+    } catch (error) {
+      (globalThis.hwLayout ??= []).push(Promise.reject(error));
+      return;
+    }
     if (!url) return;
     keep(img);
     img.src = url;

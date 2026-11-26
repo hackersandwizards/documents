@@ -1,5 +1,14 @@
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, utimesSync } from "node:fs";
-import { tmpdir } from "node:os";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+  utimesSync,
+} from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
@@ -18,9 +27,10 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-function staleProfile() {
+function staleProfile(lock?: string) {
   const profile = join(root, "hw-chrome-stale");
   mkdirSync(profile);
+  if (lock !== undefined) symlinkSync(lock, join(profile, "SingletonLock"));
   const old = new Date(Date.now() - 2 * 3_600_000);
   utimesSync(profile, old, old);
   return profile;
@@ -45,6 +55,30 @@ test("creates a Chrome profile when the stale profile vanishes before removal", 
   });
   const { makeChromeProfile } = await import("../scripts/chrome-profile");
   expect(existsSync(makeChromeProfile())).toBe(true);
+});
+
+test("propagates a denied read of Chrome's profile lock", async () => {
+  staleProfile(`${hostname()}-${process.pid}`);
+  const denied = Object.assign(new Error("Cannot inspect Chrome lock"), { code: "EACCES" });
+  vi.mocked(readlinkSync).mockImplementationOnce(() => {
+    throw denied;
+  });
+  const { makeChromeProfile } = await import("../scripts/chrome-profile");
+  expect(makeChromeProfile).toThrow(denied);
+});
+
+test("propagates an unexpected process probe failure for a locked Chrome profile", async () => {
+  staleProfile(`${hostname()}-${process.pid}`);
+  const failure = new TypeError("Cannot probe Chrome process");
+  const kill = vi.spyOn(process, "kill").mockImplementationOnce(() => {
+    throw failure;
+  });
+  try {
+    const { makeChromeProfile } = await import("../scripts/chrome-profile");
+    expect(makeChromeProfile).toThrow(failure);
+  } finally {
+    kill.mockRestore();
+  }
 });
 
 test("propagates permission errors while removing stale Chrome profiles", async () => {

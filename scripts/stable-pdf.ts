@@ -4,7 +4,7 @@
  */
 export const stableBytes = (pdf: Buffer): Buffer => {
   const text = pdf.toString("latin1");
-  const ids = [...text.matchAll(/\/ID \(node(\d+)\)/g)].map(([, id]) => +id!);
+  const ids = [...text.matchAll(/\/ID \(node(\d+)\)/g)].map(([, id]) => Number(id));
   const rank = new Map(ids.sort((a, b) => a - b).map((id, i) => [id, i + 1]));
   // Only where the structure tree names or cites a header cell: a heading reading "node22" stays.
   const renumber = (entry: string) =>

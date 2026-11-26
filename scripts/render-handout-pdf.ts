@@ -73,7 +73,8 @@ class HandoutPrint {
       await renderPdf(url.href, this.pdf, this.options);
       return;
     }
-    const file = join(this.dir!, "handout.html");
+    if (this.dir === undefined) throw new Error(`Handout work directory missing: ${this.pdf}`);
+    const file = join(this.dir, "handout.html");
     const html = await source(pass);
     this.label ??= chapterLabelOf(html);
     // Resolve relative images before writing the page into the temporary folder.
@@ -82,7 +83,8 @@ class HandoutPrint {
   }
 
   pages() {
-    return chapterPages(this.pdf, this.label!.trim());
+    if (this.label === undefined) throw new Error(`Handout chapter label missing: ${this.pdf}`);
+    return chapterPages(this.pdf, this.label.trim());
   }
 
   close() {
@@ -137,7 +139,8 @@ export async function renderHandoutPdf(
           "pdftotext (poppler) missing or no chapter eyebrow found: the contents prints without page numbers and every chapter opens a page",
       };
     const flowed = flow.length ? flow.join(",") : undefined;
-    const pages = toc.at(-1)!;
+    const pages = toc.at(-1);
+    if (pages === undefined) throw new Error("Handout contents pages missing: " + pdfPath);
     const lines = notesFit(pdfPath, pages);
     if (lines) {
       await job.render({ flow: flowed, toc: [...toc.slice(0, -1), pages - 1], notes: `${lines}` });
@@ -161,9 +164,11 @@ function chapterLabelOf(html: string): string {
       html,
     )?.[1];
   if (value === undefined) return HANDOUT_TEXT.en.chapter;
-  return value.replace(/\\(?:([\da-f]{1,6}) ?|(.))/gi, (_, hex?: string, char?: string) =>
-    hex ? String.fromCodePoint(parseInt(hex, 16)) : char!,
-  );
+  return value.replace(/\\(?:([\da-f]{1,6}) ?|(.))/gi, (match, hex?: string, char?: string) => {
+    if (hex !== undefined) return String.fromCodePoint(parseInt(hex, 16));
+    if (char === undefined) throw new Error(`Handout chapter label escape missing: ${match}`);
+    return char;
+  });
 }
 
 /** The 1-based page each chapter eyebrow ("CHAPTER 03") starts on, in chapter order, or undefined.
@@ -244,7 +249,7 @@ function flowing(pdf: string, toc: number[], flow: number[]): number[] {
     if (!before || !own) return [];
     // A chapter ends on the page before the next one's start, or on that page where the next one
     // already runs on under it.
-    const single = toc[i + 1]! - (flow.includes(i + 2) ? 0 : 1) === start;
+    const single = toc[i + 1] - (flow.includes(i + 2) ? 0 : 1) === start;
     if (before.bottom < own.height * (single ? 1 / 3 : 1 / 2)) return [i + 1];
     const free = own.height - brandPt("--print-margin-bottom") - before.bottom;
     return single && own.bottom - own.top + gap <= free ? [i + 1] : [];

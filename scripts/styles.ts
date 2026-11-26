@@ -91,11 +91,15 @@ const BRAND_HREF =
 /** Whether a link's address is one of the brand's files, read as the browser reads it: entities
  *  decoded, trimmed, and percent-escapes decoded, so %2e%2e is the `..` it climbs out with. */
 function linksBrandFile(raw: string): boolean {
+  const href = decodeHTMLAttribute(raw).trim();
+  let decoded: string;
   try {
-    return BRAND_HREF.test(decodeURIComponent(decodeHTMLAttribute(raw).trim()));
-  } catch {
-    return false;
+    decoded = decodeURIComponent(href);
+  } catch (error) {
+    if (error instanceof URIError) return false;
+    throw error;
   }
+  return BRAND_HREF.test(decoded);
 }
 
 /** What in a rendered document the engine did not write, one line per finding. */
