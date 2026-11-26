@@ -22,7 +22,7 @@ body {
   width: var(--deck-width);
   height: var(--deck-height);
   background: var(--tint);
-  page-break-after: always;
+  break-after: page;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -189,6 +189,11 @@ h2 {
   color: var(--muted);
   margin-top: var(--deck-12);
 }
+.caption {
+  font-size: var(--deck-text-caption);
+  color: var(--muted);
+  margin-top: var(--deck-12);
+}
 .bignum .caption {
   max-width: var(--deck-448);
   margin-top: var(--deck-32);
@@ -251,11 +256,6 @@ h2 {
 }
 .axis {
   text-align: center;
-}
-.caption {
-  font-size: var(--deck-text-caption);
-  color: var(--muted);
-  margin-top: var(--deck-12);
 }
 .legend {
   display: flex;
@@ -420,13 +420,6 @@ h2 {
   columns: 2;
   column-gap: var(--deck-28);
 }
-.quotes .quote {
-  break-inside: avoid;
-  margin-bottom: var(--deck-12);
-}
-.quotes .caption {
-  column-span: all;
-}
 .quote,
 .rcol {
   background: var(--surface);
@@ -439,6 +432,13 @@ h2 {
   color: var(--ink);
   padding: var(--deck-16) var(--deck-28);
 }
+.quotes .quote {
+  break-inside: avoid;
+  margin-bottom: var(--deck-12);
+}
+.quotes .caption {
+  column-span: all;
+}
 
 /* Strengths on the left, weak spots and flags stacked on the right, each card ending with its
    content: three equal full-height cards left two of them mostly empty. */
@@ -449,11 +449,11 @@ h2 {
   gap: var(--deck-28);
   align-items: start;
 }
-.readout .rcol:first-child {
-  grid-row: span 2;
-}
 .rcol {
   padding: var(--deck-24) var(--deck-28);
+}
+.readout .rcol:first-child {
+  grid-row: span 2;
 }
 /* Headings in ink on a hairline, as the engine's card titles: the band colours stay on the
    charts, where each band has one meaning. */

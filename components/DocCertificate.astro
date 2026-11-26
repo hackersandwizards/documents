@@ -370,6 +370,10 @@ const topicClass = [
     max-width: var(--cert-topics-compact);
   }
 
+  .topics-columns li {
+    break-inside: avoid;
+  }
+
   .topics-compact li + li {
     margin-top: calc(2 * var(--cert-topic-pad));
   }
@@ -381,10 +385,6 @@ const topicClass = [
   .topics-columns ul {
     columns: 2;
     column-gap: var(--cert-column-gap);
-  }
-
-  .topics-columns li {
-    break-inside: avoid;
   }
 
   .signatures {
@@ -478,6 +478,16 @@ const topicClass = [
     text-decoration: none;
   }
 
+  .fit-columns .topics li {
+    break-inside: avoid;
+  }
+
+  /* The label role's size and leading in the small role's face: the topics stay in Inter. */
+  .fit-topics .topics li {
+    font-size: var(--label-size);
+    line-height: var(--label-leading);
+  }
+
   .fit-tight .topics li + li {
     margin-top: 0;
   }
@@ -490,10 +500,6 @@ const topicClass = [
   .fit-columns .topics ul {
     columns: 2;
     column-gap: var(--cert-column-gap);
-  }
-
-  .fit-columns .topics li {
-    break-inside: avoid;
   }
 
   .fit-name .attendee-name {
@@ -514,12 +520,6 @@ const topicClass = [
 
   .fit-logo .logo {
     height: var(--cert-logo-fit);
-  }
-
-  /* The label role's size and leading in the small role's face: the topics stay in Inter. */
-  .fit-topics .topics li {
-    font-size: var(--label-size);
-    line-height: var(--label-leading);
   }
 
   .certificate-overflow {

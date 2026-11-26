@@ -13,10 +13,6 @@
   --hw-button-size: var(--hw-pill-size);
 }
 
-.page {
-  page: onepager;
-}
-
 /* In the base layer, so the brand's elements (layer components) keep their padding, and a label
    set in strong its type. */
 @layer base {
@@ -56,11 +52,15 @@ ul {
   font: var(--role-display);
   letter-spacing: var(--tracking-display);
   word-spacing: var(--word-spacing-display);
+  color: var(--surface);
+  margin-bottom: var(--op-8);
+  text-wrap: balance;
 }
 
 .proof-number {
   font: var(--role-stat);
   letter-spacing: var(--tracking-stat);
+  color: var(--accent);
 }
 
 .po-track-box h3,
@@ -103,6 +103,23 @@ ul {
   font: var(--role-body);
 }
 
+.deliverable-banner p,
+.proof-box p,
+.scope-box p,
+.goals-lead {
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.testimonial p {
+  font-weight: var(--weight-medium);
+}
+
+.community-box p,
+.funding-box p {
+  color: var(--ink);
+}
+
 .facts dd,
 .facts .price p,
 .module li,
@@ -120,6 +137,7 @@ ul {
 /* The side margin sits on .page, not on @page: Chrome clips content to the page box, and the
    header bar has to reach the paper edge. */
 .page {
+  page: onepager;
   position: relative;
   padding: 0 var(--side);
 }
@@ -156,18 +174,20 @@ ul {
   margin-bottom: var(--op-6);
 }
 
+.references strong {
+  display: block;
+}
+.references-lead strong {
+  display: inline;
+  margin-right: var(--op-6);
+}
+
 .page > .claim {
   font: var(--role-lead);
   margin-bottom: var(--op-section);
 }
 .page > .claim strong {
   color: var(--accent-text);
-}
-
-.document-title {
-  color: var(--surface);
-  margin-bottom: var(--op-8);
-  text-wrap: balance;
 }
 
 .intro {
@@ -239,6 +259,10 @@ ul {
   padding-bottom: var(--op-4);
 }
 
+.planning dd {
+  color: var(--ink);
+}
+
 /* The lead role here and the small role on every other fact keep the decision row the only large
    text in the box. */
 .facts .key-row dd {
@@ -273,6 +297,12 @@ ul {
 .facts-key .key-row > .wide {
   contain: inline-size;
 }
+.facts dl.details {
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--op-7) var(--op-14);
+  border-top: var(--rule) solid var(--accent-line);
+  padding-top: var(--op-8);
+}
 .facts:has(.facts-key) dl.details {
   border-top: 0;
   padding: var(--op-9) var(--card-pad) var(--op-10);
@@ -283,17 +313,20 @@ ul {
   padding-bottom: var(--op-6);
 }
 
-.facts dl.details {
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--op-7) var(--op-14);
-  border-top: var(--rule) solid var(--accent-line);
-  padding-top: var(--op-8);
-}
-
 .facts dl.details > div {
   padding: 0;
 }
-/* The last row is full: a lone last fact spans the row, a pair takes it as one and two. */
+.tight .facts dl:not(.details) > div {
+  padding: var(--op-3) 0 var(--op-4);
+}
+
+/* The last row is full: a lone item spans the row, a pair takes it as one and two. */
+.planning dl > div:last-child:nth-child(3n + 2) {
+  grid-column: span 2;
+}
+.planning dl > div:last-child:nth-child(3n + 1) {
+  grid-column: 1 / -1;
+}
 .facts dl.details > div:last-child:nth-child(3n + 1) {
   grid-column: 1 / -1;
 }
@@ -375,14 +408,6 @@ ul {
 .deliverable-banner li {
   font: var(--role-lead);
   font-weight: var(--weight-medium);
-}
-
-.deliverable-banner p,
-.proof-box p,
-.scope-box p,
-.goals-lead {
-  font-weight: var(--weight-medium);
-  color: var(--ink);
 }
 
 .goals-columns {
@@ -482,18 +507,10 @@ ul {
   margin-top: var(--op-6);
 }
 
-.proof-number {
-  color: var(--accent);
-}
-
 .testimonial {
   padding-block: var(--op-2);
   margin-bottom: var(--op-section);
   break-inside: avoid;
-}
-
-.testimonial p {
-  font-weight: var(--weight-medium);
 }
 
 .testimonial cite {
@@ -509,10 +526,6 @@ ul {
   break-inside: avoid;
 }
 
-.community-box p,
-.funding-box p {
-  color: var(--ink);
-}
 .page > .community-box,
 .page > .funding-box,
 .page > .contrast-grid {
@@ -536,15 +549,6 @@ ul {
 .planning dt {
   margin-bottom: var(--op-1);
 }
-.planning dd {
-  color: var(--ink);
-}
-.planning dl > div:last-child:nth-child(3n + 2) {
-  grid-column: span 2;
-}
-.planning dl > div:last-child:nth-child(3n + 1) {
-  grid-column: 1 / -1;
-}
 
 .company-grid {
   display: grid;
@@ -561,16 +565,9 @@ ul {
   break-inside: avoid;
 }
 
-.references strong {
-  display: block;
-}
 .references-lead {
   color: var(--ink);
   margin-bottom: var(--op-8);
-}
-.references-lead strong {
-  display: inline;
-  margin-right: var(--op-6);
 }
 
 .client-row {
@@ -708,9 +705,6 @@ ul {
 }
 .tight .hero {
   padding: var(--op-hero-pad-tight);
-}
-.tight .facts dl:not(.details) > div {
-  padding: var(--op-3) 0 var(--op-4);
 }
 .tight .deliverable-banner li {
   font: var(--role-small);

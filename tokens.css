@@ -103,19 +103,17 @@
   --small-size: var(--type-small-size);
   --small-leading: var(--type-small-line-height);
   --label-leading: var(--type-label-line-height);
+
+  /* Bar colours, the slide engine's rule: teal is the data hue, a bar that is
+     context takes the ink at the ladder's 40 % on the page, a step between takes teal at 70 %. */
+  --deck-bar-step: color-mix(in srgb, var(--color-teal) 70%, var(--color-bg));
+  --deck-bar-context: color-mix(in srgb, var(--color-ink) 40%, var(--color-bg));
 }
 
 /* Set on every element, not once at the root, so --radius takes the small corner wherever brand
    sets --print-radius to it: inside a brand-cornered block (elements/card.css). */
 * {
   --radius: var(--print-radius);
-}
-
-:root {
-  /* Bar colours, the slide engine's rule: teal is the data hue, a bar that is
-     context takes the ink at the ladder's 40 % on the page, a step between takes teal at 70 %. */
-  --deck-bar-step: color-mix(in srgb, var(--color-teal) 70%, var(--color-bg));
-  --deck-bar-context: color-mix(in srgb, var(--color-ink) 40%, var(--color-bg));
 }
 
 /* The base page is print.css's A4 with a 14mm top and 16mm bottom margin. */

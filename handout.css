@@ -20,9 +20,6 @@ body {
   --page-content-height: calc(
     var(--page-height) - var(--handout-margin-top) - var(--page-margin-bottom)
   );
-}
-
-:root {
   --type-body-size: var(--handout-body-size);
   --type-small-size: var(--handout-small-size);
   --type-code-size: var(--handout-code-size);
@@ -42,6 +39,11 @@ section.flow {
   margin-top: var(--handout-flow-space);
 }
 
+/* Code takes the full width, below any note still running beside the text above it. */
+section pre {
+  clear: right;
+}
+
 /* A heading, and a sentence leading into code, stay with the block they introduce, and a table
    or a code block stays whole where it fits a page: a participant copies from it. */
 section :is(h1, h2, h3) + *,
@@ -52,11 +54,6 @@ section p + pre {
 section h1,
 section table {
   break-inside: avoid;
-}
-
-/* Code takes the full width, below any note still running beside the text above it. */
-section pre {
-  clear: right;
 }
 
 /* A code line too long for the block wraps under a hanging indent, so its continuation never
@@ -85,6 +82,8 @@ pre.astro-code .line {
    fragment. */
 section :is(h2, h3) {
   contain: paint;
+  /* A section heading starts below a note still running beside the text above it. */
+  clear: right;
 }
 
 section h1::before {
@@ -105,12 +104,6 @@ section h1 {
 
 section h1 > .hw-rule {
   margin-top: var(--handout-title-bar-space);
-}
-
-/* A section heading starts below a note still running beside the text above it, so it never
-   shares a line with an earlier section's note. */
-section :is(h2, h3) {
-  clear: right;
 }
 
 /* A chapter is one step down the base's scale: its sections take the h3 role, their parts h4. */
