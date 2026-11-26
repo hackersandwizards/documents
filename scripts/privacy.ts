@@ -4,7 +4,21 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { denyPatterns } from "./deny-patterns";
 import { brandCompany, ROOT } from "./root";
+import * as agreements from "./sample-agreements";
+import * as proposals from "./sample-proposals";
+import * as survey from "./sample-survey";
+import * as timesheets from "./sample-timesheets";
 import * as samples from "./samples";
+
+const sampleModules = {
+  "scripts/samples.ts": samples,
+  "scripts/sample-agreements.ts": agreements,
+  "scripts/sample-proposals.ts": proposals,
+  "scripts/sample-survey.ts": survey,
+  "scripts/sample-timesheets.ts": timesheets,
+};
+const sampleData = {};
+for (const data of Object.values(sampleModules)) Object.assign(sampleData, data);
 
 const MAIL_DOMAINS = /^(hackersandwizards\.dev|example\.(com|org|net|de))$/i;
 const company = brandCompany();
@@ -139,7 +153,7 @@ export function scanText(root: string, deny: string[] = []): Finding[] {
 }
 
 /** Each person or client the samples' props name, word by word against the invented names. */
-export function scanSamples(data: object = samples): string[] {
+export function scanSamples(data: object = sampleData): string[] {
   const found: string[] = [];
   const walk = (value: unknown, path: string, key: string) => {
     if (typeof value === "string") {
@@ -176,10 +190,13 @@ if (import.meta.main) {
     process.exit(1);
   }
   const findings = scanText(ROOT, deny);
-  const names = scanSamples();
+  const names = Object.entries(sampleModules).flatMap(([file, data]) =>
+    scanSamples(data).map(
+      (finding) => `${file} ${finding}: not an invented name (privacy.ts INVENTED)`,
+    ),
+  );
   for (const f of findings) console.error(`${f.file}:${f.line}: ${f.what}`);
-  for (const n of names)
-    console.error(`scripts/samples.ts ${n}: not an invented name (privacy.ts INVENTED)`);
+  for (const n of names) console.error(n);
   if (findings.length + names.length > 0) {
     console.error("documents-privacy: the package carries what may not be public.");
     process.exit(1);

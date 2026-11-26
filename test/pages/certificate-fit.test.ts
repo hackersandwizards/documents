@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -157,7 +158,10 @@ async function printCertificate(props: Record<string, unknown>) {
   writeFileSync(page, html(false));
   await renderPdf(page, pdf);
   const pages = Number(
-    execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/Pages:\s+(\d+)/)![1],
+    defined(
+      execFileSync("pdfinfo", [pdf], { encoding: "utf8" }).match(/Pages:\s+(\d+)/),
+      "pdfinfo page count",
+    )[1],
   );
   writeFileSync(page, html(true));
   const dom = execFileSync(
@@ -170,14 +174,18 @@ async function printCertificate(props: Record<string, unknown>) {
     ],
     { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
   );
-  const overPt = Number(dom.match(/<pre id="fit-probe">([^<]*)<\/pre>/)![1]);
+  const overPt = Number(
+    defined(dom.match(/<pre id="fit-probe">([^<]*)<\/pre>/), "certificate fit probe")[1],
+  );
   return { pages, overPt };
 }
 
 test.each(Object.keys(fits))(
   "%s fits one page, nothing clipped",
   async (name) => {
-    const { pages, overPt } = await printCertificate(fits[name]!);
+    const { pages, overPt } = await printCertificate(
+      defined(fits[name], `certificate fit ${name}`),
+    );
     expect(pages).toBe(1);
     expect(overPt).toBeLessThanOrEqual(0.5);
   },

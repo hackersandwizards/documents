@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { limit } from "../probe";
 import { execFileSync } from "node:child_process";
@@ -10,7 +11,9 @@ import { chromeBinary } from "@hackersandwizards/scaffolding/chrome";
 import { subsetFaces } from "../../scripts/font-faces";
 import { documentCss } from "../../scripts/document-css";
 import { renderPdf } from "../../scripts/render-pdf";
-import { handout, leistungsnachweisMonth, proposalDe, rateCard } from "../../scripts/samples";
+import { handout, rateCard } from "../../scripts/samples";
+import { leistungsnachweisMonth } from "../../scripts/sample-timesheets";
+import { proposalDe } from "../../scripts/sample-proposals";
 
 // The running header holds the document's title on one line. The longest title on record is the
 // trainer hub's AE-DEV-TTT product (73 characters). Measured in Chrome:
@@ -71,8 +74,13 @@ function headerLinesPerPage(pdf: string): number[] {
 }
 
 // A chapter over three pages and a short one: the chapter's opening page ends mid-chapter.
-const long = { ...handout.chapters[0]!, html: handout.chapters[0]!.html.repeat(6) };
-const longHandout = { ...handout, chapters: [long, handout.chapters[1]!], toc: [] };
+const first = defined(handout.chapters[0], "first handout chapter");
+const long = { ...first, html: first.html.repeat(6) };
+const longHandout = {
+  ...handout,
+  chapters: [long, defined(handout.chapters[1], "second handout chapter")],
+  toc: [],
+};
 
 /** Every word below the running head with its position, page by page. */
 function textBelowHead(pdf: string): string[] {
@@ -90,9 +98,12 @@ function textBelowHead(pdf: string): string[] {
 
 /** The header lines on the long chapter's second page, the first that carries a running head. */
 async function headerLines(title: string): Promise<number> {
-  return headerLinesPerPage(
-    await render({ component: "DocHandout", props: { ...longHandout, title } }),
-  )[2]!;
+  return defined(
+    headerLinesPerPage(
+      await render({ component: "DocHandout", props: { ...longHandout, title } }),
+    )[2],
+    "third handout page running head",
+  );
 }
 
 test.skipIf(!chromeBinary())(

@@ -1,5 +1,5 @@
 import DocAgreement from "../../../components/DocAgreement.astro";
-import { agreementNda, agreementOrder } from "../../../scripts/samples";
+import { agreementNda, agreementOrder } from "../../../scripts/sample-agreements";
 import { onSheet } from "../../sheet";
 
 export default { component: DocAgreement };

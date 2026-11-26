@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -72,7 +73,9 @@ describe("fitOnepager with named entities", () => {
     async () => {
       const whole = join(work, "whole.html");
       writeFileSync(whole, await composeOnepager(composer, { ...onepager, html, fit: fit.fit }));
-      const faces = (file: string) => readFileSync(file, "utf8").match(/data:font\/woff2/g)!.length;
+      const faces = (file: string) =>
+        defined(readFileSync(file, "utf8").match(/data:font\/woff2/g), "embedded font faces")
+          .length;
       expect(faces(file)).toBeLessThan(faces(whole));
       const wholePdf = join(work, "whole.pdf");
       await renderPdf(whole, wholePdf);
@@ -115,7 +118,7 @@ describe("fitOnepager, page 2's first line", () => {
       );
       const short = await fitOnepager(composer, { ...onepager, html }, work);
       // The notes precede the original opening block. The third note is two blocks after the first.
-      expect(short.fit.page2Start).toBe(plain.fit.page2Start! + 2);
+      expect(short.fit.page2Start).toBe(defined(plain.fit.page2Start, "plain page-two start") + 2);
     },
     limit(120_000),
   );
@@ -156,9 +159,10 @@ describe.skipIf(!chromeBinary())("the tight fit", () => {
           ),
         ),
       );
-      const [loose, tight] = pads.map((p) => p.split(" | "));
-      expect(tight![0]).toBe(loose![0]);
-      expect(tight![1]).not.toBe(loose![1]);
+      const loose = defined(pads[0], "loose padding probe").split(" | ");
+      const tight = defined(pads[1], "tight padding probe").split(" | ");
+      expect(tight[0]).toBe(loose[0]);
+      expect(tight[1]).not.toBe(loose[1]);
     },
     limit(60_000),
   );

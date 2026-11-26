@@ -9,7 +9,7 @@ import {
   scoresSlide,
 } from "../scripts/readout-slides";
 import { READOUT_TEXT as text } from "../scripts/readout-text";
-import { surveyReadout } from "../scripts/samples";
+import { surveyReadout } from "../scripts/sample-survey";
 
 test.each([
   [{ attendees: 0, teams: 2 }, ">—</b><span>response rate</span>", ">2</b><span>teams</span>"],

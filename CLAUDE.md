@@ -112,7 +112,8 @@ package's own component exports.
   with its reason, and `brand-elements` in the gate measures the type pages against the brand. A
   rule restyling an element-named class fails there: set the element's `--hw-*` setting instead,
   or list an exception.
-- `scripts/samples.ts`: the fictitious props the catalog and the tests share.
+- `scripts/samples.ts` and `scripts/sample-*.ts` (agreements, proposals, survey, timesheets): the
+  fictitious props the catalog and the tests share.
 - `catalog/`: the catalog, one Astro app in scaffolding's shell (`@hackersandwizards/scaffolding`,
   preset `catalog` in `catalog/astro.config.ts`). Astrobook over
   `catalog/stories` at the site's root, the tiles grouped `Types`, then `Components` (their former German paths forward); each story

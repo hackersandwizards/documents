@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -32,20 +33,22 @@ afterAll(async () => {
 // A chapter over several pages, two short ones and the notes: the contents needs the pages the
 // chapters land on, which only a first render tells. A later chapter's text names an earlier one at
 // a line start, which is no eyebrow.
-const [first, second, notes] = handout.chapters;
+const first = defined(handout.chapters[0], "first handout chapter");
+const second = defined(handout.chapters[1], "second handout chapter");
+const notes = defined(handout.chapters[2], "handout notes");
 const props = {
   ...handout,
   toc: undefined,
   chapters: [
-    { ...first!, html: first!.html.repeat(4) },
-    second!,
+    { ...first, html: first.html.repeat(4) },
+    second,
     {
-      ...second!,
+      ...second,
       title: "Rules, Again",
       // A path longer than a margin note is wide.
-      html: `<aside class="margin-note">See <code>/Users/participant/projects/beispielprojekt/.claude/settings.local.json</code>.</aside><p>Chapter 1 set up the loop.</p>${second!.html}`,
+      html: `<aside class="margin-note">See <code>/Users/participant/projects/beispielprojekt/.claude/settings.local.json</code>.</aside><p>Chapter 1 set up the loop.</p>${second.html}`,
     },
-    notes!,
+    notes,
   ],
 };
 const composeHandoutPage = async (props: Record<string, unknown>) =>
@@ -68,7 +71,7 @@ function read(pdf: string, eyebrow = "CHAPTER") {
       starts[Number(m[1]) - 1] ??= i + 1;
   });
   const listed = props.chapters.map((c) =>
-    Number(new RegExp(`${c.title}\\s+(\\d+)`).exec(pages[0]!)?.[1]),
+    Number(new RegExp(`${c.title}\\s+(\\d+)`).exec(defined(pages[0], "first handout page"))?.[1]),
   );
   return { starts, listed };
 }
@@ -85,7 +88,7 @@ test(
     expect(listed).toEqual(starts);
     // Every word stays on the paper, a long path in a margin note too.
     const box = execFileSync("pdftotext", ["-bbox", pdf, "-"], { encoding: "utf8" });
-    const width = Number(/<page width="([\d.]+)"/.exec(box)![1]);
+    const width = Number(defined(/<page width="([\d.]+)"/.exec(box), "PDF page width")[1]);
     const off = [...box.matchAll(/xMax="([\d.]+)" yMax="[\d.]+">([^<]*)</g)].filter(
       ([, x]) => Number(x) > width,
     );
@@ -184,10 +187,10 @@ describe("a handout served from a URL", () => {
 test(
   "without pdftotext the first render stands, unnumbered, and the result says so",
   async () => {
-    const path = process.env.PATH;
+    const path = defined(process.env.PATH, "PATH");
     // Chrome is found by its absolute path; only the folders holding poppler drop off the PATH,
     // wherever it is installed (/opt/homebrew/bin on a Mac, /usr/bin on Linux).
-    process.env.PATH = path!
+    process.env.PATH = path
       .split(delimiter)
       .filter((folder) => !existsSync(join(folder, "pdftotext")))
       .join(delimiter);
@@ -227,7 +230,7 @@ test(
       { stdout: "pipe" },
     );
     try {
-      const port = (await server.stdout.getReader().read()).value!;
+      const port = defined((await server.stdout.getReader().read()).value, "handout server port");
       const html = await composeHandoutPage({
         title: "T",
         chapters: [

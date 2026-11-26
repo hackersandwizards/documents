@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { describe, expect, it, test } from "vitest";
 import {
   attributeMatches,
@@ -9,7 +10,8 @@ import {
 
 const page = (css: string, body: string) =>
   `<html><head><style>${css}</style></head><body>${body}</body></html>`;
-const styles = (html: string) => /<style>([\s\S]*)<\/style>/.exec(html)![1];
+const styles = (html: string) =>
+  defined(/<style>([\s\S]*)<\/style>/.exec(html), "style element")[1];
 
 describe("pruneStyles", () => {
   const body = '<main id="top" data-Mode="on"><p class="kept">x</p></main>';

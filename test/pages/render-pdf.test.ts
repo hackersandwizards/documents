@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { afterAll, afterEach, assert, beforeAll, describe, expect, it, vi } from "vitest";
 import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -57,18 +58,33 @@ describe.skipIf(!chromeBinary())("cutFacesToPdf", () => {
   // cross-reference offsets the new lengths shift do not matter.
   const withMaps = (pdf: Buffer, rewrite: (dict: string, map: Buffer) => [string, Buffer]) => {
     const text = pdf.toString("latin1");
-    const ids = new Set([...text.matchAll(/\/ToUnicode (\d+) 0 R/g)].map(([, id]) => id!));
+    const ids = new Set(
+      [...text.matchAll(/\/ToUnicode (\d+) 0 R/g)].map(([, id]) =>
+        defined(id, "ToUnicode object number"),
+      ),
+    );
     const heads = [...ids]
       .map((id) =>
-        new RegExp(`(?<!\\d)(${id}) 0 obj\\s*<<([\\s\\S]*?)>>\\s*stream\\r?\\n`).exec(text)!,
+        defined(
+          new RegExp(`(?<!\\d)(${id}) 0 obj\\s*<<([\\s\\S]*?)>>\\s*stream\\r?\\n`).exec(text),
+          `ToUnicode stream ${id}`,
+        ),
       )
       .sort((a, b) => a.index - b.index);
     const parts: Buffer[] = [];
     let at = 0;
     for (const m of heads) {
-      const length = Number(/\/Length (\d+)/.exec(m[2]!)![1]);
+      const length = Number(
+        defined(
+          /\/Length (\d+)/.exec(defined(m[2], "ToUnicode dictionary")),
+          "ToUnicode stream length",
+        )[1],
+      );
       const start = m.index + m[0].length;
-      const [dict, map] = rewrite(m[2]!, pdf.subarray(start, start + length));
+      const [dict, map] = rewrite(
+        defined(m[2], "ToUnicode dictionary"),
+        pdf.subarray(start, start + length),
+      );
       parts.push(pdf.subarray(at, m.index));
       parts.push(
         Buffer.from(
@@ -146,7 +162,7 @@ describe.skipIf(!chromeBinary())("renderPdf profile", () => {
     const profile = lines.find((l) => l.startsWith("--user-data-dir="))?.slice(16);
     expect(profile?.startsWith(tmpdir())).toBe(true);
     expect(lines).toContain(`exists ${profile}`);
-    expect(existsSync(profile!)).toBe(false);
+    expect(existsSync(defined(profile, "Chrome profile"))).toBe(false);
   });
 });
 
@@ -389,7 +405,7 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
     // The data URI, the file beside the page, and the wizard as tall as the lockup's box, 40 px
     // from the data URI and 20 px from the file.
     expect(sizes[0]).toEqual([324, 60]);
-    expect(sizes[1]![1]).toBe(60);
+    expect(defined(sizes[1], "second page size")[1]).toBe(60);
     expect(sizes[2]).toEqual([120, 120]);
     expect(sizes[3]).toEqual([60, 60]);
   });
@@ -655,7 +671,7 @@ describe.skipIf(!chromeBinary())("the preparation's code", () => {
         { ...first, html: first.html.replace("choco install nodejs-lts git", long) },
         ...following,
       ];
-      expect(steps[0]!.html).toContain(long);
+      expect(defined(steps[0], "first handout render").html).toContain(long);
       const html = await composeDocument("DocPreparation", { ...preparation, steps });
       const width = probePage(html, `return String(document.documentElement.scrollWidth);`, [
         "--window-size=794,1123",

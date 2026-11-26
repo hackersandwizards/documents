@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import {
   chmodSync,
@@ -20,7 +21,8 @@ import { inlineImages } from "../scripts/inline-images";
 import { subsetFaces } from "../scripts/font-faces";
 import { decompress } from "woff2-encoder";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
-import { rateCard, surveyReadout } from "../scripts/samples";
+import { rateCard } from "../scripts/samples";
+import { surveyReadout } from "../scripts/sample-survey";
 import { composeSurveyReadout } from "../scripts/survey-readout";
 import { fallbackFamilies, withLinkedBrand, limit } from "./probe";
 
@@ -160,25 +162,31 @@ function overlapFlagged(ttf: Uint8Array): number {
     const at = 12 + 16 * i;
     tables.set(String.fromCharCode(...ttf.subarray(at, at + 4)), view.getUint32(at + 8));
   }
-  const [head, maxp, loca, glyf] = ["head", "maxp", "loca", "glyf"].map((t) => tables.get(t)!);
-  const long = view.getInt16(head! + 50) === 1;
+  const head = defined(tables.get("head"), "head table offset");
+  const maxp = defined(tables.get("maxp"), "maxp table offset");
+  const loca = defined(tables.get("loca"), "loca table offset");
+  const glyf = defined(tables.get("glyf"), "glyf table offset");
+  const long = view.getInt16(head + 50) === 1;
   const offset = (i: number) =>
-    long ? view.getUint32(loca! + 4 * i) : 2 * view.getUint16(loca! + 2 * i);
+    long ? view.getUint32(loca + 4 * i) : 2 * view.getUint16(loca + 2 * i);
   let flagged = 0;
-  for (let g = 0; g < view.getUint16(maxp! + 4); g++) {
+  for (let g = 0; g < view.getUint16(maxp + 4); g++) {
     if (offset(g + 1) === offset(g)) continue;
-    const at = glyf! + offset(g);
+    const at = glyf + offset(g);
     const contours = view.getInt16(at);
     if (contours <= 0) continue;
     const instructions = at + 10 + 2 * contours;
-    if (ttf[instructions + 2 + view.getUint16(instructions)]! & 0x40) flagged++;
+    if (defined(ttf[instructions + 2 + view.getUint16(instructions)], "first glyph flag") & 0x40)
+      flagged++;
   }
   return flagged;
 }
 
 describe("subsetFaces", () => {
   const faces = (html: string) =>
-    [...html.matchAll(/data:font\/woff2;base64,([\w+/=]+)/g)].map(([, data]) => data!);
+    [...html.matchAll(/data:font\/woff2;base64,([\w+/=]+)/g)].map(([, data]) =>
+      defined(data, "embedded WOFF2 payload"),
+    );
 
   it(
     "cuts each face of a composed document, and a re-bake cut again writes the same bytes",
@@ -197,8 +205,12 @@ describe("subsetFaces", () => {
     const page = `<html><head><style>${documentCss()}</style></head><body>Agenten</body></html>`;
     const [source] = faces(page);
     const [kept] = faces(await subsetFaces(page));
-    expect(overlapFlagged(await decompress(Buffer.from(source!, "base64")))).toBeGreaterThan(0);
-    expect(overlapFlagged(await decompress(Buffer.from(kept!, "base64")))).toBeGreaterThan(0);
+    expect(
+      overlapFlagged(await decompress(Buffer.from(defined(source, "source WOFF2"), "base64"))),
+    ).toBeGreaterThan(0);
+    expect(
+      overlapFlagged(await decompress(Buffer.from(defined(kept, "trimmed WOFF2"), "base64"))),
+    ).toBeGreaterThan(0);
   });
 });
 

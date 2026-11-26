@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -22,7 +23,10 @@ function css(file: string): string {
 // @page reads no custom property: each named page box's top margin is brand's token, typed again.
 it("the handout's page boxes take brand's top margin", () => {
   const brand = readFileSync(brandFile("document.css"), "utf8");
-  const top = /--handout-margin-top:\s*([\d.]+mm);/.exec(brand)![1];
+  const top = defined(
+    /--handout-margin-top:\s*([\d.]+mm);/.exec(brand),
+    "brand handout top margin",
+  )[1];
   const tokens = readFileSync(join(ROOT, "tokens.css"), "utf8");
   for (const box of ["handout", "opening"])
     expect(new RegExp(`@page ${box} \\{\\s*margin-top: ([\\d.]+mm);`).exec(tokens)?.[1]).toBe(top);

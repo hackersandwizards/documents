@@ -39,8 +39,24 @@ function profileHeld(profile: string): boolean {
   }
 }
 
-/** Removes each stale profile no Chrome holds, at most once an hour. A profile the sweep
- * cannot stat is left if missing or inaccessible. */
+/** Whether a Chrome profile is old enough to sweep. Missing and inaccessible profiles stay put. */
+export function isStaleChromeProfile(profile: string): boolean {
+  let stat;
+  try {
+    stat = lstatSync(profile, { throwIfNoEntry: false });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error.code === "EACCES" || error.code === "EPERM")
+    )
+      return false;
+    throw error;
+  }
+  return stat !== undefined && Date.now() - stat.mtimeMs > STALE_PROFILE_MS;
+}
+
+/** Removes each stale profile no Chrome holds, at most once an hour. */
 function removeLeftProfiles() {
   if (Date.now() - profilesSwept < STALE_PROFILE_MS) return;
   profilesSwept = Date.now();
@@ -48,15 +64,7 @@ function removeLeftProfiles() {
   const removalErrors: unknown[] = [];
   for (const name of readdirSync(root).filter((n) => n.startsWith(PROFILE))) {
     const profile = join(root, name);
-    let made: number;
-    try {
-      made = lstatSync(profile).mtimeMs;
-    } catch (error) {
-      const { code } = error as NodeJS.ErrnoException;
-      if (code === "ENOENT" || code === "EACCES" || code === "EPERM") continue;
-      throw error;
-    }
-    if (Date.now() - made <= STALE_PROFILE_MS || profileHeld(profile)) continue;
+    if (!isStaleChromeProfile(profile) || profileHeld(profile)) continue;
     try {
       rmSync(profile, { recursive: true });
     } catch (error) {

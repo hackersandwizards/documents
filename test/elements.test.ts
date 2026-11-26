@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { expect, test } from "vitest";
 import { withElements } from "../scripts/elements";
 import { decodeHTMLAttribute } from "entities";
@@ -23,5 +24,7 @@ test("brand-elements measures every type page but the survey readout's", () => {
 
 test("a literal entity in an assigned title remains literal when read back", () => {
   const out = withElements("<p>x</p>", [["p", undefined, { title: "&quot" }]]);
-  expect(decodeHTMLAttribute(/title="([^"]*)"/.exec(out)![1])).toBe("&quot");
+  expect(
+    decodeHTMLAttribute(defined(/title="([^"]*)"/.exec(out), "escaped title attribute")[1]),
+  ).toBe("&quot");
 });

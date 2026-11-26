@@ -1,5 +1,6 @@
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   realpathSync,
@@ -89,4 +90,13 @@ test("propagates permission errors while removing stale Chrome profiles", async 
   });
   const { makeChromeProfile } = await import("../scripts/chrome-profile");
   expect(makeChromeProfile).toThrow(denied);
+});
+
+test("propagates an unexpected error while checking a Chrome profile's age", async () => {
+  const { isStaleChromeProfile } = await import("../scripts/chrome-profile");
+  const failure = Object.assign(new Error("Cannot stat Chrome profile"), { code: "EIO" });
+  vi.mocked(lstatSync).mockImplementationOnce(() => {
+    throw failure;
+  });
+  expect(() => isStaleChromeProfile(root)).toThrow(failure);
 });

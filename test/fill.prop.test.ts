@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { fc, test, unicodeString } from "@hackersandwizards/scaffolding/property";
 import { decodeHTML } from "entities";
 import { expect } from "vitest";
@@ -24,7 +25,9 @@ test.prop([unicodeString], {
     const decoded = escaped
       .slice(1, -1)
       .replace(/\\(?:([0-9a-f]{1,6}) |(["\\]))/gi, (_, hex?: string, literal?: string) =>
-        hex ? String.fromCodePoint(Number.parseInt(hex, 16)) : literal!,
+        hex
+          ? String.fromCodePoint(Number.parseInt(hex, 16))
+          : defined(literal, "named character reference"),
       );
     expect(decoded).toBe(text);
     if (text.includes('"')) expect(escaped).toContain(String.raw`\"`);

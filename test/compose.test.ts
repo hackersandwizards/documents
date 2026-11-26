@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -7,15 +8,9 @@ import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import { afterAll, assert, beforeAll, describe, expect, it } from "vitest";
 import { limit } from "./probe";
-import {
-  certificate,
-  certificateDe,
-  leistungsnachweisLumpSum,
-  proposalDe,
-  proposalDeNoPrice,
-  proposalEn,
-  rateCard,
-} from "../scripts/samples";
+import { certificate, certificateDe, rateCard } from "../scripts/samples";
+import { leistungsnachweisLumpSum } from "../scripts/sample-timesheets";
+import { proposalDe, proposalDeNoPrice, proposalEn } from "../scripts/sample-proposals";
 import { openComposer } from "../scripts/compose";
 import { isRecord, ROOT } from "../scripts/root";
 import { foreignStyles } from "../scripts/styles";
@@ -227,8 +222,10 @@ describe("scripts/compose-cli.ts", () => {
       });
       const responses = lines[Symbol.asyncIterator]();
       try {
-        child.stdin!.write("not json\n");
-        child.stdin!.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
+        defined(child.stdin, "composer stdin").write("not json\n");
+        defined(child.stdin, "composer stdin").write(
+          `${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`,
+        );
         const firstLine = await responses.next();
         const secondLine = await responses.next();
         assert(!firstLine.done, "Expected the malformed JSON response line");
@@ -243,7 +240,7 @@ describe("scripts/compose-cli.ts", () => {
         expect(second.error).toContain("Not a document component: Header");
       } finally {
         lines.close();
-        child.stdin!.end();
+        defined(child.stdin, "composer stdin").end();
         await exited;
       }
     },

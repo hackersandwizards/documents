@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -24,7 +25,7 @@ describe("type page links", () => {
   for (const page of pages)
     it(`${page.slice(TYPES.length + 1)} links only files in dist/`, () => {
       const hrefs = [...readFileSync(page, "utf8").matchAll(/<link\b[^>]*\bhref="([^"]+)"/g)]
-        .map((m) => m[1]!)
+        .map((m) => defined(m[1], "style tag attributes"))
         .filter((href) => !/^[a-z]+:|^\//.test(href));
       expect(hrefs.length).toBeGreaterThan(0);
       expect(hrefs.filter((href) => !existsSync(resolve(page, "..", href)))).toEqual([]);

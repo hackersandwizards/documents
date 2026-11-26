@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { expect, test } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -11,12 +12,7 @@ const components = readdirSync(join(ROOT, "components"))
 test("every component has a story", () => {
   const stories = (readdirSync(join(ROOT, "catalog/stories"), { recursive: true }) as string[])
     .filter((f) => f.endsWith(".stories.ts"))
-    .map((f) =>
-      f
-        .split("/")
-        .pop()!
-        .replace(/\.stories\.ts$/, ""),
-    );
+    .map((f) => defined(f.split("/").pop(), "story file name").replace(/\.stories\.ts$/, ""));
   expect(components.filter((c) => !stories.includes(c))).toEqual([]);
 });
 
@@ -44,7 +40,9 @@ test("every component appears on a type page, and every type page is listed", ()
   shown("DocOnepager", covered);
   expect(components.filter((c) => !covered.has(c))).toEqual([]);
   const listed = new Set(
-    pages.map((p) => p.split("/")[0]!.replace(/\.astro$/, "")).filter((p) => !/[.]|^_/.test(p)),
+    pages
+      .map((p) => defined(p.split("/")[0], "type page path segment").replace(/\.astro$/, ""))
+      .filter((p) => !/[.]|^_/.test(p)),
   );
   expect([...listed].sort()).toEqual(TYPES.map((t) => t.file).sort());
 });

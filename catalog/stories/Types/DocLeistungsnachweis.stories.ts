@@ -3,7 +3,7 @@ import {
   leistungsnachweisLumpSum,
   leistungsnachweisMonth,
   leistungsnachweisTraining,
-} from "../../../scripts/samples";
+} from "../../../scripts/sample-timesheets";
 import { onSheet } from "../../sheet";
 
 export default { component: DocLeistungsnachweis };

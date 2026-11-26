@@ -1,3 +1,4 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { fc, test } from "@hackersandwizards/scaffolding/property";
 import { expect } from "vitest";
 import { compactStyles, editFaces, printableCodePoints } from "../scripts/compact-styles";
@@ -146,7 +147,9 @@ test.prop([fc.constantFrom(String.raw`\110000`, String.raw`\u{110000}`, String.r
   examples: [[String.raw`\110000`], [String.raw`\u{110000}`]],
 })("escapes outside Unicode leave their literal characters printable", (escape) => {
   expect(printableCodePoints(escape)).toContain(0x5c);
-  expect(printableCodePoints(escape)).toContain(escape[1]!.codePointAt(0));
+  expect(printableCodePoints(escape)).toContain(
+    defined(escape[1], "escaped character").codePointAt(0),
+  );
 });
 
 test.prop([fc.constantFrom("", " ", "\n"), fc.constantFrom("", " ", " \n ")], {

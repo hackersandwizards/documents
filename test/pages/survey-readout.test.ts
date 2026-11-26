@@ -1,6 +1,6 @@
 import { assert, expect, test } from "vitest";
 import { isRecord } from "../../scripts/root";
-import { surveyReadout } from "../../scripts/samples";
+import { surveyReadout } from "../../scripts/sample-survey";
 import { composeSurveyReadout } from "../../scripts/survey-readout";
 import { probePage, limit } from "../probe";
 

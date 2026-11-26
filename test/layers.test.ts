@@ -4,7 +4,8 @@ import { composePage, openComposer } from "../scripts/compose";
 import { composeOnepager } from "../scripts/onepager";
 import { editStyles } from "../scripts/prune";
 import { ROOT } from "../scripts/root";
-import { onepager, surveyReadout } from "../scripts/samples";
+import { onepager } from "../scripts/samples";
+import { surveyReadout } from "../scripts/sample-survey";
 import { composeSurveyReadout } from "../scripts/survey-readout";
 
 import { brandOrder, LAYER } from "./layer-order";

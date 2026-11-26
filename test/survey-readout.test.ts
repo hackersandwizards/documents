@@ -1,7 +1,8 @@
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { expect, test } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { surveyReadout } from "../scripts/samples";
+import { surveyReadout } from "../scripts/sample-survey";
 import {
   bandColor,
   composeSurveyReadout,
@@ -59,7 +60,10 @@ test("a weak spot without its colour is refused, not printed without a marker", 
 });
 
 test("the sample's weak spot carries its score's band", () => {
-  const weak = surveyReadout.scales.find((s) => s.mean.toFixed(1) === "2.9")!;
+  const weak = defined(
+    surveyReadout.scales.find((s) => s.mean.toFixed(1) === "2.9"),
+    "survey scale with mean 2.9",
+  );
   expect(surveyReadout.readout.weakColors).toEqual([bandColor(weak.mean, weak)]);
 });
 

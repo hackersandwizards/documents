@@ -4,7 +4,7 @@ import {
   proposalDeNoPrice,
   proposalDeSigned,
   proposalEn,
-} from "../../../scripts/samples";
+} from "../../../scripts/sample-proposals";
 import { onSheet } from "../../sheet";
 
 export default { component: DocProposal };

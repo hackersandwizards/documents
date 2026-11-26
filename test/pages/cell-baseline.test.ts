@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { limit } from "../probe";
+import { limit, probeInit } from "../probe";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
 import { chromeBinary, INSTALL_HINT, NO_KEYCHAIN } from "@hackersandwizards/scaffolding/chrome";
@@ -30,16 +30,21 @@ function offsets(wrap: string) {
   const baseline = (cell: Element) => {
     const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT, {
       acceptNode: (n) =>
-        n.textContent!.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+        globalThis.probeDefined(n.textContent, "text node content").trim()
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_SKIP,
     });
     const text = walker.nextNode();
     if (!text) return null;
-    const style = getComputedStyle(text.parentElement!);
+    const style = getComputedStyle(
+      globalThis.probeDefined(text.parentElement, "text parent element"),
+    );
     const probe = document.createElement("span");
     probe.style.cssText = "display: inline-block; width: 0; height: 0";
-    text.parentNode!.insertBefore(probe, text);
+    globalThis.probeDefined(text.parentNode, "text parent node").insertBefore(probe, text);
     const y =
-      probe.getBoundingClientRect().bottom - cell.closest("tr")!.getBoundingClientRect().top;
+      probe.getBoundingClientRect().bottom -
+      globalThis.probeDefined(cell.closest("tr"), "cell row").getBoundingClientRect().top;
     probe.remove();
     return { y, font: `${style.fontSize}/${style.lineHeight}` };
   };
@@ -47,13 +52,22 @@ function offsets(wrap: string) {
   for (const row of document.querySelectorAll<HTMLTableRowElement>("tr")) {
     const cell = [...row.cells].find((c) => c.querySelector(":scope > :is(ul, ol)"));
     if (!cell) continue;
-    const list = baseline(cell)!;
+    const list = globalThis.probeDefined(baseline(cell), "list baseline");
     const others = [...row.cells]
       .filter((c) => c !== cell)
       .map(baseline)
       .filter((b) => b?.font === list.font);
-    const off = others.length ? Math.max(...others.map((b) => Math.abs(b!.y - list.y))) : NaN;
-    readings.push({ label: `as shipped: ${row.textContent!.trim().slice(0, 30)}`, off });
+    const off = others.length
+      ? Math.max(
+          ...others.map((b) =>
+            Math.abs(globalThis.probeDefined(b, "reference baseline").y - list.y),
+          ),
+        )
+      : NaN;
+    readings.push({
+      label: `as shipped: ${globalThis.probeDefined(row.textContent, "row text").trim().slice(0, 30)}`,
+      off,
+    });
   }
   let measured = 0;
   for (const table of document.querySelectorAll("table")) {
@@ -64,9 +78,9 @@ function offsets(wrap: string) {
     measured++;
     const copy = (html: string) => {
       const r = row.cloneNode(true) as HTMLTableRowElement;
-      r.cells[r.cells.length - 1]!.innerHTML = html;
+      globalThis.probeDefined(r.cells[r.cells.length - 1], "last copied cell").innerHTML = html;
       row.after(r);
-      return r.cells[r.cells.length - 1]!;
+      return globalThis.probeDefined(r.cells[r.cells.length - 1], "last copied cell");
     };
     const plain = copy("Eins");
     for (const [label, html] of [
@@ -74,8 +88,11 @@ function offsets(wrap: string) {
       ["one line", "<ul><li>Eins</li><li>Zwei</li></ul>"],
     ] as const)
       readings.push({
-        label: `list, ${label}: ${row.textContent!.trim().slice(0, 30)}`,
-        off: Math.abs(baseline(copy(html))!.y - baseline(plain)!.y),
+        label: `list, ${label}: ${globalThis.probeDefined(row.textContent, "row text").trim().slice(0, 30)}`,
+        off: Math.abs(
+          globalThis.probeDefined(baseline(copy(html)), "copied list baseline").y -
+            globalThis.probeDefined(baseline(plain), "plain text baseline").y,
+        ),
       });
   }
   return { readings, measured, tables: document.querySelectorAll("table").length };
@@ -121,11 +138,15 @@ function spacing([own, offBase]: [string, string]) {
     lists.push({
       label: (list.textContent ?? "").trim().slice(0, 30),
       own: padded,
-      above: items[0]!.top - box.top,
+      above: globalThis.probeDefined(items[0], "first list item").top - box.top,
       below: box.bottom - Math.max(...items.map((item) => item.bottom)),
       gaps: items
         .slice(1)
-        .flatMap((item, i) => (item.left === items[i]!.left ? [item.top - items[i]!.bottom] : [])),
+        .flatMap((item, i) =>
+          item.left === globalThis.probeDefined(items[i], "previous list item").left
+            ? [item.top - globalThis.probeDefined(items[i], "previous list item").bottom]
+            : [],
+        ),
       columns: Math.max(...tops.values()) - Math.min(...tops.values()),
     });
   }
@@ -143,6 +164,7 @@ afterAll(() => browser?.close());
 async function load(file: string, css: string) {
   const page = await browser.newPage();
   try {
+    await page.evaluateOnNewDocument(probeInit);
     await page.emulateMediaType("print");
     await page.goto(`file://${join(TYPES, file, "index.html")}`, { waitUntil: "load" });
     if (css) await page.addStyleTag({ content: css });

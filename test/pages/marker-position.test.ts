@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
-import { limit } from "../probe";
+import { limit, probeInit } from "../probe";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import puppeteer, { type Browser } from "puppeteer-core";
@@ -36,7 +36,8 @@ function collect(): { probes: Probe[]; listSquares: number } {
     const list = el.closest("ul, ol");
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
       acceptNode: (n) =>
-        n.parentElement!.closest("ul, ol") === list && n.textContent!.trim()
+        globalThis.probeDefined(n.parentElement, "text parent element").closest("ul, ol") ===
+          list && globalThis.probeDefined(n.textContent, "text node content").trim()
           ? NodeFilter.FILTER_ACCEPT
           : NodeFilter.FILTER_SKIP,
     });
@@ -51,7 +52,7 @@ function collect(): { probes: Probe[]; listSquares: number } {
         ? parseFloat(before.width)
         : 0;
   const label = (el: Element) =>
-    `${el.tagName.toLowerCase()}.${el.className.toString().split(" ")[0]} "${el.textContent!.trim().slice(0, 30)}"`;
+    `${el.tagName.toLowerCase()}.${el.className.toString().split(" ")[0]} "${globalThis.probeDefined(el.textContent, "element text").trim().slice(0, 30)}"`;
   // Brand-markers measures the squares on list items and their opening paragraphs.
   const classifyPseudo = (host: Element): "list-square" | "middle" | "bottom" | "none" => {
     const before = getComputedStyle(host, "::before");
@@ -79,11 +80,22 @@ function collect(): { probes: Probe[]; listSquares: number } {
   const inlineNumerals = (): Marker[] => {
     const markers: Marker[] = [];
     for (const numeral of document.querySelectorAll(":is(li, h1, h2, h3, h4) *")) {
-      if (numeral.children.length || !/^\d{1,2}\.?$/.test(numeral.textContent!.trim())) continue;
+      if (
+        numeral.children.length ||
+        !/^\d{1,2}\.?$/.test(globalThis.probeDefined(numeral.textContent, "numeral text").trim())
+      )
+        continue;
       let next = numeral.nextSibling;
-      while (next && !next.textContent!.trim()) next = next.nextSibling;
+      while (next && !globalThis.probeDefined(next.textContent, "sibling text").trim())
+        next = next.nextSibling;
       const text = next && (next instanceof Text ? next : firstText(next as Element));
-      if (text) markers.push({ host: numeral.parentElement!, text, edge: "bottom", numeral });
+      if (text)
+        markers.push({
+          host: globalThis.probeDefined(numeral.parentElement, "numeral parent"),
+          text,
+          edge: "bottom",
+          numeral,
+        });
     }
     return markers;
   };
@@ -99,8 +111,8 @@ function collect(): { probes: Probe[]; listSquares: number } {
   const rectOf = (node: Node, end?: number, start = 0) => {
     const range = document.createRange();
     range.setStart(node, start);
-    range.setEnd(node, end ?? node.textContent!.length);
-    return range.getClientRects()[0]!;
+    range.setEnd(node, end ?? globalThis.probeDefined(node.textContent, "range text").length);
+    return globalThis.probeDefined(range.getClientRects()[0], "first range rectangle");
   };
   const box = ({ left, right, top, bottom }: DOMRectReadOnly): Box => ({
     x: left + scrollX,
@@ -129,7 +141,9 @@ function collect(): { probes: Probe[]; listSquares: number } {
     return {
       label: label(host),
       edge,
-      marker: numeral ? box(rectOf(numeral.firstChild!)) : pseudoBox(marker, textRect),
+      marker: numeral
+        ? box(rectOf(globalThis.probeDefined(numeral.firstChild, "numeral text node")))
+        : pseudoBox(marker, textRect),
       text: box(textRect),
       caps: edge === "middle" ? box(rectOf(text, 8, 4)) : null,
     };
@@ -150,23 +164,32 @@ async function inkEdge(png: string, scale: number, edge: Probe["edge"]): Promise
   const img = new Image();
   img.src = `data:image/png;base64,${png}`;
   await img.decode();
-  const ctx = new OffscreenCanvas(img.width, img.height).getContext("2d")!;
+  const ctx = globalThis.probeDefined(
+    new OffscreenCanvas(img.width, img.height).getContext("2d"),
+    "2D canvas context",
+  );
   ctx.drawImage(img, 0, 0);
   const { data, width, height } = ctx.getImageData(0, 0, img.width, img.height);
   const counts = new Map<number, number>();
   for (let i = 0; i < data.length; i += 4) {
-    const key = (data[i]! << 16) | (data[i + 1]! << 8) | data[i + 2]!;
+    const key =
+      (globalThis.probeDefined(data[i], "pixel red channel") << 16) |
+      (globalThis.probeDefined(data[i + 1], "pixel green channel") << 8) |
+      globalThis.probeDefined(data[i + 2], "pixel blue channel");
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-  const bg = [...counts].sort((a, b) => b[1] - a[1])[0]![0];
+  const bg = globalThis.probeDefined(
+    [...counts].sort((a, b) => b[1] - a[1])[0],
+    "background pixel",
+  )[0];
   const rows = Array.from({ length: height }, (_, y) => {
     let ink = 0;
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
       ink += Math.hypot(
-        data[i]! - (bg >> 16),
-        data[i + 1]! - ((bg >> 8) & 255),
-        data[i + 2]! - (bg & 255),
+        globalThis.probeDefined(data[i], "pixel red channel") - (bg >> 16),
+        globalThis.probeDefined(data[i + 1], "pixel green channel") - ((bg >> 8) & 255),
+        globalThis.probeDefined(data[i + 2], "pixel blue channel") - (bg & 255),
       );
     }
     return ink;
@@ -193,6 +216,7 @@ const tolerance = (label: string) => (/^(li|p)\./.test(label) ? LIST_TOLERANCE :
 async function measure(file: string, css = "") {
   const page = await browser.newPage();
   try {
+    await page.evaluateOnNewDocument(probeInit);
     await page.setViewport({ width: 1100, height: 1400, deviceScaleFactor: SCALE });
     await page.goto(`file://${join(TYPES, file, "index.html")}`, { waitUntil: "load" });
     if (css) await page.addStyleTag({ content: css });

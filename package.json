@@ -80,6 +80,10 @@
     "scripts/styles.ts",
     "scripts/stable-pdf.ts",
     "scripts/samples.ts",
+    "scripts/sample-agreements.ts",
+    "scripts/sample-proposals.ts",
+    "scripts/sample-survey.ts",
+    "scripts/sample-timesheets.ts",
     "LICENSE"
   ],
   "scripts": {
@@ -119,8 +123,8 @@
   "devDependencies": {
     "@astrojs/check": "0.9.12",
     "@hackersandwizards/admin": "git+https://github.com/hackersandwizards/admin.git#v1.42.1",
-    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v2.29.3",
-    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v5.44.0",
+    "@hackersandwizards/brand": "git+https://github.com/hackersandwizards/brand.git#v2.30.0",
+    "@hackersandwizards/scaffolding": "git+https://github.com/hackersandwizards/scaffolding.git#v5.45.0",
     "@types/bun": "1.4.5",
     "@typescript/native": "npm:typescript@7.0.2",
     "astro": "7.4.13",
