@@ -44,35 +44,35 @@ const personAt = (path: string, key: string) =>
 
 const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boolean }[] = [
   {
-    what: "a euro figure that is not a placeholder",
+    what: "A numeric euro figure can expose private prices. Replace it in the source with a placeholder such as X.XXX €.",
     // A gap may be a space or an HTML no-break space, € an entity, the scale k, T, Mio. or Mrd.
     pattern:
       /\d[\d.,]*(?:,[-–])?(?:\s|&nbsp;|&#160;)?(?:[kT]|Mio\.|Mrd\.)?(?:\s|&nbsp;|&#160;)?(?:€|&euro;|&#8364;|&#x20ac;|EUR\b|Euros?\b)|(?:€|&euro;|&#8364;|&#x20ac;|\bEUR|\bEuro)(?:\s|&nbsp;|&#160;)?\d/gi,
   },
   {
-    what: "a mail address outside the example domains and ours",
+    what: "A mail address outside the allowed domains can expose contact details. Replace it in the source with an address on example.com.",
     // Not before a colon and a path, quote or backtick: git@host:org/repo is an SSH remote.
     pattern:
       /[\p{L}\p{N}_.+-]+@((?:[\p{L}\p{N}_-]+\.)+\p{L}{2,})(?![\p{L}\p{N}_.-]*:[\p{L}\p{N}_"'`/~])/giu,
     allowed: (m) => MAIL_DOMAINS.test(m.split("@")[1]),
   },
   {
-    what: "a phone number",
+    what: "A phone number can expose contact details. Remove it from the source or replace it with a nonnumeric placeholder.",
     pattern:
       /(?<![\w+])\+\d{1,3}(?:[\s.-]\d{1,4}){3,}(?![\w.,])|(?<!\w)\+\d{2}[\s/-]?(?:\(0\)\s?)?\(?0?\d{2,5}\)?[\s/-]?\d{3,}|(?<![\w.,])\(?0\d{2,4}\)?(?: ?[/-] ?|\s)?\d{5,}|(?<![\w.,])0\d{2,4}(?: ?[/-] ?|\s)[1-9]\d{1,3}(?:\s\d{2,4})+/g,
   },
   // Any country in capitals; a German one in lower case too, which a hash cannot pass for.
   {
-    what: "an IBAN",
+    what: "An IBAN can expose bank details. Remove it from the source or replace it with a nonnumeric placeholder.",
     pattern: /\b[A-Z]{2}\d{2}(?: ?[A-Z\d]{4}){3,}|\bde\d{2}(?: ?\d{4}){4} ?\d{2}\b/g,
   },
   {
-    what: "a credential ID that is not the invented EXAMPLE0EXAMPLE0",
+    what: "A credential ID without the EXAMPLE0EXAMPLE0 suffix can expose an issued credential. Replace the ID suffix in the source with EXAMPLE0EXAMPLE0.",
     pattern: /\bHW(?:-[A-Z]{2,})+-\d{6}-[A-Z\d]{8,}\b/g,
     allowed: (m) => m.endsWith("-EXAMPLE0EXAMPLE0"),
   },
   {
-    what: "a street address",
+    what: "A street address outside the allowed set can expose a private address. Replace it in the source with an invented address from STREETS in scripts/privacy.ts.",
     pattern:
       // A lookbehind, since \b knows no umlaut even under /u.
       /(?<![\p{L}\p{N}])\p{Lu}[\p{L}-]*(?:straße|strasse|str\.|weg|gasse|allee|platz|damm|ring|chaussee|stieg|kamp|deich|ufer|kai)\s+\d+|(?<![\p{L}\p{N}])\p{Lu}\p{L}+ (?:Straße|Strasse|Weg|Gasse|Allee|Platz|Damm|Ring|Wall|Road|Street|Avenue|Lane) \d+/gu,
@@ -104,7 +104,10 @@ function scanned(root: string): string[] {
     cwd: root,
     encoding: "utf8",
   });
-  if (git.status !== 0) throw new Error(`git ls-files failed in ${root}: ${git.stderr}`);
+  if (git.status !== 0)
+    throw new Error(
+      `git ls-files failed in ${root}: ${git.stderr?.trimEnd() || git.error?.message}\nThe privacy check cannot list files to scan. Run git status in that checkout and repair the reported Git error before retrying.`,
+    );
   const listed = git.stdout
     .split("\0")
     .filter(Boolean)
@@ -127,7 +130,11 @@ export function scanText(root: string, deny: string[] = []): Finding[] {
     const path = relative(root, file);
     for (const { term, inPath } of terms)
       if (path.match(inPath))
-        findings.push({ file: path, line: 0, what: `the term "${term}" in the path` });
+        findings.push({
+          file: path,
+          line: 0,
+          what: `The term "${term}" in the path is on the deny list. Rename the flagged file or directory in the source and regenerate it if it was built.`,
+        });
     const bytes = readFileSync(file);
     // An image or font: no text, and any pattern matches its bytes by chance.
     if (bytes.includes(0)) continue;
@@ -145,7 +152,7 @@ export function scanText(root: string, deny: string[] = []): Finding[] {
         findings.push({
           file: path,
           line: text.slice(0, index).split("\n").length,
-          what: `the term "${term}"`,
+          what: `The term "${term}" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.`,
         });
     }
   }
@@ -185,13 +192,16 @@ if (import.meta.main) {
           .filter(Boolean)
       : [];
   if (denyAt === 0 && deny.length === 0) {
-    console.error(`documents-privacy: ${args[1]} holds no deny terms.`);
+    console.error(
+      `documents-privacy: ${args[1]} holds no deny terms, so the check cannot look for private names in paths or text. Put one term per line in ${args[1]} and rerun with --deny.`,
+    );
     process.exit(1);
   }
   const findings = scanText(ROOT, deny);
   const names = Object.entries(sampleModules).flatMap(([file, data]) =>
     scanSamples(data).map(
-      (finding) => `${file} ${finding}: not an invented name (privacy.ts INVENTED)`,
+      (finding) =>
+        `${file} ${finding}: Public samples must use invented names. Replace the flagged words in this field with invented words from INVENTED in scripts/privacy.ts.`,
     ),
   );
   for (const f of findings) console.error(`${f.file}:${f.line}: ${f.what}`);

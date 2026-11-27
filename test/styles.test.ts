@@ -30,8 +30,8 @@ describe("foreignStyles", () => {
 
   it("control: a hand-built document fails on its style element and its style attribute", () => {
     expect(foreignStyles(handBuilt)).toEqual([
-      "a style element the engine did not write: <style>",
-      'a style attribute setting page-break-before: "page-break-before: always"',
+      "The document contains a style element the engine did not write: <style>. Move the CSS into the document type's engine stylesheet and recompose the document.",
+      'The document sets unsupported inline properties page-break-before in style="page-break-before: always". Keep only engine-supported custom properties in style and move the other declarations into the document type\'s engine stylesheet.',
     ]);
     expect(foreignStyles('<link rel="stylesheet" href="own.css">')).toHaveLength(1);
     expect(foreignStyles('<b style="--share: 40%"></b>')).toEqual([]);
@@ -86,6 +86,8 @@ describe("documents-styles", () => {
     const empty = mkdtempSync(join(dir, "empty-"));
     const result = run(empty);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("no .html file");
+    expect(result.stderr).toBe(
+      `documents-styles: no .html file under ${empty}, so there is no document to check. Pass a rendered .html file or a directory containing one as an argument.\n`,
+    );
   });
 });

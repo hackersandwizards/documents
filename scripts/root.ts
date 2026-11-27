@@ -30,7 +30,10 @@ export const brandFile = (file: string) =>
 // rather than printing "undefined".
 function brandJson(file: string): Record<string, unknown> {
   const data: unknown = JSON.parse(readFileSync(brandFile(file), "utf8"));
-  if (!isRecord(data)) throw new Error(`Expected an object in brand's ${file}`);
+  if (!isRecord(data))
+    throw new Error(
+      `The documents engine needs a JSON object in the brand package's ${file} to read its facts. Restore the object in verbal/${file} in the brand package source.`,
+    );
   return data;
 }
 
@@ -38,9 +41,16 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function checked<K extends string>(facts: Record<K, unknown>): Record<K, string> {
+function checked<K extends string>(
+  file: string,
+  facts: Record<K, unknown>,
+  keyPrefix = "",
+): Record<K, string> {
   for (const [field, value] of Object.entries(facts))
-    if (typeof value !== "string") throw new Error(`brand's company facts hold no ${field}`);
+    if (typeof value !== "string")
+      throw new Error(
+        `The documents engine requires a string at ${keyPrefix}${field} in the brand package's ${file}. Restore that key as a string in verbal/${file} in the brand package source.`,
+      );
   return facts as Record<K, string>;
 }
 
@@ -48,11 +58,12 @@ function checked<K extends string>(facts: Record<K, unknown>): Record<K, string>
 export function brandName(): Record<"name" | "legal", string> {
   const { name } = brandJson("verbal.json");
   const { company, legal } = isRecord(name) ? name : {};
-  return checked({ name: company, legal });
+  const names = checked("verbal.json", { company, legal }, "name.");
+  return { name: names.company, legal: names.legal };
 }
 
 /** brandName and the office address, from brand's `imprint.json`. */
 export function brandCompany(): Record<"name" | "legal" | "street" | "postcode" | "city", string> {
   const { street, postcode, city } = brandJson("imprint.json");
-  return { ...checked({ street, postcode, city }), ...brandName() };
+  return { ...checked("imprint.json", { street, postcode, city }), ...brandName() };
 }

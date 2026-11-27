@@ -40,7 +40,7 @@ test.prop(
     const safe = `${space}--band: grüń`;
     expect(foreignStyles(`<i style="${safe}"></i>`)).toEqual([]);
     expect(foreignStyles(`<i style="${safe}${separator}${space}${name}: 0"></i>`)).toEqual([
-      `a style attribute setting ${name}: "${safe};${space}${name}: 0"`,
+      `The document sets unsupported inline properties ${name} in style="${safe};${space}${name}: 0". Keep only engine-supported custom properties in style and move the other declarations into the document type's engine stylesheet.`,
     ]);
   },
 );

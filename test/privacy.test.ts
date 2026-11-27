@@ -83,11 +83,46 @@ test("every text rule hits a planted case", () => {
   expect(scanText(planted)).toEqual([]);
 });
 
+test.each([
+  [
+    "4.200 " + "€",
+    "A numeric euro figure can expose private prices. Replace it in the source with a placeholder such as X.XXX €.",
+  ],
+  [
+    "jane" + "@acme-corp.de",
+    "A mail address outside the allowed domains can expose contact details. Replace it in the source with an address on example.com.",
+  ],
+  [
+    "+49 40" + " 1234567",
+    "A phone number can expose contact details. Remove it from the source or replace it with a nonnumeric placeholder.",
+  ],
+  [
+    "DE89 3704" + " 0044 0532 0130 00",
+    "An IBAN can expose bank details. Remove it from the source or replace it with a nonnumeric placeholder.",
+  ],
+  [
+    "HW-AE-DEV-260318-" + "ABCDEF0123456789",
+    "A credential ID without the EXAMPLE0EXAMPLE0 suffix can expose an issued credential. Replace the ID suffix in the source with EXAMPLE0EXAMPLE0.",
+  ],
+  [
+    "Haupt" + "straße 5",
+    "A street address outside the allowed set can expose a private address. Replace it in the source with an invented address from STREETS in scripts/privacy.ts.",
+  ],
+])("gives a repair for a planted text finding %#", (content, what) => {
+  const dir = mkdtempSync(join(planted, "repair-"));
+  writeFileSync(join(dir, "sample.md"), content);
+  expect(scanText(dir)).toEqual([{ file: "sample.md", line: 1, what }]);
+});
+
 test("a deny term reports the file name and line zero", () => {
   const dir = mkdtempSync(join(planted, "deny-path-"));
   writeFileSync(join(dir, "echtfirma-logo.svg"), "<svg/>");
   expect(scanText(dir, ["Echtfirma"])).toEqual([
-    { file: "echtfirma-logo.svg", line: 0, what: 'the term "Echtfirma" in the path' },
+    {
+      file: "echtfirma-logo.svg",
+      line: 0,
+      what: 'The term "Echtfirma" in the path is on the deny list. Rename the flagged file or directory in the source and regenerate it if it was built.',
+    },
   ]);
 });
 
@@ -135,7 +170,11 @@ test("a checkout's built type pages are scanned, though git ignores them", () =>
     mkdirSync(join(dir, "dist", "types", "x"), { recursive: true });
     writeFileSync(join(dir, "dist", "types", "x", "index.html"), "<p>Echtfirma</p>");
     expect(scanText(dir, ["Echtfirma"])).toEqual([
-      { file: "dist/types/x/index.html", line: 1, what: 'the term "Echtfirma"' },
+      {
+        file: "dist/types/x/index.html",
+        line: 1,
+        what: 'The term "Echtfirma" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.',
+      },
     ]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -155,7 +194,11 @@ test("a checkout scans untracked text and skips deleted paths, directory symlink
   writeFileSync(join(dir, "notes\nmore.md"), "Example title\nEchtfirma");
 
   expect(scanText(dir, ["Echtfirma"])).toEqual([
-    { file: "notes\nmore.md", line: 2, what: 'the term "Echtfirma"' },
+    {
+      file: "notes\nmore.md",
+      line: 2,
+      what: 'The term "Echtfirma" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.',
+    },
   ]);
 });
 
@@ -163,7 +206,10 @@ test("an unreadable git index stops the scan", () => {
   const dir = mkdtempSync(join(planted, "index-"));
   expect(Bun.spawnSync(["git", "init", "-q", dir]).exitCode).toBe(0);
   writeFileSync(join(dir, ".git", "index"), "invalid index contents");
-  expect(() => scanText(dir)).toThrow(/git ls-files failed/);
+  const git = Bun.spawnSync(["git", "-C", dir, "ls-files"]);
+  expect(() => scanText(dir)).toThrow(
+    `git ls-files failed in ${dir}: ${git.stderr.toString().trimEnd()}\nThe privacy check cannot list files to scan. Run git status in that checkout and repair the reported Git error before retrying.`,
+  );
 });
 
 test("an installed package scans ordinary folders and text while ignoring binary assets and caches", () => {
@@ -179,7 +225,11 @@ test("an installed package scans ordinary folders and text while ignoring binary
   );
 
   expect(scanText(dir, ["Echtfirma"])).toEqual([
-    { file: "node_modules-guide/notes.md", line: 1, what: 'the term "Echtfirma"' },
+    {
+      file: "node_modules-guide/notes.md",
+      line: 1,
+      what: 'The term "Echtfirma" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.',
+    },
   ]);
 });
 
@@ -187,10 +237,22 @@ test("deny term findings follow document order and treat punctuation as literal"
   const dir = mkdtempSync(join(planted, "terms-"));
   writeFileSync(join(dir, "notes.md"), "abc-guide\nABC-guide\nABC\nOne.Go\nOneXGo\nOneGo");
   expect(scanText(dir, ["ABC", "One.Go"]).map(({ line, what }) => [line, what])).toEqual([
-    [1, 'the term "ABC"'],
-    [2, 'the term "ABC"'],
-    [3, 'the term "ABC"'],
-    [4, 'the term "One.Go"'],
+    [
+      1,
+      'The term "ABC" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.',
+    ],
+    [
+      2,
+      'The term "ABC" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.',
+    ],
+    [
+      3,
+      'The term "ABC" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.',
+    ],
+    [
+      4,
+      'The term "One.Go" is on the deny list. Remove or replace it in the flagged source and regenerate the page if it was built.',
+    ],
   ]);
 });
 
@@ -199,7 +261,25 @@ test("an empty deny list fails rather than passes", () => {
   writeFileSync(empty, "\n");
   const run = Bun.spawnSync(["bun", join(ROOT, "scripts/privacy.ts"), "--deny", empty]);
   expect(run.exitCode).toBe(1);
-  expect(run.stderr.toString()).toContain("holds no deny terms");
+  expect(run.stderr.toString()).toBe(
+    `documents-privacy: ${empty} holds no deny terms, so the check cannot look for private names in paths or text. Put one term per line in ${empty} and rerun with --deny.\n`,
+  );
+});
+
+test("the CLI points to the source field and invented words for a sample finding", () => {
+  const preload = join(planted, "sample-preload.ts");
+  writeFileSync(
+    preload,
+    `import { mock } from "bun:test";
+mock.module(${JSON.stringify(join(ROOT, "scripts/samples.ts"))}, () => ({
+  probe: { personName: "Zzx" },
+}));`,
+  );
+  const run = Bun.spawnSync(["bun", "--preload", preload, join(ROOT, "scripts/privacy.ts")]);
+  expect(run.exitCode).toBe(1);
+  expect(run.stderr.toString().split("\n")).toContain(
+    "scripts/samples.ts probe.personName: Zzx: Public samples must use invented names. Replace the flagged words in this field with invented words from INVENTED in scripts/privacy.ts.",
+  );
 });
 
 test("the repository samples use invented names", () => {

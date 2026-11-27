@@ -112,14 +112,18 @@ export function foreignStyles(html: string): string[] {
     .on("style", {
       element(el) {
         if (!ENGINE_STYLES.some((attr) => el.hasAttribute(attr)))
-          found.push(`a style element the engine did not write: ${openTag(el)}`);
+          found.push(
+            `The document contains a style element the engine did not write: ${openTag(el)}. Move the CSS into the document type's engine stylesheet and recompose the document.`,
+          );
       },
     })
     .on("link", {
       element(el) {
         const rel = (el.getAttribute("rel") ?? "").toLowerCase().split(/\s+/);
         if (rel.includes("stylesheet") && !linksBrandFile(el.getAttribute("href") ?? ""))
-          found.push(`a linked stylesheet: ${openTag(el)}`);
+          found.push(
+            `The document links a stylesheet without an allowed brand href: ${openTag(el)}. Remove the link or set href to a relative path to a brand stylesheet such as print.css.`,
+          );
       },
     })
     .on("*", {
@@ -134,7 +138,9 @@ export function foreignStyles(html: string): string[] {
             .filter(Boolean);
           const foreign = set.filter((p) => !DATA_PROPERTIES.includes(p));
           if (foreign.length)
-            found.push(`a style attribute setting ${foreign.join(", ")}: "${style}"`);
+            found.push(
+              `The document sets unsupported inline properties ${foreign.join(", ")} in style="${style}". Keep only engine-supported custom properties in style and move the other declarations into the document type's engine stylesheet.`,
+            );
         }
       },
     })
@@ -171,7 +177,9 @@ if (import.meta.main) {
   }
   const files = args.flatMap((a) => htmlFiles(resolve(a)));
   if (files.length === 0) {
-    console.error(`documents-styles: no .html file under ${args.join(", ")}`);
+    console.error(
+      `documents-styles: no .html file under ${args.join(", ")}, so there is no document to check. Pass a rendered .html file or a directory containing one as an argument.`,
+    );
     process.exit(1);
   }
   let failed = 0;

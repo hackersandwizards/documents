@@ -112,9 +112,9 @@ describe("stylesheet checks", () => {
       '<link rel="alternate stylesheet" href="extra.css" disabled>' +
       '<div id="sample" style="--band: green&#59; margin: 0; color: red; "></div>';
     expect(foreignStyles(html)).toEqual([
-      'a style element the engine did not write: <style media="print" id="extra">',
-      'a linked stylesheet: <link rel="alternate stylesheet" href="extra.css" disabled>',
-      'a style attribute setting margin, color: "--band: green; margin: 0; color: red; "',
+      'The document contains a style element the engine did not write: <style media="print" id="extra">. Move the CSS into the document type\'s engine stylesheet and recompose the document.',
+      'The document links a stylesheet without an allowed brand href: <link rel="alternate stylesheet" href="extra.css" disabled>. Remove the link or set href to a relative path to a brand stylesheet such as print.css.',
+      'The document sets unsupported inline properties margin, color in style="--band: green; margin: 0; color: red; ". Keep only engine-supported custom properties in style and move the other declarations into the document type\'s engine stylesheet.',
     ]);
   });
 
@@ -126,10 +126,10 @@ describe("stylesheet checks", () => {
       '<link href="alternate.html">';
     expect(foreignStyles(html)).toEqual([]);
     expect(foreignStyles('<link rel="stylesheet" href="../@hackersandwizards/brand/%">')).toEqual([
-      'a linked stylesheet: <link rel="stylesheet" href="../@hackersandwizards/brand/%">',
+      'The document links a stylesheet without an allowed brand href: <link rel="stylesheet" href="../@hackersandwizards/brand/%">. Remove the link or set href to a relative path to a brand stylesheet such as print.css.',
     ]);
     expect(foreignStyles('<link rel="stylesheet">')).toEqual([
-      'a linked stylesheet: <link rel="stylesheet">',
+      'The document links a stylesheet without an allowed brand href: <link rel="stylesheet">. Remove the link or set href to a relative path to a brand stylesheet such as print.css.',
     ]);
   });
 
@@ -171,7 +171,50 @@ i { content: '/* literal \' text */'; }`);
   it.each(["null", "[]"])("names the source when brand facts contain %s", (contents) => {
     const read = vi.mocked(readFileSync).mockReturnValueOnce(contents);
     try {
-      expect(() => brandName()).toThrow("Expected an object in brand's verbal.json");
+      expect(() => brandName()).toThrow(
+        "The documents engine needs a JSON object in the brand package's verbal.json to read its facts. Restore the object in verbal/verbal.json in the brand package source.",
+      );
+    } finally {
+      read.mockReset();
+    }
+  });
+  it.each([
+    {
+      key: "name.company",
+      readFacts: brandName,
+      contents: '{"name":{"legal":"Example"}}',
+      file: "verbal.json",
+    },
+    {
+      key: "name.legal",
+      readFacts: brandName,
+      contents: '{"name":{"company":"Example"}}',
+      file: "verbal.json",
+    },
+    {
+      key: "street",
+      readFacts: brandCompany,
+      contents: '{"postcode":"example","city":"example"}',
+      file: "imprint.json",
+    },
+    {
+      key: "postcode",
+      readFacts: brandCompany,
+      contents: '{"street":"example","city":"example"}',
+      file: "imprint.json",
+    },
+    {
+      key: "city",
+      readFacts: brandCompany,
+      contents: '{"street":"example","postcode":"example"}',
+      file: "imprint.json",
+    },
+  ])("points to the missing $key fact", ({ key, readFacts, contents, file }) => {
+    const read = vi.mocked(readFileSync).mockReturnValueOnce(contents);
+    try {
+      expect(readFacts).toThrow(
+        `The documents engine requires a string at ${key} in the brand package's ${file}. Restore that key as a string in verbal/${file} in the brand package source.`,
+      );
     } finally {
       read.mockReset();
     }
