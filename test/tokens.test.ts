@@ -13,7 +13,6 @@ const ROOT = join(import.meta.dirname, "..");
 const STYLESHEETS = ["document.css", "onepager.css", "handout.css", "readout.css"];
 const COMPONENTS = readdirSync(join(ROOT, "components")).filter((f) => f.endsWith(".astro"));
 
-/** The CSS a source holds: a stylesheet whole, a component's style elements. */
 function css(file: string): string {
   const text = readFileSync(join(ROOT, file), "utf8");
   if (!file.endsWith(".astro")) return text;

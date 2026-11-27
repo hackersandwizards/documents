@@ -297,7 +297,6 @@ test.each([
   limit(60_000),
 );
 
-// The control for the page guard: a square on the handout's <ol> items, a page with no <ul>, counts.
 test(
   "a square on a list item is counted on a page without a <ul>",
   async () => {

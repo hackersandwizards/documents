@@ -38,7 +38,6 @@ afterAll(async () => {
 
 type PrintableDocument = { component: string; props: Record<string, unknown> };
 
-/** A component's props rendered to a PDF in the test folder, the handout on its own stylesheet. */
 async function render(
   { component, props }: PrintableDocument,
   edit = (html: string) => html,

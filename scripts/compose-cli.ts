@@ -32,7 +32,6 @@ async function serve() {
       if (typeof name !== "string" || !/^Doc\w+$/.test(name))
         throw new Error(`Not a document component: ${String(name)}`);
       if (!isRecord(props)) throw new Error("Expected a document props object");
-      // A composer that failed to open is opened again on the next call, not kept failing.
       let composer = composers.get(name);
       if (composer === undefined) {
         composer = openComposer().catch((error) => {

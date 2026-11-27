@@ -184,7 +184,6 @@ if (import.meta.main) {
           .map((t) => t.trim())
           .filter(Boolean)
       : [];
-  // An empty deny file is a caller's mistake (a wrong path to its list), never a pass.
   if (denyAt === 0 && deny.length === 0) {
     console.error(`documents-privacy: ${args[1]} holds no deny terms.`);
     process.exit(1);

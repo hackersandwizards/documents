@@ -1,4 +1,7 @@
 import { defined } from "@hackersandwizards/scaffolding/defined";
+import { rejection } from "@hackersandwizards/scaffolding/rejection";
+import imprint from "@hackersandwizards/brand/imprint.json";
+import { decodeHTML } from "entities";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -6,7 +9,8 @@ import { join, resolve } from "node:path";
 import { once } from "node:events";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
-import { afterAll, assert, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, assert, beforeAll, describe, expect, it, vi } from "vitest";
+import { createServer } from "vite";
 import { limit } from "./probe";
 import { certificate, certificateDe, rateCard } from "../scripts/samples";
 import { leistungsnachweisLumpSum } from "../scripts/sample-timesheets";
@@ -18,6 +22,8 @@ import { foreignStyles } from "../scripts/styles";
 const SCRIPT = resolve(import.meta.dirname, "../scripts/compose-cli.ts");
 const dir = mkdtempSync(join(tmpdir(), "pdf-compose-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+vi.mock("vite", { spy: true });
 
 describe("scripts/compose-cli.ts", () => {
   it("renders a document component with the base and its components' scoped styles", () => {
@@ -169,7 +175,9 @@ describe("scripts/compose-cli.ts", () => {
     });
 
     it("prints the company imprint", () => {
-      expect(html).toContain("Sitz und Registergericht Hamburg, HRB 198840");
+      const text = decodeHTML(html);
+      expect(text).toContain(`Sitz und Registergericht ${imprint.seat}, ${imprint.register}`);
+      expect(text).toContain(imprint.managingDirectors.join(", "));
     });
 
     it("uses base styles and preserves supported print markup", () => {
@@ -211,21 +219,22 @@ describe("scripts/compose-cli.ts", () => {
     "--serve answers a line it cannot read and a foreign name, and keeps serving",
     async () => {
       const child = spawn("bun", [SCRIPT, "--serve"], {
-        stdio: ["pipe", "ignore", "pipe", "pipe"],
+        stdio: ["pipe", "ignore", "inherit", "pipe"],
+        timeout: limit(15_000),
+        killSignal: "SIGKILL",
       });
-      const exited = once(child, "exit");
-      const replyPipe = child.stdio[3];
-      assert(replyPipe instanceof Readable, "Expected a readable pipe on descriptor 3");
-      const lines = createInterface({
-        input: replyPipe,
-        signal: AbortSignal.timeout(limit(10_000)),
-      });
-      const responses = lines[Symbol.asyncIterator]();
+      const closed = once(child, "close");
+      const stdin = defined(child.stdin, "composer stdin");
       try {
-        defined(child.stdin, "composer stdin").write("not json\n");
-        defined(child.stdin, "composer stdin").write(
-          `${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`,
-        );
+        const replyPipe = child.stdio[3];
+        assert(replyPipe instanceof Readable, "Expected a readable pipe on descriptor 3");
+        using lines = createInterface({
+          input: replyPipe,
+          signal: AbortSignal.timeout(limit(10_000)),
+        });
+        const responses = lines[Symbol.asyncIterator]();
+        stdin.write("not json\n");
+        stdin.write(`${JSON.stringify({ id: 2, name: "Header", props: {} })}\n`);
         const firstLine = await responses.next();
         const secondLine = await responses.next();
         assert(!firstLine.done, "Expected the malformed JSON response line");
@@ -239,20 +248,60 @@ describe("scripts/compose-cli.ts", () => {
         assert(typeof second.error === "string", "Expected a composer error string");
         expect(second.error).toContain("Not a document component: Header");
       } finally {
-        lines.close();
-        defined(child.stdin, "composer stdin").end();
-        await exited;
+        stdin.end();
+        await closed;
       }
+      expect(child.exitCode).toBe(0);
+      expect(child.signalCode).toBeNull();
     },
     limit(20_000),
   );
 });
 
-// openComposer's compressHTML, the catalog's: the line break after </a> stays a space.
-it("keeps the space between an inline element and the text on the next line", async () => {
+it("rejects an invalid document name before loading a component", async () => {
+  const vite = await vi.importActual<typeof import("vite")>("vite");
+  const paths: string[] = [];
+  vi.mocked(createServer).mockImplementationOnce(async (config) => {
+    const server = await vite.createServer(config);
+    const load = server.ssrLoadModule.bind(server);
+    vi.spyOn(server, "ssrLoadModule").mockImplementation((id, options) => {
+      paths.push(id);
+      return load(id, options);
+    });
+    return server;
+  });
   const composer = await openComposer(ROOT);
   try {
-    expect(await composer.render("../test/fixtures/InlineSpace", {})).toMatch(/<\/a>\s+text/);
+    const name = "../test/fixtures/InlineSpace";
+    expect(await rejection(composer.render(name, {}))).toBe(
+      `Error: Not a document component: ${name}`,
+    );
+    expect(paths).toEqual(["astro/container"]);
+  } finally {
+    await composer.close();
+  }
+});
+
+// openComposer's compressHTML, the catalog's: the line break after </a> stays a space.
+it("keeps the space between an inline element and the text on the next line", async () => {
+  const vite = await vi.importActual<typeof import("vite")>("vite");
+  vi.mocked(createServer).mockImplementationOnce((config) =>
+    vite.createServer(
+      vite.mergeConfig(defined(config, "composer Vite config"), {
+        resolve: {
+          alias: [
+            {
+              find: join(ROOT, "components/DocInlineSpace.astro"),
+              replacement: join(ROOT, "test/fixtures/InlineSpace.astro"),
+            },
+          ],
+        },
+      }),
+    ),
+  );
+  const composer = await openComposer(ROOT);
+  try {
+    expect(await composer.render("DocInlineSpace", {})).toMatch(/<\/a>\s+text/);
   } finally {
     await composer.close();
   }

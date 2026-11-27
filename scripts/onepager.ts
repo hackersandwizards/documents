@@ -26,7 +26,6 @@ function rule(css: string, pattern: RegExp, what: string) {
   return found;
 }
 
-/** A brand file's text, its path added to `read`. */
 function brandText(file: string, read?: Set<string>) {
   const path = brandFile(file);
   read?.add(path);
@@ -56,14 +55,12 @@ function baseCss(link: boolean, read?: Set<string>) {
   return [
     ...(link ? [] : [brandBase(read)]),
     withoutImports(readFileSync(join(ROOT, "tokens.css"), "utf8")),
-    // The brand's elements, which ONEPAGER_ELEMENTS puts on the page's blocks.
     inlineCss(brandFile("elements.flat.css"), read),
     // Every h&w document draws the identical list marker: the brand's rule, switched on in
     // tokens.css above, and the base's list indent, never a copy.
     brandText("marker.css", read),
     rule(documentCss, /^ul li \{[\s\S]*?^\}/m, "`ul li` rule holding the list indent"),
     rule(documentCss, /^li \+ li \{[\s\S]*?^\}/m, "`li + li` rule spacing the items"),
-    // The page number every document carries bottom right, the base's margin box.
     `@page onepager { ${rule(documentCss, /^ {2}@bottom-right \{[\s\S]*?^ {2}\}/m, "@bottom-right page number")} }`,
   ].join("\n");
 }

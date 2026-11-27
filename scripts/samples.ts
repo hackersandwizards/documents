@@ -45,7 +45,6 @@ export const rateCard = {
   signOff: "Viele Grüße",
 };
 
-// The 22 working days of October 2026, the 1st a Thursday.
 /** A certificate with its verification footer; the QR code encodes the fictitious verification URL. */
 export const certificate = {
   lang: "en" as const,

@@ -23,7 +23,6 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
   const { customerName, readout } = d;
   if (readout.weakColors.length !== readout.weak.length)
     throw new Error("composeSurveyReadout: readout.weakColors needs one colour per weak spot");
-  // A key the caller left undefined keeps today's word.
   const own = Object.entries(d.text ?? {}).filter(([, v]) => v !== undefined);
   const t: ReadoutText = { ...READOUT_TEXT, ...Object.fromEntries(own) };
   const slides = readoutSlides(d, t);
@@ -58,11 +57,8 @@ export function composeSurveyReadout(d: SurveyReadout, brand?: (file: string) =>
   );
 }
 
-/** The lockup's and the wordmark's alt text. */
 const ALT = esc(brandName().name);
 
-/** The deck's stylesheet: the document tokens (the brand files apart, which brandCss inlines) and
- * readout.css. */
 const STYLE = ["tokens.css", "readout.css"]
   .map((f) => withoutImports(readFileSync(join(ROOT, f), "utf8")))
   .join("\n");
@@ -76,8 +72,7 @@ __STYLE__
 </style></head>
 <body>__SLIDES__
 <script>
-  // The engine's fit guard: a slide never clips. A body holding more than fits (a long free-text
-  // answer) shrinks below its title until it fits, after the faces have loaded.
+  // After load, shrink overflowing slide content in steps down to half size while keeping the title fixed.
   addEventListener("load", () => {
     for (const body of document.querySelectorAll(".sbody")) {
       // Measured on the deepest boxes: a part that stretches to fill the body (flex: 1) always

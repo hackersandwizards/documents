@@ -197,7 +197,6 @@ async function measureSpacing(file: string, css = "") {
   }
 }
 
-/** Each way a list breaks the spacing, as one line per list. */
 const spacingFaults = (lists: Awaited<ReturnType<typeof measureSpacing>>) =>
   lists.flatMap((l) =>
     [

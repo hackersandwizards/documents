@@ -9,11 +9,10 @@ import { composePage, openComposer } from "../../scripts/compose";
 import { renderPdf } from "../../scripts/render-pdf";
 import { probePage, limit } from "../probe";
 
-// DocCertificate printed by headless Chrome, as os's certificate generator prints it: every case
-// fits one A4 page with nothing past the content box, and content no fit step can hold prints a second page,
-// which the generator refuses. The cases are the worst found across os's certificate ledger and
-// curricula (866 credentials: up to 14 topics, topics up to 120 characters, names
-// wrapping onto two lines), with invented names.
+// DocCertificate printed by headless Chrome, as the certificate generator prints it: every case fits one A4
+// page with nothing past the content box, and content no fit step can hold prints a second page, which the
+// generator refuses. The cases are the worst found across the issued certificates and curricula (up to 14
+// topics, topics up to 120 characters, names wrapping onto two lines), with invented names.
 const chrome = chromeBinary();
 
 const foundations = [
@@ -43,7 +42,7 @@ const productEngineering = [
   "Human accountability and ownership when delegating to agents",
   "Applying agentic workflows in day-to-day engineering",
 ];
-// The ledger's longest list: twelve topics of up to 103 characters.
+// Twelve topics of up to 103 characters.
 const longTopics = [
   "Agentic systems at work: models, tools, the feedback loop between them and why it matters",
   "Context economics: context windows, token costs and subagents as protection for parallel work",
@@ -71,7 +70,7 @@ const certificate = (over: Record<string, unknown>) => ({
   remote: true,
   durationHours: "16",
   topics: foundations,
-  signers: [signer("Stefan Munz"), signer("Benedikt Stemmildt")],
+  signers: [signer("Erika Mustermann"), signer("Max Mustermann")],
   credentialId: "HW-AE-DEV-260318-EXAMPLE0EXAMPLE0",
   verificationUrl: "https://certificates.hackersandwizards.dev/c/HW-AE-DEV-260318-EXAMPLE0EXAMPLE0",
   qrCodeUri: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==",
@@ -80,9 +79,7 @@ const certificate = (over: Record<string, unknown>) => ({
 });
 const productCourse = { trainingSubtitle: "Agentic Product Engineering" };
 const fits: Record<string, Record<string, unknown>> = {
-  // The ledger's most common certificate.
   "nine topics and a course name on one line": certificate({ trainingSubtitle: "" }),
-  // The certificates skill's standard invocation.
   "nine topics and a course name on two lines": certificate({}),
   "a two-line name, nine topics": certificate({ attendeeName: twoLineName }),
   "a two-line name, eleven topics": certificate({
@@ -90,11 +87,11 @@ const fits: Record<string, Record<string, unknown>> = {
     attendeeName: twoLineName,
     topics: productEngineering.slice(0, 11),
   }),
-  "fourteen topics, the most in the ledger": certificate({
+  "fourteen topics": certificate({
     ...productCourse,
     topics: productEngineering,
   }),
-  "twelve long topics, the longest list in the ledger": certificate({
+  "twelve long topics": certificate({
     lang: "de",
     trainingTitle: "hackers&wizards Workshop (2 Tage)",
     trainingSubtitle: "Agentic Factory",

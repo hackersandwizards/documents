@@ -78,7 +78,6 @@ function distBar(s: ReadoutScale): string {
 }
 
 export function scaleRow(s: ReadoutScale): string {
-  // An unanswered row has no score: no band colour, no bar, a dash for the mean.
   const col = s.n ? bandColor(s.mean, s) : "inherit";
   const fill = s.n ? scalePosition(s.mean, s) * 100 : 0;
   return `

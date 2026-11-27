@@ -148,7 +148,6 @@ function canMatch(selector: string, page: Present): boolean {
   return bareSelectorMatches(bare, page);
 }
 
-// Blocks whose body holds rules, which prune themselves; any other at-rule stays whole.
 const GROUPING = /^@(media|supports|layer|container|scope|document)\b/i;
 
 /** `css` with each plain rule passed through `rule`, which returns it rewritten or "", and each
@@ -167,7 +166,6 @@ function walk(css: string, rule: (prelude: string, body: string) => string): str
     .join("");
 }
 
-/** The rules of `css` that can match the page. */
 const pruneRules = (css: string, page: Present) =>
   walk(css, (prelude, body) => (anySelectorMatches(prelude, page) ? `${prelude}{${body}}` : ""));
 
@@ -214,7 +212,6 @@ export function pruneStyles(html: string): string {
       element(el) {
         const tag = el.tagName.toLowerCase();
         page.tags.add(tag);
-        // A script block counts as running unless its type names JSON data; an event handler runs too.
         if (tag === "script" && !/json/i.test(el.getAttribute("type") ?? "")) runs = true;
         for (const [name] of el.attributes) {
           page.attributes.add(name.toLowerCase());

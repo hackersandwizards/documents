@@ -34,7 +34,6 @@ const css = [
     .sheet { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; }
   }`,
 ].join("\n");
-// The onepager takes its own map, as composeOnepager applies it.
 const map = sheet === "onepager" ? ONEPAGER_ELEMENTS : ELEMENT_MAP;
 const html = preview
   ? editStyles(withElements(await Astro.slots.render("default"), map), bodyToSheet)

@@ -16,7 +16,6 @@ test("every component has a story", () => {
   expect(components.filter((c) => !stories.includes(c))).toEqual([]);
 });
 
-/** Every component a page shows, its own imports followed. */
 function shown(component: string, seen: Set<string>): Set<string> {
   if (seen.has(component)) return seen;
   seen.add(component);

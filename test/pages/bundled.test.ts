@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join, resolve } from "node:path";
-import { afterAll, assert, describe, expect, it, vi } from "vitest";
+import { afterAll, assert, beforeAll, describe, expect, it, vi } from "vitest";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import manifest from "../../package.json";
 import type * as composer from "../../scripts/compose-document";
@@ -32,13 +32,6 @@ const exportTypes = {
 };
 const moduleExports = Object.entries(manifest.exports).filter(([, path]) => path.endsWith(".ts"));
 
-const built = await Bun.build({
-  entrypoints: moduleExports.map(([, path]) => join(REPO, path)),
-  outdir: out,
-  naming: "[name].[ext]",
-  target: "node",
-  packages: "external",
-});
 async function loadBundle(file: string): Promise<Record<string, unknown>> {
   const module: unknown = await import(join(out, file));
   if (!isRecord(module)) throw new Error(`Expected a bundled module: ${file}`);
@@ -69,7 +62,16 @@ async function loadRenderBundle(query = ""): Promise<RenderBundle> {
 }
 
 describe("bundled into a consumer's chunk", () => {
-  it("builds", () => expect(built.success).toBe(true));
+  beforeAll(async () => {
+    const built = await Bun.build({
+      entrypoints: moduleExports.map(([, path]) => join(REPO, path)),
+      outdir: out,
+      naming: "[name].[ext]",
+      target: "node",
+      packages: "external",
+    });
+    expect(built.success).toBe(true);
+  });
 
   it("lists the exported API of every bundled entry point", () => {
     expect(Object.keys(exportTypes).sort()).toEqual(moduleExports.map(([key]) => key).sort());
@@ -224,10 +226,6 @@ describe("bundled into a consumer's chunk", () => {
       }
     },
   );
-
-  it("loads the survey readout, which reads its stylesheet on import", async () => {
-    expect((await loadBundle("survey-readout.js")).composeSurveyReadout).toBeTypeOf("function");
-  });
 
   it("loads the handout's words, which read the company's name from brand on import", async () => {
     const { HANDOUT_TEXT } = await loadBundle("handout.js");

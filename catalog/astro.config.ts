@@ -33,7 +33,6 @@ export default defineConfig({
       product: "Documents",
       lead: "Every document type of @hackersandwizards/documents and the components it is built from, on A4 at print size. The documents are German or English; every name is invented and every amount a placeholder.",
       css: [
-        // tokens.css holds an @theme block a browser skips: tokens.root.css is its :root twin.
         "@hackersandwizards/brand/tokens.root.css",
         "@hackersandwizards/brand/print.css",
         "@hackersandwizards/brand/document.flat.css",

@@ -1,11 +1,10 @@
-// Run by onepager.test.ts in its own Vitest process, so no module
-// cache or composer of another test hides a read: the sample onepager composed with every file
-// read through node:fs recorded, and its brand files held against onepagerBrandFiles. A fit only
-// renders that page again in Chrome, which reads no brand file, since the page inlines them.
+// Run in a separate Vitest process so cached modules or a reused composer cannot hide brand files read during composition.
+// A fit only renders that page again in Chrome, which reads no brand file, since the page inlines them.
 import fs, * as fsExports from "node:fs";
 import fsp, * as fspExports from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { defined } from "@hackersandwizards/scaffolding/defined";
 import { expect, test, vi } from "vitest";
 
 const read = new Set<string>();
@@ -18,19 +17,37 @@ const traced =
   };
 const traceTimeout = (60_000 * Number(process.env.SCAFFOLDING_TEST_TIMEOUT_MS || 5000)) / 5000;
 
+const transpiler = new Bun.Transpiler({ loader: "ts" });
+const importsBrand = (source: string) =>
+  transpiler
+    .scanImports(source.replace(/^#![^\n]*/, ""))
+    .some(
+      ({ path }) =>
+        path === "@hackersandwizards/brand" || path.startsWith("@hackersandwizards/brand/"),
+    );
+
+test.each([
+  'import "@hackersandwizards/brand/imprint.json";',
+  'const imprint = import ("@hackersandwizards/brand/imprint.json");',
+])("recognizes the brand import %s", (source) => {
+  expect(importsBrand(source)).toBe(true);
+});
+
 // Bun's own loader reads an imported module without going through node:fs.
 test("engine scripts load no brand modules outside the file trace", () => {
   const root = resolve(import.meta.dirname, "..");
-  const imports = /(from|import\()\s*["']@hackersandwizards\/brand/;
   // The control finds the brand import Vite reads in DocHeader.
-  expect(fs.readFileSync(join(root, "components", "DocHeader.astro"), "utf8")).toMatch(imports);
+  const frontmatter = fs
+    .readFileSync(join(root, "components", "DocHeader.astro"), "utf8")
+    .split(/^---$/m)[1];
+  expect(importsBrand(defined(frontmatter, "DocHeader frontmatter"))).toBe(true);
   const scripts = join(root, "scripts");
   const scriptFiles = fs
     .readdirSync(scripts, { recursive: true, encoding: "utf8" })
     .filter((file) => file.endsWith(".ts"));
   expect(scriptFiles, "TypeScript files in scripts/").not.toHaveLength(0);
   expect(
-    scriptFiles.filter((file) => imports.test(fs.readFileSync(join(scripts, file), "utf8"))),
+    scriptFiles.filter((file) => importsBrand(fs.readFileSync(join(scripts, file), "utf8"))),
   ).toEqual([]);
 });
 
@@ -89,7 +106,6 @@ test(
           !/^(?:node_modules\/(@[^/]+\/)?[^/]+\/)?package\.json$/.test(path.slice(brand.length)),
       )
       .sort();
-    // The control: the trace sees Vite's read of DocHeader's lockup and the engine's of a face.
     expect(tracedFiles.some((path) => path.endsWith("logos/lockup-screen.svg"))).toBe(true);
     expect(tracedFiles.some((path) => path.endsWith(".woff2"))).toBe(true);
     expect(onepagerBrandFiles()).toEqual(tracedFiles);

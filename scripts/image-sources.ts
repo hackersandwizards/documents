@@ -9,7 +9,6 @@ const packageImages = new Map<string, string>();
 export const PACKAGE_SRC = /^(@hackersandwizards\/[^/]+)\//;
 /** Resolves a package path from where this package is installed. */
 const packageRequire = createRequire(import.meta.url);
-/** The MIME type by extension, the images `inlineImages` takes. */
 const IMAGE_TYPES: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
@@ -26,7 +25,6 @@ const IMAGE_FILE = new RegExp(
 );
 /** A file Git LFS has not fetched holds this pointer instead of the image. */
 const LFS_POINTER = Buffer.from("version https://git-lfs.github.com/spec/v1\n");
-/** `bytes` as a data URI, or undefined for a Git LFS pointer. */
 const dataUri = (ext: string, bytes: Buffer) =>
   bytes.subarray(0, LFS_POINTER.length).equals(LFS_POINTER)
     ? undefined

@@ -40,7 +40,6 @@ const ALWAYS = String.fromCodePoint(
   0x203a,
 );
 
-/** Every face a page inlines, its base64 as the group. */
 const FACES = /data:font\/woff2;base64,([\w+/=]+)/g;
 
 /** Each brand face decoded once a process; the cuts for the last page text, since fitOnepager
@@ -48,11 +47,10 @@ const FACES = /data:font\/woff2;base64,([\w+/=]+)/g;
 const decoded = new Map<string, Promise<Uint8Array>>();
 let lastCut = { text: "", faces: new Map<string, Promise<string>>() };
 
-/** A face's base64 decoded to TrueType, through the cache. */
 const decodedFace = (data: string) => {
   let ttf = decoded.get(data);
   if (!ttf) {
-    // A page whose faces were cut before brings faces of its own: the cache keeps the brand's.
+    // Bound the decode cache because rebaking pages can introduce distinct font subsets.
     if (decoded.size >= 64) decoded.clear();
     decoded.set(data, (ttf = decompress(Buffer.from(data, "base64"))));
   }
@@ -197,8 +195,7 @@ export async function cutFacesToPdf(html: string, pdf: string): Promise<string> 
   // A Type 3 face carries no name to match: the page stays as it is.
   if (bytes.includes("/Subtype /Type3")) return html;
   const printed = printedCharacters(bytes);
-  // No font found means fonts written in a form this reader does not know, not a page without
-  // text: nothing is cut.
+  // If no fonts can be mapped, keep all inlined faces because the PDF may use an unsupported font representation.
   if (printed.size === 0) return html;
   const faces = await Promise.all(
     [...new Set([...html.matchAll(FACES)].map(([, data]) => data))].map(async (data) => {

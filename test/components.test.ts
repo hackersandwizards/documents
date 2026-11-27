@@ -1,4 +1,5 @@
 import { afterAll, assert, beforeAll, describe, expect, test } from "vitest";
+import companyImprint from "@hackersandwizards/brand/imprint.json";
 import { mission } from "@hackersandwizards/brand/verbal.json";
 import { decodeHTML } from "entities";
 import { readdirSync } from "node:fs";
@@ -255,7 +256,6 @@ test.each(["de", "en"])("DocProposal %s prints its terms from props only", async
   ).toContain("vatLabel");
 });
 
-// About us closes on brand's mission, read from its verbal.json; labels.aboutText is the control.
 test.each(["de", "en"] as const)("DocProposal %s prints brand's mission", async (lang) => {
   const text = async (props: object) =>
     decodeHTML(await composer.render("DocProposal", { ...proposal, lang, ...props }));
@@ -271,34 +271,26 @@ test("styles() returns each scoped style once, however often it is called", asyn
 // § 35a GmbHG puts legal form, seat, register court and number and every managing director on
 // business letters: every document issued as the GmbH carries them in the imprint, each fact once.
 test.each([
-  ["DocProposal", { ...proposal, lang: "en" }, "Registered office and court Hamburg, HRB 198840"],
-  [
-    "DocLeistungsnachweis",
-    props.DocLeistungsnachweis,
-    "Sitz und Registergericht Hamburg, HRB 198840",
-  ],
-  ["DocRateCard", props.DocRateCard, "Sitz und Registergericht Hamburg, HRB 198840"],
-  ["DocAgreement", props.DocAgreement, "Sitz und Registergericht Hamburg, HRB 198840"],
-  [
-    "DocMarkdown",
-    { ...props.DocMarkdown, legal: true },
-    "Sitz und Registergericht Hamburg, HRB 198840",
-  ],
-  [
-    "DocMarkdown",
-    { ...props.DocMarkdown, legal: true, lang: "en" },
-    "Registered office and court Hamburg, HRB 198840",
-  ],
+  ["DocProposal", { ...proposal, lang: "en" }, "Registered office and court"],
+  ["DocLeistungsnachweis", props.DocLeistungsnachweis, "Sitz und Registergericht"],
+  ["DocRateCard", props.DocRateCard, "Sitz und Registergericht"],
+  ["DocAgreement", props.DocAgreement, "Sitz und Registergericht"],
+  ["DocMarkdown", { ...props.DocMarkdown, legal: true }, "Sitz und Registergericht"],
+  ["DocMarkdown", { ...props.DocMarkdown, legal: true, lang: "en" }, "Registered office and court"],
 ])(
   "%s carries the imprint of § 35a GmbHG",
-  async (name, componentProps, register) => {
+  async (name, componentProps, registerLabel) => {
     const html = await composer.render(name, componentProps as Record<string, unknown>);
     const imprint = html.match(/class="company-meta"[^>]*>([\s\S]*?)<\/div>/)?.[1];
     assert(imprint, "Expected the company imprint in the rendered component");
     expect(imprint).toContain("hackers&amp;wizards GmbH");
-    expect(imprint).toContain(register);
-    expect(imprint).toContain("Benedikt Stemmildt, Stefan Munz");
-    expect(imprint.match(/Hamburg/g)).toHaveLength(2);
+    const text = decodeHTML(imprint);
+    expect(text).toContain(`${registerLabel} ${companyImprint.seat}, ${companyImprint.register}`);
+    expect(text).toContain(companyImprint.managingDirectors.join(", "));
+    expect(text).toContain(`${companyImprint.postcode} ${companyImprint.city}`);
+    expect(text.split(companyImprint.seat).length - 1).toBe(
+      1 + Number(companyImprint.city === companyImprint.seat),
+    );
   },
   limit(30_000),
 );
@@ -344,14 +336,13 @@ test("a regional tag prints its language's words", async () => {
     legal: true,
     lang: "de-AT",
   });
-  expect(imprint).toContain("Sitz und Registergericht Hamburg");
+  expect(decodeHTML(imprint)).toContain(`Sitz und Registergericht ${companyImprint.seat}`);
   const offer = await composer.render("DocProposal", { ...proposal, lang: "de-AT" });
   expect(offer).toContain("Woran ihr es messt");
   const english = await composer.render("DocProposal", { ...proposal, lang: "en-GB" });
   expect(english).not.toContain("Woran ihr es messt");
 });
 
-// A consumer reads the handout's words from HANDOUT_TEXT, so these are the words it prints.
 test.each(["de", "en"] as const)("DocHandout %s prints HANDOUT_TEXT's words", async (lang) => {
   const html = await composer.render("DocHandout", {
     ...props.DocHandout,
@@ -375,7 +366,6 @@ test("DocHandout carries the brand's elements and the code palette's classes", a
   expect(html).not.toMatch(/<span[^>]* style=/);
 });
 
-// The lump-sum and rounding notes print as muted lines, never in the brand's callout box.
 test("DocLeistungsnachweis notes take no callout", async () => {
   const html = await composer.render("DocLeistungsnachweis", {
     ...props.DocLeistungsnachweis,
@@ -430,7 +420,6 @@ test("DocCertificate prints its alt text in its language and links only a given 
     qrCodeUri: "data:image/png;base64,iVBORw0KGgo=",
   });
   expect(de).toContain('alt="QR-Code zur Verifizierung des Zertifikats"');
-  // Without verificationUrl, the QR code stands unlinked and no empty address line prints.
   expect(de).not.toMatch(/<a class="qr-link"(?![^>]*href)/);
   expect(de).not.toContain('class="footer-url"');
   const linked = await composer.render("DocCertificate", {

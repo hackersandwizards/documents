@@ -1,7 +1,6 @@
 import { posix, relative } from "node:path";
-import { brandFile } from "../scripts/render-pdf";
+import { brandFile, ROOT } from "../scripts/root";
 import { inlineCss } from "../scripts/document-css";
-import { ROOT } from "../scripts/root";
 
 /** A file brand exports, as a path from this repository's root: where the catalog's `copy` puts it
  * in dist/. */
@@ -14,8 +13,6 @@ function fromRoot(absolute: string): string {
   return path;
 }
 
-/** The brand stylesheets a type page links (_Type.astro, the onepager's and the readout's
- * composers). */
 const LINKED_CSS = [
   "layers.css",
   "tokens.root.css",

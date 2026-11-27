@@ -3,7 +3,6 @@ import { canonicalLanguageTag } from "./fill";
 import { cssItems, editStyles, pruneStyles } from "./prune";
 import { stripComments } from "./root";
 
-/** A code point from a CSS or JS escape; one past U+10FFFF is no character. */
 const escaped = (match: string, hex: string) => {
   const point = parseInt(hex, 16);
   return point <= 0x10ffff ? String.fromCodePoint(point) : match;

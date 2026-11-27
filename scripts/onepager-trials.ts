@@ -2,8 +2,8 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ChromeExitedError } from "./chrome-pipe";
 import { renderPdf } from "./render-pdf";
+import { isRecord } from "./root";
 
 /** The page balance fitOnepager picks: `tight` for copy over two pages, then the widest gap level
  *  (0 to 4) between page 1's blocks after the hero (`lift`) and between page 2's blocks after its
@@ -53,7 +53,8 @@ export function onepagerTrials(bake: (fit: OnepagerFit) => Promise<string>, dir:
       // and whether a kept one still does is not measured.
       pages = renderPdf(html, pdf, { warm: true })
         .catch((error: unknown) => {
-          if (error instanceof ChromeExitedError) return renderPdf(html, pdf, { warm: true });
+          if (isRecord(error) && error.code === "HW_CHROME_EXITED")
+            return renderPdf(html, pdf, { warm: true });
           throw error;
         })
         .then(() => pdfPages(pdf));
@@ -77,9 +78,11 @@ export async function widestOnepagerSpacing(
   trial: ReturnType<typeof onepagerTrials>,
 ): Promise<OnepagerFit | undefined> {
   for (const fit of fits) await trial.files(fit);
-  const attempts = await Promise.all(fits.map(trial.render));
+  const renders = fits.map(trial.render);
+  await Promise.allSettled(renders);
+  const results = await Promise.all(renders);
   let kept: OnepagerFit | undefined;
-  for (const [i, { pages, pdf }] of attempts.entries()) {
+  for (const [i, { pages, pdf }] of results.entries()) {
     if (pages !== 2 || flatText(pdfPageText(pdf, 1)) !== first) break;
     kept = fits[i];
   }

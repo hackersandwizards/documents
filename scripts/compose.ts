@@ -64,6 +64,8 @@ export async function openComposer(root = process.cwd()) {
   const container = await experimental_AstroContainer.create();
   return {
     async render(name: string, props: object, slots: Record<string, string> = {}) {
+      if (typeof name !== "string" || !/^Doc\w+$/.test(name))
+        throw new Error(`Not a document component: ${String(name)}`);
       if (!isRecord(props)) throw new Error("Expected a document props object");
       const path = join(ROOT, `components/${name}.astro`);
       const { default: component } = await load(path);

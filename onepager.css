@@ -263,8 +263,6 @@ ul {
   color: var(--ink);
 }
 
-/* The lead role here and the small role on every other fact keep the decision row the only large
-   text in the box. */
 .facts .key-row dd {
   font: var(--role-lead);
   font-weight: var(--weight-semibold);
@@ -395,8 +393,6 @@ ul {
   margin-bottom: var(--op-4);
 }
 
-/* A ruled block's text starts on its rule's left edge, as every box's border does: no
-   indent. */
 .deliverable-banner {
   border-top: var(--op-2) solid var(--accent);
   padding: var(--op-8) 0 0;
@@ -658,10 +654,7 @@ ul {
   color: var(--muted);
 }
 
-/* The fit pass (fitOnepager) gives page 1's blocks after the hero a top margin of --lift-gap and
-   every block after the first one on page 2 one of --air-gap, each at the widest level that keeps the page
-   breaks: free space goes between the blocks instead of under the last one. A margin under
-   --op-section collapses into it, so every level starts above it. */
+/* The fit pass adds space between blocks without moving page breaks, so each gap level must exceed --op-section to survive margin collapse. */
 .air0 {
   --air-gap: var(--op-air-0);
 }

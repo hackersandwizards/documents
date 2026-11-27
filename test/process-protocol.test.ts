@@ -9,6 +9,7 @@ const protocols = [
   },
   { delimiter: "\0", chunks: ['{"id":1}\0{"id":', "2}\0"], expected: [{ id: 1 }, { id: 2 }] },
   { delimiter: "\n", chunks: ["null\n?\n[]\n"], expected: [undefined, undefined, undefined] },
+  { delimiter: "\n", chunks: ['{broken}\n{"id":3}\n'], expected: [undefined, { id: 3 }] },
 ] as const;
 
 test.each(protocols)(

@@ -77,7 +77,6 @@ class HandoutPrint {
     const file = join(this.dir, "handout.html");
     const html = await source(pass);
     this.label ??= chapterLabelOf(html);
-    // Resolve relative images before writing the page into the temporary folder.
     writeFileSync(file, inlineImages(html, process.cwd()));
     await renderPdf(file, this.pdf, this.options);
   }

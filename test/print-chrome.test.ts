@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { assert, expect, test, vi } from "vitest";
+import { ChromeExitedError } from "../scripts/chrome-pipe";
 import { coldPrint, keptChrome } from "../scripts/print-chrome";
 import { readProtocol } from "../scripts/process-protocol";
 
@@ -51,7 +52,7 @@ function chromeReplies(close: { error: object } | "exit", print?: object) {
       kill: () => kill(),
     }) as ChildProcess,
   );
-  return { input, kill };
+  return { input, output, kill };
 }
 
 const printed = { result: { data: pdf.toString("base64") } };
@@ -86,13 +87,53 @@ test("logs an unexpected close error before stopping a timed-out kept Chrome", a
   }
 });
 
-test("only ignores EPIPE errors on the Chrome input stream", async () => {
-  const { input } = chromeReplies({ error: targetMissing }, printed);
-  await coldPrint("chrome", job);
-  const brokenPipe = Object.assign(new Error("Pipe closed"), { code: "EPIPE" });
-  const failure = Object.assign(new Error("Pipe I/O failed"), { code: "EIO" });
-  expect(input.emit("error", brokenPipe)).toBe(true);
-  expect(() => input.emit("error", failure)).toThrow(failure);
+test("ignores EPIPE on the input, leaving the exit to reject the print", async () => {
+  const { input, kill } = chromeReplies({ error: targetMissing });
+  const pending = keptChrome("epipe-test-chrome")
+    .print(job)
+    .then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+  await vi.waitFor(() => expect(input.listenerCount("error")).toBeGreaterThan(0));
+  input.emit("error", Object.assign(new Error("Pipe closed"), { code: "EPIPE" }));
+  expect(kill).not.toHaveBeenCalled();
+  kill(); // emits exit
+  expect(await pending).toBeInstanceOf(ChromeExitedError);
+});
+
+test.each(["input", "output"] as const)(
+  "%s pipe I/O failure rejects a pending print",
+  async (side) => {
+    const streams = chromeReplies({ error: targetMissing });
+    const stream = streams[side];
+    const pending = keptChrome(`pipe-error-${side}-chrome`)
+      .print(job)
+      .then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+    const failure = Object.assign(new Error("Pipe I/O failed"), { code: "EIO" });
+    expect(() => stream.emit("error", failure)).not.toThrow();
+    expect(await pending).toBe(failure);
+    expect(streams.kill).toHaveBeenCalledTimes(1);
+  },
+);
+
+test("starts a new Chrome despite an entry under the legacy cache key", async () => {
+  const chrome = "old-shape-test-chrome";
+  const store = ((globalThis as Record<symbol, Map<string, unknown>>)[
+    Symbol.for("@hackersandwizards/documents/kept")
+  ] ??= new Map());
+  store.set(chrome, { api: { print: () => Buffer.from("legacy") }, busy() {} });
+  try {
+    const { kill } = chromeReplies("exit", printed);
+    expect(await keptChrome(chrome).print(job)).toEqual(pdf);
+    expect(kill).toHaveBeenCalledTimes(1);
+  } finally {
+    store.delete(chrome);
+    vi.mocked(spawn).mockReset();
+  }
 });
 
 test("reports both failures when printing and closing the target fail", async () => {

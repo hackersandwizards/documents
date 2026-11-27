@@ -96,6 +96,11 @@ test.each([
 });
 
 const emptyReadout = { strengths: [], weak: [], weakColors: [], flags: [] };
+test("readout slide shows one placeholder for each empty list", () => {
+  const html = readoutSlide(emptyReadout, text, "Kicker");
+  expect(html.match(/<div class="caption">—<\/div>/g)).toHaveLength(3);
+});
+
 const populatedReadout = {
   strengths: ["Progress"],
   weak: ["Repair"],
@@ -104,7 +109,6 @@ const populatedReadout = {
 };
 
 test.each([
-  ["shows the fallback for empty lists", emptyReadout, '<div class="caption">—</div>'],
   ["lists strengths", populatedReadout, 'class="good"><li>Progress</li>'],
   ["marks weak spots", populatedReadout, 'style="--mark:red">Repair</li>'],
   ["escapes flags", populatedReadout, "Check &lt;first&gt;"],

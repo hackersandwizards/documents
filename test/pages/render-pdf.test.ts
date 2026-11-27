@@ -147,7 +147,6 @@ describe.skipIf(!chromeBinary())("renderPdf profile", () => {
   });
 
   it("runs Chrome in its own temporary profile and removes it, so it never touches the user's Chrome", async () => {
-    // Chrome behind a script that records its arguments and whether the profile exists.
     const fake = join(dir, "fake-chrome.sh");
     const log = join(dir, "fake-chrome.log");
     writeFileSync(
@@ -219,7 +218,6 @@ describe.skipIf(!chromeBinary())("renderPdf with an empty Chrome cache", () => {
   });
 });
 
-// Every check runs on a Chrome of its own and on the kept one.
 describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (warm) => {
   let pdf: string;
   const pdfinfo = () => execFileSync("pdfinfo", [pdf], { encoding: "utf8" });
@@ -439,11 +437,25 @@ describe.skipIf(!chromeBinary()).each([false, true])("renderPdf, warm: %p", (war
       const file = join(dir, "bad-svg.html");
       writeFileSync(
         file,
-        `<!doctype html><html lang="en"><body><p>Kept</p><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect width='100%' height='10'/%3E%3C/svg%3E" style="height:10px"></body></html>`,
+        `<!doctype html><html lang="en"><body><p>Kept</p>
+        <script>
+          const decode = globalThis.decodeURIComponent;
+          globalThis.decodeURIComponent = (value) => {
+            if (!value.includes("svg-decoder-probe")) return decode(value);
+            const marker = document.createElement("p");
+            marker.textContent = "SVG decoder called";
+            document.body.append(marker);
+            throw new URIError("Unreadable SVG");
+          };
+        </script>
+        <img src="${svgUri('<svg xmlns="http://www.w3.org/2000/svg" data-test="svg-decoder-probe" width="10" height="10"><rect width="10" height="10"/></svg>')}" style="height:10px">
+        </body></html>`,
       );
       const out = join(dir, `bad-svg-${warm}.pdf`);
       await renderPdf(file, out, { warm });
-      expect(execFileSync("pdftotext", [out, "-"], { encoding: "utf8" })).toContain("Kept");
+      const text = execFileSync("pdftotext", [out, "-"], { encoding: "utf8" });
+      expect(text).toContain("Kept");
+      expect(text).toContain("SVG decoder called");
 
       const png = readFileSync(brand("lockup.png")).toString("base64");
       const foreign = svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">

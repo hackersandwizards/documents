@@ -204,7 +204,7 @@ export async function coldPrint(chrome: string, job: PrintJob): Promise<Buffer> 
 }
 
 export function keptChrome(chrome: string) {
-  const entry = kept(chrome, (stop) => {
+  const entry = kept(`chrome:print-job-v1:${chrome}`, (stop) => {
     const { child, print, cleanup } = pipeChrome(chrome, stop);
     return { child, api: { print }, cleanup };
   });

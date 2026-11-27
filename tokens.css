@@ -36,7 +36,6 @@
      reads it. New styles read --gradient-strip. */
   --gradient: var(--gradient-strip);
 
-  /* Every text takes one role through its shorthand, never a size or face of its own. */
   --sans: var(--font-sans);
   --mono: var(--font-mono);
   --code-family: var(--type-code-family);

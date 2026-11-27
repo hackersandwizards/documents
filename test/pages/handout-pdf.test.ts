@@ -86,7 +86,7 @@ test(
     const { starts, listed } = read(pdf);
     expect(starts.length).toBe(props.chapters.length);
     expect(listed).toEqual(starts);
-    // Every word stays on the paper, a long path in a margin note too.
+    // Check the right page edge because the long margin-note path can overflow there.
     const box = execFileSync("pdftotext", ["-bbox", pdf, "-"], { encoding: "utf8" });
     const width = Number(defined(/<page width="([\d.]+)"/.exec(box), "PDF page width")[1]);
     const off = [...box.matchAll(/xMax="([\d.]+)" yMax="[\d.]+">([^<]*)</g)].filter(

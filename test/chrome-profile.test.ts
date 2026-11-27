@@ -58,6 +58,15 @@ test("creates a Chrome profile when the stale profile vanishes before removal", 
   expect(existsSync(makeChromeProfile())).toBe(true);
 });
 
+test("creates a Chrome profile and leaves the stale profile of another user", async () => {
+  const stale = staleProfile();
+  const stat = fs.lstatSync(stale);
+  vi.mocked(lstatSync).mockReturnValueOnce(Object.assign(stat, { uid: stat.uid + 1 }));
+  const { makeChromeProfile } = await import("../scripts/chrome-profile");
+  expect(existsSync(makeChromeProfile())).toBe(true);
+  expect(existsSync(stale)).toBe(true);
+});
+
 test("propagates a denied read of Chrome's profile lock", async () => {
   staleProfile(`${hostname()}-${process.pid}`);
   const denied = Object.assign(new Error("Cannot inspect Chrome lock"), { code: "EACCES" });

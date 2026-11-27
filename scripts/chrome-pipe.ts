@@ -7,7 +7,9 @@ type Result = Record<string, unknown>;
 type Pending = { resolve(r: Result): void; reject(e: Error): void; sessionId?: string };
 type PendingLoad = (error?: Error) => void;
 
-export class ChromeExitedError extends Error {}
+export class ChromeExitedError extends Error {
+  readonly code = "HW_CHROME_EXITED";
+}
 class ChromeTargetClosedError extends Error {}
 
 export class ChromePipe {
@@ -49,10 +51,13 @@ export class ChromePipe {
       });
     });
     // A write after exit fails with EPIPE, but exit already rejects the calls.
-    this.input?.on("error", (error: Error) => {
+    const onPipeError = (error: Error) => {
       if ("code" in error && error.code === "EPIPE") return;
-      throw error;
-    });
+      this.fail(error);
+      hung?.();
+    };
+    this.input?.on("error", onPipeError);
+    output?.on("error", onPipeError);
   }
 
   private receiveReply(id: number, { error, result }: Result) {

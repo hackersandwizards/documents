@@ -9,7 +9,7 @@ const ROOT = resolve(import.meta.dirname, "..");
 const SOURCE = /\.(astro|[cm]?[jt]sx?)$/;
 const SPEC = String.raw`["']@hackersandwizards/brand/verbal\.json["']`;
 const IMPORT = new RegExp(String.raw`import\s+([^;]*?)\s*from\s*${SPEC}`, "g");
-const DYNAMIC = new RegExp(String.raw`import\(\s*${SPEC}`);
+const DYNAMIC = new RegExp(String.raw`import\s*\(\s*${SPEC}`);
 
 // Every file git tracks or would track, so a new file counts before its first commit.
 const files = Bun.spawnSync(["git", "ls-files", "-co", "--exclude-standard"], { cwd: ROOT })
@@ -37,6 +37,7 @@ test.each([
   { kind: "default and named", source: `import v, { name } from '${JSON_PATH}'` },
   { kind: "namespace", source: `import * as v from "${JSON_PATH}"` },
   { kind: "dynamic", source: `const v = await import("${JSON_PATH}")` },
+  { kind: "spaced dynamic", source: `const v = await import ("${JSON_PATH}")` },
 ])("the scan reports a $kind import of verbal.json", ({ source }) => {
   expect(wholeImports(source)).toHaveLength(1);
 });

@@ -369,7 +369,7 @@ h2 {
   gap: var(--deck-16);
   flex: 1;
 }
-/* Labels take a fixed column and the bars the rest, so no gutter opens between a label and its bar. */
+/* Reserve a label column so all risk bars start at the same edge. */
 .risk {
   display: grid;
   grid-template-columns: minmax(0, var(--deck-448)) 1fr var(--deck-112);

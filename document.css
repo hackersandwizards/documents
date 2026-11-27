@@ -337,10 +337,7 @@ tr.total td {
   font-variant-numeric: tabular-nums;
 }
 
-/* A table holding a band (a total row; DocPriceTable's sums alike) reaches --band-bleed past the
-   text edge on each side, rules and band included, and pads its outer cells by as much: the band
-   gets equal room left and right, and every row's text stays on the edge of the heading above,
-   rather than the total sitting indented with its amount against the band's right edge. */
+/* Match the outer cell padding to the band's bleed so the band reaches past the text while the cells align with the heading. */
 table:has(tr.total) {
   width: calc(100% + 2 * var(--band-bleed));
   margin-inline: calc(-1 * var(--band-bleed));

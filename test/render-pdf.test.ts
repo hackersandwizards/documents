@@ -5,6 +5,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   readdirSync,
   rmSync,
   symlinkSync,
@@ -325,7 +326,6 @@ describe("inlineImages", () => {
     expect(() =>
       inlineImages(`<img alt="a > b" src="@hackersandwizards/brand/logos/none.svg">`, page),
     ).toThrow("brand exports no image");
-    // Text that only looks like a tag is no image.
     const text = `<p>&lt;img src="a%20b.jpg"&gt;</p><!-- <img src="a%20b.jpg"> -->`;
     expect(inlineImages(text, page)).toBe(text);
   });
@@ -478,19 +478,27 @@ describe("a malformed child-process reply", () => {
   const badChromeReply: unknown = expect.stringContaining("Invalid Chrome protocol message");
   const badComposerReply: unknown = expect.stringContaining("Invalid composer protocol message");
   it.each([
-    { worker: "Chrome", replies: [badChromeReply, badChromeReply, badChromeReply] },
-    { worker: "composer", replies: [badComposerReply, "ok"] },
+    {
+      worker: "Chrome",
+      replies: [badChromeReply, badChromeReply, badChromeReply],
+      chromeStarts: 3,
+    },
+    { worker: "composer", replies: [badComposerReply, "ok"], chromeStarts: 0 },
   ])(
     "rejects a malformed $worker reply and lets the next warm request start a new child",
-    async ({ worker, replies }) => {
+    async ({ worker, replies, chromeStarts }) => {
       const stubDir = mkdtempSync(join(dir, "bad-reply-"));
       const stubChrome = join(stubDir, "chrome");
       const stubBun = join(stubDir, "bun");
+      const starts = join(stubDir, "chrome-starts");
       const input = join(stubDir, "input.html");
+      writeFileSync(starts, "");
       writeFileSync(input, "<!doctype html><html><body>x</body></html>");
-      writeFileSync(stubChrome, "#!/bin/sh\nprintf 'null\\000' >&4\nread -r request <&3\n", {
-        mode: 0o755,
-      });
+      writeFileSync(
+        stubChrome,
+        "#!/bin/sh\nprintf 'start\\n' >> \"$CHROME_STARTS\"\nprintf 'null\\000' >&4\nread -r request <&3\n",
+        { mode: 0o755 },
+      );
       writeFileSync(stubBun, "#!/bin/sh\nread -r request\nprintf '!\\n' >&3\nread -r request\n", {
         mode: 0o755,
       });
@@ -511,7 +519,7 @@ describe("a malformed child-process reply", () => {
         console.log(JSON.stringify([failed, await compose()]));
       }`;
       const child = Bun.spawn([process.execPath, "-e", script], {
-        env: { ...process.env, CHROME_BINARY: stubChrome, TMPDIR: stubDir },
+        env: { ...process.env, CHROME_BINARY: stubChrome, CHROME_STARTS: starts, TMPDIR: stubDir },
         stderr: "pipe",
         timeout: limit(15_000),
       });
@@ -523,6 +531,7 @@ describe("a malformed child-process reply", () => {
       expect(status, stderr).toBe(0);
       const answer: unknown = JSON.parse(stdout);
       expect(answer).toEqual(replies);
+      expect([...readFileSync(starts, "utf8").matchAll(/^start$/gm)]).toHaveLength(chromeStarts);
     },
     limit(30_000),
   );
@@ -633,7 +642,6 @@ describe.each([false, true])("renderPdf, warm: %p", (warm) => {
       file,
       `<!doctype html><html lang="en"><body><img src="@hackersandwizards/brand/logos/none.svg"></body></html>`,
     );
-    // A PDF from an earlier render does not survive the failed one.
     const out = join(dir, `no-brand-image-${warm}.pdf`);
     writeFileSync(out, "earlier");
     expect(await rejection(renderPdf(file, out, { warm }))).toContain(

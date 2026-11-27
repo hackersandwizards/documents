@@ -170,7 +170,6 @@ if (import.meta.main) {
     process.exit(args.length === 0 ? 1 : 0);
   }
   const files = args.flatMap((a) => htmlFiles(resolve(a)));
-  // A path holding no document is a wrong path, never a pass.
   if (files.length === 0) {
     console.error(`documents-styles: no .html file under ${args.join(", ")}`);
     process.exit(1);

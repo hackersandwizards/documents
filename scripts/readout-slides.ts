@@ -45,12 +45,9 @@ function quoteList(t: ReadoutText, texts: string[]): string {
   return `${ordered.map(quoteCard).join("")}<div class="caption more" data-text="${esc(t.more)}" hidden></div>`;
 }
 
-// Title, at a glance, scores, risks, liked, improve, readout.
 export const SLIDE_COUNT = 7;
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-/** A content slide in the slide engine's frame: the brand strip, the kicker above the title, the
- *  page counter beside the corner wordmark. */
 function slideShell(inner: string, kicker: string, page: number): string {
   return `<section class="slide">
     <div class="strip hw-strip" aria-hidden="true"></div>

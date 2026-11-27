@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { rejection } from "@hackersandwizards/scaffolding/rejection";
 import { ChromeExitedError } from "../scripts/chrome-pipe";
 import { renderPdf } from "../scripts/render-pdf";
-import { onepagerTrials } from "../scripts/onepager-trials";
+import { onepagerTrials, widestOnepagerSpacing } from "../scripts/onepager-trials";
 
 vi.mock("../scripts/render-pdf");
 
@@ -60,6 +60,48 @@ test("retries a Chrome exit once on the same HTML and PDF paths", async () => {
     expect(await rejection(trial.render(fit))).toBe("Error: Second Chrome exited");
     expect(renderPdf).toHaveBeenNthCalledWith(2, html, pdf, { warm: true });
     expect(renderPdf).toHaveBeenCalledTimes(2);
+  } finally {
+    vi.mocked(renderPdf).mockReset();
+  }
+});
+
+test("retries a Chrome exit from a separately evaluated module", async () => {
+  vi.resetModules();
+  const copy = await import("../scripts/chrome-pipe");
+  expect(copy.ChromeExitedError).not.toBe(ChromeExitedError);
+  vi.mocked(renderPdf)
+    .mockRejectedValueOnce(new copy.ChromeExitedError("First Chrome exited"))
+    .mockRejectedValueOnce(new Error("Second render reached"));
+  try {
+    expect(await rejection(trial.render({ tight: true }))).toBe("Error: Second render reached");
+  } finally {
+    vi.mocked(renderPdf).mockReset();
+  }
+});
+
+test("waits for a sibling to read its file before a failed spacing trial closes", async () => {
+  const fits = [{ lift: 1 }, { lift: 2 }];
+  const failure = new Error("First render failed");
+  const sibling = Promise.withResolvers<unknown>();
+  vi.mocked(renderPdf)
+    .mockRejectedValueOnce(failure)
+    .mockImplementationOnce(async (html) => {
+      await Bun.sleep(20);
+      sibling.resolve(
+        await Bun.file(html)
+          .text()
+          .catch((error: unknown) => error),
+      );
+      throw new Error("Second render failed");
+    });
+  try {
+    const spacing = widestOnepagerSpacing(fits, "", trial).finally(() => trial.close());
+    const failed = await spacing.then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(failed).toBe(failure);
+    expect(await sibling.promise).toBe(JSON.stringify(fits[1]));
   } finally {
     vi.mocked(renderPdf).mockReset();
   }

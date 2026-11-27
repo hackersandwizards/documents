@@ -39,7 +39,7 @@ function profileHeld(profile: string): boolean {
   }
 }
 
-/** Whether a Chrome profile is old enough to sweep. Missing and inaccessible profiles stay put. */
+/** Whether a Chrome profile belongs to this user and is old enough to sweep. */
 export function isStaleChromeProfile(profile: string): boolean {
   let stat;
   try {
@@ -53,7 +53,13 @@ export function isStaleChromeProfile(profile: string): boolean {
       return false;
     throw error;
   }
-  return stat !== undefined && Date.now() - stat.mtimeMs > STALE_PROFILE_MS;
+  const uid = process.getuid?.();
+  return (
+    uid !== undefined &&
+    stat !== undefined &&
+    stat.uid === uid &&
+    Date.now() - stat.mtimeMs > STALE_PROFILE_MS
+  );
 }
 
 /** Removes each stale profile no Chrome holds, at most once an hour. */
