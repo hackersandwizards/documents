@@ -12,7 +12,6 @@ custom property. A directory is searched for .html files. Every finding names th
 to do instead: compose the document from an engine type, or add the missing type or variant to
 the engine.`;
 
-/** The attribute each style element the engine writes carries; any other style element is foreign. */
 const ENGINE_STYLES = [
   "data-hw-document",
   "data-hw-components",
@@ -88,8 +87,7 @@ export function rawInlineStyles(text: string): string[] {
 const BRAND_HREF =
   /^(?![a-z][\w+.-]*:|[\\/]{2})(?:[^?#]*\/)?@hackersandwizards\/brand\/(?![^?#]*\.\.)/i;
 
-/** Whether a link's address is one of the brand's files, read as the browser reads it: entities
- *  decoded, trimmed, and percent-escapes decoded, so %2e%2e is the `..` it climbs out with. */
+/** Decode the href so the package path check rejects encoded `..` after the package name. */
 function linksBrandFile(raw: string): boolean {
   const href = decodeHTMLAttribute(raw).trim();
   let decoded: string;
@@ -122,7 +120,7 @@ export function foreignStyles(html: string): string[] {
         const rel = (el.getAttribute("rel") ?? "").toLowerCase().split(/\s+/);
         if (rel.includes("stylesheet") && !linksBrandFile(el.getAttribute("href") ?? ""))
           found.push(
-            `The document links a stylesheet without an allowed brand href: ${openTag(el)}. Remove the link or set href to a relative path to a brand stylesheet such as print.css.`,
+            `The document links a stylesheet without an allowed brand href: ${openTag(el)}. Remove the link or set href to a relative path that runs through @hackersandwizards/brand/, such as one ending in @hackersandwizards/brand/tokens/print.css.`,
           );
       },
     })

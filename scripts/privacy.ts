@@ -45,7 +45,6 @@ const personAt = (path: string, key: string) =>
 const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boolean }[] = [
   {
     what: "A numeric euro figure can expose private prices. Replace it in the source with a placeholder such as X.XXX €.",
-    // A gap may be a space or an HTML no-break space, € an entity, the scale k, T, Mio. or Mrd.
     pattern:
       /\d[\d.,]*(?:,[-–])?(?:\s|&nbsp;|&#160;)?(?:[kT]|Mio\.|Mrd\.)?(?:\s|&nbsp;|&#160;)?(?:€|&euro;|&#8364;|&#x20ac;|EUR\b|Euros?\b)|(?:€|&euro;|&#8364;|&#x20ac;|\bEUR|\bEuro)(?:\s|&nbsp;|&#160;)?\d/gi,
   },
@@ -61,7 +60,7 @@ const RULES: { what: string; pattern: RegExp; allowed?: (match: string) => boole
     pattern:
       /(?<![\w+])\+\d{1,3}(?:[\s.-]\d{1,4}){3,}(?![\w.,])|(?<!\w)\+\d{2}[\s/-]?(?:\(0\)\s?)?\(?0?\d{2,5}\)?[\s/-]?\d{3,}|(?<![\w.,])\(?0\d{2,4}\)?(?: ?[/-] ?|\s)?\d{5,}|(?<![\w.,])0\d{2,4}(?: ?[/-] ?|\s)[1-9]\d{1,3}(?:\s\d{2,4})+/g,
   },
-  // Any country in capitals; a German one in lower case too, which a hash cannot pass for.
+  // The lowercase German alternative requires digits after the country code to reduce false matches in hexadecimal hashes.
   {
     what: "An IBAN can expose bank details. Remove it from the source or replace it with a nonnumeric placeholder.",
     pattern: /\b[A-Z]{2}\d{2}(?: ?[A-Z\d]{4}){3,}|\bde\d{2}(?: ?\d{4}){4} ?\d{2}\b/g,
@@ -136,7 +135,7 @@ export function scanText(root: string, deny: string[] = []): Finding[] {
           what: `The term "${term}" in the path is on the deny list. Rename the flagged file or directory in the source and regenerate it if it was built.`,
         });
     const bytes = readFileSync(file);
-    // An image or font: no text, and any pattern matches its bytes by chance.
+    // Treat a NUL byte as a sign of binary content to avoid matching private-data patterns against binary files.
     if (bytes.includes(0)) continue;
     const text = withoutDataUris(bytes.toString("utf8"));
     text.split("\n").forEach((line, i) => {

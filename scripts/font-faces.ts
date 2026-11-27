@@ -42,8 +42,7 @@ const ALWAYS = String.fromCodePoint(
 
 const FACES = /data:font\/woff2;base64,([\w+/=]+)/g;
 
-/** Each brand face decoded once a process; the cuts for the last page text, since fitOnepager
- * composes one onepager many times over. */
+/** Bound the cache of decoded faces and reuse cuts for the last page text because fitOnepager composes the same page repeatedly. */
 const decoded = new Map<string, Promise<Uint8Array>>();
 let lastCut = { text: "", faces: new Map<string, Promise<string>>() };
 
@@ -76,7 +75,6 @@ const encodeHere = ({ font, resolve }: EncodeJob) => resolve(compress(font));
 function startEncoder() {
   encoders++;
   let job: EncodeJob | undefined;
-  // A Worker that cannot start or exits leaves the same page to encode in-process.
   const encodeAllHere = (reason: unknown) => {
     if (encoderLimit > 1) console.warn(`Encoding font faces in-process: ${String(reason)}`);
     encoderLimit = 1;
@@ -122,7 +120,6 @@ const encodeFace = (font: Uint8Array) =>
     if (encoders < encoderLimit) startEncoder();
   });
 
-/** A TrueType face cut to `text`, as WOFF2 base64. */
 const cutTo = async (font: Uint8Array, text: string) =>
   Buffer.from(
     await encodeFace(await subsetFont(Buffer.from(font), text, { targetFormat: "truetype" })),
@@ -199,7 +196,7 @@ export async function cutFacesToPdf(html: string, pdf: string): Promise<string> 
   if (printed.size === 0) return html;
   const faces = await Promise.all(
     [...new Set([...html.matchAll(FACES)].map(([, data]) => data))].map(async (data) => {
-      // Not through `decoded`, which holds the brand's faces: these are this page's cuts.
+      // Decode these page-specific subsets directly so they cannot evict reusable faces from the shared cache.
       const font = await decompress(Buffer.from(data, "base64"));
       return { data, font, name: postScriptName(font) ?? "" };
     }),

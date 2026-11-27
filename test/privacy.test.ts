@@ -28,7 +28,6 @@ test("propagates a denied stat when scanning for private data", () => {
   expect(() => scanText(planted)).toThrow(denied);
 });
 
-// The privacy check's controls: each rule must hit a planted case, or its silence proves nothing.
 const ROOT = resolve(import.meta.dirname, "..");
 const planted = mkdtempSync(join(tmpdir(), "hw-privacy-"));
 afterAll(() => rmSync(planted, { recursive: true, force: true }));
@@ -75,7 +74,6 @@ test("every text rule hits a planted case", () => {
   );
   const lines = Array.from({ length: 32 }, (_, i) => i + 1);
   expect(scanText(planted).map((f) => f.line)).toEqual(lines);
-  // An SSH remote is no mailbox.
   writeFileSync(
     join(planted, "scripts", "leak.ts"),
     ['insteadOf="git' + '@github.com:"', "`VALUE=git" + "@github.com:`"].join("\n"),
@@ -155,7 +153,6 @@ describe("deny terms in document text", () => {
     { term: "Müllerbau", lines: [6, 7, 11] },
     // A capital umlaut is spelled out in capitals.
     { term: "MÜLLERBAU", lines: [6, 11] },
-    // Acronyms match in capitals in ordinary text and in either case beside a slug separator.
     { term: "ECHT", lines: [8, 10, 10] },
   ])("$term matches its allowed spellings on lines $lines", ({ term, lines }) => {
     expect(scanText(dir, [term]).map((finding) => finding.line)).toEqual(lines);

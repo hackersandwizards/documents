@@ -25,9 +25,7 @@ export const withoutImports = (css: string) => css.replace(/^@import [^;]+;\n/gm
 export const brandFile = (file: string) =>
   createRequire(import.meta.url).resolve(`@hackersandwizards/brand/${file}`);
 
-// brand's JSON files are read through node:fs rather than imported: Bun's loader reads an import
-// past node:fs, where onepager-trace.ts cannot see it. A field brand drops or renames fails here
-// rather than printing "undefined".
+// Read brand JSON through node:fs so onepager-trace.ts can see the file reads that Bun's module loader bypasses.
 function brandJson(file: string): Record<string, unknown> {
   const data: unknown = JSON.parse(readFileSync(brandFile(file), "utf8"));
   if (!isRecord(data))
@@ -62,7 +60,7 @@ export function brandName(): Record<"name" | "legal", string> {
   return { name: names.company, legal: names.legal };
 }
 
-/** brandName and the office address, from brand's `imprint.json`. */
+/** The company's names from `verbal.json` and its office address from `imprint.json`. */
 export function brandCompany(): Record<"name" | "legal" | "street" | "postcode" | "city", string> {
   const { street, postcode, city } = brandJson("imprint.json");
   return { ...checked("imprint.json", { street, postcode, city }), ...brandName() };
