@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   pages:
-    uses: hackersandwizards/scaffolding/.github/workflows/pages.yml@3063e0269d091e00ed3d802b69d419e78318788a # v5.46.8
+    uses: hackersandwizards/scaffolding/.github/workflows/pages.yml@baa1f13ec3359aeba19ee844bae3de1f7d86d474 # v5.46.9
     permissions:
       contents: read
       pages: write
