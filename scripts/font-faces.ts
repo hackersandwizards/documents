@@ -8,12 +8,12 @@ import { editFaces, printableCodePoints } from "./compact-styles";
 import { printedCharacters } from "./pdf-character-map";
 import { ROOT } from "./root";
 
-const packageRequire = createRequire(import.meta.url);
+const require = createRequire(import.meta.url);
 
 /** subset-font (HarfBuzz) ships no types; this is the call subsetFaces makes. woff2-encoder, not
  * subset-font's wawoff2, decodes and encodes: wawoff2 drops the glyph overlap flag FreeType
  * anti-aliases by. */
-const subsetFont = packageRequire("subset-font") as (
+const subsetFont = require("subset-font") as (
   font: Buffer,
   text: string,
   options: { targetFormat: "truetype" },
