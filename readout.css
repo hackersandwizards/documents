@@ -424,7 +424,7 @@ h2 {
 .rcol {
   background: var(--surface);
   border: var(--deck-hairline) solid var(--line-soft);
-  border-radius: var(--deck-corner);
+  border-radius: var(--slide-radius-sm);
 }
 .quote {
   font-size: var(--deck-text-note);

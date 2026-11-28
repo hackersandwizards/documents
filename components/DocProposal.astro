@@ -279,24 +279,24 @@ const running = `@page {
       </ul>
     </DocCard>
   ))}
-  {p.community && (
-    <div class="included wide tint-panel">
-      <h3>{t.community}</h3>
-      {p.community.meta && <p class="meta">{p.community.meta}</p>}
-      <ul>
-        {t.communityItems.map((item) => (
-          <li>{item}</li>
-        ))}
-      </ul>
-      <p class="value">
-        {fill(
-          p.community.seats && p.community.value ? t.communityValue : t.communityValuePerPerson,
-          p.community,
-        )}
-      </p>
-    </div>
-  )}
 </div>
+{p.community && (
+  <div class="included tint-panel">
+    <h3>{t.community}</h3>
+    {p.community.meta && <p class="meta">{p.community.meta}</p>}
+    <ul>
+      {t.communityItems.map((item) => (
+        <li>{item}</li>
+      ))}
+    </ul>
+    <p class="value">
+      {fill(
+        p.community.seats && p.community.value ? t.communityValue : t.communityValuePerPerson,
+        p.community,
+      )}
+    </p>
+  </div>
+)}
 
 {p.sequence && (
   <>
@@ -376,7 +376,7 @@ const running = `@page {
   }
 
   .included {
-    grid-column: 1 / -1;
+    margin: var(--block-margin);
     break-inside: avoid;
   }
 
